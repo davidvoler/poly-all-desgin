@@ -1,0 +1,92 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  body{
+    margin:0;padding:48px 32px;
+    background:#fafbfc;
+    font-family:"Inter", var(--font-latin);
+    color:var(--fg-strong);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  .stack{display:flex;flex-direction:column;gap:48px;max-width:680px;margin:0 auto}
+  .block{
+    background:#fff;
+    border:1px solid #eef0f3;
+    border-radius:16px;
+    padding:48px 40px;
+    text-align:center;
+  }
+  .block.hero{
+    background:var(--gradient-home);
+    border:none;
+  }
+  .mark{
+    font-size:52px;
+    font-weight:200;
+    letter-spacing:-.02em;
+    color:#1a1d21;
+    line-height:1;
+  }
+  .mark .tld{
+    font-weight:300;
+    color:var(--brand-primary);
+  }
+  .tag{
+    font-size:14px;
+    font-weight:300;
+    color:var(--fg-muted);
+    margin-top:18px;
+    letter-spacing:.01em;
+  }
+  .lockup{
+    font-size:40px;
+    font-weight:200;
+    letter-spacing:-.015em;
+    color:#1a1d21;
+    line-height:1;
+    display:inline-flex;align-items:center;gap:14px;
+  }
+  .lockup .amp{
+    font-weight:300;
+    color:var(--brand-primary);
+    font-style:italic;
+    font-size:0.85em;
+  }
+  .meta{
+    font-size:11px;
+    font-weight:400;
+    color:var(--fg-subtle);
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    margin-top:24px;
+  }
+  .small{
+    font-size:24px;font-weight:300;letter-spacing:-.01em;
+  }
+  .small .tld{font-weight:400;color:var(--brand-primary)}
+</style></head>
+<body>
+  <div class="stack">
+
+    <div class="block hero">
+      <div class="mark">polyglots<span class="tld">.social</span></div>
+      <div class="tag">Improve language through understanding</div>
+    </div>
+
+    <div class="block">
+      <div class="lockup">Listen <span class="amp">&amp;</span> Learn</div>
+      <div class="meta">In-app wordmark · Inter 200 / 300</div>
+    </div>
+
+    <div class="block">
+      <div class="small">polyglots<span class="tld">.social</span></div>
+      <div class="meta">Compact · 24 / 300</div>
+    </div>
+
+  </div>
+</body></html>
