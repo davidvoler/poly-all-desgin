@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Concept 2A — Paper Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-default);
+    background: #ECEFF4;
+    color: var(--fg-strong);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .phone {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    min-height: 860px;
+    background:
+      radial-gradient(120% 60% at 50% 0%, #FFFDF7 0%, #F6F1E7 60%, #EFE7D6 100%);
+    box-shadow: 0 30px 80px rgba(70, 50, 20, 0.18);
+  }
+
+  /* Massive native script — soft ink */
+  .hero-script {
+    position: absolute;
+    top: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-jp);
+    font-size: 380px;
+    font-weight: 700;
+    color: rgba(40, 30, 20, 0.045);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    user-select: none;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Subtle horizontal rule reminiscent of editorial layout */
+  .rule {
+    width: 100%;
+    height: 1px;
+    background: rgba(40, 30, 20, 0.10);
+    margin: 12px 0;
+  }
+
+  .page {
+    position: relative;
+    padding: 28px 28px 32px 28px;
+    min-height: 860px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+  }
+
+  /* Top bar */
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+  .brand {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: #2b241a;
+  }
+  .brand .dot {
+    color: var(--brand-primary);
+  }
+  .streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #6b5a3f;
+    border: 1px solid rgba(40, 30, 20, 0.15);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .streak .icon {
+    font-family: var(--font-icon);
+    font-size: 14px;
+    color: var(--color-orange-700);
+  }
+
+  /* Editorial label row */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8a7855;
+  }
+  .issue {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: #8a7855;
+  }
+
+  /* Hero block */
+  .hero {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 28px;
+  }
+  .hero .flag-pair {
+    font-size: 22px;
+    letter-spacing: 0.4em;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-family: var(--font-jp);
+    font-size: 104px;
+    font-weight: 700;
+    margin: 0;
+    color: #1a1410;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .hero .romaji {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8a7855;
+    margin-top: 14px;
+    font-style: italic;
+  }
+  .hero .course {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1410;
+    margin-top: 18px;
+    letter-spacing: -0.01em;
+  }
+  .hero .module {
+    font-size: 13px;
+    color: #6b5a3f;
+    margin-top: 4px;
+  }
+
+  /* Stats — typographic, table-style, no boxes */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    margin-bottom: 28px;
+    border-top: 1px solid rgba(40, 30, 20, 0.15);
+    border-bottom: 1px solid rgba(40, 30, 20, 0.15);
+    padding: 18px 0;
+  }
+  .stat {
+    text-align: center;
+    border-right: 1px solid rgba(40, 30, 20, 0.10);
+  }
+  .stat:last-child { border-right: none; }
+  .stat .v {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a1410;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .stat .l {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #8a7855;
+    margin-top: 8px;
+  }
+
+  /* Progress as a thin editorial line */
+  .prog-block {
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .prog-pct {
+    font-size: 68px;
+    font-weight: 700;
+    line-height: 1;
+    color: #1a1410;
+    letter-spacing: -0.04em;
+  }
+  .prog-pct .small {
+    font-size: 24px;
+    color: #8a7855;
+    font-weight: 500;
+    margin-left: 4px;
+  }
+  .prog-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8a7855;
+    margin-top: 8px;
+    margin-bottom: 14px;
+  }
+  .prog-bar {
+    height: 3px;
+    background: rgba(40, 30, 20, 0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .prog-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0 55% 0 0;
+    background: #1a1410;
+  }
+
+  /* Practice button — large solid pill, ink black */
+  .cta-row {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .practice {
+    flex: 1;
+    background: #1a1410;
+    color: #FFFDF7;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 18px 24px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(40, 30, 20, 0.25);
+    font-family: var(--font-default);
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  .practice:hover { transform: translateY(-2px); background: #000; }
+  .practice .icon { font-family: var(--font-icon); font-size: 22px; }
+  .icon-btn {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(40, 30, 20, 0.15);
+    color: #1a1410;
+    font-family: var(--font-icon);
+    font-size: 22px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Edition footer */
+  .edition {
+    position: absolute;
+    left: 28px; right: 28px;
+    bottom: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: #8a7855;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="hero-script">語</div>
+
+    <div class="page">
+
+      <div class="top">
+        <div class="brand">poly<span class="dot">·</span>glots</div>
+        <div class="streak">
+          <span class="icon">local_fire_department</span>
+          5 days
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <span class="label">Current Course · No. 03</span>
+        <span class="issue">May 06</span>
+      </div>
+
+      <div class="hero">
+        <div class="flag-pair">🇺🇸 → 🇯🇵</div>
+        <h1>日本語</h1>
+        <div class="romaji">— Ni-hon-go —</div>
+        <div class="course">Japanese for Beginners</div>
+        <div class="module">Module 3 · Greetings &amp; Introductions</div>
+      </div>
+
+      <div class="prog-block">
+        <div class="prog-pct">45<span class="small">%</span></div>
+        <div class="prog-label">Course Progress</div>
+        <div class="prog-bar"></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="v">248</div>
+          <div class="l">Words</div>
+        </div>
+        <div class="stat">
+          <div class="v">12</div>
+          <div class="l">Lessons</div>
+        </div>
+        <div class="stat">
+          <div class="v">86</div>
+          <div class="l">Sentences</div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="practice">
+          <span class="icon">play_arrow</span>
+          Practice
+        </button>
+        <button class="icon-btn" aria-label="More">tune</button>
+      </div>
+
+    </div>
+
+    <div class="edition">
+      <span>Volume I · Edition 03</span>
+      <span>Polyglots Press</span>
+    </div>
+  </div>
+</body>
+</html>
