@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/davidle/dev/tutorial/poly-all-desgin/step-5)"
+    ],
+    "additionalDirectories": [
+      "/Users/davidle/dev/tutorial/poly-all-desgin"
+    ]
+  }
+}

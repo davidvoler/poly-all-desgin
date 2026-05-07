@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polyglots — App Pages</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-default);
+    background: #0c0f1a;
+    color: #fff;
+    min-height: 100vh;
+    padding: 32px 24px 64px 24px;
+  }
+  .header {
+    max-width: 1200px;
+    margin: 0 auto 28px auto;
+  }
+  .header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+  }
+  .header p {
+    margin: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+  }
+  .gallery {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 28px;
+    justify-items: center;
+  }
+  .frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .frame iframe {
+    width: 384px;
+    height: 752px;
+    border: none;
+    border-radius: 32px;
+    background: #0c0f1a;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.55);
+  }
+  .frame-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .frame-label a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    padding-bottom: 1px;
+  }
+  .frame-label .num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Polyglots — App Pages</h1>
+    <p>Four core screens, single design language. Each fits one mobile viewport.</p>
+  </div>
+  <div class="gallery">
+
+    <div class="frame">
+      <div class="frame-label">
+        <span class="num">1</span>
+        <a href="courses.html" target="_blank">Courses · Choose your language</a>
+      </div>
+      <iframe src="courses.html" title="Courses"></iframe>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label">
+        <span class="num">2</span>
+        <a href="course.html" target="_blank">Course · Modules &amp; Lessons</a>
+      </div>
+      <iframe src="course.html" title="Course"></iframe>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label">
+        <span class="num">3</span>
+        <a href="quiz.html" target="_blank">Quiz · Multiple Choice</a>
+      </div>
+      <iframe src="quiz.html" title="Quiz"></iframe>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label">
+        <span class="num">4</span>
+        <a href="annotated.html" target="_blank">Annotated · Tap to Learn</a>
+      </div>
+      <iframe src="annotated.html" title="Annotated reading"></iframe>
+    </div>
+
+  </div>
+</body>
+</html>

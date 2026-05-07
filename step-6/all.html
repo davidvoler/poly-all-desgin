@@ -1,0 +1,1509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polyglots — All Pages (single document)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* ---------- Override app.css body for grid layout ---------- */
+  body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 384px);
+    gap: 32px 28px;
+    padding: 36px 24px 64px 24px;
+    justify-content: center;
+    align-content: start;
+    min-height: 100vh;
+  }
+
+  .doc-header {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .doc-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+  }
+  .doc-header p {
+    margin: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+  }
+
+  .phone-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .phone-frame .label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .phone-frame .label-row .num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .phone-frame .label-row .home-badge {
+    margin-left: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--color-orange-300);
+    color: #5a2a00;
+    text-transform: uppercase;
+  }
+
+  /* The phones themselves: each phone keeps the gradient bg. We need each
+     phone's children to be 100% height, which app.css handles via .page. */
+  .phone-frame .phone {
+    flex-shrink: 0;
+  }
+
+  /* =============================================================
+     PAGE 1 — HOME (mosaic backdrop)
+     ============================================================= */
+  #p-home .medallion {
+    position: relative;
+    margin: 4px auto 16px auto;
+    width: 168px;
+    height: 168px;
+  }
+  #p-home .medallion svg { transform: rotate(-90deg); position: absolute; inset: 0; }
+  #p-home .medallion .glow {
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.10), transparent 70%);
+    filter: blur(10px);
+  }
+  #p-home .medallion .disc {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  #p-home .medallion .center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  #p-home .medallion .flag-pair {
+    font-size: 13px;
+    letter-spacing: 0.30em;
+    margin-bottom: 5px;
+    opacity: 0.85;
+  }
+  #p-home .medallion .native {
+    font-family: var(--font-jp);
+    font-size: 44px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.5);
+  }
+  #p-home .medallion .pct {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+    margin-top: 7px;
+  }
+  #p-home .course-cap {
+    text-align: center;
+    margin: 0 auto 16px auto;
+    padding: 8px 14px 10px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.10);
+    width: fit-content;
+    max-width: 90%;
+  }
+  #p-home .course-cap .lang-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+  }
+  #p-home .course-cap h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin: 5px 0 2px 0;
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  #p-home .course-cap .module {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+  }
+  #p-home .stats {
+    display: flex;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  #p-home .seg {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    border-right: 1px solid rgba(255,255,255,0.10);
+  }
+  #p-home .seg:last-child { border-right: none; }
+  #p-home .seg .v {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.30);
+  }
+  #p-home .seg .l {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    margin-top: 4px;
+  }
+  #p-home .stats-label {
+    text-align: center;
+    margin-bottom: 7px;
+    color: rgba(255,255,255,0.5);
+  }
+  #p-home .cta-row {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* =============================================================
+     PAGE 2 — LANGUAGES
+     ============================================================= */
+  #p-langs .header {
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  #p-langs .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  #p-langs .header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+  }
+  #p-langs .pair { margin-bottom: 14px; }
+  #p-langs .pair-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 8px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #p-langs .pair-label .ic {
+    font-family: var(--font-icon);
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+  }
+  #p-langs .lang-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 16px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.18);
+    cursor: pointer;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  #p-langs .lang-card:hover { transform: translateY(-1px); }
+  #p-langs .flag {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.14);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #p-langs .lang-body { flex: 1; min-width: 0; }
+  #p-langs .lang-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+  #p-langs .lang-native {
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  #p-langs .lang-native.jp { font-family: var(--font-jp); }
+  #p-langs .lang-en {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  #p-langs .lang-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+  }
+  #p-langs .change {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  #p-langs .change .ic {
+    font-family: var(--font-icon);
+    font-size: 16px;
+  }
+  #p-langs .swap-row {
+    display: flex;
+    justify-content: center;
+    margin: 4px 0;
+    position: relative;
+    z-index: 2;
+  }
+  #p-langs .swap-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(13, 71, 161, 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-family: var(--font-icon);
+    font-size: 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -16px;
+    margin-bottom: -16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  #p-langs .level-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 4px 0;
+    padding: 0 4px;
+  }
+  #p-langs .level-row .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+  #p-langs .level-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  #p-langs .chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+  }
+  #p-langs .chip.selected {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+  #p-langs .cta-row {
+    margin-top: auto;
+    padding-top: 14px;
+  }
+
+  /* =============================================================
+     PAGE 3 — COURSES
+     ============================================================= */
+  #p-courses .pair-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.14);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+  }
+  #p-courses .pair-strip .arrow {
+    font-family: var(--font-icon);
+    font-size: 16px;
+    opacity: 0.7;
+  }
+  #p-courses .pair-strip .ja { font-family: var(--font-jp); }
+  #p-courses .header { margin-bottom: 14px; }
+  #p-courses .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  #p-courses .header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+  }
+  #p-courses .course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    overflow-y: auto;
+    margin: 0 -4px;
+    padding: 4px 4px 4px 4px;
+  }
+  #p-courses .course {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+    cursor: pointer;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  #p-courses .course:hover { transform: translateY(-1px); }
+  #p-courses .course.active {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.30);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+  }
+  #p-courses .course-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #p-courses .course-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-icon);
+    font-size: 20px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  #p-courses .course.active .course-icon {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+  #p-courses .course-title { flex: 1; min-width: 0; }
+  #p-courses .course-title .name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+  #p-courses .course-title .sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2px;
+  }
+  #p-courses .level-pill {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: rgba(255,255,255,0.85);
+    flex-shrink: 0;
+  }
+  #p-courses .level-pill.in-progress {
+    background: var(--color-orange-300);
+    border-color: var(--color-orange-300);
+    color: #5a2a00;
+  }
+  #p-courses .course-foot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+  }
+  #p-courses .course-foot .progress-bar { flex: 1; height: 4px; }
+  #p-courses .course.active .course-foot { color: rgba(255,255,255,0.9); }
+
+  /* =============================================================
+     PAGE 4 — COURSE (modules ↕ / lessons ↔)
+     ============================================================= */
+  #p-course .hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  #p-course .hero .pct {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  #p-course .hero .pct .unit { font-size: 10px; color: rgba(255,255,255,0.65); }
+  #p-course .hero .stat {
+    flex: 1;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.3;
+  }
+  #p-course .hero .progress-bar { flex: 1; height: 5px; }
+  #p-course .section-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+  #p-course .section-row .label { color: rgba(255,255,255,0.6); }
+  #p-course .section-row .meta {
+    margin-left: auto;
+    font-size: 10px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  #p-course .modules {
+    flex: 0 1 auto;
+    height: 240px;
+    overflow-y: auto;
+    margin: 0 -4px 14px -4px;
+    padding: 2px 4px 2px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #p-course .module {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  #p-course .module:hover { transform: translateY(-1px); }
+  #p-course .module .num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    font-family: var(--font-default);
+  }
+  #p-course .module.done .num {
+    background: var(--color-green-500);
+    border-color: var(--color-green-500);
+    font-family: var(--font-icon);
+    font-size: 16px;
+  }
+  #p-course .module.selected {
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(255,255,255,0.32);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  }
+  #p-course .module.selected .num {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+  #p-course .module .body { flex: 1; min-width: 0; }
+  #p-course .module .name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #p-course .module .meta {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.65);
+  }
+  #p-course .module .meta .progress-bar {
+    flex: 1;
+    height: 3px;
+    max-width: 80px;
+  }
+  #p-course .module .chev {
+    font-family: var(--font-icon);
+    font-size: 18px;
+    color: rgba(255,255,255,0.5);
+  }
+  #p-course .module.selected .chev { color: #fff; }
+  #p-course .lessons {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 0 -20px 14px -20px;
+    padding: 4px 20px 4px 20px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  #p-course .lesson {
+    flex: 0 0 auto;
+    width: 130px;
+    height: 150px;
+    border-radius: 14px;
+    padding: 12px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  #p-course .lesson:hover { transform: translateY(-2px); }
+  #p-course .lesson .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: auto;
+  }
+  #p-course .lesson .num {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.12em;
+  }
+  #p-course .lesson .badge {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-icon);
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+  }
+  #p-course .lesson.done .badge {
+    background: var(--color-green-500);
+    border-color: var(--color-green-500);
+    color: #fff;
+  }
+  #p-course .lesson.selected {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.30);
+  }
+  #p-course .lesson.selected .num { color: rgba(13, 71, 161, 0.65); }
+  #p-course .lesson.selected .badge {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: #fff;
+  }
+  #p-course .lesson .jp {
+    font-family: var(--font-jp);
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    line-height: 1.2;
+    margin-top: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  #p-course .lesson .en {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  #p-course .lesson.selected .jp { color: var(--brand-primary); }
+  #p-course .lesson.selected .en { color: var(--fg-muted); }
+  #p-course .cta-row { margin-top: auto; }
+
+  /* =============================================================
+     PAGES 5 + 6 — QUIZ + ANNOTATED (shared subset of styles)
+     ============================================================= */
+  #p-quiz .top.quiz-top,
+  #p-anno .top.quiz-top {
+    margin-bottom: 18px;
+    gap: 12px;
+  }
+  #p-quiz .quiz-progress,
+  #p-anno .quiz-progress {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #p-quiz .quiz-progress .progress-bar,
+  #p-anno .quiz-progress .progress-bar { flex: 1; height: 8px; }
+  #p-quiz .quiz-progress .count,
+  #p-anno .quiz-progress .count {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  #p-quiz .lives {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+  #p-quiz .lives .heart {
+    font-family: var(--font-icon);
+    font-size: 14px;
+    color: var(--color-red-400);
+  }
+  #p-quiz .qnav,
+  #p-anno .qnav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 6px 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 999px;
+  }
+  #p-quiz .qnav-btn,
+  #p-anno .qnav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-default);
+    flex-shrink: 0;
+  }
+  #p-quiz .qnav-btn:disabled,
+  #p-anno .qnav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  #p-quiz .qnav-btn .ic,
+  #p-anno .qnav-btn .ic {
+    font-family: var(--font-icon);
+    font-size: 16px;
+  }
+  #p-quiz .qnav .label,
+  #p-anno .qnav .label {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+  }
+  #p-quiz .prompt-label,
+  #p-anno .prompt-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  /* QUIZ-only */
+  #p-quiz .prompt {
+    text-align: center;
+    margin-bottom: 18px;
+    padding: 16px 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  #p-quiz .prompt .word-jp {
+    font-family: var(--font-jp);
+    font-size: 40px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    margin-bottom: 6px;
+  }
+  #p-quiz .prompt .romaji {
+    font-size: 13px;
+    font-style: italic;
+    color: rgba(255,255,255,0.75);
+  }
+  #p-quiz .prompt .audio-btn {
+    margin-top: 8px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #fff;
+    font-family: var(--font-icon);
+    font-size: 17px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #p-quiz .answers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: auto;
+  }
+  #p-quiz .tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+    cursor: pointer;
+    transition: transform var(--duration-base) var(--ease-standard),
+                background-color var(--duration-base) var(--ease-standard),
+                border-color var(--duration-base) var(--ease-standard);
+  }
+  #p-quiz .tile:hover { transform: translateY(-1px); }
+  #p-quiz .tile .key {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.20);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    flex-shrink: 0;
+  }
+  #p-quiz .tile .label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+  #p-quiz .tile.selected {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.45);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.20);
+  }
+  #p-quiz .tile.selected .key {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+  #p-quiz .cta-row {
+    margin-top: 14px;
+    padding-top: 4px;
+  }
+
+  /* ANNOTATED-only */
+  #p-anno .reading {
+    padding: 20px 16px 18px 16px;
+    border-radius: 18px;
+    text-align: center;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  #p-anno .sentence {
+    font-family: var(--font-jp);
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    margin-bottom: 10px;
+  }
+  #p-anno .translation {
+    font-size: 12px;
+    font-style: italic;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.4;
+  }
+  #p-anno .anno {
+    position: relative;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 7px;
+    margin: 0 1px;
+  }
+  #p-anno .anno.hint {
+    background: rgba(255, 183, 77, 0.18);
+    box-shadow: inset 0 -2px 0 var(--color-orange-300);
+    color: #fff;
+  }
+  #p-anno .anno.active {
+    background: var(--color-orange-300);
+    color: #5a2a00;
+    text-shadow: none;
+    box-shadow: 0 4px 14px rgba(255, 183, 77, 0.35);
+  }
+  #p-anno .anno-card {
+    position: relative;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.96);
+    color: var(--fg-strong);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.28);
+    margin-bottom: 14px;
+  }
+  #p-anno .anno-card::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 14px; height: 14px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 3px;
+  }
+  #p-anno .anno-card .head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  #p-anno .anno-card .word-jp {
+    font-family: var(--font-jp);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg-strong);
+    letter-spacing: -0.01em;
+  }
+  #p-anno .anno-card .reading {
+    font-family: var(--font-jp);
+    font-size: 13px;
+    color: var(--fg-muted);
+    /* override the .reading panel rules above for nested usage */
+    padding: 0;
+    border-radius: 0;
+    text-align: left;
+    margin: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+  }
+  #p-anno .anno-card .romaji {
+    font-size: 11px;
+    color: var(--fg-subtle);
+    font-style: italic;
+    margin-left: auto;
+  }
+  #p-anno .anno-card .meaning {
+    font-size: 13px;
+    color: var(--fg-default);
+    line-height: 1.45;
+    margin-bottom: 10px;
+  }
+  #p-anno .anno-card .pos {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+    margin-bottom: 4px;
+  }
+  #p-anno .anno-card .actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #p-anno .anno-card .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-default);
+    background: #fff;
+    color: var(--fg-strong);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-default);
+  }
+  #p-anno .anno-card .pill-btn.primary {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: #fff;
+  }
+  #p-anno .anno-card .pill-btn .ic {
+    font-family: var(--font-icon);
+    font-size: 16px;
+  }
+  #p-anno .anno-card .saved {
+    margin-left: auto;
+    color: var(--fg-subtle);
+    font-family: var(--font-icon);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  #p-anno .hint-text {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12px;
+  }
+  #p-anno .hint-text .swatch {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    background: var(--color-orange-300);
+    vertical-align: -1px;
+    margin: 0 4px;
+    box-shadow: 0 0 6px rgba(255, 183, 77, 0.5);
+  }
+  #p-anno .cta-row { margin-top: auto; }
+</style>
+</head>
+<body>
+
+  <div class="doc-header">
+    <h1>Polyglots — All Pages</h1>
+    <p>Six screens inlined into a single document. No iframes; styles scoped per phone via <code>#p-X</code>.</p>
+  </div>
+
+  <!-- =============================================================
+       1 — HOME (only page with mosaic)
+       ============================================================= -->
+  <div class="phone-frame" id="p-home">
+    <div class="label-row">
+      <span class="num">1</span>Home — Dashboard
+      <span class="home-badge">Mosaic</span>
+    </div>
+    <div class="phone">
+      <div class="mosaic">
+        <span class="word w1">こんにちは</span>
+        <span class="word w2">ありがとう</span>
+        <span class="word w3">日本</span>
+        <span class="word w4">学校</span>
+        <span class="word w5">すみません</span>
+        <span class="word w6">食べる</span>
+        <span class="word w7">本</span>
+        <span class="word w8">先生</span>
+        <span class="word w9">はじめまして</span>
+        <span class="word w10">水</span>
+        <span class="word w11">友達</span>
+        <span class="word w12">おはよう</span>
+        <span class="word w13">学</span>
+      </div>
+      <div class="page">
+        <div class="top">
+          <div class="brand">polyglots</div>
+          <div class="streak"><span class="dot"></span>5 day streak</div>
+        </div>
+        <div class="medallion">
+          <div class="glow"></div>
+          <div class="disc"></div>
+          <svg width="168" height="168" viewBox="0 0 168 168">
+            <circle cx="84" cy="84" r="74" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+            <circle cx="84" cy="84" r="74" fill="none" stroke="#fff" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="465" stroke-dashoffset="256"/>
+          </svg>
+          <div class="center">
+            <div class="flag-pair">🇺🇸 → 🇯🇵</div>
+            <div class="native">日本語</div>
+            <div class="pct">45% Complete</div>
+          </div>
+        </div>
+        <div class="course-cap">
+          <div class="lang-label">Japanese · Nihongo</div>
+          <h2>Japanese for Beginners</h2>
+          <div class="module">Module 3 · Greetings &amp; Introductions</div>
+        </div>
+        <div class="section-label stats-label">— Your Vocabulary —</div>
+        <div class="stats">
+          <div class="seg"><div class="v">248</div><div class="l">Words</div></div>
+          <div class="seg"><div class="v">12</div><div class="l">Lessons</div></div>
+          <div class="seg"><div class="v">86</div><div class="l">Sentences</div></div>
+        </div>
+        <div class="cta-row">
+          <button class="cta"><span class="icon">play_arrow</span>Practice Now</button>
+          <button class="icon-btn" aria-label="Settings">tune</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       2 — LANGUAGES
+       ============================================================= -->
+  <div class="phone-frame" id="p-langs">
+    <div class="label-row"><span class="num">2</span>Languages — I speak / I want to learn</div>
+    <div class="phone">
+      <div class="page">
+        <div class="top">
+          <button class="icon-btn" aria-label="Back">arrow_back</button>
+          <div class="brand" style="text-align:center;flex:1;">polyglots</div>
+          <div style="width:36px;"></div>
+        </div>
+        <div class="header">
+          <h1>Set your languages</h1>
+          <p>You can change these any time.</p>
+        </div>
+        <div class="pair">
+          <div class="pair-label"><span class="ic">record_voice_over</span>I speak</div>
+          <div class="lang-card">
+            <div class="flag">🇺🇸</div>
+            <div class="lang-body">
+              <div class="lang-row"><span class="lang-native">English</span></div>
+              <div class="lang-meta">Your native language</div>
+            </div>
+            <span class="change">Change <span class="ic">expand_more</span></span>
+          </div>
+        </div>
+        <div class="swap-row"><button class="swap-btn" aria-label="Swap">swap_vert</button></div>
+        <div class="pair">
+          <div class="pair-label"><span class="ic">school</span>I want to learn</div>
+          <div class="lang-card">
+            <div class="flag">🇯🇵</div>
+            <div class="lang-body">
+              <div class="lang-row">
+                <span class="lang-native jp">日本語</span>
+                <span class="lang-en">Japanese</span>
+              </div>
+              <div class="lang-meta">12 courses · 4 levels</div>
+            </div>
+            <span class="change">Change <span class="ic">expand_more</span></span>
+          </div>
+        </div>
+        <div class="level-row"><span class="label">Your level</span></div>
+        <div class="level-chips">
+          <span class="chip selected">Beginner</span>
+          <span class="chip">Elementary</span>
+          <span class="chip">Intermediate</span>
+          <span class="chip">Advanced</span>
+        </div>
+        <div class="cta-row">
+          <button class="cta">See courses<span class="icon">arrow_forward</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       3 — COURSES
+       ============================================================= -->
+  <div class="phone-frame" id="p-courses">
+    <div class="label-row"><span class="num">3</span>Courses — Pick a course</div>
+    <div class="phone">
+      <div class="page">
+        <div class="top">
+          <button class="icon-btn" aria-label="Back">arrow_back</button>
+          <div class="title-block">
+            <div class="lang">Japanese · Nihongo</div>
+            <h1>Pick a course</h1>
+          </div>
+          <div class="streak"><span class="dot"></span>5</div>
+        </div>
+        <div class="pair-strip">
+          🇺🇸 English
+          <span class="arrow">arrow_forward</span>
+          🇯🇵 <span class="ja">日本語</span>
+        </div>
+        <div class="course-list scroll-clean">
+          <div class="course active">
+            <div class="course-head">
+              <span class="course-icon">play_arrow</span>
+              <div class="course-title">
+                <div class="name">Japanese for Beginners</div>
+                <div class="sub">First words, greetings, numbers</div>
+              </div>
+              <span class="level-pill in-progress">In Progress</span>
+            </div>
+            <div class="course-foot">
+              <div class="progress-bar"><div class="fill" style="width:45%"></div></div>
+              <span>45% · 12/24</span>
+            </div>
+          </div>
+          <div class="course">
+            <div class="course-head">
+              <span class="course-icon">flight_takeoff</span>
+              <div class="course-title">
+                <div class="name">Travel Phrases</div>
+                <div class="sub">Get around — directions, food, hotels</div>
+              </div>
+              <span class="level-pill">A1·A2</span>
+            </div>
+            <div class="course-foot"><span>18 lessons · 145 phrases</span></div>
+          </div>
+          <div class="course">
+            <div class="course-head">
+              <span class="course-icon">menu_book</span>
+              <div class="course-title">
+                <div class="name">Hiragana &amp; Katakana</div>
+                <div class="sub">Master both kana scripts</div>
+              </div>
+              <span class="level-pill">A1</span>
+            </div>
+            <div class="course-foot"><span>14 lessons · 92 characters</span></div>
+          </div>
+          <div class="course">
+            <div class="course-head">
+              <span class="course-icon">work</span>
+              <div class="course-title">
+                <div class="name">Japanese for Business</div>
+                <div class="sub">Keigo, meetings, email etiquette</div>
+              </div>
+              <span class="level-pill">B1·B2</span>
+            </div>
+            <div class="course-foot"><span>22 lessons · 280 phrases</span></div>
+          </div>
+          <div class="course">
+            <div class="course-head">
+              <span class="course-icon">forum</span>
+              <div class="course-title">
+                <div class="name">Everyday Conversation</div>
+                <div class="sub">Real dialogues, casual speech</div>
+              </div>
+              <span class="level-pill">A2·B1</span>
+            </div>
+            <div class="course-foot"><span>20 lessons · 320 phrases</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       4 — COURSE (modules vertical / lessons horizontal)
+       ============================================================= -->
+  <div class="phone-frame" id="p-course">
+    <div class="label-row"><span class="num">4</span>Course — Modules ↕ / Lessons ↔</div>
+    <div class="phone">
+      <div class="page">
+        <div class="top">
+          <button class="icon-btn" aria-label="Back">arrow_back</button>
+          <div class="title-block">
+            <div class="lang">Japanese · Nihongo</div>
+            <h1>Japanese for Beginners</h1>
+          </div>
+          <div class="streak"><span class="dot"></span>5</div>
+        </div>
+        <div class="hero">
+          <span class="pct">45<span class="unit">%</span></span>
+          <span class="stat">12 of 24 lessons<br/>248 words learned</span>
+          <div class="progress-bar"><div class="fill" style="width:45%"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-label label">Modules</span>
+          <span class="meta">5 modules · scroll for more</span>
+        </div>
+        <div class="modules scroll-clean">
+          <div class="module done">
+            <span class="num">check</span>
+            <div class="body">
+              <div class="name">First Words</div>
+              <div class="meta">
+                <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
+                <span>4 / 4</span>
+              </div>
+            </div>
+            <span class="chev">chevron_right</span>
+          </div>
+          <div class="module done">
+            <span class="num">check</span>
+            <div class="body">
+              <div class="name">Numbers &amp; Colors</div>
+              <div class="meta">
+                <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
+                <span>5 / 5</span>
+              </div>
+            </div>
+            <span class="chev">chevron_right</span>
+          </div>
+          <div class="module selected">
+            <span class="num">3</span>
+            <div class="body">
+              <div class="name">Greetings &amp; Introductions</div>
+              <div class="meta">
+                <div class="progress-bar"><div class="fill" style="width:75%"></div></div>
+                <span>3 / 4</span>
+              </div>
+            </div>
+            <span class="chev">expand_more</span>
+          </div>
+          <div class="module">
+            <span class="num">4</span>
+            <div class="body">
+              <div class="name">Family &amp; People</div>
+              <div class="meta">
+                <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+                <span>0 / 5</span>
+              </div>
+            </div>
+            <span class="chev">chevron_right</span>
+          </div>
+          <div class="module">
+            <span class="num">5</span>
+            <div class="body">
+              <div class="name">Food &amp; Drink</div>
+              <div class="meta">
+                <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+                <span>0 / 6</span>
+              </div>
+            </div>
+            <span class="chev">chevron_right</span>
+          </div>
+        </div>
+        <div class="section-row">
+          <span class="section-label label">Lessons in Module 3</span>
+          <span class="meta">swipe →</span>
+        </div>
+        <div class="lessons scroll-clean">
+          <div class="lesson done">
+            <div class="row"><span class="num">L1</span><span class="badge">check</span></div>
+            <div class="jp">はじめまして</div>
+            <div class="en">Nice to meet you</div>
+          </div>
+          <div class="lesson done">
+            <div class="row"><span class="num">L2</span><span class="badge">check</span></div>
+            <div class="jp">わたしは</div>
+            <div class="en">I am…</div>
+          </div>
+          <div class="lesson done">
+            <div class="row"><span class="num">L3</span><span class="badge">check</span></div>
+            <div class="jp">どうぞよろしく</div>
+            <div class="en">Pleased to meet you</div>
+          </div>
+          <div class="lesson selected">
+            <div class="row"><span class="num">L4 · CURRENT</span><span class="badge">play_arrow</span></div>
+            <div class="jp">お名前は何ですか</div>
+            <div class="en">What is your name?</div>
+          </div>
+        </div>
+        <div class="cta-row">
+          <button class="cta"><span class="icon">play_arrow</span>Continue Lesson</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       5 — QUIZ
+       ============================================================= -->
+  <div class="phone-frame" id="p-quiz">
+    <div class="label-row"><span class="num">5</span>Quiz — Multiple Choice + Back/Skip</div>
+    <div class="phone">
+      <div class="page">
+        <div class="top quiz-top">
+          <button class="icon-btn" aria-label="Close">close</button>
+          <div class="quiz-progress">
+            <div class="progress-bar"><div class="fill" style="width:40%"></div></div>
+            <div class="count">4 / 10</div>
+          </div>
+          <div class="lives"><span class="heart">favorite</span>3</div>
+        </div>
+        <div class="qnav">
+          <button class="qnav-btn" aria-label="Previous question">
+            <span class="ic">arrow_back</span>Back
+          </button>
+          <div class="label">Question 4</div>
+          <button class="qnav-btn" aria-label="Skip question">
+            Skip<span class="ic">arrow_forward</span>
+          </button>
+        </div>
+        <div class="prompt-label">— Translate this word —</div>
+        <div class="prompt">
+          <div class="word-jp">ありがとう</div>
+          <div class="romaji">arigatō</div>
+          <button class="audio-btn" aria-label="Play audio">volume_up</button>
+        </div>
+        <div class="answers">
+          <div class="tile"><span class="key">A</span><span class="label">Hello</span></div>
+          <div class="tile selected"><span class="key">B</span><span class="label">Thank you</span></div>
+          <div class="tile"><span class="key">C</span><span class="label">Goodbye</span></div>
+          <div class="tile"><span class="key">D</span><span class="label">Please</span></div>
+        </div>
+        <div class="cta-row">
+          <button class="cta">Check answer<span class="icon">arrow_forward</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       6 — ANNOTATED
+       ============================================================= -->
+  <div class="phone-frame" id="p-anno">
+    <div class="label-row"><span class="num">6</span>Annotated — Tap to Learn</div>
+    <div class="phone">
+      <div class="page">
+        <div class="top quiz-top">
+          <button class="icon-btn" aria-label="Close">close</button>
+          <div class="quiz-progress">
+            <div class="progress-bar"><div class="fill" style="width:30%"></div></div>
+            <div class="count">3 / 10</div>
+          </div>
+          <button class="icon-btn" aria-label="Settings">tune</button>
+        </div>
+        <div class="qnav">
+          <button class="qnav-btn" aria-label="Previous">
+            <span class="ic">arrow_back</span>Back
+          </button>
+          <div class="label">Question 3</div>
+          <button class="qnav-btn" aria-label="Skip">
+            Skip<span class="ic">arrow_forward</span>
+          </button>
+        </div>
+        <div class="prompt-label">— Read &amp; tap the highlighted words —</div>
+        <div class="reading">
+          <div class="sentence">
+            わたしは<span class="anno active">日本語</span>を<span class="anno hint">べんきょう</span>しています。
+          </div>
+          <div class="translation">"I am studying Japanese."</div>
+        </div>
+        <div class="anno-card">
+          <div class="pos">Noun · にほんご</div>
+          <div class="head">
+            <span class="word-jp">日本語</span>
+            <span class="reading">にほんご</span>
+            <span class="romaji">nihongo</span>
+          </div>
+          <div class="meaning">The Japanese language. Lit. "Japan-language" — used to refer to the spoken/written language itself.</div>
+          <div class="actions">
+            <button class="pill-btn primary"><span class="ic">volume_up</span>Play</button>
+            <button class="pill-btn"><span class="ic">menu_book</span>Examples</button>
+            <span class="saved">bookmark_border</span>
+          </div>
+        </div>
+        <div class="hint-text">
+          Tap any <span class="swatch"></span> word to learn its meaning &amp; sound.
+        </div>
+        <div class="cta-row">
+          <button class="cta">Continue<span class="icon">arrow_forward</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
