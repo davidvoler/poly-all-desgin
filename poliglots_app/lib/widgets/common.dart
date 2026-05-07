@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../i18n/translations.g.dart';
 import '../theme.dart';
 
 /// Phone-style background — the deep blue radial gradient used across
@@ -398,13 +399,14 @@ class TitleBlock extends StatelessWidget {
   }
 }
 
-/// "polyglots" wordmark used at top of home.
+/// "polyglots" wordmark used at top of home. Pulled from i18n so the brand
+/// can be transliterated for non-Latin locales if ever needed.
 class BrandWordmark extends StatelessWidget {
   const BrandWordmark({super.key});
   @override
   Widget build(BuildContext context) {
     return Text(
-      'POLYGLOTS',
+      t.brand,
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
