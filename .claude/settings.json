@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p /Users/davidle/dev/tutorial/poly-all-desgin/step-5)"
+      "Bash(mkdir -p /Users/davidle/dev/tutorial/poly-all-desgin/step-5)",
+      "Bash(ls /Users/davidle/dev/tutorial/poly-all-desgin/ && echo \"---\" && find /Users/davidle/dev/tutorial -maxdepth 3 -name \"pubspec.yaml\" 2>/dev/null)",
+      "Read(//Users/davidle/dev/tutorial/**)",
+      "Read(//Users/davidle/**)"
     ],
     "additionalDirectories": [
       "/Users/davidle/dev/tutorial/poly-all-desgin"
