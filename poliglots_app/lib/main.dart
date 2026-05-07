@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'i18n/translations.g.dart';
 import 'pages/annotated_page.dart';
@@ -13,7 +14,11 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Pick the device locale, fall back to base (en) if unsupported.
   LocaleSettings.useDeviceLocale();
-  runApp(TranslationProvider(child: const PolyglotsApp()));
+  runApp(
+    ProviderScope(
+      child: TranslationProvider(child: const PolyglotsApp()),
+    ),
+  );
 }
 
 class PolyglotsApp extends StatelessWidget {

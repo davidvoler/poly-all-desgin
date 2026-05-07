@@ -7,7 +7,8 @@
       "Read(//Users/davidle/**)",
       "Bash(flutter test *)",
       "Bash(flutter pub *)",
-      "Bash(dart run *)"
+      "Bash(dart run *)",
+      "Bash(wait)"
     ],
     "additionalDirectories": [
       "/Users/davidle/dev/tutorial/poly-all-desgin"

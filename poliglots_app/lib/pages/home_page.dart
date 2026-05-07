@@ -1,7 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../i18n/translations.g.dart';
+import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
@@ -22,24 +25,32 @@ class HomePage extends StatelessWidget {
                 // Top bar — brand + streak
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    BrandWordmark(),
-                    StreakChip(),
+                  children: [
+                    const BrandWordmark(),
+                    StreakChip(text: t.common.streak_days(n: 5)),
                   ],
                 ),
                 const SizedBox(height: 28),
 
-                // Tappable course block (medallion + caption)
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => Navigator.pushNamed(context, '/courses'),
-                  child: Column(
-                    children: const [
-                      _Medallion(progress: 0.45),
-                      SizedBox(height: 16),
-                      _CourseCaption(),
-                    ],
-                  ),
+                // Two distinct tap targets:
+                //  • round medallion  → /courses  (pick course/language)
+                //  • rect caption     → /course   (open the current course)
+                Column(
+                  children: [
+                    Center(
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => Navigator.pushNamed(context, '/courses'),
+                        child: const _Medallion(progress: 0.45),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => Navigator.pushNamed(context, '/course'),
+                      child: const _CourseCaption(),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -47,19 +58,19 @@ class HomePage extends StatelessWidget {
                 // Stats label + glass capsule
                 Center(
                   child: Text(
-                    '— Your Vocabulary —',
+                    t.home.vocabulary_label,
                     style: PolyText.sectionLabel(color: PolyColors.white(0.5)),
                   ),
                 ),
                 const SizedBox(height: 7),
                 GlassCard(
                   child: Row(
-                    children: const [
-                      _StatSeg(value: '248', label: 'Words'),
-                      _StatDivider(),
-                      _StatSeg(value: '12', label: 'Lessons'),
-                      _StatDivider(),
-                      _StatSeg(value: '86', label: 'Sentences'),
+                    children: [
+                      _StatSeg(value: '248', label: t.home.stat_words),
+                      const _StatDivider(),
+                      _StatSeg(value: '12', label: t.home.stat_lessons),
+                      const _StatDivider(),
+                      _StatSeg(value: '86', label: t.home.stat_sentences),
                     ],
                   ),
                 ),
@@ -71,7 +82,7 @@ class HomePage extends StatelessWidget {
                   children: [
                     Expanded(
                       child: CtaButton(
-                        label: 'Practice Now',
+                        label: t.home.practice_now,
                         leadingIcon: Icons.play_arrow,
                         onTap: () => Navigator.pushNamed(context, '/quiz'),
                       ),
@@ -79,7 +90,7 @@ class HomePage extends StatelessWidget {
                     const SizedBox(width: 8),
                     RoundIconButton(
                       icon: Icons.tune,
-                      tooltip: 'Settings',
+                      tooltip: t.home.settings_tooltip,
                       iconSize: 18,
                       size: 40,
                       onTap: () => Navigator.pushNamed(context, '/courses'),
@@ -95,12 +106,14 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class _Medallion extends StatelessWidget {
+class _Medallion extends ConsumerWidget {
   final double progress;
   const _Medallion({required this.progress});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final speak = ref.watch(speakLangProvider);
+    final learning = ref.watch(learningLangProvider);
     return SizedBox(
       width: 168,
       height: 168,
@@ -149,12 +162,14 @@ class _Medallion extends StatelessWidget {
               strokeCap: StrokeCap.round,
             ),
           ),
-          // Centered identity
+          // Centered identity — flag pair + target's native name come from
+          // the speak/learning providers so the medallion reflects the
+          // user's actual selection on the courses page.
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '🇺🇸 → 🇯🇵',
+                '${speak.flag} → ${learning.flag}',
                 style: TextStyle(
                   fontSize: 13,
                   letterSpacing: 3.9,
@@ -162,9 +177,11 @@ class _Medallion extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 5),
-              const Text(
-                '日本語',
-                style: TextStyle(
+              Text(
+                learning.native,
+                textDirection:
+                    learning.rtl ? TextDirection.rtl : TextDirection.ltr,
+                style: const TextStyle(
                   fontSize: 44,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -177,7 +194,7 @@ class _Medallion extends StatelessWidget {
               ),
               const SizedBox(height: 7),
               Text(
-                '${(progress * 100).round()}% COMPLETE',
+                t.home.complete(percent: (progress * 100).round()).toUpperCase(),
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
@@ -212,12 +229,12 @@ class _CourseCaption extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Japanese · Nihongo',
+              Text(t.home.course_overline,
                   style: PolyText.smallCaps(size: 9, color: PolyColors.white(0.6))),
               const SizedBox(height: 5),
-              const Text(
-                'Japanese for Beginners',
-                style: TextStyle(
+              Text(
+                t.home.course_title,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -229,7 +246,7 @@ class _CourseCaption extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Module 3 · Greetings & Introductions',
+                t.home.course_module,
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.7),
@@ -243,7 +260,7 @@ class _CourseCaption extends StatelessWidget {
                       size: 12, color: Colors.white.withValues(alpha: 0.55)),
                   const SizedBox(width: 3),
                   Text(
-                    'TAP TO CHANGE',
+                    t.home.tap_to_change,
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,

@@ -57,10 +57,10 @@ class TranslationsCommonEn {
 	// Translations
 
 	/// en: '{n} day streak'
-	String get streak_days => '{n} day streak';
+	String streak_days({required Object n}) => '${n} day streak';
 
 	/// en: '{n}'
-	String get streak_short => '{n}';
+	String streak_short({required Object n}) => '${n}';
 
 	/// en: 'Back'
 	String get back => 'Back';
@@ -81,7 +81,7 @@ class TranslationsHomeEn {
 	// Translations
 
 	/// en: '{percent}% Complete'
-	String get complete => '{percent}% Complete';
+	String complete({required Object percent}) => '${percent}% Complete';
 
 	/// en: 'Japanese · Nihongo'
 	String get course_overline => 'Japanese · Nihongo';
@@ -123,12 +123,12 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'brand' => 'POLYGLOTS',
-			'common.streak_days' => '{n} day streak',
-			'common.streak_short' => '{n}',
+			'common.streak_days' => ({required Object n}) => '${n} day streak',
+			'common.streak_short' => ({required Object n}) => '${n}',
 			'common.back' => 'Back',
 			'common.skip' => 'Skip',
 			'common.kContinue' => 'Continue',
-			'home.complete' => '{percent}% Complete',
+			'home.complete' => ({required Object percent}) => '${percent}% Complete',
 			'home.course_overline' => 'Japanese · Nihongo',
 			'home.course_title' => 'Japanese for Beginners',
 			'home.course_module' => 'Module 3 · Greetings & Introductions',

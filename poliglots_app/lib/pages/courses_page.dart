@@ -1,15 +1,19 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
-class CoursesPage extends StatelessWidget {
+class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final speak = ref.watch(speakLangProvider);
+    final learning = ref.watch(learningLangProvider);
     return Scaffold(
       body: PhoneBackground(
         child: SafeArea(
@@ -43,9 +47,11 @@ class CoursesPage extends StatelessWidget {
                     Expanded(
                       child: _Picker(
                         label: 'I speak',
-                        flag: '🇺🇸',
-                        native: 'English',
+                        lang: speak,
                         sub: 'Native',
+                        disabled: {learning},
+                        onChanged: (l) =>
+                            ref.read(speakLangProvider.notifier).set(l),
                       ),
                     ),
                     const Padding(
@@ -55,9 +61,11 @@ class CoursesPage extends StatelessWidget {
                     Expanded(
                       child: _Picker(
                         label: 'Learning',
-                        flag: '🇯🇵',
-                        native: '日本語',
-                        sub: 'Japanese',
+                        lang: learning,
+                        sub: learning.englishName,
+                        disabled: {speak},
+                        onChanged: (l) =>
+                            ref.read(learningLangProvider.notifier).set(l),
                       ),
                     ),
                   ],
@@ -115,17 +123,26 @@ class CoursesPage extends StatelessWidget {
   }
 }
 
-class _Picker extends StatelessWidget {
+class _Picker extends StatefulWidget {
   final String label;
-  final String flag;
-  final String native;
+  final Lang lang;
   final String sub;
+  final Set<Lang> disabled;
+  final ValueChanged<Lang> onChanged;
   const _Picker({
     required this.label,
-    required this.flag,
-    required this.native,
+    required this.lang,
     required this.sub,
+    required this.disabled,
+    required this.onChanged,
   });
+
+  @override
+  State<_Picker> createState() => _PickerState();
+}
+
+class _PickerState extends State<_Picker> {
+  final MenuController _menu = MenuController();
 
   @override
   Widget build(BuildContext context) {
@@ -134,67 +151,105 @@ class _Picker extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(label, style: PolyText.smallCaps(size: 9)),
+          child: Text(widget.label, style: PolyText.smallCaps(size: 9)),
         ),
-        ClipRRect(
-          borderRadius: PolyRadii.pill,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Material(
-              color: Colors.white.withValues(alpha: 0.08),
-              shape: RoundedRectangleBorder(
-                borderRadius: PolyRadii.pill,
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+        MenuAnchor(
+          controller: _menu,
+          alignmentOffset: const Offset(0, 6),
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(
+                PolyColors.darkBg.withValues(alpha: 0.96)),
+            shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+            )),
+            elevation: const WidgetStatePropertyAll(12),
+            padding: const WidgetStatePropertyAll(EdgeInsets.all(6)),
+          ),
+          menuChildren: [
+            for (final l in Lang.values)
+              _LanguageMenuItem(
+                lang: l,
+                selected: l == widget.lang,
+                disabled: widget.disabled.contains(l),
+                onTap: () {
+                  _menu.close();
+                  widget.onChanged(l);
+                },
               ),
-              child: InkWell(
-                onTap: () {}, // placeholder — opens language list in real app
-                borderRadius: PolyRadii.pill,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child: Row(
-                    children: [
-                      _FlagPill(flag: flag),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              native,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.13,
-                                height: 1.1,
-                              ),
+          ],
+          builder: (context, controller, child) {
+            return ClipRRect(
+              borderRadius: PolyRadii.pill,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Material(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: PolyRadii.pill,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+                  ),
+                  child: InkWell(
+                    onTap: () =>
+                        controller.isOpen ? controller.close() : controller.open(),
+                    borderRadius: PolyRadii.pill,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      child: Row(
+                        children: [
+                          _FlagPill(flag: widget.lang.flag),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  widget.lang.native,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textDirection: widget.lang.rtl
+                                      ? TextDirection.rtl
+                                      : TextDirection.ltr,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.13,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  widget.sub.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.54,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 1),
-                            Text(
-                              sub.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.54,
-                                color: Colors.white.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                          AnimatedRotation(
+                            turns: controller.isOpen ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 180),
+                            child: Icon(Icons.expand_more,
+                                size: 18,
+                                color: Colors.white.withValues(alpha: 0.7)),
+                          ),
+                        ],
                       ),
-                      Icon(Icons.expand_more,
-                          size: 18, color: Colors.white.withValues(alpha: 0.7)),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
@@ -452,6 +507,77 @@ class _LevelPill extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 1.26,
           color: inProgress ? PolyColors.annoActiveText : Colors.white.withValues(alpha: 0.85),
+        ),
+      ),
+    );
+  }
+}
+
+/// Single row inside the [MenuAnchor] dropdown. Tighter than the old sheet
+/// tile since the menu floats above content and shouldn't dominate.
+class _LanguageMenuItem extends StatelessWidget {
+  final Lang lang;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+  const _LanguageMenuItem({
+    required this.lang,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = disabled ? Colors.white.withValues(alpha: 0.35) : Colors.white;
+    return Material(
+      color: selected ? Colors.white.withValues(alpha: 0.10) : Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: disabled ? null : onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 240,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Opacity(
+                opacity: disabled ? 0.45 : 1.0,
+                child: _FlagPill(flag: lang.flag),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      lang.native,
+                      textDirection:
+                          lang.rtl ? TextDirection.rtl : TextDirection.ltr,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: fg,
+                        letterSpacing: -0.14,
+                      ),
+                    ),
+                    Text(
+                      lang.englishName,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(
+                            alpha: disabled ? 0.30 : 0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(Icons.check, color: Colors.white, size: 16),
+            ],
+          ),
         ),
       ),
     );

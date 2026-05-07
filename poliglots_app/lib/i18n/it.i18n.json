@@ -1,0 +1,27 @@
+{
+  "@@locale": "it",
+
+  "brand": "POLYGLOTS",
+
+  "common": {
+    "streak_days": "Serie di {n} giorni",
+    "streak_short": "{n}",
+    "back": "Indietro",
+    "skip": "Salta",
+    "continue": "Continua"
+  },
+
+  "home": {
+    "complete": "{percent}% Completato",
+    "course_overline": "Giapponese · Nihongo",
+    "course_title": "Giapponese per Principianti",
+    "course_module": "Modulo 3 · Saluti e Presentazioni",
+    "tap_to_change": "Tocca per cambiare",
+    "vocabulary_label": "— Il tuo vocabolario —",
+    "stat_words": "Parole",
+    "stat_lessons": "Lezioni",
+    "stat_sentences": "Frasi",
+    "practice_now": "Esercitati ora",
+    "settings_tooltip": "Impostazioni"
+  }
+}

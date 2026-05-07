@@ -10,3 +10,8 @@ namespaces: false
 translate_var: t
 enum_name: AppLocale
 class_name: Translations
+string_interpolation: braces
+# Bundle every locale at build time instead of using deferred imports.
+# Avoids the async load step in tests and keeps `setLocaleSync` working
+# for non-base locales. Acceptable cost for a small set of UI strings.
+lazy: false
