@@ -3,10 +3,24 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/courses_api.dart';
+import '../api/models.dart';
 import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/lang_menu_item.dart';
+
+/// Map server-side icon names → Flutter [IconData]. The server sends the
+/// Material name (e.g. `"play_arrow"`) so the API stays platform-neutral.
+const Map<String, IconData> _icons = {
+  'play_arrow': Icons.play_arrow,
+  'flight_takeoff': Icons.flight_takeoff,
+  'menu_book': Icons.menu_book,
+  'work': Icons.work,
+  'forum': Icons.forum,
+  'school': Icons.school,
+};
+IconData _iconFromName(String name) => _icons[name] ?? Icons.school;
 
 class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
@@ -89,31 +103,50 @@ class CoursesPage extends ConsumerWidget {
                 const SizedBox(height: 14),
 
                 // Section row
-                Row(
-                  children: [
-                    Text('Pick a course', style: PolyText.sectionLabel(color: PolyColors.white(0.6))),
-                    const Spacer(),
-                    Text(
-                      '5 available',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.4,
-                        color: Colors.white.withValues(alpha: 0.55),
+                Consumer(builder: (context, ref, _) {
+                  final coursesAsync = ref.watch(coursesListProvider);
+                  return Row(
+                    children: [
+                      Text('Pick a course',
+                          style: PolyText.sectionLabel(color: PolyColors.white(0.6))),
+                      const Spacer(),
+                      Text(
+                        coursesAsync.maybeWhen(
+                          data: (cs) => '${cs.length} available',
+                          orElse: () => '…',
+                        ),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
                 const SizedBox(height: 8),
 
-                // Course list
+                // Course list — pulled from /courses
                 Expanded(
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _courses.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) => _CourseCard(course: _courses[i]),
-                  ),
+                  child: Consumer(builder: (context, ref, _) {
+                    final coursesAsync = ref.watch(coursesListProvider);
+                    return coursesAsync.when(
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                      error: (err, _) => _CoursesError(
+                        error: err,
+                        onRetry: () => ref.invalidate(coursesListProvider),
+                      ),
+                      data: (courses) => ListView.separated(
+                        padding: EdgeInsets.zero,
+                        itemCount: courses.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, i) => _CourseCard(course: courses[i]),
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -297,67 +330,8 @@ class _ArrowCell extends StatelessWidget {
   }
 }
 
-class _CourseInfo {
-  final IconData icon;
-  final String name;
-  final String sub;
-  final String levelPill;
-  final bool inProgress;
-  final double? progress;
-  final String? footer;
-  const _CourseInfo({
-    required this.icon,
-    required this.name,
-    required this.sub,
-    required this.levelPill,
-    this.inProgress = false,
-    this.progress,
-    this.footer,
-  });
-}
-
-const _courses = <_CourseInfo>[
-  _CourseInfo(
-    icon: Icons.play_arrow,
-    name: 'Japanese for Beginners',
-    sub: 'First words, greetings, numbers',
-    levelPill: 'In Progress',
-    inProgress: true,
-    progress: 0.45,
-    footer: '45% · 12/24',
-  ),
-  _CourseInfo(
-    icon: Icons.flight_takeoff,
-    name: 'Travel Phrases',
-    sub: 'Directions, food, hotels',
-    levelPill: 'A1·A2',
-    footer: '18 lessons · 145 phrases',
-  ),
-  _CourseInfo(
-    icon: Icons.menu_book,
-    name: 'Hiragana & Katakana',
-    sub: 'Master both kana scripts',
-    levelPill: 'A1',
-    footer: '14 lessons · 92 characters',
-  ),
-  _CourseInfo(
-    icon: Icons.work,
-    name: 'Japanese for Business',
-    sub: 'Keigo, meetings, email etiquette',
-    levelPill: 'B1·B2',
-    footer: '22 lessons · 280 phrases',
-  ),
-  _CourseInfo(
-    icon: Icons.forum,
-    name: 'Everyday Conversation',
-    sub: 'Real dialogues, casual speech',
-    levelPill: 'A2·B1',
-    footer: '20 lessons · 320 phrases',
-  ),
-];
-
 class _CourseCard extends StatelessWidget {
-  final _CourseInfo course;
+  final CourseSummary course;
   const _CourseCard({required this.course});
 
   @override
@@ -403,7 +377,7 @@ class _CourseCard extends StatelessWidget {
                       ),
                     ),
                     child: Icon(
-                      course.icon,
+                      _iconFromName(course.icon),
                       size: 18,
                       color: active ? PolyColors.brandPrimary : Colors.white,
                     ),
@@ -415,7 +389,7 @@ class _CourseCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          course.name,
+                          course.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -427,7 +401,7 @@ class _CourseCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          course.sub,
+                          course.subtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -476,6 +450,57 @@ class _CourseCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Inline error view shown when the courses fetch fails — keeps the
+/// surrounding chrome (top bar, pickers) visible and offers a retry.
+class _CoursesError extends StatelessWidget {
+  final Object error;
+  final VoidCallback onRetry;
+  const _CoursesError({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off,
+                size: 36, color: Colors.white.withValues(alpha: 0.55)),
+            const SizedBox(height: 10),
+            Text(
+              "Couldn't load courses",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.white.withValues(alpha: 0.85),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              error.toString(),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.55),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 14),
+            CtaButton(
+              label: 'Retry',
+              leadingIcon: Icons.refresh,
+              onTap: onRetry,
+            ),
+          ],
         ),
       ),
     );

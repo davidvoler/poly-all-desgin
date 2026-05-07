@@ -27,6 +27,12 @@ enum Lang {
     required this.englishName,
     this.rtl = false,
   });
+
+  /// Look up a [Lang] from its ISO-style code (e.g. "en", "ja"). Falls
+  /// back to [Lang.english] for unknown codes — server contracts may
+  /// drift, and we'd rather render *something* than crash.
+  static Lang byCode(String code) =>
+      values.firstWhere((l) => l.code == code, orElse: () => english);
 }
 
 /// The chrome language — what the app's UI is rendered in. Independent
