@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../i18n/translations.g.dart';
+import '../state/lang.dart';
 import '../theme.dart';
 
 /// Phone-style background — the deep blue radial gradient used across
@@ -27,50 +29,97 @@ class PhoneBackground extends StatelessWidget {
   }
 }
 
-class _Mosaic extends StatelessWidget {
+/// Mosaic backdrop — 13 words floating at fixed positions, with the
+/// vocabulary swapping based on the user's [learningLangProvider]. The
+/// positions/sizes/opacities are fixed (designed for visual balance);
+/// only the *text* varies per language.
+class _Mosaic extends ConsumerWidget {
   const _Mosaic();
 
-  static const _words = <_MosaicWord>[
-    _MosaicWord('こんにちは', top: 0.04, left: -0.02, size: 45, opacity: 0.14),
-    _MosaicWord('ありがとう', top: 0.08, right: 0.06, size: 20, opacity: 0.34, rotateDeg: -2),
-    _MosaicWord('日本',     top: 0.17, left: 0.08, size: 25, opacity: 0.22),
-    _MosaicWord('学校',     top: 0.24, right: -0.04, size: 62, opacity: 0.10),
-    _MosaicWord('すみません', top: 0.31, left: 0.04, size: 15, opacity: 0.50),
-    _MosaicWord('食べる',    top: 0.36, right: 0.12, size: 21, opacity: 0.26),
-    _MosaicWord('本',       top: 0.44, left: -0.03, size: 77, opacity: 0.09),
-    _MosaicWord('先生',     top: 0.56, right: 0.04, size: 27, opacity: 0.24),
-    _MosaicWord('はじめまして', top: 0.65, left: 0.10, size: 18, opacity: 0.46),
-    _MosaicWord('水',       top: 0.72, right: 0.08, size: 49, opacity: 0.13),
-    _MosaicWord('友達',     top: 0.80, left: 0.04, size: 24, opacity: 0.32),
-    _MosaicWord('おはよう',  top: 0.88, right: 0.14, size: 17, opacity: 0.54),
-    _MosaicWord('学',       top: 0.92, left: 0.16, size: 39, opacity: 0.13),
+  // Position / size / opacity / rotation slots — design-tuned, not text.
+  static const List<_MosaicSlot> _slots = [
+    _MosaicSlot(top: 0.04, left: -0.02, size: 45, opacity: 0.14),
+    _MosaicSlot(top: 0.08, right: 0.06, size: 20, opacity: 0.34, rotateDeg: -2),
+    _MosaicSlot(top: 0.17, left: 0.08, size: 25, opacity: 0.22),
+    _MosaicSlot(top: 0.24, right: -0.04, size: 62, opacity: 0.10),
+    _MosaicSlot(top: 0.31, left: 0.04, size: 15, opacity: 0.50),
+    _MosaicSlot(top: 0.36, right: 0.12, size: 21, opacity: 0.26),
+    _MosaicSlot(top: 0.44, left: -0.03, size: 77, opacity: 0.09),
+    _MosaicSlot(top: 0.56, right: 0.04, size: 27, opacity: 0.24),
+    _MosaicSlot(top: 0.65, left: 0.10, size: 18, opacity: 0.46),
+    _MosaicSlot(top: 0.72, right: 0.08, size: 49, opacity: 0.13),
+    _MosaicSlot(top: 0.80, left: 0.04, size: 24, opacity: 0.32),
+    _MosaicSlot(top: 0.88, right: 0.14, size: 17, opacity: 0.54),
+    _MosaicSlot(top: 0.92, left: 0.16, size: 39, opacity: 0.13),
   ];
 
+  // Per-language vocabulary banks. Each list is paired by index with [_slots].
+  // Picking common-ish beginner words; large-size slots get short tokens so
+  // they don't run off-screen too far on narrow phones.
+  static const Map<Lang, List<String>> _words = {
+    Lang.japanese: [
+      'こんにちは', 'ありがとう', '日本', '学校', 'すみません',
+      '食べる', '本', '先生', 'はじめまして', '水',
+      '友達', 'おはよう', '学',
+    ],
+    Lang.english: [
+      'hello', 'thanks', 'book', 'school', 'excuse me',
+      'to eat', 'word', 'teacher', 'nice to meet you', 'water',
+      'friend', 'morning', 'learn',
+    ],
+    Lang.italian: [
+      'ciao', 'grazie', 'libro', 'scuola', 'scusa',
+      'mangiare', 'libro', 'maestro', 'piacere', 'acqua',
+      'amico', 'buongiorno', 'studio',
+    ],
+    Lang.hebrew: [
+      'שלום', 'תודה', 'ספר', 'בית-ספר', 'סליחה',
+      'לאכול', 'מילה', 'מורה', 'נעים מאוד', 'מים',
+      'חבר', 'בוקר טוב', 'ללמוד',
+    ],
+    Lang.arabic: [
+      'مرحبا', 'شكرا', 'كتاب', 'مدرسة', 'عذرا',
+      'أكل', 'كلمة', 'معلم', 'تشرفنا', 'ماء',
+      'صديق', 'صباح الخير', 'تعلم',
+    ],
+    Lang.greek: [
+      'γεια', 'ευχαριστώ', 'βιβλίο', 'σχολείο', 'συγγνώμη',
+      'τρώω', 'λέξη', 'δάσκαλος', 'χαίρω πολύ', 'νερό',
+      'φίλος', 'καλημέρα', 'μαθαίνω',
+    ],
+  };
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final learning = ref.watch(learningLangProvider);
+    // Fall back to English vocabulary if a language has no bank yet.
+    final words = _words[learning] ?? _words[Lang.english]!;
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
         return Stack(
           children: [
-            for (final word in _words)
+            for (var i = 0; i < _slots.length; i++)
               Positioned(
-                top: word.top * h,
-                left: word.left == null ? null : word.left! * w,
-                right: word.right == null ? null : word.right! * w,
+                top: _slots[i].top * h,
+                left: _slots[i].left == null ? null : _slots[i].left! * w,
+                right: _slots[i].right == null ? null : _slots[i].right! * w,
                 child: Transform.rotate(
-                  angle: word.rotateDeg * 3.1415927 / 180.0,
+                  angle: _slots[i].rotateDeg * 3.1415927 / 180.0,
                   child: Opacity(
-                    opacity: word.opacity,
+                    opacity: _slots[i].opacity,
                     child: Text(
-                      word.text,
+                      words[i % words.length],
+                      textDirection: learning.rtl
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
                       style: TextStyle(
-                        fontSize: word.size,
+                        fontSize: _slots[i].size,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                         height: 1.0,
-                        letterSpacing: -word.size * 0.02,
+                        letterSpacing: -_slots[i].size * 0.02,
                       ),
                     ),
                   ),
@@ -102,21 +151,21 @@ class _Mosaic extends StatelessWidget {
   }
 }
 
-class _MosaicWord {
-  final String text;
+class _MosaicSlot {
   final double top;
   final double? left;
   final double? right;
   final double size;
   final double opacity;
   final double rotateDeg;
-  const _MosaicWord(this.text,
-      {required this.top,
-      this.left,
-      this.right,
-      required this.size,
-      required this.opacity,
-      this.rotateDeg = 0});
+  const _MosaicSlot({
+    required this.top,
+    this.left,
+    this.right,
+    required this.size,
+    required this.opacity,
+    this.rotateDeg = 0,
+  });
 }
 
 /// Frosted-glass surface — translucent white with a 1px white border.

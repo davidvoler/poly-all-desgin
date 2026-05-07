@@ -29,12 +29,23 @@ enum Lang {
   });
 }
 
-/// The user's source ("I speak") language. Changing this also flips the
-/// app's UI locale to the matching `AppLocale` if a translation bundle
-/// exists for it; otherwise the UI falls back to English.
-class SpeakLangNotifier extends Notifier<Lang> {
+/// The chrome language — what the app's UI is rendered in. Independent
+/// of [speakLangProvider] so a user can speak English natively but read
+/// the app in Italian, or vice versa.
+///
+/// Setting this is the *one* place that flips slang's locale; if no
+/// translation bundle exists for the chosen language the UI falls back
+/// to English (slang's `fallback_strategy: base_locale`).
+class UiLangNotifier extends Notifier<Lang> {
   @override
-  Lang build() => Lang.english;
+  Lang build() {
+    // Mirror whatever slang resolved on startup (useDeviceLocale or fallback)
+    final code = LocaleSettings.currentLocale.languageCode;
+    return Lang.values.firstWhere(
+      (l) => l.code == code,
+      orElse: () => Lang.english,
+    );
+  }
 
   void set(Lang lang) {
     state = lang;
@@ -48,11 +59,24 @@ class SpeakLangNotifier extends Notifier<Lang> {
   }
 }
 
+final uiLangProvider =
+    NotifierProvider<UiLangNotifier, Lang>(UiLangNotifier.new);
+
+/// The user's source ("I speak") language — a profile fact, used to scope
+/// course catalogs and to label the medallion's flag-pair on home. Has
+/// no side effect on the UI locale.
+class SpeakLangNotifier extends Notifier<Lang> {
+  @override
+  Lang build() => Lang.english;
+
+  void set(Lang lang) => state = lang;
+}
+
 final speakLangProvider =
     NotifierProvider<SpeakLangNotifier, Lang>(SpeakLangNotifier.new);
 
-/// The user's target ("Learning") language. No locale side-effects — this
-/// is purely the *content* the user is studying.
+/// The user's target ("Learning") language — the *content* they're
+/// studying. Independent of UI and speak.
 class LearningLangNotifier extends Notifier<Lang> {
   @override
   Lang build() => Lang.japanese;

@@ -7,12 +7,18 @@ import '../i18n/translations.g.dart';
 import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/lang_menu_item.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Subscribe so the page rebuilds when the UI lang flips. Slang's `t`
+    // global doesn't subscribe via context, so without this watch the
+    // hard-coded `t.xxx` reads inside child widgets stick on whatever
+    // locale was active when this page was first built.
+    ref.watch(uiLangProvider);
     return Scaffold(
       body: PhoneBackground(
         showMosaic: true,
@@ -22,11 +28,13 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top bar — brand + streak
+                // Top bar — brand + UI language selector + streak
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const BrandWordmark(),
+                    const Spacer(),
+                    const _UiLangSelector(),
+                    const SizedBox(width: 8),
                     StreakChip(text: t.common.streak_days(n: 5)),
                   ],
                 ),
@@ -323,6 +331,91 @@ class _StatDivider extends StatelessWidget {
       width: 1,
       height: 36,
       color: Colors.white.withValues(alpha: 0.10),
+    );
+  }
+}
+
+/// Compact UI-language selector for the home top bar. Writes to
+/// [speakLangProvider], which already owns the side-effect of flipping
+/// slang's UI locale (with English fallback when no bundle exists).
+class _UiLangSelector extends ConsumerStatefulWidget {
+  const _UiLangSelector();
+
+  @override
+  ConsumerState<_UiLangSelector> createState() => _UiLangSelectorState();
+}
+
+class _UiLangSelectorState extends ConsumerState<_UiLangSelector> {
+  final MenuController _menu = MenuController();
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = ref.watch(uiLangProvider);
+    return MenuAnchor(
+      controller: _menu,
+      alignmentOffset: const Offset(0, 6),
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(
+            PolyColors.darkBg.withValues(alpha: 0.96)),
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+        )),
+        elevation: const WidgetStatePropertyAll(12),
+        padding: const WidgetStatePropertyAll(EdgeInsets.all(6)),
+      ),
+      menuChildren: [
+        for (final l in Lang.values)
+          LanguageMenuItem(
+            lang: l,
+            selected: l == ui,
+            onTap: () {
+              _menu.close();
+              ref.read(uiLangProvider.notifier).set(l);
+            },
+          ),
+      ],
+      builder: (context, controller, child) {
+        return Tooltip(
+          message: 'UI language',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Material(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: () =>
+                      controller.isOpen ? controller.close() : controller.open(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(ui.flag,
+                            style: const TextStyle(fontSize: 14, height: 1.0)),
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          turns: controller.isOpen ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 180),
+                          child: Icon(Icons.expand_more,
+                              size: 14,
+                              color: Colors.white.withValues(alpha: 0.75)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

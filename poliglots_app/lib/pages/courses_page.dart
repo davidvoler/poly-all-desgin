@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/lang_menu_item.dart';
 
 class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
@@ -168,7 +169,7 @@ class _PickerState extends State<_Picker> {
           ),
           menuChildren: [
             for (final l in Lang.values)
-              _LanguageMenuItem(
+              LanguageMenuItem(
                 lang: l,
                 selected: l == widget.lang,
                 disabled: widget.disabled.contains(l),
@@ -513,73 +514,3 @@ class _LevelPill extends StatelessWidget {
   }
 }
 
-/// Single row inside the [MenuAnchor] dropdown. Tighter than the old sheet
-/// tile since the menu floats above content and shouldn't dominate.
-class _LanguageMenuItem extends StatelessWidget {
-  final Lang lang;
-  final bool selected;
-  final bool disabled;
-  final VoidCallback onTap;
-  const _LanguageMenuItem({
-    required this.lang,
-    required this.selected,
-    required this.disabled,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = disabled ? Colors.white.withValues(alpha: 0.35) : Colors.white;
-    return Material(
-      color: selected ? Colors.white.withValues(alpha: 0.10) : Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: disabled ? null : onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 240,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            children: [
-              Opacity(
-                opacity: disabled ? 0.45 : 1.0,
-                child: _FlagPill(flag: lang.flag),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      lang.native,
-                      textDirection:
-                          lang.rtl ? TextDirection.rtl : TextDirection.ltr,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: fg,
-                        letterSpacing: -0.14,
-                      ),
-                    ),
-                    Text(
-                      lang.englishName,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(
-                            alpha: disabled ? 0.30 : 0.55),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (selected)
-                const Icon(Icons.check, color: Colors.white, size: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
