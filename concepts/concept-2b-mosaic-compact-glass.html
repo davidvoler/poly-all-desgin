@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Concept 2B — Vocabulary Mosaic (compact, no nav)</title>
+<title>Concept 2B — Mosaic Compact (Glass)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="../step-1/colors_and_type.css" />
 <style>
@@ -31,7 +31,7 @@
     box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6);
   }
 
-  /* Mosaic of learned vocabulary as the backdrop */
+  /* Mosaic — keep words across the whole canvas; foreground will be glass */
   .mosaic {
     position: absolute;
     inset: 0;
@@ -48,25 +48,30 @@
     letter-spacing: -0.02em;
     white-space: nowrap;
   }
-  .w1  { top: 4%;   left: -2%;  font-size: 45px; opacity: 0.10; }
-  .w2  { top: 8%;   right: 6%;  font-size: 20px; opacity: 0.30; transform: rotate(-2deg); }
-  .w3  { top: 17%;  left: 8%;   font-size: 25px; opacity: 0.18; }
-  .w4  { top: 24%;  right: -4%; font-size: 62px; opacity: 0.07; }
-  .w5  { top: 31%;  left: 4%;   font-size: 15px; opacity: 0.45; }
-  .w6  { top: 36%;  right: 12%; font-size: 21px; opacity: 0.22; }
-  .w7  { top: 44%;  left: -3%;  font-size: 77px; opacity: 0.06; }
-  .w8  { top: 56%;  right: 4%;  font-size: 27px; opacity: 0.20; }
-  .w9  { top: 65%;  left: 10%;  font-size: 18px; opacity: 0.42; }
-  .w10 { top: 72%;  right: 8%;  font-size: 49px; opacity: 0.10; }
-  .w11 { top: 80%;  left: 4%;   font-size: 24px; opacity: 0.28; }
-  .w12 { top: 88%;  right: 14%; font-size: 17px; opacity: 0.50; }
-  .w13 { top: 92%;  left: 16%;  font-size: 39px; opacity: 0.10; }
+  .w1  { top: 4%;   left: -2%;  font-size: 45px; opacity: 0.14; }
+  .w2  { top: 8%;   right: 6%;  font-size: 20px; opacity: 0.34; transform: rotate(-2deg); }
+  .w3  { top: 17%;  left: 8%;   font-size: 25px; opacity: 0.22; }
+  .w4  { top: 24%;  right: -4%; font-size: 62px; opacity: 0.10; }
+  .w5  { top: 31%;  left: 4%;   font-size: 15px; opacity: 0.50; }
+  .w6  { top: 36%;  right: 12%; font-size: 21px; opacity: 0.26; }
+  .w7  { top: 44%;  left: -3%;  font-size: 77px; opacity: 0.09; }
+  .w8  { top: 56%;  right: 4%;  font-size: 27px; opacity: 0.24; }
+  .w9  { top: 65%;  left: 10%;  font-size: 18px; opacity: 0.46; }
+  .w10 { top: 72%;  right: 8%;  font-size: 49px; opacity: 0.13; }
+  .w11 { top: 80%;  left: 4%;   font-size: 24px; opacity: 0.32; }
+  .w12 { top: 88%;  right: 14%; font-size: 17px; opacity: 0.54; }
+  .w13 { top: 92%;  left: 16%;  font-size: 39px; opacity: 0.13; }
 
+  /* Subtle global tint instead of a center dim — keeps gradient mood,
+     lets every word stay legible behind translucent cards. */
   .mosaic::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(60% 40% at 50% 48%, rgba(13, 71, 161, 0.55) 0%, rgba(13, 71, 161, 0) 70%);
+    background: linear-gradient(180deg,
+      rgba(13, 71, 161, 0.18) 0%,
+      rgba(13, 71, 161, 0.05) 40%,
+      rgba(13, 71, 161, 0.18) 100%);
   }
 
   .page {
@@ -97,9 +102,10 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.18);
     padding: 4px 9px;
     border-radius: var(--radius-pill);
     font-size: 11px;
@@ -113,7 +119,7 @@
     box-shadow: 0 0 10px var(--color-orange-300);
   }
 
-  /* Center medallion */
+  /* Medallion — thin floating ring, transparent core, words show through */
   .medallion {
     position: relative;
     margin: 4px auto 16px auto;
@@ -123,10 +129,20 @@
   .medallion svg { transform: rotate(-90deg); position: absolute; inset: 0; }
   .medallion .glow {
     position: absolute;
-    inset: -14px;
+    inset: -10px;
     border-radius: 50%;
-    background: radial-gradient(closest-side, rgba(255,255,255,0.18), transparent 70%);
-    filter: blur(6px);
+    background: radial-gradient(closest-side, rgba(255,255,255,0.10), transparent 70%);
+    filter: blur(10px);
+  }
+  /* Soft frosted disc inside the ring — not opaque, just a tint */
+  .medallion .disc {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.10);
   }
   .medallion .center {
     position: absolute;
@@ -150,28 +166,36 @@
     color: #fff;
     line-height: 1;
     letter-spacing: -0.02em;
-    text-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    text-shadow: 0 4px 18px rgba(0,0,0,0.5);
   }
   .medallion .pct {
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.20em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.85);
     margin-top: 7px;
   }
 
-  /* Course caption */
+  /* Course caption — frosted plate so text stays readable over words */
   .course-cap {
     text-align: center;
-    margin-bottom: 16px;
+    margin: 0 auto 16px auto;
+    padding: 8px 14px 10px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.10);
+    width: fit-content;
+    max-width: 90%;
   }
   .course-cap .lang-label {
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.20em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.6);
   }
   .course-cap h2 {
     font-size: 16px;
@@ -179,19 +203,20 @@
     color: #fff;
     margin: 5px 0 2px 0;
     letter-spacing: -0.01em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
   }
   .course-cap .module {
     font-size: 11px;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.7);
   }
 
-  /* Stats — segmented capsule */
+  /* Stats — glassier capsule (more blur, less white fill) */
   .stats {
     display: flex;
-    background: rgba(255,255,255,0.10);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 16px;
@@ -209,13 +234,14 @@
     color: #fff;
     line-height: 1;
     letter-spacing: -0.02em;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.30);
   }
   .seg .l {
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.65);
+    color: rgba(255,255,255,0.75);
     margin-top: 4px;
   }
   .stats-label {
@@ -223,12 +249,12 @@
     font-weight: 700;
     letter-spacing: 0.20em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.55);
     text-align: center;
     margin-bottom: 7px;
   }
 
-  /* Practice button */
+  /* Practice button — solid white CTA stays opaque on purpose */
   .cta-row {
     margin-top: auto;
     display: flex;
@@ -262,7 +288,9 @@
   .icon-btn {
     width: 40px; height: 40px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.18);
     color: #fff;
     font-family: var(--font-icon);
@@ -304,9 +332,10 @@
 
       <div class="medallion">
         <div class="glow"></div>
+        <div class="disc"></div>
         <svg width="168" height="168" viewBox="0 0 168 168">
-          <circle cx="84" cy="84" r="74" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="5"/>
-          <circle cx="84" cy="84" r="74" fill="none" stroke="#fff" stroke-width="5"
+          <circle cx="84" cy="84" r="74" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+          <circle cx="84" cy="84" r="74" fill="none" stroke="#fff" stroke-width="3"
             stroke-linecap="round"
             stroke-dasharray="465"
             stroke-dashoffset="256"/>
