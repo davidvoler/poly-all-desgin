@@ -1,0 +1,101 @@
+name: Italian for English Speakers
+description: A course designed to help English speakers learn Italian, covering essential grammar, vocabulary, and
+language: Italian
+student_languages: English
+tags: 
+  - listening
+  - reading
+  - basic vocabulary
+modules: 
+  - name: Greetings
+    description: How to be polite in Italian
+    lessons:
+      - word: Buonasera
+        options:
+          - Good evening 
+            correct: true
+          - Good morning
+          - Hello
+          - Goodbye
+      - word: Arrivederci
+        options:
+          - Goodbye
+            correct: true
+          - See you later
+          - Hello
+          - Good evening
+      - sentence: Per favore
+        options:
+          - Please
+            correct: true
+          - Thank you
+          - You're welcome
+          - Excuse me
+      - word: Grazie
+        options:
+          - Thank you
+            correct: true
+          - Please
+          - You're welcome
+          - Excuse me
+      - word: Prego
+        options:
+          - You're welcome
+            correct: true
+          - Please
+          - Thank you
+          - Excuse me   
+      - sentence: Mi scusi
+        options:
+          - Excuse me
+            correct: true
+          - Please
+          - Thank you
+          - You're welcome
+      - word: Ciao
+        options:
+          - Hello
+            correct: true
+          - Goodbye
+          - Good evening
+          - See you later  
+        note: Ciao is informal and should be used only with close friends - do not use it with strangers
+      - words in sentence: 
+          sentence: Buongiorno, signore, che cosa desidera?
+          words in sentence:
+            - Buongiorno
+            - signore
+            - cosa
+          words not in sentence:
+            - Per favore
+            - Grazie
+            - Prego
+      - sentence: Ciao mama, come stai?
+        options:
+          - Hello mom, how are you?
+            correct: true
+          - Goodbye mom, how are you?
+          - Hello dad, how are you?
+          - Hello mom, how is it going?
+      - sentence: Arrivederci, Massimo, a domani!
+        options:
+          - Goodbye, Massimo, see you tomorrow!
+            correct: true
+          - Hello, see you soon!
+          - Goodbye, see you later!
+          - Goodbye, take care!
+      - sentence: Mi scusi, dov'è il bagno?
+        options:
+          - Excuse me, where is the bathroom?
+            correct: true
+          - Please, where is the bathroom?
+          - Thank you, where is the bathroom?
+          - You're welcome, where is the bathroom?
+      # words that with <> like <aiuto> will have tooltip translation 
+      - sentence: Grazie mille per il tuo <aiuto>!
+        options:
+          - Thank you very much for your help!
+            correct: true
+          - Please, thank you for your help!
+          - You're welcome, thank you for your help!
+          - Excuse me, thank you for your help!

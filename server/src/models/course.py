@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-
 class UserCourseProgress(BaseModel):
     user_id: int
     course_id: int
@@ -18,4 +17,3 @@ class Course(BaseModel):
     lesson_count: int = 1
     tags : list[str] = []
     user_course_progress: UserCourseProgress | None = None
-
