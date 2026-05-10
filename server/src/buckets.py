@@ -22,7 +22,7 @@ Usage:
 import hashlib
 
 
-def bucket_for(word: str, *, n_buckets: int = 4) -> int:
+def bucket_for(word: str, *, n_buckets: int = 3) -> int:
     """Return a 1-indexed bucket number in 1..n_buckets for `word`.
 
     The mapping is deterministic and approximately uniform — over a large
@@ -52,3 +52,9 @@ if __name__ == "__main__":  # pragma: no cover
     print(f"Sample size: {len(sample)}")
     for b in sorted(counts):
         print(f"  bucket {b}: {counts[b]:>3}  ({counts[b]/len(sample):.0%})")
+
+
+    print("hello -> bucket", bucket_for("hello"))
+    print("hello -> bucket", bucket_for("hello"))
+    print("こんにちは -> bucket", bucket_for("こんにちは"))
+    print("こんにちは -> bucket", bucket_for("こんにちは"))
