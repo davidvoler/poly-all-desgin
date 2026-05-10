@@ -8,7 +8,8 @@
       "Bash(flutter test *)",
       "Bash(flutter pub *)",
       "Bash(dart run *)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(python3 buckets.py)"
     ],
     "additionalDirectories": [
       "/Users/davidle/dev/tutorial/poly-all-desgin"
