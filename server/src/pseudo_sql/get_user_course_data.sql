@@ -1,6 +1,8 @@
 
 
 -- get lessons with user progress for a specific course
+--# add course name and module name to the results
+
 SELECT a.course,a.module,a.lesson_id,a.lesson_name, b.completed
 FROM content.lessons a
 LEFT JOIN user_data.results b ON a.id = b.lesson_id AND b.user_id = :user_id
