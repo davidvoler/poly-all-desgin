@@ -1,3 +1,25 @@
+
+CREATE TABLE user_data.users (
+	email varchar(200) NOT NULL,
+	user_id varchar(100) NOT NULL,
+	last_login timestamp DEFAULT now() NULL,
+	first_login timestamp DEFAULT now() NULL,
+	CONSTRAINT users_pkey PRIMARY KEY (email, user_id)
+);
+
+
+
+CREATE TABLE IF NOT EXISTS user_data.preference (
+    user_id   VARCHAR(100)  NOT NULL,
+    ui_lang   VARCHAR(12),
+    lang   VARCHAR(12) NOT NULL DEFAULT '',
+    to_lang   VARCHAR(12),
+    course_id int4 null DEFAULT 0,
+    created_at   DATETIME  DEFAULT now(),
+    updated_at   DATETIME  DEFAULT now(),
+    CONSTRAINT preference_pkey PRIMARY KEY (user_id, lang)
+);
+
 -- users_data.results definition
 
 -- Drop table
@@ -17,10 +39,11 @@ CREATE TABLE users_data.results (
 	mark SMALLINT DEFAULT 0,
 	attempts SMALLINT DEFAULT 0 NULL,
 	answer_delay_ms int4 DEFAULT 0 NULL,
+    word varchar(255) NULL,
     word1 varchar(255) NULL,
     word2 varchar(255) NULL,
     word3 varchar(255) NULL,
-    sentence varchar(255) NULL,
+    sentence_id varchar(255) NULL,
 	created_at timestamp DEFAULT now(),
 	CONSTRAINT results_pkey PRIMARY KEY (id)
 );
