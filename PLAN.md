@@ -30,7 +30,7 @@ The process of implementations
 6. select words order per lessons - do it once using export
 7. remove non-arabic words 
 
-
+8. for arabic - before we break words we should clear diacritical signs - currently we have to many words with the same letters with different sign - pron
 
 The generation process 
 start with greeting lessons

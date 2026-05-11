@@ -6,7 +6,6 @@ def words_per_modules():
 def get_words_per_lesson(module_no):
     pass
 
-
 def gen_greetings():
     pass 
 
