@@ -1,7 +1,7 @@
 import stanza
 
 # Download the Arabic model
-stanza.download('ar')
+# stanza.download('ar')
 nlp = stanza.Pipeline('ar')
 
 doc = nlp("ذهب الولد إلى المدرسة")

@@ -12,6 +12,7 @@ Design a step based plan for getting to some target every week
 - listen and select options
 - annotated sentence - annotate all 3 specific words 
 - words in sentence
+- explanation
 
 - [] start generating a course for arabic
 
