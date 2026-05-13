@@ -1,6 +1,6 @@
 from db import get_query_results
 import asyncio
-
+import random
 
 LESSONS_PER_MODULE = 10
 
@@ -28,8 +28,7 @@ async def get_all_words(lang:str):
     order by w_count1_3  desc, w_count4_5 desc, w_count6_9  desc, w_count10_20 desc 
     offset 50
     """
-    res = await get_query_results(sql, (lang,))
-    return [r['word'] for r in res]
+    return await get_query_results(sql, (lang,))
 
 async def get_all_words_by_rank(lang:str):
     sql = """
@@ -47,8 +46,8 @@ async def get_all_words_by_rank(lang:str):
     res = await get_query_results(sql, (lang,))
     return [r['word'] for r in res]
 
-async def get_sentences_for_words(lang,to_lang,  word):
-    sql = """
+async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
+    sql = f"""
     select lang.text as text, sentences.text as to_text, trans.id as id, trans.to_id as to_id
     from content_raw.sentence_elements_simple2 lang
     join  content_raw.translation_links  trans
@@ -57,10 +56,18 @@ async def get_sentences_for_words(lang,to_lang,  word):
     on sentences.id = trans.to_id
     where sentences.lang = %s 
     and (lang.word1 = %s or lang.word2 = %s)
-    limit 13
+    limit 30
     """
     res = await get_query_results(sql, (lang, to_lang,to_lang, word, word))
-    return [(r['text'], r['to_text'], r['id'], r['to_id']) for r in res]
+    # res =  [(r['text'], r['to_text'], r['id'], r['to_id']) for r in res]
+    selected_sentences = []
+    for r in res:
+        txt = r['text']
+        if max_words > 0 and len(txt.split()) > max_words:
+            continue
+        selected_sentences.append((r['text'], r['to_text'], r['id'], r['to_id']))
+    random.shuffle(selected_sentences)
+    return selected_sentences[:12]
 
 
 def words_per_lesson(words_count):
@@ -88,6 +95,21 @@ def get_sort_for_sentences():
     elif lesson_no < 2100:
         return ""
 
+def get_max_words_for_sentences(words_so_far):
+    if words_so_far < 200:
+        return 3
+    elif words_so_far < 400:
+        return 4
+    elif words_so_far < 600:
+        return 5
+    elif words_so_far < 800:
+        return 6
+    elif words_so_far < 1000:
+        return 8
+    elif words_so_far < 1200:
+        return 10
+    else:
+        return 0
 
 def get_sentence_audio(sentences_id, lang):
     pass
@@ -121,7 +143,7 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
         else:
             words = await get_all_words(lang)
         
-        print (words[:10])
+        # print (words[:10])
         words_so_far = []
         i =1
         while len(words) > 0:
@@ -131,8 +153,8 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
             lesson_words = words[:wc]
             sentences = []
             for w in lesson_words:
-                sentences += await get_sentences_for_words(lang, to_lang, w)
-            print(sentences)
+                sentences += await get_sentences_for_words(lang, to_lang, w, max_words = get_max_words_for_sentences(len(words_so_far)))
+            # print(sentences)
             lesson_words = words[:wc]
             words = words[wc:]
             if i % LESSONS_PER_MODULE == 0:
