@@ -71,20 +71,25 @@ async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
 
 
 def words_per_lesson(words_count):
-    if words_count < 400:
+    if words_count < 500:
         return 1
-    elif words_count < 600:
+    elif words_count < 800:
         return 2
-    elif words_count < 900:
-        return 3
     elif words_count < 1200:
-        return 4
+        return 3
     elif words_count < 1500:
+        return 4
+    elif words_count < 2000:
         return 5
-    elif words_count < 1800:
+    elif words_count < 2500:
         return 6
-    else:
+    elif words_count < 3000:
         return 10
+    elif words_count < 4000:
+        return 15
+    else:
+        return 20
+
 
 
 def get_sort_for_sentences():
