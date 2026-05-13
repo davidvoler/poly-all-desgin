@@ -1,0 +1,149 @@
+module: 1 
+	Lesson: 1
+ 		words:
+		- كان
+		sentences:
+		- ar: أراهن أن هذا كان مضحكا أن نرى.
+		  en: I bet that was funny to see. 
+		- ar: أين كان في ذهنك؟
+		  en: Where did you have in mind? 
+		- ar: أي واحد كان؟
+		  en: Which one was it? 
+		- ar: إنفصالي كان صعبًا.
+		  en: My breakup is tough. 
+		- ar: توم كان رصيناً.
+		  en: Tom was sober. 
+		- ar: ذلك كان أرنوباً شريراً.
+		  en: That was an evil bunny. 
+		- ar: زيري كان يعرفني.
+		  en: Ziri knew me. 
+		- ar: زيري كان يعطي.
+		  en: Ziri was sneezing. 
+		- ar: زيري كان يفسر ذلك.
+		  en: Ziri was explaining that. 
+		- ar: ساعد كان توم.
+		  en: Ken helped Tom. 
+		- ar: سامي كان جزء من kkk
+		  en: Sami was a part of the KKK. 
+		- ar: سامي كان على فيسبوك.
+		  en: Sami was on Facebook. 
+	Lesson: 2
+ 		words:
+		- الذي
+		sentences:
+		- ar: أخبرني ، ما الذي حدث؟
+		  en: Tell me what happened. 
+		- ar: أنا صديق روبرتس.
+		  en: I am a friend of Robert's. 
+		- ar: أوليغ هو الذي خان ريمة.
+		  en: Oleg was the man who betrayed Rima. 
+		- ar: الذي - التي
+		  en: that 
+		- ar: الذي يلعب؟
+		  en: Who's playing? 
+		- ar: ما الذي حدث؟!
+		  en: What the hell just happened? 
+		- ar: ما الذي حصل؟
+		  en: What happened? 
+		- ar: ما الذي في الملف؟
+		  en: What's in the file? 
+		- ar: ما الذي يحدث؟
+		  en: What is going on? 
+		- ar: ما الذي يحدث؟
+		  en: What is happening? 
+		- ar: ما الذي يحدث؟
+		  en: What's going on? 
+		- ar: ما الذي يحدث؟
+		  en: What's happening? 
+	Lesson: 3
+ 		words:
+		- الّذي
+		sentences:
+	Lesson: 4
+ 		words:
+		- ذٰلك
+		sentences:
+		- ar: أليس كذلك؟
+		  en: Isn't it so? 
+		- ar: أليس كذلك؟
+		  en: No? 
+		- ar: رمى يانّي بذلك التّين.
+		  en: Yanni threw the figs away. 
+		- ar: زيري بحاجة لذلك.
+		  en: Ziri needs that. 
+		- ar: سيفوز بيل، أليس كذلك؟
+		  en: Bill will win, won't he? 
+		- ar: صدقتموه، أليس كذلك؟
+		  en: You believe it, don't you? 
+		- ar: فلتكن كذلك !
+		  en: May it be so! 
+		- ar: كان زيري بحاجة لذلك.
+		  en: Ziri needed that. 
+		- ar: كان زيري بحاجة لذلك.
+		  en: Ziri needed this. 
+		- ar: لقد استمتعنا، أليس كذلك؟
+		  en: We had fun, didn't we? 
+		- ar: لقد اشتقت إلى توم، أليس كذلك؟
+		  en: You missed Tom, didn't you? 
+		- ar: لقد تصافحتما، أليس كذلك؟
+		  en: You shook hands, didn't you? 
+	Lesson: 5
+ 		words:
+		- ذلك
+		sentences:
+		- ar: آمل أن يعجبك ذلك.
+		  en: I hope you like it there. 
+		- ar: آمل ذلك.
+		  en: Hope so. 
+		- ar: آمل ذلك.
+		  en: I hope so. 
+		- ar: آمُلُ ذلك.
+		  en: I do hope so. 
+		- ar: أتمنى ذلك!
+		  en: I hope so! 
+		- ar: أحب ذلك!
+		  en: I like that! 
+		- ar: أخذنا ذلك.
+		  en: We took that. 
+		- ar: أخفنا ذلك الببر.
+		  en: We scared the tiger off. 
+		- ar: أشكّ في صحة ذلك.
+		  en: I don't think that's correct. 
+		- ar: أكثر من ذلك؟
+		  en: More than that? 
+		- ar: أنا أراهن على ذلك.
+		  en: I bet it will. 
+		- ar: أوقف ذلك.
+		  en: Stop that! 
+	Lesson: 6
+ 		words:
+		- بعد
+		sentences:
+		- ar: أراك بعد الدّرس.
+		  en: See you after class. 
+		- ar: أراك بعد عشر دقائق؟
+		  en: See you in ten minutes? 
+		- ar: أضف البيض بعد ذلك.
+		  en: Add the eggs next. 
+		- ar: أين نذهب بعد ذلك؟
+		  en: Where are we going after? 
+		- ar: بعد
+		  en: after 
+		- ar: بعد الآن
+		  en: anymore 
+		- ar: بعد الانفصال؟
+		  en: After the breakup? 
+		- ar: بعد الظهر
+		  en: afternoon 
+		- ar: توم يعمل عن بعد.
+		  en: Tom works remotely. 
+		- ar: دعنا نذهب بعد العمل!
+		  en: Let's go after work! 
+		- ar: روبيرت هو من سيموت بعد ذلك.
+		  en: Robert will die next. 
+		- ar: لا ليس بعد!
+		  en: No, not yet! 
+	Lesson: 7
+ 		words:
+		- اللَّهِ
+		sentences:

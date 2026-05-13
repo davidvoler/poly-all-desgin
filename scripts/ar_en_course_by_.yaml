@@ -1,0 +1,220 @@
+module: 1 
+	Lesson: 1
+ 		words:
+		- ك
+		sentences:
+		- ar: 350 درجة، أليس كذلك؟
+		  en: 350 degrees, right? 
+		- ar: "Bonjour" تعني مرحبًا، أليس كذلك؟
+		  en: "Bonjour" means hello, right? 
+		- ar: آسف للضغط عليك.
+		  en: I'm sorry to rush you. 
+		- ar: آمل أنك دعوت لي.
+		  en: I hope you prayed for me. 
+		- ar: أبإمكانك أن تقلني إلى محطة القطار؟
+		  en: Could you give me a lift to the train station? 
+		- ar: أتحدث عنك.
+		  en: I'm talking about you. 
+		- ar: أتريد مني مساعدتك في ذلك؟
+		  en: Do you want me to help you do that? 
+		- ar: أتفق معك.
+		  en: I agree with you. 
+		- ar: أتَ لا يمكنك تحدث الإنجليزية؟
+		  en: Are you not able to speak English? 
+		- ar: أتمنى أن يكون لديك وقت أكثر لي.
+		  en: I wish you had more time for me. 
+		- ar: أتوقع مساعدتك.
+		  en: I expect your help. 
+		- ar: أثق بك.
+		  en: I trust you. 
+	Lesson: 2
+ 		words:
+		- ل
+		sentences:
+		- ar: "Shake It Off" لتايلور سويفت.
+		  en: "Shake It Off" by Taylor Swift. 
+		- ar: آسف لسماع ذلك.
+		  en: Sorry to hear that. 
+		- ar: آسف لما حدث.
+		  en: I'm sorry for what happened. 
+		- ar: آسف لمغادرتي بتلك السرعة.
+		  en: I'm sorry I have left with such haste. 
+		- ar: أبي صارم للغاية.
+		  en: My dad is very strict. 
+		- ar: أتت لتراني.
+		  en: She came to see me. 
+		- ar: أتجهّزت لامتحان اليوم؟
+		  en: Are you well prepared for today's exam? 
+		- ar: أتی عمي لرؤيتي.
+		  en: My uncle came to see me. 
+		- ar: أُحَاوِلُ تَرْكَ مَكَانٍ لِلتَّحْلِيَة.
+		  en: I'm trying to save room for dessert. 
+		- ar: أُحَاوِلُ تَرْكَ مَكَانٍ لِلحَلْوَى.
+		  en: I'm trying to save room for dessert. 
+		- ar: أحبّ سامي ليلى.
+		  en: Sami liked Layla. 
+		- ar: أخاف سامي ليلى.
+		  en: Sami intimidated Layla. 
+	Lesson: 3
+ 		words:
+		- ل
+		sentences:
+		- ar: "Shake It Off" لتايلور سويفت.
+		  en: "Shake It Off" by Taylor Swift. 
+		- ar: آسف لسماع ذلك.
+		  en: Sorry to hear that. 
+		- ar: آسف لما حدث.
+		  en: I'm sorry for what happened. 
+		- ar: آسف لمغادرتي بتلك السرعة.
+		  en: I'm sorry I have left with such haste. 
+		- ar: أبي صارم للغاية.
+		  en: My dad is very strict. 
+		- ar: أتت لتراني.
+		  en: She came to see me. 
+		- ar: أتجهّزت لامتحان اليوم؟
+		  en: Are you well prepared for today's exam? 
+		- ar: أتی عمي لرؤيتي.
+		  en: My uncle came to see me. 
+		- ar: أُحَاوِلُ تَرْكَ مَكَانٍ لِلتَّحْلِيَة.
+		  en: I'm trying to save room for dessert. 
+		- ar: أُحَاوِلُ تَرْكَ مَكَانٍ لِلحَلْوَى.
+		  en: I'm trying to save room for dessert. 
+		- ar: أحبّ سامي ليلى.
+		  en: Sami liked Layla. 
+		- ar: أخاف سامي ليلى.
+		  en: Sami intimidated Layla. 
+	Lesson: 4
+ 		words:
+		- ز
+		sentences:
+	Lesson: 5
+ 		words:
+		- ك
+		sentences:
+		- ar: 350 درجة، أليس كذلك؟
+		  en: 350 degrees, right? 
+		- ar: "Bonjour" تعني مرحبًا، أليس كذلك؟
+		  en: "Bonjour" means hello, right? 
+		- ar: آسف للضغط عليك.
+		  en: I'm sorry to rush you. 
+		- ar: آمل أنك دعوت لي.
+		  en: I hope you prayed for me. 
+		- ar: أبإمكانك أن تقلني إلى محطة القطار؟
+		  en: Could you give me a lift to the train station? 
+		- ar: أتحدث عنك.
+		  en: I'm talking about you. 
+		- ar: أتريد مني مساعدتك في ذلك؟
+		  en: Do you want me to help you do that? 
+		- ar: أتفق معك.
+		  en: I agree with you. 
+		- ar: أتَ لا يمكنك تحدث الإنجليزية؟
+		  en: Are you not able to speak English? 
+		- ar: أتمنى أن يكون لديك وقت أكثر لي.
+		  en: I wish you had more time for me. 
+		- ar: أتوقع مساعدتك.
+		  en: I expect your help. 
+		- ar: أثق بك.
+		  en: I trust you. 
+	Lesson: 6
+ 		words:
+		- ي
+		sentences:
+		- ar: أحب الاحتفال برأس السنة الجديدة مع عائلتي.
+		  en: I love celebrating New Year's Eve with my family. 
+		- ar: أحب الاحتفال بعيد الشكر مع عائلتي.
+		  en: I love celebrating Thanksgiving with my family. 
+		- ar: أحب القراءة وقضاء الوقت مع عائلتي.
+		  en: I like to read and spend time with my family. 
+		- ar: أحب صنع التاماليز مع عائلتي.
+		  en: I love making tamales with my family. 
+		- ar: أحب صنع الزلابية مع عائلتي.
+		  en: I love making dumplings with my family. 
+		- ar: أحب صنع ذكريات مع عائلتي مثل هذه.
+		  en: I love making memories with my family like that. 
+		- ar: أحس بأن لياقتي عالية.
+		  en: I'm feeling fit. 
+		- ar: أريد أن أعرف من سيأتي معنا.
+		  en: I want to know who is coming with us. 
+		- ar: أريد أن أعرف من سيأتي معنا.
+		  en: I want to know who's coming with us. 
+		- ar: أريد التحدّث مع شقيقتي.
+		  en: I want to talk to my sister. 
+		- ar: أريد رؤية توم قبل مغادرتي.
+		  en: I want to see Tom before I leave. 
+		- ar: أشك في أن توم سيأتي.
+		  en: I doubt Tom will come. 
+	Lesson: 7
+ 		words:
+		- ي
+		sentences:
+		- ar: أحب الاحتفال برأس السنة الجديدة مع عائلتي.
+		  en: I love celebrating New Year's Eve with my family. 
+		- ar: أحب الاحتفال بعيد الشكر مع عائلتي.
+		  en: I love celebrating Thanksgiving with my family. 
+		- ar: أحب القراءة وقضاء الوقت مع عائلتي.
+		  en: I like to read and spend time with my family. 
+		- ar: أحب صنع التاماليز مع عائلتي.
+		  en: I love making tamales with my family. 
+		- ar: أحب صنع الزلابية مع عائلتي.
+		  en: I love making dumplings with my family. 
+		- ar: أحب صنع ذكريات مع عائلتي مثل هذه.
+		  en: I love making memories with my family like that. 
+		- ar: أحس بأن لياقتي عالية.
+		  en: I'm feeling fit. 
+		- ar: أريد أن أعرف من سيأتي معنا.
+		  en: I want to know who is coming with us. 
+		- ar: أريد أن أعرف من سيأتي معنا.
+		  en: I want to know who's coming with us. 
+		- ar: أريد التحدّث مع شقيقتي.
+		  en: I want to talk to my sister. 
+		- ar: أريد رؤية توم قبل مغادرتي.
+		  en: I want to see Tom before I leave. 
+		- ar: أشك في أن توم سيأتي.
+		  en: I doubt Tom will come. 
+	Lesson: 8
+ 		words:
+		- ي
+		sentences:
+		- ar: أحب الاحتفال برأس السنة الجديدة مع عائلتي.
+		  en: I love celebrating New Year's Eve with my family. 
+		- ar: أحب الاحتفال بعيد الشكر مع عائلتي.
+		  en: I love celebrating Thanksgiving with my family. 
+		- ar: أحب القراءة وقضاء الوقت مع عائلتي.
+		  en: I like to read and spend time with my family. 
+		- ar: أحب صنع التاماليز مع عائلتي.
+		  en: I love making tamales with my family. 
+		- ar: أحب صنع الزلابية مع عائلتي.
+		  en: I love making dumplings with my family. 
+		- ar: أحب صنع ذكريات مع عائلتي مثل هذه.
+		  en: I love making memories with my family like that. 
+		- ar: أحس بأن لياقتي عالية.
+		  en: I'm feeling fit. 
+		- ar: أريد أن أعرف من سيأتي معنا.
+		  en: I want to know who is coming with us. 
+		- ar: أريد أن أعرف من سيأتي معنا.
+		  en: I want to know who's coming with us. 
+		- ar: أريد التحدّث مع شقيقتي.
+		  en: I want to talk to my sister. 
+		- ar: أريد رؤية توم قبل مغادرتي.
+		  en: I want to see Tom before I leave. 
+		- ar: أشك في أن توم سيأتي.
+		  en: I doubt Tom will come. 
+	Lesson: 9
+ 		words:
+		- ت
+		sentences:
+module: 2 
+	Lesson: 10
+ 		words:
+		- أ
+		sentences:
+		- ar: أ
+		  en: an 
+		- ar: أ أنت جائع ؟
+		  en: Are you hungry? 
+	Lesson: 11
+ 		words:
+		- ا
+		sentences:
+		- ar: أَنُلْزِمُكُمُوهَا؟
+		  en: Should we force it upon you? 
