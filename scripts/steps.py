@@ -24,11 +24,12 @@ async def get_all_words(lang:str):
     (w_count1_3>5 
     or w_count4_5 >4 
     or w_count6_9 >3 
-    or w_count10_20 >1)
+    or w_count10_20 >0)
     order by w_count1_3  desc, w_count4_5 desc, w_count6_9  desc, w_count10_20 desc 
     offset 50
     """
-    return await get_query_results(sql, (lang,))
+    res =  await get_query_results(sql, (lang,))
+    return [r['word'] for r in res]
 
 async def get_all_words_by_rank(lang:str):
     sql = """
@@ -139,10 +140,11 @@ async def generate_course(lang: str, to_lang:str):
         
 async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
     r = "_by_rank" if rank else ""
-    with open(f"{lang}_{to_lang}_course{r}.yaml", "w") as f:
-        
+    with open(f"../data/content/{lang}_{to_lang}_course{r}.yaml", "w") as f:
         module = 1
-        f.write(f"module: {module} \n")
+        f.write(f"modules:\n")
+        f.write(f"\t- module:\n")
+        f.write(f"\t  name: module {module} \n")
         if rank:
             words = await get_all_words_by_rank(lang)
         else:
@@ -164,18 +166,20 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
             words = words[wc:]
             if i % LESSONS_PER_MODULE == 0:
                 module += 1
-                f.write(f"module: {module} \n")
-            f.write(f"\tLesson: {i}\n ")
-            f.write(f"\t\twords:\n")
+                f.write(f"\t- module:\n")
+                f.write(f"\t  name: module {module} \n")
+            f.write(f"\t\t- lesson:\n ")
+            f.write(f"\t\t  name: lesson {i}\n ")
+            f.write(f"\t\t  words:\n")
             for w in lesson_words:
-                f.write(f"\t\t- {w}\n")                 
-            f.write(f"\t\tsentences:\n")
+                f.write(f"\t\t\t- {w}\n")                 
+            f.write(f"\t\t  sentences:\n")
 
             for s in sentences:
-                f.write(f"\t\t- {lang}_id: {s[2]}\n")
-                f.write(f"\t\t  {lang}_text: {s[0]}\n")
-                f.write(f"\t\t  {to_lang}_id: {s[3]}\n")
-                f.write(f"\t\t  {to_lang}_text: {s[1]}\n")
+                f.write(f"\t\t\t- {lang}_id: {s[2]}\n")
+                f.write(f"\t\t\t  {lang}_text: {s[0]}\n")
+                f.write(f"\t\t\t  {to_lang}_id: {s[3]}\n")
+                f.write(f"\t\t\t  {to_lang}_text: {s[1]}\n")
             i+=1
 
 if __name__ == "__main__":
