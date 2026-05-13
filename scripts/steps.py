@@ -49,7 +49,7 @@ async def get_all_words_by_rank(lang:str):
 
 async def get_sentences_for_words(lang,to_lang,  word):
     sql = """
-    select lang.text as text, sentences.text as to_text
+    select lang.text as text, sentences.text as to_text, trans.id as id, trans.to_id as to_id
     from content_raw.sentence_elements_simple2 lang
     join  content_raw.translation_links  trans
     on trans.id = lang.id and trans.lang = %s and trans.to_lang = %s
@@ -60,7 +60,7 @@ async def get_sentences_for_words(lang,to_lang,  word):
     limit 13
     """
     res = await get_query_results(sql, (lang, to_lang,to_lang, word, word))
-    return [(r['text'], r['to_text']) for r in res]
+    return [(r['text'], r['to_text'], r['id'], r['to_id']) for r in res]
 
 
 def words_per_lesson(words_count):
@@ -111,8 +111,8 @@ async def generate_course(lang: str, to_lang:str):
 
         
 async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
-    r = "_rank" if rank else ""
-    with open(f"{lang}_{to_lang}_course_by{r}.yaml", "w") as f:
+    r = "_by_rank" if rank else ""
+    with open(f"{lang}_{to_lang}_course{r}.yaml", "w") as f:
         
         module = 1
         f.write(f"module: {module} \n")
@@ -143,12 +143,15 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
             for w in lesson_words:
                 f.write(f"\t\t- {w}\n")                 
             f.write(f"\t\tsentences:\n")
+
             for s in sentences:
-                f.write(f"\t\t- {lang}: {s[0]}\n") 
-                f.write(f"\t\t  {to_lang}: {s[1]} \n") 
+                f.write(f"\t\t- {lang}_id: {s[2]}\n")
+                f.write(f"\t\t  {lang}_text: {s[0]}\n")
+                f.write(f"\t\t  {to_lang}_id: {s[3]}\n")
+                f.write(f"\t\t  {to_lang}_text: {s[1]}\n")
             i+=1
 
 if __name__ == "__main__":
     # asyncio.run(generate_course("ar", "en"))
-    asyncio.run(generate_course_by_rank("ar", "en"))
+    asyncio.run(generate_course_by_rank("ar", "en", rank=True))
     
