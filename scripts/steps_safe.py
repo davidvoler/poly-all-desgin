@@ -3,8 +3,22 @@ import asyncio
 import random
 
 
-LESSONS_PER_MODULE = 10
+LESSONS_PER_MODULE = 30
 
+
+def get_lessons_per_module(lesson_no):
+    if lesson_no < 100:
+        return 25
+    elif lesson_no < 250:
+        return 35
+    elif lesson_no < 500:
+        return 45
+    elif lesson_no < 750:
+        return 60
+    elif lesson_no < 1000:
+        return 70
+    else:
+        return 100
 
 def get_greetings_words():
     return [
@@ -21,13 +35,15 @@ async def get_all_words(lang:str):
     select word from content_raw.words 
     where lang = %s
     and rank < 1000
+    and rank > 450
     and 
     (w_count1_3>5 
     or w_count4_5 >4 
     or w_count6_9 >3 
     or w_count10_20 >0)
+    
     order by w_count1_3  desc, w_count4_5 desc, w_count6_9  desc, w_count10_20 desc 
-    offset 50
+    
     """
     res =  await get_query_results(sql, (lang,))
     return [r['word'] for r in res]
@@ -67,7 +83,7 @@ async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
         txt = r['text']
         if max_words > 0 and len(txt.split()) > max_words:
             continue
-        selected_sentences.append((r['text'], r['to_text'], r['id'], r['to_id']))
+        selected_sentences.append(r)
     random.shuffle(selected_sentences)
     return selected_sentences[:12]
 
@@ -92,7 +108,11 @@ def words_per_lesson(words_count):
     else:
         return 20
 
-
+def is_arabic(text):
+    for ch in text:
+        if '\u0600' <= ch <= '\u06FF' or '\u0750' <= ch <= '\u077F' or '\u08A0' <= ch <= '\u08FF':
+            return True
+    return False
 
 def get_sort_for_sentences():
     if lesson_no < 700:
@@ -122,71 +142,56 @@ def get_sentence_audio(sentences_id, lang):
     pass
 
 
-async def generate_course(lang: str, to_lang:str):
-    module = 1
-    words = await get_all_words(lang)
-    words_so_far = []
-    i =1
-    with open(f"{lang}_{to_lang}_course.txt", "w") as f:
-        while len(words) > 0:
-            wc = words_per_lesson(len(words_so_far))
-            words_so_far += words[:wc]
-            lesson_words = words[:wc]
-            words = words[wc:]
-            if i % LESSONS_PER_MODULE == 0:
-                module += 1
-            f.write(f"AR-EN Module {module} - Lesson {i} words: {lesson_words} words so far {len(words_so_far)} \n ")
-            i+=1
-
         
 async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
     r = "_by_rank" if rank else ""
-    with open(f"../data/content/{lang}_{to_lang}_course{r}.yaml", "w") as f:
-        module = 1
-        f.write(f"modules:\n")
-        f.write(f"  - module:\n")
-        f.write(f"    name: module {module} \n")
-        f.write(f"    lessons:\n")
-        if rank:
-            words = await get_all_words_by_rank(lang)
-        else:
-            words = await get_all_words(lang)
+    modules = []
+    module_no = 1
+    module = {
+        'module': module_no,
+        'lessons': []
+    }
+    if rank:
+        words = await get_all_words_by_rank(lang)
+    else:
+        words = await get_all_words(lang)
+    
+    # print (words[:10])
+    words_so_far = []
+    i =1
+    words_to_use = []
+    for w in words:
+        if  is_arabic(w):
+            words_to_use.append(w)
+    words = words_to_use
+    # words = words[:100]
+    while len(words) > 0:
+        wc = words_per_lesson(len(words_so_far))
+        words_so_far += words[:wc]
+        lesson_words = words[:wc]
         
-        # print (words[:10])
-        words_so_far = []
-        i =1
-        words = words[:100]
-        while len(words) > 0:
-            
-            wc = words_per_lesson(len(words_so_far))
-            words_so_far += words[:wc]
-            lesson_words = words[:wc]
-            sentences = []
-            for w in lesson_words:
-                sentences += await get_sentences_for_words(lang, to_lang, w, max_words = get_max_words_for_sentences(len(words_so_far)))
-            # print(sentences)
-            lesson_words = words[:wc]
-            words = words[wc:]
-            if i % LESSONS_PER_MODULE == 0:
-                module += 1
-                f.write(f"  - module:\n")
-                f.write(f"    name: module {module} \n")
-                f.write(f"    lessons:\n")
-            f.write(f"    - lesson:\n ")
-            f.write(f"     name: lesson {i}\n ")
-            f.write(f"     words: {lesson_words}\n ")
-            # for w in lesson_words:
-                # f.write(f"      - {w}\n")                 
-            f.write(f"     sentences:\n")
+        sentences = []
+        for w in lesson_words:
+            sentences += await get_sentences_for_words(lang, to_lang, w, max_words = get_max_words_for_sentences(len(words_so_far)))
 
-            for s in sentences:
-                f.write(f"      - sentence:\n")
-                f.write(f"        {lang}_id: {s[2]}\n")
-                f.write(f"        {lang}_text: \"{s[0]}\"\n")
-                f.write(f"        {to_lang}_id: {s[3]}\n")
-                f.write(f"        {to_lang}_text: {s[1]}\n")
-            i+=1
-
+        lesson = {
+            'lesson': f"lesson {i}",
+            'words': lesson_words,
+            'sentences': sentences
+        }
+        module['lessons'].append(lesson)
+        words = words[wc:]
+        lessons_per_module = get_lessons_per_module(i)
+        if i % lessons_per_module == 0:
+            modules.append(module)
+            module_no += 1
+            module = {
+                'module': module_no,
+                'lessons': []
+            }
+        i+=1
+    modules.append(module)
+    yaml.safe_dump({'modules': modules}, open(f"../data/content/{lang}_{to_lang}_course{r}.yaml", "w"), allow_unicode=True)
 def open_yaml(lang, to_lang, rank = False):
     r = "_by_rank" if rank else ""
     with open(f'../data/content/{lang}_{to_lang}_course{r}.yaml', 'r') as f:
@@ -205,5 +210,5 @@ def open_yaml(lang, to_lang, rank = False):
 import yaml
 if __name__ == "__main__":
     asyncio.run(generate_course_by_rank("ar", "en", rank=False))
-    open_yaml("ar", "en", rank=False)
+    # open_yaml("ar", "en", rank=False)
     
