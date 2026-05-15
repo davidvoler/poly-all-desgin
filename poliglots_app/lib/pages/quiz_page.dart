@@ -1,148 +1,238 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/courses_api.dart';
+import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
-class QuizPage extends StatefulWidget {
+class QuizPage extends ConsumerStatefulWidget {
   const QuizPage({super.key});
 
   @override
-  State<QuizPage> createState() => _QuizPageState();
+  ConsumerState<QuizPage> createState() => _QuizPageState();
 }
 
-class _QuizPageState extends State<QuizPage> {
-  int? _selected = 1; // 'Thank you' selected by default to mirror the HTML
+class _QuizPageState extends ConsumerState<QuizPage> {
+  int _exerciseIndex = 0;
+  int? _selected;
 
   @override
   Widget build(BuildContext context) {
-    final answers = const ['Hello', 'Thank you', 'Goodbye', 'Please'];
+    final lessonId = (ModalRoute.of(context)?.settings.arguments as int?) ?? 1;
+    final exercisesAsync = ref.watch(exercisesProvider(lessonId));
 
     return Scaffold(
       body: PhoneBackground(
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Top — close + progress + lives
-                Row(
-                  children: [
-                    RoundIconButton(
-                      icon: Icons.close,
-                      tooltip: 'Close',
-                      onTap: () => Navigator.maybePop(context),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(child: PolyProgressBar(value: 0.4, height: 8)),
-                    const SizedBox(width: 10),
-                    const Text(
-                      '4 / 10',
+            child: exercisesAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+              error: (err, _) => Center(
+                child: Text(
+                  "Couldn't load exercises\n$err",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+              data: (exercises) {
+                if (exercises.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No exercises in this lesson',
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.44,
-                        color: Colors.white,
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.favorite, size: 14, color: PolyColors.red400),
-                        SizedBox(width: 4),
-                        Text(
-                          '3',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                // Back / Question label / Skip
-                _QuizNav(
-                  questionLabel: 'Question 4',
-                  onBack: () {},
-                  onSkip: () {},
-                ),
-                const SizedBox(height: 14),
-
-                Center(
-                  child: Text('— Translate this word —',
-                      style: PolyText.sectionLabel()),
-                ),
-                const SizedBox(height: 12),
-
-                // Prompt card
-                GlassCard(
-                  borderRadius: const BorderRadius.all(Radius.circular(18)),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'ありがとう',
-                        style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.8,
-                          height: 1.1,
-                          shadows: [
-                            Shadow(
-                                blurRadius: 18,
-                                color: Colors.black54,
-                                offset: Offset(0, 4)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'arigatō',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.white.withValues(alpha: 0.75),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _AudioButton(onTap: () {}),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-
-                // Answer tiles
-                Expanded(
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: answers.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) => _AnswerTile(
-                      letter: String.fromCharCode(65 + i),
-                      label: answers[i],
-                      selected: _selected == i,
-                      onTap: () => setState(() => _selected = i),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-                CtaButton(
-                  label: 'Check answer',
-                  trailingIcon: Icons.arrow_forward,
-                  onTap: () {},
-                ),
-              ],
+                  );
+                }
+                final idx = _exerciseIndex.clamp(0, exercises.length - 1);
+                final ex = exercises[idx];
+                return _QuizBody(
+                  index: idx,
+                  total: exercises.length,
+                  exercise: ex,
+                  selected: _selected,
+                  onSelect: (i) => setState(() => _selected = i),
+                  onCheck: () {
+                    setState(() {
+                      _selected = null;
+                      _exerciseIndex = (idx + 1 < exercises.length)
+                          ? idx + 1
+                          : idx;
+                    });
+                  },
+                  onSkip: () {
+                    setState(() {
+                      _selected = null;
+                      if (idx + 1 < exercises.length) _exerciseIndex = idx + 1;
+                    });
+                  },
+                  onBack: () {
+                    setState(() {
+                      _selected = null;
+                      if (idx > 0) _exerciseIndex = idx - 1;
+                    });
+                  },
+                );
+              },
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _QuizBody extends StatelessWidget {
+  final int index;
+  final int total;
+  final Exercise exercise;
+  final int? selected;
+  final ValueChanged<int> onSelect;
+  final VoidCallback onCheck;
+  final VoidCallback onSkip;
+  final VoidCallback onBack;
+
+  const _QuizBody({
+    required this.index,
+    required this.total,
+    required this.exercise,
+    required this.selected,
+    required this.onSelect,
+    required this.onCheck,
+    required this.onSkip,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = total == 0 ? 0.0 : (index + 1) / total;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Top — close + progress + lives
+        Row(
+          children: [
+            RoundIconButton(
+              icon: Icons.close,
+              tooltip: 'Close',
+              onTap: () => Navigator.maybePop(context),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: PolyProgressBar(value: progress, height: 8)),
+            const SizedBox(width: 10),
+            Text(
+              '${index + 1} / $total',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.44,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.favorite, size: 14, color: PolyColors.red400),
+                SizedBox(width: 4),
+                Text(
+                  '3',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+
+        _QuizNav(
+          questionLabel: 'Question ${index + 1}',
+          onBack: index > 0 ? onBack : null,
+          onSkip: index < total - 1 ? onSkip : null,
+        ),
+        const SizedBox(height: 14),
+
+        Center(
+          child: Text('— Translate this sentence —',
+              style: PolyText.sectionLabel()),
+        ),
+        const SizedBox(height: 12),
+
+        GlassCard(
+          borderRadius: const BorderRadius.all(Radius.circular(18)),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Column(
+            children: [
+              Text(
+                exercise.sentence,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.4,
+                  height: 1.2,
+                  shadows: [
+                    Shadow(
+                        blurRadius: 18,
+                        color: Colors.black54,
+                        offset: Offset(0, 4)),
+                  ],
+                ),
+              ),
+              if (exercise.exerciseType.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  exercise.exerciseType.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.6,
+                    color: Colors.white.withValues(alpha: 0.65),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              _AudioButton(onTap: () {}),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        Expanded(
+          child: ListView.separated(
+            padding: EdgeInsets.zero,
+            itemCount: exercise.options.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            itemBuilder: (context, i) => _AnswerTile(
+              letter: String.fromCharCode(65 + i),
+              label: exercise.options[i].text,
+              selected: selected == i,
+              onTap: () => onSelect(i),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 14),
+        CtaButton(
+          label: 'Check answer',
+          trailingIcon: Icons.arrow_forward,
+          onTap: selected == null ? null : onCheck,
+        ),
+      ],
     );
   }
 }

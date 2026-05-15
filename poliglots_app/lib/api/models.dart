@@ -74,6 +74,58 @@ class Module {
       );
 }
 
+/// One choice within an [Exercise]. Exactly one option per exercise
+/// is the correct answer (`correct: true` on the server).
+class ExerciseOption {
+  final String text;
+  final bool correct;
+
+  const ExerciseOption({required this.text, this.correct = false});
+
+  factory ExerciseOption.fromJson(Map<String, dynamic> j) => ExerciseOption(
+        text: (j['text'] as String?) ?? '',
+        correct: (j['correct'] as bool?) ?? false,
+      );
+}
+
+/// Shape returned by `GET /api/v1/exercise/?lesson_id=…` — one
+/// question to display on the quiz screen.
+class Exercise {
+  final int id;
+  final String sentence;
+  final String exerciseType;
+  final List<ExerciseOption> options;
+  final String audio;
+  final String word1;
+  final String word2;
+  final String word3;
+
+  const Exercise({
+    required this.id,
+    required this.sentence,
+    required this.exerciseType,
+    required this.options,
+    required this.audio,
+    required this.word1,
+    required this.word2,
+    required this.word3,
+  });
+
+  factory Exercise.fromJson(Map<String, dynamic> j) => Exercise(
+        id: j['exercise_id'] as int,
+        sentence: (j['sentence'] as String?) ?? '',
+        exerciseType: (j['exercise_type'] as String?) ?? '',
+        options: ((j['options'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(ExerciseOption.fromJson)
+            .toList(),
+        audio: (j['audio'] as String?) ?? '',
+        word1: (j['word1'] as String?) ?? '',
+        word2: (j['word2'] as String?) ?? '',
+        word3: (j['word3'] as String?) ?? '',
+      );
+}
+
 /// Shape returned by `GET /api/v1/lesson/?module_id=…` — one lesson
 /// card. `completed` is the server's 0/1 flag.
 class Lesson {

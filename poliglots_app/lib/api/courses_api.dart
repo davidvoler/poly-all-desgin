@@ -77,6 +77,19 @@ class CoursesRepository {
         .map(Lesson.fromJson)
         .toList();
   }
+
+  /// `GET /api/v1/exercise/?lesson_id=…` — exercises for a single lesson.
+  Future<List<Exercise>> fetchExercises(int lessonId) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/exercise/',
+      queryParameters: {'lesson_id': lessonId},
+    );
+    final data = res.data ?? const [];
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(Exercise.fromJson)
+        .toList();
+  }
 }
 
 final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {
@@ -104,6 +117,13 @@ final lessonsProvider =
     FutureProvider.family<List<Lesson>, int>((ref, moduleId) {
   final repo = ref.watch(coursesRepositoryProvider);
   return repo.fetchLessons(moduleId);
+});
+
+/// Exercises for a lesson; keyed by lesson id.
+final exercisesProvider =
+    FutureProvider.family<List<Exercise>, int>((ref, lessonId) {
+  final repo = ref.watch(coursesRepositoryProvider);
+  return repo.fetchExercises(lessonId);
 });
 
 /// Which module is currently open on the course page. `null` means

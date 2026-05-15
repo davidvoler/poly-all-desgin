@@ -370,6 +370,7 @@ class _ModuleNum extends StatelessWidget {
 }
 
 class _LessonInfo {
+  final int id;
   final String num;
   final String jp;
   final String en;
@@ -377,6 +378,7 @@ class _LessonInfo {
   final bool selected;
   final String? route;
   const _LessonInfo({
+    required this.id,
     required this.num,
     required this.jp,
     required this.en,
@@ -432,6 +434,7 @@ _LessonInfo _lessonInfoFromServer(List<api.Lesson> lessons, int i) {
   final translation =
       l.words.length > 1 ? l.words.skip(1).join(' · ') : l.description;
   return _LessonInfo(
+    id: l.id,
     num: 'L${i + 1}',
     jp: native,
     en: translation,
@@ -454,7 +457,11 @@ class _LessonCard extends StatelessWidget {
       child: InkWell(
         onTap: lesson.route == null
             ? null
-            : () => Navigator.pushNamed(context, lesson.route!),
+            : () => Navigator.pushNamed(
+                  context,
+                  lesson.route!,
+                  arguments: lesson.id,
+                ),
         borderRadius: BorderRadius.circular(14),
         child: Container(
           width: 130,
