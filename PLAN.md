@@ -48,11 +48,32 @@ if words count > 4
 
 *** Week 3 - Example Courses - Done ***
 
-*** Week 4 - Course Learning End to End  ***
+*** Week 4 - Course Learning End to End - Done ***
 
+*** Week 5 - Add Audio ***
 
+*** Week 5 - Improvements ***
 
+1. limits wring options when creating a quiz - now we have almos 10
+2. identify words - use variable number of words 
+3. load lesson - consider loading only a limited number exercises 10 or 15
 
-*** Week 5 - Deploy  ***
+*** practice ***
+
+- implement practice for words and sentences 
+- words 
+    - search exercise with a certain words - from current course 
+- sentences 
+    - repeat sentences you have already learned 
+
+    
+*** App UX improvements *** 
+
+- modules vertical and lessons horizontal
+- design and implement quiz end page. 
+    - repeat lesson 
+    - next lesson 
+
+*** Week 6 - Deploy  ***
 
 
