@@ -4,7 +4,7 @@
 
 -- DROP TABLE course.course;
 
-CREATE TABLE course.course (
+CREATE TABLE course_simple.course (
 	course_id serial4 NOT NULL,
 	lang varchar(12) NOT NULL,
 	to_lang varchar(12) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE course.course (
 	level int2 DEFAULT 0 NULL,
 	created_at timestamp DEFAULT now() NULL,
 	updated_at timestamp DEFAULT now() NULL,
-	CONSTRAINT course_pkey PRIMARY KEY (courseid)
+	CONSTRAINT course_pkey PRIMARY KEY (course_id)
 );
 
 
@@ -24,14 +24,13 @@ CREATE TABLE course.course (
 
 -- DROP TABLE "content"."module";
 
-CREATE TABLE "content"."module" (
-	module_id serial4 NOT NULL,
+CREATE TABLE course_simple."module" (
 	course_id int8 NOT NULL,
+	module_id serial4 NOT NULL,
 	title varchar(255) NOT NULL,
 	description text NULL,
 	weight int2 DEFAULT 0 NULL,
 	words _varchar NULL,
-	words_in_sentences _varchar NULL,
 	created_at timestamp DEFAULT now() NULL,
 	updated_at timestamp DEFAULT now() NULL,
 	CONSTRAINT module_pkey PRIMARY KEY (module_id)
@@ -60,27 +59,22 @@ CREATE TABLE course_simple.lesson (
 
 -- DROP TABLE "content".exercise;
 
-CREATE TABLE "content".exercise (
-	exercise_id serial4 NOT NULL,
+CREATE TABLE course_simple.exercise (
 	course_id int8 NOT NULL,
 	module_id int8 NOT NULL DEFAULT 0,
 	lesson_id int8 NOT NULL,
-	weight int2 DEFAULT 0 NULL,
+	exercise_id serial4 NOT NULL,
 	exercise_type varchar(100) ,
-	title varchar(300) NULL,
-	instruction varchar(300) NULL,
-	sentence varchar(300) DEFAULT ''::character varying NULL,
-	correct_options _varchar NULL,
-	wrong_options _varchar NULL,
-	annotated_sentence jsonb DEFAULT '{}'::jsonb NULL,
-	extra_data jsonb DEFAULT '{}'::jsonb NULL,
-	explanation text NULL,
-	audio_link varchar(300) DEFAULT ''::character varying NULL,
-	word1 varchar(100) DEFAULT ,
-	word2 varchar(100) DEFAULT ,
-	word3 varchar(100) DEFAULT ,
+	sentence varchar(300) DEFAULT '' NULL,
+	options jsonb DEFAULT '{}'::jsonb NULL,
+	audio varchar(300) DEFAULT '' NULL,
+	word1 varchar(100) DEFAULT '',
+	word2 varchar(100) DEFAULT '',
+	word3 varchar(100) DEFAULT '',
 	sentence_id int8 NULL,
 	to_sentence_id int8 NULL,
+	explanation text NULL,
+	weight int2 DEFAULT 0 NULL,
 	created_at timestamp DEFAULT now() NULL,
 	updated_at timestamp DEFAULT now() NULL,
 	CONSTRAINT exercise_pkey PRIMARY KEY (exercise_id)
@@ -90,17 +84,3 @@ CREATE TABLE "content".exercise (
 
 
 
-
-drop table if exists course_simple.sentences_per_lesson ;
-CREATE TABLE course_simple.sentences_per_lesson (
-	exercise_id serial4 NOT NULL,
-	sentence_id int8 NOT NULL, 
-    to_sentence_id int8 NULL,    
-    word varchar(100) NULL,
-    words _varchar NULL,
-    options _varchar NULL,
-    to_options _varchar NULL,
-    audio_link varchar(300) NULL,
-    words_so_far _varchar NULL,
-	CONSTRAINT sentences_per_lesson_pkey PRIMARY KEY (exercise_id)
-);

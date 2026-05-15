@@ -44,9 +44,9 @@ if words count > 4
 
 
 
-*** Week 2 - Data Structure  ***
+*** Week 2 - Data Structure  - Done ***
 
-*** Week 3 - Example Courses ***
+*** Week 3 - Example Courses - Done ***
 
 *** Week 4 - Course Learning End to End  ***
 
