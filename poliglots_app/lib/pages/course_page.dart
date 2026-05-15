@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/courses_api.dart';
+import '../api/models.dart' as api;
 import '../theme.dart';
 import '../widgets/common.dart';
 
-class CoursePage extends StatelessWidget {
+class CoursePage extends ConsumerWidget {
   const CoursePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final courseId = (ModalRoute.of(context)?.settings.arguments as int?) ?? 1;
+    final modulesAsync = ref.watch(modulesProvider(courseId));
+    final selectedId = ref.watch(selectedModuleIdProvider);
+
+    // Effective module id once modules load: explicit selection wins,
+    // otherwise default to the first module so lessons still render.
+    int? effectiveModuleId(List<api.Module> modules) {
+      if (modules.isEmpty) return null;
+      if (selectedId != null && modules.any((m) => m.id == selectedId)) {
+        return selectedId;
+      }
+      return modules.first.id;
+    }
     return Scaffold(
       body: PhoneBackground(
         child: SafeArea(
@@ -93,7 +109,10 @@ class CoursePage extends StatelessWidget {
                         style: PolyText.sectionLabel(color: PolyColors.white(0.6))),
                     const Spacer(),
                     Text(
-                      '5 modules · scroll for more',
+                      modulesAsync.maybeWhen(
+                        data: (ms) => '${ms.length} modules · scroll for more',
+                        orElse: () => '…',
+                      ),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -108,20 +127,53 @@ class CoursePage extends StatelessWidget {
                 // Modules — vertical scroll, fixed height
                 SizedBox(
                   height: 240,
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _modules.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) => _ModuleRow(module: _modules[i]),
+                  child: modulesAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                    error: (err, _) => Center(
+                      child: Text(
+                        "Couldn't load modules\n$err",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                    data: (modules) {
+                      final effId = effectiveModuleId(modules);
+                      return ListView.separated(
+                        padding: EdgeInsets.zero,
+                        itemCount: modules.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, i) => _ModuleRow(
+                          module: _infoFromServer(modules, i, effId),
+                          onTap: () => ref
+                              .read(selectedModuleIdProvider.notifier)
+                              .set(modules[i].id),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 14),
 
-                // Section row — Lessons
+                // Section row — Lessons (reflects the selected module)
                 Row(
                   children: [
-                    Text('Lessons in Module 3',
-                        style: PolyText.sectionLabel(color: PolyColors.white(0.6))),
+                    Text(
+                      modulesAsync.maybeWhen(
+                        data: (modules) {
+                          final id = effectiveModuleId(modules);
+                          if (id == null) return 'Lessons';
+                          final m = modules.firstWhere((x) => x.id == id);
+                          return 'Lessons in ${m.title}';
+                        },
+                        orElse: () => 'Lessons',
+                      ),
+                      style: PolyText.sectionLabel(color: PolyColors.white(0.6)),
+                    ),
                     const Spacer(),
                     Text(
                       'swipe →',
@@ -136,15 +188,16 @@ class CoursePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
 
-                // Lessons — horizontal scroll
+                // Lessons — horizontal scroll, fetched per-module
                 SizedBox(
                   height: 150,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 0),
-                    itemCount: _lessons.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (context, i) => _LessonCard(lesson: _lessons[i]),
+                  child: modulesAsync.maybeWhen(
+                    data: (modules) {
+                      final id = effectiveModuleId(modules);
+                      if (id == null) return const SizedBox.shrink();
+                      return _LessonsSection(moduleId: id);
+                    },
+                    orElse: () => const SizedBox.shrink(),
                   ),
                 ),
 
@@ -181,30 +234,27 @@ class _ModuleInfo {
   });
 }
 
-const _modules = <_ModuleInfo>[
-  _ModuleInfo(
-      number: '1', name: 'First Words', progress: 1, pct: '4 / 4', state: _ModuleState.done),
-  _ModuleInfo(
-      number: '2',
-      name: 'Numbers & Colors',
-      progress: 1,
-      pct: '5 / 5',
-      state: _ModuleState.done),
-  _ModuleInfo(
-      number: '3',
-      name: 'Greetings & Introductions',
-      progress: 0.75,
-      pct: '3 / 4',
-      state: _ModuleState.selected),
-  _ModuleInfo(
-      number: '4', name: 'Family & People', progress: 0, pct: '0 / 5', state: _ModuleState.locked),
-  _ModuleInfo(
-      number: '5', name: 'Food & Drink', progress: 0, pct: '0 / 6', state: _ModuleState.locked),
-];
+/// Bridge the server's [Module] to the row widget's view model. State:
+/// done if the server flag is set; selected if its id matches the
+/// effective open-module id; locked otherwise.
+_ModuleInfo _infoFromServer(List<api.Module> modules, int i, int? effId) {
+  final m = modules[i];
+  final state = m.completed
+      ? _ModuleState.done
+      : (m.id == effId ? _ModuleState.selected : _ModuleState.locked);
+  return _ModuleInfo(
+    number: '${i + 1}',
+    name: m.title,
+    progress: m.completed ? 1.0 : 0.0,
+    pct: m.completed ? '✓' : '–',
+    state: state,
+  );
+}
 
 class _ModuleRow extends StatelessWidget {
   final _ModuleInfo module;
-  const _ModuleRow({required this.module});
+  final VoidCallback onTap;
+  const _ModuleRow({required this.module, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +264,7 @@ class _ModuleRow extends StatelessWidget {
       color: Colors.white.withValues(alpha: selected ? 0.16 : 0.05),
       borderRadius: PolyRadii.cardSm,
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: PolyRadii.cardSm,
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -336,12 +386,60 @@ class _LessonInfo {
   });
 }
 
-const _lessons = <_LessonInfo>[
-  _LessonInfo(num: 'L1', jp: 'はじめまして', en: 'Nice to meet you', done: true, selected: false, route: '/quiz'),
-  _LessonInfo(num: 'L2', jp: 'わたしは', en: 'I am…', done: true, selected: false, route: '/quiz'),
-  _LessonInfo(num: 'L3', jp: 'どうぞよろしく', en: 'Pleased to meet you', done: true, selected: false, route: '/annotated'),
-  _LessonInfo(num: 'L4 · CURRENT', jp: 'お名前は何ですか', en: 'What is your name?', done: false, selected: true, route: '/quiz'),
-];
+/// Lessons strip for the currently-open module. Pulled lazily so it
+/// only fetches when the user actually scrolls the module into view.
+class _LessonsSection extends ConsumerWidget {
+  final int moduleId;
+  const _LessonsSection({required this.moduleId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lessonsAsync = ref.watch(lessonsProvider(moduleId));
+    return lessonsAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+      error: (err, _) => Center(
+        child: Text(
+          "Couldn't load lessons",
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+      ),
+      data: (lessons) => ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: lessons.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, i) => _LessonCard(
+          lesson: _lessonInfoFromServer(lessons, i),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bridge server [Lesson] → row view model. The server's `title` is
+/// just `lesson <id>` today, so we surface the first word as the main
+/// label and the rest as the secondary line; falls back to title if
+/// the words list is empty.
+_LessonInfo _lessonInfoFromServer(List<api.Lesson> lessons, int i) {
+  final l = lessons[i];
+  final firstUndoneIdx = lessons.indexWhere((x) => !x.completed);
+  final native = l.words.isNotEmpty ? l.words.first : l.title;
+  final translation =
+      l.words.length > 1 ? l.words.skip(1).join(' · ') : l.description;
+  return _LessonInfo(
+    num: 'L${i + 1}',
+    jp: native,
+    en: translation,
+    done: l.completed,
+    selected: !l.completed && i == firstUndoneIdx,
+    route: '/quiz',
+  );
+}
 
 class _LessonCard extends StatelessWidget {
   final _LessonInfo lesson;

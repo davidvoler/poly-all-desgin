@@ -341,7 +341,11 @@ class _CourseCard extends StatelessWidget {
       color: Colors.white.withValues(alpha: active ? 0.14 : 0.06),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, '/course'),
+        onTap: () => Navigator.pushNamed(
+          context,
+          '/course',
+          arguments: int.parse(course.id),
+        ),
         borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),

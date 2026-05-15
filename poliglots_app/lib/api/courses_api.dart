@@ -6,15 +6,15 @@ import 'models.dart';
 
 /// Base URL for the Polyglots API. Override at compile-time via
 ///
-///     flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8001
+///     flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8004
 ///
 /// Common values:
-///   • iOS Simulator / macOS desktop : http://127.0.0.1:8001  (default)
-///   • Android Emulator              : http://10.0.2.2:8001
-///   • Real phone on same Wi-Fi      : `http://<your-mac-LAN-ip>:8001`
+///   • iOS Simulator / macOS desktop : http://127.0.0.1:8004  (default)
+///   • Android Emulator              : http://10.0.2.2:8004
+///   • Real phone on same Wi-Fi      : `http://<your-mac-LAN-ip>:8004`
 const String _kBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8001',
+  defaultValue: 'http://127.0.0.1:8004',
 );
 
 /// Single shared Dio instance for the app. Kept as a Provider so tests
@@ -36,13 +36,13 @@ class CoursesRepository {
   final Dio _dio;
   CoursesRepository(this._dio);
 
-  /// `GET /courses` — optionally filtered by language pair.
-  Future<List<CourseSummary>> fetchCourses({Lang? source, Lang? target}) async {
+  /// `GET /api/v1/course/?lang=…&to_lang=…` — courses for the given pair.
+  Future<List<CourseSummary>> fetchCourses({required Lang source, required Lang target}) async {
     final res = await _dio.get<List<dynamic>>(
-      '/courses',
+      '/api/v1/course/',
       queryParameters: {
-        if (source != null) 'source': source.code,
-        if (target != null) 'target': target.code,
+        'lang': source.code,
+        'to_lang': target.code,
       },
     );
     final data = res.data ?? const [];
@@ -52,10 +52,30 @@ class CoursesRepository {
         .toList();
   }
 
-  /// `GET /courses/{course_id}` — full module + lesson breakdown.
-  Future<CourseDetail> fetchCourse(String courseId) async {
-    final res = await _dio.get<Map<String, dynamic>>('/courses/$courseId');
-    return CourseDetail.fromJson(res.data!);
+  /// `GET /api/v1/module/?course_id=…` — modules for a single course.
+  Future<List<Module>> fetchModules(int courseId) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/module/',
+      queryParameters: {'course_id': courseId},
+    );
+    final data = res.data ?? const [];
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(Module.fromJson)
+        .toList();
+  }
+
+  /// `GET /api/v1/lesson/?module_id=…` — lessons for a single module.
+  Future<List<Lesson>> fetchLessons(int moduleId) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/lesson/',
+      queryParameters: {'module_id': moduleId},
+    );
+    final data = res.data ?? const [];
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(Lesson.fromJson)
+        .toList();
   }
 }
 
@@ -72,9 +92,29 @@ final coursesListProvider = FutureProvider<List<CourseSummary>>((ref) {
   return repo.fetchCourses(source: source, target: target);
 });
 
-/// One-off fetch of a course's detail; keyed by course id.
-final courseDetailProvider =
-    FutureProvider.family<CourseDetail, String>((ref, courseId) {
+/// Modules for a course; keyed by course id.
+final modulesProvider =
+    FutureProvider.family<List<Module>, int>((ref, courseId) {
   final repo = ref.watch(coursesRepositoryProvider);
-  return repo.fetchCourse(courseId);
+  return repo.fetchModules(courseId);
 });
+
+/// Lessons for a module; keyed by module id.
+final lessonsProvider =
+    FutureProvider.family<List<Lesson>, int>((ref, moduleId) {
+  final repo = ref.watch(coursesRepositoryProvider);
+  return repo.fetchLessons(moduleId);
+});
+
+/// Which module is currently open on the course page. `null` means
+/// "no explicit choice yet" — the page falls back to the first module
+/// returned by [modulesProvider].
+class SelectedModuleIdNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void set(int? id) => state = id;
+}
+
+final selectedModuleIdProvider =
+    NotifierProvider<SelectedModuleIdNotifier, int?>(SelectedModuleIdNotifier.new);
