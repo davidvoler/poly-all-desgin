@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import (
     lesson,
     course,
+    module,
+    exercise,
     user_data
 )
 
@@ -25,3 +27,9 @@ app.include_router(user_data.router,
 app.include_router(lesson.router,
     prefix="/api/v1/lesson",
     tags=["lesson"])
+app.include_router(module.router,
+    prefix="/api/v1/module",
+    tags=["module"])
+app.include_router(exercise.router,
+    prefix="/api/v1/exercise",
+    tags=["exercise"])

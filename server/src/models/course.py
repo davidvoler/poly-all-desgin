@@ -8,38 +8,37 @@ class UserCourseProgress(BaseModel):
     current_lesson: int = 1
 
 class Lesson(BaseModel):
-    id: int 
-    name: str
-    description: str = ''
-    words: list[str] = []
-    completed: int = 0
+    lesson_id: int 
+    title: str| None = ''
+    description: str | None = ''
+    words: list[str] | None = []
+    completed: int | None = 0
 
 class Module(BaseModel):
-    id: int 
-    name: str
-    description: str = ''
-    words: list[str] = []
-    lessons : list['Lesson'] = []
-    completed: int = 0
+    module_id: int 
+    title: str| None = ''
+    description: str | None = ''
+    words: list[str] | None = []
+    completed: int | None = 0
 
 class Course(BaseModel):
-    id: int 
-    title: str
-    description: str = ''
+    course_id: int 
+    title: str| None = ''
+    description: str | None = ''
     lang: str
     to_lang: str 
-    tags : list[str] = []
+    tags : list[str] | None = []
     user_course_progress: UserCourseProgress | None = None
 
 
 class Exercise(BaseModel):
-    id: int
-    sentence: str
-    exercise_type: str
-    options: list[str] = []
-    audio: str = ''
-    word1: str = ''
-    word2: str = ''
-    word3: str = ''
-    sentence_id: int | None = None
+    exercise_id: int
+    sentence: str | None = ''
+    exercise_type: str | None = ''
+    options: list | None = []
+    audio: str | None = ''
+    word1: str | None = ''
+    word2: str | None = ''
+    word3: str | None = ''
+    sentence_id: int |  None = None
     to_sentence_id: int | None = None
