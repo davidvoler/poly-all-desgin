@@ -15,7 +15,18 @@ class QuizPage extends ConsumerStatefulWidget {
 
 class _QuizPageState extends ConsumerState<QuizPage> {
   int _exerciseIndex = 0;
-  int? _selected;
+  // Set semantics for both modes: single-correct exercises (simple/read)
+  // replace the set on tap; `recognize` toggles, since multiple options
+  // are correct.
+  Set<int> _selected = {};
+  // Two-phase primary action: false → "Check answer" (reveals feedback),
+  // true → "Continue" (advances to the next exercise).
+  bool _checked = false;
+
+  void _resetForNext() {
+    _selected = {};
+    _checked = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,32 +66,54 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 }
                 final idx = _exerciseIndex.clamp(0, exercises.length - 1);
                 final ex = exercises[idx];
+                final multi = ex.exerciseType == 'recognize';
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
                   exercise: ex,
                   selected: _selected,
-                  onSelect: (i) => setState(() => _selected = i),
-                  onCheck: () {
-                    setState(() {
-                      _selected = null;
-                      _exerciseIndex = (idx + 1 < exercises.length)
-                          ? idx + 1
-                          : idx;
-                    });
+                  checked: _checked,
+                  onSelect: _checked
+                      ? null
+                      : (i) => setState(() {
+                            if (multi) {
+                              if (_selected.contains(i)) {
+                                _selected = {..._selected}..remove(i);
+                              } else {
+                                _selected = {..._selected, i};
+                              }
+                            } else {
+                              _selected = {i};
+                            }
+                          }),
+                  onPrimary: () {
+                    if (!_checked) {
+                      setState(() => _checked = true);
+                    } else {
+                      setState(() {
+                        if (idx + 1 < exercises.length) {
+                          _exerciseIndex = idx + 1;
+                        }
+                        _resetForNext();
+                      });
+                    }
                   },
-                  onSkip: () {
-                    setState(() {
-                      _selected = null;
-                      if (idx + 1 < exercises.length) _exerciseIndex = idx + 1;
-                    });
-                  },
-                  onBack: () {
-                    setState(() {
-                      _selected = null;
-                      if (idx > 0) _exerciseIndex = idx - 1;
-                    });
-                  },
+                  onSkip: idx < exercises.length - 1
+                      ? () {
+                          setState(() {
+                            _exerciseIndex = idx + 1;
+                            _resetForNext();
+                          });
+                        }
+                      : null,
+                  onBack: idx > 0
+                      ? () {
+                          setState(() {
+                            _exerciseIndex = idx - 1;
+                            _resetForNext();
+                          });
+                        }
+                      : null,
                 );
               },
             ),
@@ -95,19 +128,23 @@ class _QuizBody extends StatelessWidget {
   final int index;
   final int total;
   final Exercise exercise;
-  final int? selected;
-  final ValueChanged<int> onSelect;
-  final VoidCallback onCheck;
-  final VoidCallback onSkip;
-  final VoidCallback onBack;
+  final Set<int> selected;
+  final bool checked;
+  // Null while the user hasn't answered yet (or after Check, when tiles
+  // are locked); set once Check or Continue can fire.
+  final ValueChanged<int>? onSelect;
+  final VoidCallback onPrimary;
+  final VoidCallback? onSkip;
+  final VoidCallback? onBack;
 
   const _QuizBody({
     required this.index,
     required this.total,
     required this.exercise,
     required this.selected,
+    required this.checked,
     required this.onSelect,
-    required this.onCheck,
+    required this.onPrimary,
     required this.onSkip,
     required this.onBack,
   });
@@ -217,20 +254,34 @@ class _QuizBody extends StatelessWidget {
             padding: EdgeInsets.zero,
             itemCount: exercise.options.length,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) => _AnswerTile(
-              letter: String.fromCharCode(65 + i),
-              label: exercise.options[i].text,
-              selected: selected == i,
-              onTap: () => onSelect(i),
-            ),
+            itemBuilder: (context, i) {
+              final opt = exercise.options[i];
+              _TileFeedback feedback;
+              if (!checked) {
+                feedback = _TileFeedback.none;
+              } else if (opt.correct) {
+                feedback = _TileFeedback.correct;
+              } else if (selected.contains(i)) {
+                feedback = _TileFeedback.wrong;
+              } else {
+                feedback = _TileFeedback.none;
+              }
+              return _AnswerTile(
+                letter: String.fromCharCode(65 + i),
+                label: opt.text,
+                selected: selected.contains(i),
+                feedback: feedback,
+                onTap: onSelect == null ? null : () => onSelect!(i),
+              );
+            },
           ),
         ),
 
         const SizedBox(height: 14),
         CtaButton(
-          label: 'Check answer',
+          label: checked ? 'Continue' : 'Check answer',
           trailingIcon: Icons.arrow_forward,
-          onTap: selected == null ? null : onCheck,
+          onTap: (checked || selected.isNotEmpty) ? onPrimary : null,
         ),
       ],
     );
@@ -361,22 +412,39 @@ class _AudioButton extends StatelessWidget {
   }
 }
 
+enum _TileFeedback { none, correct, wrong }
+
 class _AnswerTile extends StatelessWidget {
   final String letter;
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+  final _TileFeedback feedback;
+  final VoidCallback? onTap;
   const _AnswerTile({
     required this.letter,
     required this.label,
     required this.selected,
+    required this.feedback,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isCorrect = feedback == _TileFeedback.correct;
+    final isWrong = feedback == _TileFeedback.wrong;
+    final accent = isCorrect
+        ? PolyColors.green500
+        : isWrong
+            ? PolyColors.red400
+            : null;
+
+    final fillAlpha = accent != null ? 0.22 : (selected ? 0.18 : 0.06);
+    final borderColor = accent ?? Colors.white.withValues(alpha: selected ? 0.45 : 0.14);
+
     return Material(
-      color: Colors.white.withValues(alpha: selected ? 0.18 : 0.06),
+      color: accent != null
+          ? accent.withValues(alpha: fillAlpha)
+          : Colors.white.withValues(alpha: fillAlpha),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -385,10 +453,8 @@ class _AnswerTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: selected ? 0.45 : 0.14),
-            ),
-            boxShadow: selected
+            border: Border.all(color: borderColor),
+            boxShadow: selected && accent == null
                 ? [
                     BoxShadow(
                         color: Colors.black.withValues(alpha: 0.20),
@@ -404,20 +470,30 @@ class _AnswerTile extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: selected ? Colors.white : Colors.white.withValues(alpha: 0.10),
+                  color: accent ??
+                      (selected ? Colors.white : Colors.white.withValues(alpha: 0.10)),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: selected ? Colors.white : Colors.white.withValues(alpha: 0.20),
+                    color: accent ??
+                        (selected ? Colors.white : Colors.white.withValues(alpha: 0.20)),
                   ),
                 ),
-                child: Text(
-                  letter,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? PolyColors.brandPrimary : Colors.white.withValues(alpha: 0.75),
-                  ),
-                ),
+                child: accent != null
+                    ? Icon(
+                        isCorrect ? Icons.check : Icons.close,
+                        size: 16,
+                        color: Colors.white,
+                      )
+                    : Text(
+                        letter,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: selected
+                              ? PolyColors.brandPrimary
+                              : Colors.white.withValues(alpha: 0.75),
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
