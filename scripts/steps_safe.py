@@ -73,10 +73,10 @@ async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
     join content_raw.sentences sentences
     on sentences.id = trans.to_id
     where sentences.lang = %s 
-    and (lang.word1 = %s or lang.word2 = %s)
+    and lang.word1 = %s 
     limit 30
     """
-    res = await get_query_results(sql, (lang, to_lang,to_lang, word, word))
+    res = await get_query_results(sql, (lang, to_lang,to_lang, word))
     # res =  [(r['text'], r['to_text'], r['id'], r['to_id']) for r in res]
     selected_sentences = []
     for r in res:
@@ -191,7 +191,7 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
             }
         i+=1
     modules.append(module)
-    yaml.safe_dump({'modules': modules}, open(f"../data/content/{lang}_{to_lang}_course{r}.yaml", "w"), allow_unicode=True)
+    yaml.safe_dump({'modules': modules}, open(f"../data/content/{lang}_{to_lang}_course{r}_v2.yaml", "w"), allow_unicode=True)
 def open_yaml(lang, to_lang, rank = False):
     r = "_by_rank" if rank else ""
     with open(f'../data/content/{lang}_{to_lang}_course{r}.yaml', 'r') as f:

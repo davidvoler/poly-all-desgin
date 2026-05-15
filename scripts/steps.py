@@ -57,7 +57,7 @@ async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
     join content_raw.sentences sentences
     on sentences.id = trans.to_id
     where sentences.lang = %s 
-    and (lang.word1 = %s or lang.word2 = %s)
+    and lang.word1 = %s 
     limit 30
     """
     res = await get_query_results(sql, (lang, to_lang,to_lang, word, word))
@@ -141,7 +141,7 @@ async def generate_course(lang: str, to_lang:str):
         
 async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
     r = "_by_rank" if rank else ""
-    with open(f"../data/content/{lang}_{to_lang}_course{r}.yaml", "w") as f:
+    with open(f"../data/content/{lang}_{to_lang}_course{r}_v2.yaml", "w") as f:
         module = 1
         f.write(f"modules:\n")
         f.write(f"  - module:\n")
@@ -189,16 +189,16 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
 
 def open_yaml(lang, to_lang, rank = False):
     r = "_by_rank" if rank else ""
-    with open(f'../data/content/{lang}_{to_lang}_course{r}.yaml', 'r') as f:
-        data = yaml.safe_load(f)
-    print(type(data))
-    for key, val in data.items():
-        print(key)
-        print(type(val))
-        for module in val:
-            print(type(module))
-            for k, v in module.items():
-                print(k)
+    # with open(f'../data/content/{lang}_{to_lang}_course{r}_v1.yaml', 'r') as f:
+    #     data = yaml.safe_load(f)
+    # print(type(data))
+    # for key, val in data.items():
+    #     print(key)
+    #     print(type(val))
+    #     for module in val:
+    #         print(type(module))
+    #         for k, v in module.items():
+    #             print(k)
 
 
     

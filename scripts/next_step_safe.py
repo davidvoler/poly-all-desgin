@@ -3,8 +3,19 @@ from db import get_query_results
 import random
 import asyncio
 words_for_recognize = set()
+words_for_recognize_split = set()
 lesson_words = set()
+import sys
+import unicodedata
+from multiprocessing import Pool
 
+_PUNCT = "".join(
+    chr(i) for i in range(sys.maxunicode)
+    if unicodedata.category(chr(i)).startswith("P")
+)
+
+def strip_punctuation(word):
+    return word.strip(_PUNCT)
 
 def add_words_for_recognize(word):
     if len(word) > 3:
@@ -16,6 +27,13 @@ def add_lesson_words(word):
         lesson_words.add(word)
 
 
+def add_lesson_words_split(text):
+    words = text.split()
+    for w in words:
+        if len(w) > 3:
+
+            words_for_recognize_split.add(w)
+
 async def get_sentences_voice(lang, sentence_id):
     sql = f"""SELECT recording FROM content_raw.audio WHERE lang = %s and id = {sentence_id}"""
     res = await get_query_results(sql, (lang,))
@@ -24,42 +42,7 @@ async def get_sentences_voice(lang, sentence_id):
             return r.get('recording')
     return "" 
 
-def simple_exercise(sentence:dict):
-    options = []
-    words = []
 
-    return {
-        'type': 'simple',    
-        'sentence_id': sentence.get('id'),
-        'sentence_to_id': sentence.get('id'),
-        'options': options,
-        'words': words,
-        'voice': None,
-    } 
-
-def identify_words_exercise(sentence:dict):
-    options = []
-    words = []
-    return {
-        'type': 'simple',    
-        'sentence_id': sentence.get('id'),
-        'sentence_to_id': sentence.get('id'),
-        'options': options,
-        'words': words,
-        'voice': None,
-    } 
-
-def understand_voice(sentence:dict):
-    options = []
-    words = []
-    return {
-        'type': 'understand_voice',    
-        'sentence_id': sentence.get('id'),
-        'sentence_to_id': sentence.get('id'),
-        'options': options,
-        'words': words,
-        'voice': None,
-    } 
 
 
 
@@ -89,12 +72,24 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
     
     for r in res:
         audio = await get_sentences_voice(lang, id)
-        text, word1, word2, word3, options, to_text, to_options, id, to_id = r
+        text = r.get('text')
+        word1 = r.get('word1')
+        word2 = r.get('word2')
+        word3 = r.get('word3')
+        options = r.get('options', [])
+        to_text = r.get('to_text')
+        to_options = r.get('to_options', [])
+        print(type(to_options), to_options)
         op = [{"text":o} for o in to_options]
         op.append({"text": to_text, "correct": True})
+        split_words = text.split()
+        split_words = [strip_punctuation(w) for w in split_words]
+        for w in split_words:
+            add_words_for_recognize(w)
         random.shuffle(op)
         ex.append({
             'type': 'simple',    
+            'text': text,
             'options': op,
             'voice': audio,
             'sentence_id': id,
@@ -103,13 +98,49 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
             'word2': word2, 
             'word3': word3,
         })
-        
+        if random.randint(0,10) < 3:
+            if audio:
+                if len(words_for_recognize)> 10:
+                    if len(split_words) >= 3:
+                        w_correct = random.sample(split_words, k=2)
+                        w_wrong = random.sample(list(words_for_recognize), k=4)
+                        all_words = list(set(w_correct + w_wrong))
+                        opt = [{"text": w, "correct": w in w_correct} for w in all_words]
+                        ex.append({
+                            'type': 'recognize',
+                            'text': text,
+                            'to_text': to_text,
+                            'options': opt,
+                            'voice': audio,
+                            'sentence_id': id,
+                            'sentence_to_id': to_id,
+                            'word1': word1, 
+                            'word2': word2, 
+                            'word3': word3,
+                        })
+        if random.randint(0,10) < 2:
+            op = [{"text":o} for o in options]
+            op.append({"text": text, "correct": True})
+            ex.append({
+                'type': 'read',    
+                'text': to_text,
+                'options': op,
+                'voice': audio,
+                'sentence_id': id,
+                'sentence_to_id': to_id,
+                'word1': word1, 
+                'word2': word2, 
+                'word3': word3,
+            })
+        break # single sentence translation for now
     return ex
 
 
 async def gen_lesson(l:dict):
     sentences = l.get('sentences', [])
     words = l.get('words', [])
+    for w in words:
+        add_lesson_words(w)
     sentences_count = len(sentences)
     exercises = []
     for s in sentences:
@@ -119,7 +150,8 @@ async def gen_lesson(l:dict):
         'lesson': l.get('lesson'),
         'title': "learning " + ", ".join(l.get('words', [])),
         'words': words,
-        'exercises': exercises
+        'exercises': exercises,
+        'words_so_far': list(lesson_words),
     }
 
 
@@ -139,25 +171,23 @@ async def gen_module(m:dict):
     }
 
 
+async def gen_and_save_module(m:dict):
+    gen_m =  await gen_module(m)
+    module_no = int(m.get('module'))
+    yaml.safe_dump({'modules': [gen_m]}, open(f"../data/content/gen_v2/module_{module_no}.yaml", "w"), allow_unicode=True)
+def g_module(m:dict):
+    asyncio.run(gen_and_save_module(m))
 
-async def gen_course(lang, to_lang, rank = False):
-    module = yaml.safe_load(open(f'../data/content/{lang}_{to_lang}_course_short{"_by_rank" if rank else ""}.yaml', 'r'))
+def gen_course(lang, to_lang, rank = False):
+    module = yaml.safe_load(open(f'../data/content/{lang}_{to_lang}_course_v2.yaml', 'r'))
     modules = module.get('modules', [])
-    gen_modules = []
+    modules = module.get('modules', [])
+    modules_20 = []
     for m in modules:
-        gen_m = await gen_module(m)
-        gen_modules.append(gen_m)
-
-        # module_no = int(m.get('module'))
-        # print("module_no", module_no)
-        # for l in m.get('lessons', {}):
-        #     lesson_no = int(l.get('lesson').split()[1])
-        #     print ("lesson_no", lesson_no)
-        #     sentences = l.get('sentences', [])
-        #     print("number of sentences", len(sentences))
-    
-
-    yaml.safe_dump({'modules': gen_modules}, open(f"../data/content/{lang}_{to_lang}_course_gen{'_by_rank' if rank else ''}.yaml", "w"), allow_unicode=True)
-
+        m_no = m.get('module')
+        if m_no <= 20:
+            modules_20.append(m)    
+    with Pool(processes=len(modules_20)) as pool:
+        pool.map(g_module, modules_20)
 if __name__ == '__main__':
     asyncio.run(gen_course('ar', 'en', rank = False))
