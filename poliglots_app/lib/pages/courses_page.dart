@@ -143,7 +143,20 @@ class CoursesPage extends ConsumerWidget {
                         padding: EdgeInsets.zero,
                         itemCount: courses.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, i) => _CourseCard(course: courses[i]),
+                        itemBuilder: (context, i) {
+                        final c = courses[i];
+                        return _CourseCard(
+                          course: c,
+                          onTap: () {
+                            final id = int.parse(c.id);
+                            ref
+                                .read(preferenceProvider.notifier)
+                                .save(courseId: id);
+                            Navigator.pushNamed(context, '/course',
+                                arguments: id);
+                          },
+                        );
+                      },
                       ),
                     );
                   }),
@@ -332,7 +345,8 @@ class _ArrowCell extends StatelessWidget {
 
 class _CourseCard extends StatelessWidget {
   final CourseSummary course;
-  const _CourseCard({required this.course});
+  final VoidCallback onTap;
+  const _CourseCard({required this.course, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -341,11 +355,7 @@ class _CourseCard extends StatelessWidget {
       color: Colors.white.withValues(alpha: active ? 0.14 : 0.06),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/course',
-          arguments: int.parse(course.id),
-        ),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),

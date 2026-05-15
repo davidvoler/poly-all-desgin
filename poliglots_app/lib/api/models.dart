@@ -74,6 +74,66 @@ class Module {
       );
 }
 
+/// Server-side per-user state returned by `GET /api/v1/preference/`.
+/// Mirrors what gets persisted via the POST endpoint.
+class Preference {
+  final int userId;
+  final int? courseId;
+  final int? moduleId;
+  final int? lessonId;
+  final String? uiLang;
+  final String? lang;
+  final String? toLang;
+
+  const Preference({
+    required this.userId,
+    this.courseId,
+    this.moduleId,
+    this.lessonId,
+    this.uiLang,
+    this.lang,
+    this.toLang,
+  });
+
+  factory Preference.fromJson(Map<String, dynamic> j) => Preference(
+        userId: j['user_id'] as int,
+        courseId: j['course_id'] as int?,
+        moduleId: j['module_id'] as int?,
+        lessonId: j['lesson_id'] as int?,
+        uiLang: j['ui_lang'] as String?,
+        lang: j['lang'] as String?,
+        toLang: j['to_lang'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        'course_id': courseId,
+        'module_id': moduleId,
+        'lesson_id': lessonId,
+        'ui_lang': uiLang,
+        'lang': lang,
+        'to_lang': toLang,
+      };
+
+  Preference copyWith({
+    int? courseId,
+    int? moduleId,
+    int? lessonId,
+    String? uiLang,
+    String? lang,
+    String? toLang,
+  }) =>
+      Preference(
+        userId: userId,
+        courseId: courseId ?? this.courseId,
+        moduleId: moduleId ?? this.moduleId,
+        lessonId: lessonId ?? this.lessonId,
+        uiLang: uiLang ?? this.uiLang,
+        lang: lang ?? this.lang,
+        toLang: toLang ?? this.toLang,
+      );
+}
+
 /// One choice within an [Exercise]. Exactly one option per exercise
 /// is the correct answer (`correct: true` on the server).
 class ExerciseOption {

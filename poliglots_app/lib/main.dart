@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'api/courses_api.dart';
+import 'api/models.dart';
 import 'i18n/translations.g.dart';
 import 'pages/annotated_page.dart';
 import 'pages/course_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/home_page.dart';
 import 'pages/quiz_page.dart';
+import 'state/lang.dart';
 import 'theme.dart';
 
 void main() {
@@ -16,9 +19,51 @@ void main() {
   LocaleSettings.useDeviceLocale();
   runApp(
     ProviderScope(
-      child: TranslationProvider(child: const PolyglotsApp()),
+      child: TranslationProvider(
+        child: const _PreferenceBootstrap(child: PolyglotsApp()),
+      ),
     ),
   );
+}
+
+/// Watches [preferenceProvider] once at app startup and seeds the
+/// in-memory view state (`speakLangProvider`, `learningLangProvider`,
+/// `uiLangProvider`, `selectedModuleIdProvider`) from whatever the
+/// server returns. Uses `setSilently` so the seed itself doesn't echo
+/// back to the server as a POST.
+class _PreferenceBootstrap extends ConsumerWidget {
+  final Widget child;
+  const _PreferenceBootstrap({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<Preference?>>(preferenceProvider, (prev, next) {
+      next.whenData((pref) {
+        if (pref == null) return;
+        if (pref.lang != null) {
+          ref
+              .read(speakLangProvider.notifier)
+              .setSilently(Lang.byCode(pref.lang!));
+        }
+        if (pref.toLang != null) {
+          ref
+              .read(learningLangProvider.notifier)
+              .setSilently(Lang.byCode(pref.toLang!));
+        }
+        if (pref.uiLang != null) {
+          ref
+              .read(uiLangProvider.notifier)
+              .setSilently(Lang.byCode(pref.uiLang!));
+        }
+        if (pref.moduleId != null) {
+          ref
+              .read(selectedModuleIdProvider.notifier)
+              .setSilently(pref.moduleId);
+        }
+      });
+    });
+    return child;
+  }
 }
 
 class PolyglotsApp extends StatelessWidget {

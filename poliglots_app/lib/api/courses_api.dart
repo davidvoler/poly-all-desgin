@@ -90,6 +90,25 @@ class CoursesRepository {
         .map(Exercise.fromJson)
         .toList();
   }
+
+  /// `GET /api/v1/preference/?user_id=…` — null when the user has no row.
+  Future<Preference?> fetchPreference(int userId) async {
+    final res = await _dio.get<dynamic>(
+      '/api/v1/preference/',
+      queryParameters: {'user_id': userId},
+    );
+    final data = res.data;
+    if (data is! Map) return null;
+    return Preference.fromJson(data.cast<String, dynamic>());
+  }
+
+  /// `POST /api/v1/preference/` — server upserts on `user_id`.
+  Future<void> updatePreference(Preference pref) async {
+    await _dio.post<dynamic>(
+      '/api/v1/preference/',
+      data: pref.toJson(),
+    );
+  }
 }
 
 final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {
@@ -128,13 +147,64 @@ final exercisesProvider =
 
 /// Which module is currently open on the course page. `null` means
 /// "no explicit choice yet" — the page falls back to the first module
-/// returned by [modulesProvider].
+/// returned by [modulesProvider]. The setter also pushes the chosen
+/// module id to the server so it survives across sessions.
 class SelectedModuleIdNotifier extends Notifier<int?> {
   @override
   int? build() => null;
 
-  void set(int? id) => state = id;
+  void set(int? id) {
+    state = id;
+    if (id != null) {
+      ref.read(preferenceProvider.notifier).save(moduleId: id);
+    }
+  }
+
+  /// Seed from server preferences without echoing back a POST.
+  void setSilently(int? id) => state = id;
 }
 
 final selectedModuleIdProvider =
     NotifierProvider<SelectedModuleIdNotifier, int?>(SelectedModuleIdNotifier.new);
+
+/// Current user id. Hard-coded to 1 in dev; refactor when auth lands.
+const int kCurrentUserId = 1;
+
+/// Owns server-side per-user state. `build()` fetches once on first
+/// watch; mutating methods POST and refresh local state synchronously.
+class PreferenceNotifier extends AsyncNotifier<Preference?> {
+  @override
+  Future<Preference?> build() async {
+    final repo = ref.read(coursesRepositoryProvider);
+    return repo.fetchPreference(kCurrentUserId);
+  }
+
+  /// Merge new fields into the current preference, push to server, and
+  /// update local state optimistically. Named `save` (not `update`) so
+  /// it doesn't collide with [AsyncNotifier.update].
+  Future<void> save({
+    int? courseId,
+    int? moduleId,
+    int? lessonId,
+    String? uiLang,
+    String? lang,
+    String? toLang,
+  }) async {
+    final current = state.value ?? const Preference(userId: kCurrentUserId);
+    final next = current.copyWith(
+      courseId: courseId,
+      moduleId: moduleId,
+      lessonId: lessonId,
+      uiLang: uiLang,
+      lang: lang,
+      toLang: toLang,
+    );
+    state = AsyncValue.data(next);
+    final repo = ref.read(coursesRepositoryProvider);
+    await repo.updatePreference(next);
+  }
+}
+
+final preferenceProvider =
+    AsyncNotifierProvider<PreferenceNotifier, Preference?>(
+        PreferenceNotifier.new);

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/courses_api.dart';
 import '../i18n/translations.g.dart';
 
 /// UI-language catalog for the speak/learn pickers. Native names stay in
@@ -54,6 +55,14 @@ class UiLangNotifier extends Notifier<Lang> {
   }
 
   void set(Lang lang) {
+    _apply(lang);
+    ref.read(preferenceProvider.notifier).save(uiLang: lang.code);
+  }
+
+  /// Seed from server preferences without echoing back a POST.
+  void setSilently(Lang lang) => _apply(lang);
+
+  void _apply(Lang lang) {
     state = lang;
     final uiLocale = AppLocale.values.firstWhere(
       (l) => l.languageCode == lang.code,
@@ -75,7 +84,13 @@ class SpeakLangNotifier extends Notifier<Lang> {
   @override
   Lang build() => Lang.english;
 
-  void set(Lang lang) => state = lang;
+  void set(Lang lang) {
+    state = lang;
+    ref.read(preferenceProvider.notifier).save(lang: lang.code);
+  }
+
+  /// Seed from server preferences without echoing back a POST.
+  void setSilently(Lang lang) => state = lang;
 }
 
 final speakLangProvider =
@@ -87,7 +102,13 @@ class LearningLangNotifier extends Notifier<Lang> {
   @override
   Lang build() => Lang.japanese;
 
-  void set(Lang lang) => state = lang;
+  void set(Lang lang) {
+    state = lang;
+    ref.read(preferenceProvider.notifier).save(toLang: lang.code);
+  }
+
+  /// Seed from server preferences without echoing back a POST.
+  void setSilently(Lang lang) => state = lang;
 }
 
 final learningLangProvider =

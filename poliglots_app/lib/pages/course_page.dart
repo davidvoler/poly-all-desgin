@@ -415,9 +415,21 @@ class _LessonsSection extends ConsumerWidget {
         padding: EdgeInsets.zero,
         itemCount: lessons.length,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (context, i) => _LessonCard(
-          lesson: _lessonInfoFromServer(lessons, i),
-        ),
+        itemBuilder: (context, i) {
+          final info = _lessonInfoFromServer(lessons, i);
+          return _LessonCard(
+            lesson: info,
+            onTap: info.route == null
+                ? null
+                : () {
+                    ref
+                        .read(preferenceProvider.notifier)
+                        .save(lessonId: info.id);
+                    Navigator.pushNamed(context, info.route!,
+                        arguments: info.id);
+                  },
+          );
+        },
       ),
     );
   }
@@ -446,7 +458,8 @@ _LessonInfo _lessonInfoFromServer(List<api.Lesson> lessons, int i) {
 
 class _LessonCard extends StatelessWidget {
   final _LessonInfo lesson;
-  const _LessonCard({required this.lesson});
+  final VoidCallback? onTap;
+  const _LessonCard({required this.lesson, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -455,13 +468,7 @@ class _LessonCard extends StatelessWidget {
       color: selected ? Colors.white : Colors.white.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: lesson.route == null
-            ? null
-            : () => Navigator.pushNamed(
-                  context,
-                  lesson.route!,
-                  arguments: lesson.id,
-                ),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
           width: 130,
