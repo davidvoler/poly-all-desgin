@@ -1,26 +1,20 @@
 from fastapi import APIRouter, Depends
-from models.lesson import Lesson, UserLessonProgress
-
+from models.course import Lesson
+from utils.db import get_query_results
 router = APIRouter()
 
 
-@router.get("/", response_model=Lesson)
-async def get_lesson(lesson_id: int):
-    # Placeholder for fetching courses from the database
-    return Lesson(
-        id=1,
-        name="Introduction to Python",
-        description="Learn the basics of Python programming.",
-        language="English",
-        user_language="English",                
-        module_count=3,
-        lesson_count=10,
-        tags=["programming", "python", "beginner"],
-        user_lesson_progress=UserLessonProgress(
-            user_id=1,
-            lesson_id=1,
-            progress=0.5,
-            current_module=2,
-            current_lesson=5
-        )
-    )
+@router.get("/", response_model=list[Lesson])
+async def get_lessons(module_id: int):
+    sql = """
+    SELECT *  
+    FROM course_simple.lesson
+    WHERE module_id = %s
+    """
+    params = (module_id,)
+    res = await get_query_results(sql, params)
+    results = []
+    for r in res:
+        lesson = Lesson(**r)
+        results.append(lesson)
+    return results

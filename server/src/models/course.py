@@ -7,16 +7,12 @@ class UserCourseProgress(BaseModel):
     current_module: int = 1
     current_lesson: int = 1
 
-
-
 class Lesson(BaseModel):
     id: int 
     name: str
     description: str = ''
     words: list[str] = []
     completed: int = 0
-
-
 
 class Module(BaseModel):
     id: int 
@@ -26,15 +22,24 @@ class Module(BaseModel):
     lessons : list['Lesson'] = []
     completed: int = 0
 
-
 class Course(BaseModel):
     id: int 
-    name: str
+    title: str
     description: str = ''
-    language: str 
-    user_language: str
-    module_count: int = 1
-    lesson_count: int = 1
+    lang: str
+    to_lang: str 
     tags : list[str] = []
-    modules: list[Module] = []
     user_course_progress: UserCourseProgress | None = None
+
+
+class Exercise(BaseModel):
+    id: int
+    sentence: str
+    exercise_type: str
+    options: list[str] = []
+    audio: str = ''
+    word1: str = ''
+    word2: str = ''
+    word3: str = ''
+    sentence_id: int | None = None
+    to_sentence_id: int | None = None
