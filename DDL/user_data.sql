@@ -8,15 +8,17 @@ CREATE TABLE user_data.users (
 );
 
 
-
+--drop table user_data.preference;
 CREATE TABLE IF NOT EXISTS user_data.preference (
-    user_id   VARCHAR(100)  NOT NULL,
+    user_id   serial4  NOT NULL,
     ui_lang   VARCHAR(12),
-    lang   VARCHAR(12) NOT NULL DEFAULT '',
-    to_lang   VARCHAR(12),
-    course_id int4 null DEFAULT 0,
-    created_at   DATETIME  DEFAULT now(),
-    updated_at   DATETIME  DEFAULT now(),
+    lang   VARCHAR(12)  NULL DEFAULT '',
+    to_lang   VARCHAR(12) NULL DEFAULT '',
+    course_id int4 null ,
+    module_id int4 null, 
+    lesson_id int4 null, 
+    created_at   date  DEFAULT now(),
+    updated_at   date  DEFAULT now(),
     CONSTRAINT preference_pkey PRIMARY KEY (user_id, lang)
 );
 
