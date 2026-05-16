@@ -11,7 +11,7 @@ class Results(BaseModel):
     word1: str| None = ''
     word2: str| None = ''
     word3: str| None = ''
-    answer_delay_ms: str| None = ''
+    answer_delay_ms: str| None = 0
     attempts: int| None = 0
     correct: bool| None = False
     correct_ratio: float| None = 0.0

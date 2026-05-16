@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS user_data.preference (
 
 -- DROP TABLE users_data.results;
 
-CREATE TABLE users_data.results (
+CREATE TABLE user_data.results (
     id SERIAL4 PRIMARY KEY NOT NULL,
 	user_id varchar(100),
 	lang varchar(12) NOT NULL,

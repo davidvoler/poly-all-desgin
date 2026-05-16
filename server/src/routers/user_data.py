@@ -23,8 +23,8 @@ async def save_results(results: Results):
     INSERT INTO user_data.results (
         user_id, course_id, module_id, lesson_id, exercise_id,
         word1, word2, word3, sentence_id,
-        answer_delay_ms, attempts, correct, mark, lang
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        attempts,  mark, lang
+    ) VALUES (%s, %s, %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         results.user_id,
@@ -36,11 +36,11 @@ async def save_results(results: Results):
         results.word2,
         results.word3,
         results.sentence_id,
-        results.answer_delay_ms,
         results.attempts,
-        results.correct,
         mark,
         results.lang,
      )
+    print(params)
+    print(results)
     await run_query(sql, params)
     return {"message": "Results saved successfully", "mark": mark}
