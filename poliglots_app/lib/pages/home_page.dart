@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/courses_api.dart';
 import '../i18n/translations.g.dart';
 import '../state/lang.dart';
 import '../theme.dart';
@@ -218,11 +219,26 @@ class _Medallion extends ConsumerWidget {
   }
 }
 
-class _CourseCaption extends StatelessWidget {
+class _CourseCaption extends ConsumerWidget {
   const _CourseCaption();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Resolve the current course's title from the saved preference +
+    // the courses list. Fall back to the translated placeholder while
+    // either is still loading or the course isn't in the list.
+    final courseId = ref.watch(
+      preferenceProvider.select((p) => p.value?.courseId),
+    );
+    final title = ref.watch(coursesListProvider).maybeWhen(
+          data: (courses) {
+            for (final c in courses) {
+              if (c.id == courseId?.toString()) return c.title;
+            }
+            return t.home.course_title;
+          },
+          orElse: () => t.home.course_title,
+        );
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(14)),
       child: BackdropFilter(
@@ -241,7 +257,8 @@ class _CourseCaption extends StatelessWidget {
                   style: PolyText.smallCaps(size: 9, color: PolyColors.white(0.6))),
               const SizedBox(height: 5),
               Text(
-                t.home.course_title,
+                title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
