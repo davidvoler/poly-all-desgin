@@ -7,11 +7,17 @@ router = APIRouter()
 
 
 def calculate_mark(correct_ratio: float, incorrect_count: float, attempts: int) -> float:
-    """mark = correct_ratio minus a 0.25 penalty per wrong pick,
-    clamped to [0, 1]."""
+    """Calculate a mark for an exercise attempt based on the correct ratio, incorrect count, and number of attempts."""
     print(correct_ratio, incorrect_count, attempts)
-    mark = correct_ratio - 0.25 * incorrect_count
-    return max(0.0, min(1.0, mark))
+    if correct_ratio == 1 and incorrect_count == 0:
+        if attempts == 1:
+            return 1.0
+        else:
+            return 0.9
+    else:
+        if correct_ratio == 0:
+            return -1.0
+        return max(-1.0, (correct_ratio + 0.2 * incorrect_count)*-1)
 
 
 @router.post("/")
