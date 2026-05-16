@@ -64,7 +64,6 @@ class CoursesPage extends ConsumerWidget {
                         label: 'I speak',
                         lang: speak,
                         sub: 'Native',
-                        disabled: {learning},
                         onChanged: (l) =>
                             ref.read(speakLangProvider.notifier).set(l),
                       ),
@@ -78,7 +77,6 @@ class CoursesPage extends ConsumerWidget {
                         label: 'Learning',
                         lang: learning,
                         sub: learning.englishName,
-                        disabled: {speak},
                         onChanged: (l) =>
                             ref.read(learningLangProvider.notifier).set(l),
                       ),
@@ -174,13 +172,11 @@ class _Picker extends StatefulWidget {
   final String label;
   final Lang lang;
   final String sub;
-  final Set<Lang> disabled;
   final ValueChanged<Lang> onChanged;
   const _Picker({
     required this.label,
     required this.lang,
     required this.sub,
-    required this.disabled,
     required this.onChanged,
   });
 
@@ -218,7 +214,6 @@ class _PickerState extends State<_Picker> {
               LanguageMenuItem(
                 lang: l,
                 selected: l == widget.lang,
-                disabled: widget.disabled.contains(l),
                 onTap: () {
                   _menu.close();
                   widget.onChanged(l);

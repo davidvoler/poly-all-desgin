@@ -7,7 +7,7 @@ Design a step based plan for getting to some target every week
 *** Week 1 - UI/UX - DONE ***
 
 - [v] create tables 
-- [] decide on the type of exercises 
+- [v] decide on the type of exercises 
 
 - listen and select options
 - annotated sentence - annotate all 3 specific words 
@@ -66,13 +66,14 @@ if words count > 4
 - sentences 
     - repeat sentences you have already learned 
 
-    
+
 *** App UX improvements *** 
 
 - modules vertical and lessons horizontal
 - design and implement quiz end page. 
     - repeat lesson 
     - next lesson 
+- add end of quiz page
 
 *** Week 6 - Deploy  ***
 

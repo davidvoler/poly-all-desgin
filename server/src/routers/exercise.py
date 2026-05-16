@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 from models.course import Exercise
 from utils.db import get_query_results
+import random
+
 router = APIRouter()
 
 
@@ -17,4 +19,5 @@ async def get_exercises(lesson_id: int):
     for r in res:
         exercise = Exercise(**r)
         results.append(exercise)
-    return results
+    random.shuffle(results)
+    return results[:10]
