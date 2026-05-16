@@ -114,6 +114,14 @@ class CoursesRepository {
       data: pref.toJson(),
     );
   }
+
+  /// `POST /api/v1/user_data/` — append one answered-exercise result.
+  Future<void> saveResults(Results results) async {
+    await _dio.post<dynamic>(
+      '/api/v1/user_data/',
+      data: results.toJson(),
+    );
+  }
 }
 
 final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {

@@ -15,17 +15,61 @@ class QuizPage extends ConsumerStatefulWidget {
 
 class _QuizPageState extends ConsumerState<QuizPage> {
   int _exerciseIndex = 0;
+  // Per-question state, keyed by exercise index, so navigating Back/Skip
+  // restores a previously answered question with its feedback intact.
   // Set semantics for both modes: single-correct exercises (simple/read)
   // replace the set on tap; `recognize` toggles, since multiple options
   // are correct.
-  Set<int> _selected = {};
-  // Two-phase primary action: false → "Check answer" (reveals feedback),
-  // true → "Continue" (advances to the next exercise).
-  bool _checked = false;
+  final Map<int, Set<int>> _selectedByIndex = {};
+  // Indices the user has pressed "Check answer" on (feedback revealed).
+  final Set<int> _checkedIndices = {};
+  // Set once the user advances past the last exercise — swaps the quiz
+  // body for the completion screen.
+  bool _finished = false;
 
-  void _resetForNext() {
-    _selected = {};
-    _checked = false;
+  void _restartLesson() {
+    setState(() {
+      _exerciseIndex = 0;
+      _finished = false;
+      _selectedByIndex.clear();
+      _checkedIndices.clear();
+    });
+  }
+
+  /// Fired once, when the user reveals feedback for an exercise. POSTs
+  /// the attempt (correct or not) so progress is tracked server-side.
+  void _submitResult(Exercise ex, Set<int> selected, int lessonId) {
+    final correctIdx = <int>{
+      for (var k = 0; k < ex.options.length; k++)
+        if (ex.options[k].correct) k,
+    };
+    final chosenCorrect =
+        selected.where(correctIdx.contains).length;
+    final incorrectCount =
+        selected.where((i) => !correctIdx.contains(i)).length;
+    final correctRatio =
+        correctIdx.isEmpty ? 0.0 : chosenCorrect / correctIdx.length;
+    final isCorrect =
+        chosenCorrect == correctIdx.length && incorrectCount == 0;
+    final pref = ref.read(preferenceProvider).value;
+    ref.read(coursesRepositoryProvider).saveResults(
+          Results(
+            userId: kCurrentUserId,
+            lang: pref?.lang ?? '',
+            courseId: pref?.courseId,
+            moduleId: pref?.moduleId,
+            lessonId: lessonId,
+            exerciseId: ex.id,
+            sentenceId: ex.sentenceId,
+            word1: ex.word1,
+            word2: ex.word2,
+            word3: ex.word3,
+            attempts: 1,
+            correct: isCorrect,
+            correctRatio: correctRatio,
+            incorrectCount: incorrectCount,
+          ),
+        );
   }
 
   @override
@@ -64,59 +108,193 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     ),
                   );
                 }
+                if (_finished) {
+                  return _QuizComplete(
+                    lessonId: lessonId,
+                    onRepeat: _restartLesson,
+                  );
+                }
                 final idx = _exerciseIndex.clamp(0, exercises.length - 1);
                 final ex = exercises[idx];
                 final multi = ex.exerciseType == 'recognize';
+                final selected = _selectedByIndex[idx] ?? const <int>{};
+                final checked = _checkedIndices.contains(idx);
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
                   exercise: ex,
-                  selected: _selected,
-                  checked: _checked,
-                  onSelect: _checked
+                  selected: selected,
+                  checked: checked,
+                  onSelect: checked
                       ? null
                       : (i) => setState(() {
+                            final cur = {...selected};
                             if (multi) {
-                              if (_selected.contains(i)) {
-                                _selected = {..._selected}..remove(i);
+                              if (cur.contains(i)) {
+                                cur.remove(i);
                               } else {
-                                _selected = {..._selected, i};
+                                cur.add(i);
                               }
                             } else {
-                              _selected = {i};
+                              cur
+                                ..clear()
+                                ..add(i);
                             }
+                            _selectedByIndex[idx] = cur;
                           }),
                   onPrimary: () {
-                    if (!_checked) {
-                      setState(() => _checked = true);
+                    if (!checked) {
+                      _submitResult(ex, selected, lessonId);
+                      setState(() => _checkedIndices.add(idx));
+                    } else if (idx + 1 < exercises.length) {
+                      setState(() => _exerciseIndex = idx + 1);
                     } else {
-                      setState(() {
-                        if (idx + 1 < exercises.length) {
-                          _exerciseIndex = idx + 1;
-                        }
-                        _resetForNext();
-                      });
+                      setState(() => _finished = true);
                     }
                   },
                   onSkip: idx < exercises.length - 1
-                      ? () {
-                          setState(() {
-                            _exerciseIndex = idx + 1;
-                            _resetForNext();
-                          });
-                        }
+                      ? () => setState(() => _exerciseIndex = idx + 1)
                       : null,
                   onBack: idx > 0
-                      ? () {
-                          setState(() {
-                            _exerciseIndex = idx - 1;
-                            _resetForNext();
-                          });
-                        }
+                      ? () => setState(() => _exerciseIndex = idx - 1)
                       : null,
                 );
               },
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown after the last exercise. "Next Lesson" jumps to the following
+/// lesson in the current module (resolved via [preferenceProvider]'s
+/// `moduleId` + [lessonsProvider]); falls back to popping back to the
+/// course page when this is the module's last lesson.
+class _QuizComplete extends ConsumerWidget {
+  final int lessonId;
+  final VoidCallback onRepeat;
+  const _QuizComplete({required this.lessonId, required this.onRepeat});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final moduleId =
+        ref.watch(preferenceProvider.select((p) => p.value?.moduleId));
+    final lessons = moduleId == null
+        ? const <Lesson>[]
+        : (ref.watch(lessonsProvider(moduleId)).value ?? const <Lesson>[]);
+
+    final i = lessons.indexWhere((l) => l.id == lessonId);
+    final Lesson? current = i != -1 ? lessons[i] : null;
+    final Lesson? next =
+        (i != -1 && i + 1 < lessons.length) ? lessons[i + 1] : null;
+
+    String name(Lesson? l) =>
+        (l != null && l.title.isNotEmpty) ? l.title : 'this lesson';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            RoundIconButton(
+              icon: Icons.close,
+              tooltip: 'Close',
+              onTap: () => Navigator.maybePop(context),
+            ),
+          ],
+        ),
+        const Spacer(),
+        const Icon(Icons.celebration, size: 64, color: Colors.white),
+        const SizedBox(height: 16),
+        Text(
+          'Lesson ${name(current)} completed',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: -0.4,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          next != null
+              ? 'Nice work — ready for the next one?'
+              : "You've finished the last lesson in this module.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+        ),
+        const Spacer(),
+        CtaButton(
+          label: next != null ? 'Continue to ${name(next)}' : 'Back to course',
+          trailingIcon: Icons.arrow_forward,
+          onTap: () {
+            if (next != null) {
+              ref.read(preferenceProvider.notifier).save(lessonId: next.id);
+              Navigator.pushReplacementNamed(context, '/quiz',
+                  arguments: next.id);
+            } else {
+              Navigator.maybePop(context);
+            }
+          },
+        ),
+        const SizedBox(height: 10),
+        _SecondaryButton(
+          label: 'Repeat lesson',
+          icon: Icons.refresh,
+          onTap: onRepeat,
+        ),
+      ],
+    );
+  }
+}
+
+/// Translucent glass pill — secondary action paired with [CtaButton].
+class _SecondaryButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _SecondaryButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.08),
+      borderRadius: PolyRadii.pill,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: PolyRadii.pill,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: PolyRadii.pill,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: Colors.white),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.26,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),

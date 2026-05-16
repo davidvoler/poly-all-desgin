@@ -38,7 +38,7 @@ CREATE TABLE users_data.results (
 	lesson_id int8 DEFAULT 0 NULL,
 	exercise_id int8 DEFAULT 0 NULL,
 	exercise_type varchar(100) DEFAULT ''::character varying NULL,
-	mark SMALLINT DEFAULT 0,
+	mark REAL DEFAULT 0.0 NULL,
 	attempts SMALLINT DEFAULT 0 NULL,
 	answer_delay_ms int4 DEFAULT 0 NULL,
     word varchar(255) NULL,
@@ -46,8 +46,7 @@ CREATE TABLE users_data.results (
     word2 varchar(255) NULL,
     word3 varchar(255) NULL,
     sentence_id varchar(255) NULL,
-	created_at timestamp DEFAULT now(),
-	CONSTRAINT results_pkey PRIMARY KEY (id)
+	created_at timestamp DEFAULT now()
 );
 
 CREATE INDEX idx_results_user_lang_course ON users_data.results (user_id, lang, course_id, lesson_id);

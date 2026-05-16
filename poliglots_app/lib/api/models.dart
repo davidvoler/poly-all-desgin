@@ -161,6 +161,7 @@ class Exercise {
   final String word1;
   final String word2;
   final String word3;
+  final int? sentenceId;
 
   const Exercise({
     required this.id,
@@ -171,6 +172,7 @@ class Exercise {
     required this.word1,
     required this.word2,
     required this.word3,
+    required this.sentenceId,
   });
 
   factory Exercise.fromJson(Map<String, dynamic> j) => Exercise(
@@ -185,7 +187,67 @@ class Exercise {
         word1: (j['word1'] as String?) ?? '',
         word2: (j['word2'] as String?) ?? '',
         word3: (j['word3'] as String?) ?? '',
+        sentenceId: j['sentence_id'] as int?,
       );
+}
+
+/// Write-only payload for `POST /api/v1/user_data/` — one row per
+/// answered exercise.
+class Results {
+  final int userId;
+  final String lang;
+  final int? courseId;
+  final int? moduleId;
+  final int? lessonId;
+  final int? exerciseId;
+  final int? sentenceId;
+  final String word1;
+  final String word2;
+  final String word3;
+  final String answerDelayMs;
+  final int attempts;
+  final bool correct;
+  // Fraction of the exercise's correct options the user picked (1 of 2
+  // correct → 0.5). Server derives the final mark from this.
+  final double correctRatio;
+  // How many wrong options the user picked.
+  final int incorrectCount;
+
+  const Results({
+    required this.userId,
+    required this.lang,
+    this.courseId,
+    this.moduleId,
+    this.lessonId,
+    this.exerciseId,
+    this.sentenceId,
+    this.word1 = '',
+    this.word2 = '',
+    this.word3 = '',
+    this.answerDelayMs = '',
+    this.attempts = 1,
+    this.correct = false,
+    this.correctRatio = 0.0,
+    this.incorrectCount = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        'lang': lang,
+        'course_id': courseId,
+        'module_id': moduleId,
+        'lesson_id': lessonId,
+        'exercise_id': exerciseId,
+        'sentence_id': sentenceId,
+        'word1': word1,
+        'word2': word2,
+        'word3': word3,
+        'answer_delay_ms': answerDelayMs,
+        'attempts': attempts,
+        'correct': correct,
+        'correct_ratio': correctRatio,
+        'incorrect_count': incorrectCount,
+      };
 }
 
 /// Shape returned by `GET /api/v1/lesson/?module_id=…` — one lesson
