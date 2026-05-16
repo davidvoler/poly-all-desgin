@@ -37,12 +37,17 @@ class CoursesRepository {
   CoursesRepository(this._dio);
 
   /// `GET /api/v1/course/?lang=…&to_lang=…` — courses for the given pair.
-  Future<List<CourseSummary>> fetchCourses({required Lang source, required Lang target}) async {
+  /// Server contract: `lang` is the language being **learned**,
+  /// `to_lang` is the student's **native** language.
+  Future<List<CourseSummary>> fetchCourses({
+    required Lang learning,
+    required Lang native,
+  }) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/course/',
       queryParameters: {
-        'lang': source.code,
-        'to_lang': target.code,
+        'lang': learning.code,
+        'to_lang': native.code,
       },
     );
     final data = res.data ?? const [];
@@ -119,9 +124,9 @@ final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {
 /// (the courses list is conceptually scoped to the current pair).
 final coursesListProvider = FutureProvider<List<CourseSummary>>((ref) {
   final repo = ref.watch(coursesRepositoryProvider);
-  final source = ref.watch(speakLangProvider);
-  final target = ref.watch(learningLangProvider);
-  return repo.fetchCourses(source: source, target: target);
+  final native = ref.watch(speakLangProvider);
+  final learning = ref.watch(learningLangProvider);
+  return repo.fetchCourses(learning: learning, native: native);
 });
 
 /// Modules for a course; keyed by course id.

@@ -37,8 +37,10 @@ class CourseSummary {
       subtitle: (j['description'] as String?) ?? '',
       icon: 'play_arrow',
       levelPill: tags.isNotEmpty ? tags.first : '',
-      sourceLang: Lang.byCode(j['lang'] as String),
-      targetLang: Lang.byCode(j['to_lang'] as String),
+      // Server: `lang` = language being learned, `to_lang` = student's
+      // native language. `sourceLang` is the native/"I speak" side.
+      sourceLang: Lang.byCode(j['to_lang'] as String),
+      targetLang: Lang.byCode(j['lang'] as String),
       inProgress: progressValue != null && progressValue > 0 && progressValue < 1,
       progress: progressValue,
       footer: progressValue != null

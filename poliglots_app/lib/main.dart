@@ -40,14 +40,16 @@ class _PreferenceBootstrap extends ConsumerWidget {
     ref.listen<AsyncValue<Preference?>>(preferenceProvider, (prev, next) {
       next.whenData((pref) {
         if (pref == null) return;
+        // Server: `lang` = language being learned, `to_lang` = the
+        // student's native ("I speak") language.
         if (pref.lang != null) {
           ref
-              .read(speakLangProvider.notifier)
+              .read(learningLangProvider.notifier)
               .setSilently(Lang.byCode(pref.lang!));
         }
         if (pref.toLang != null) {
           ref
-              .read(learningLangProvider.notifier)
+              .read(speakLangProvider.notifier)
               .setSilently(Lang.byCode(pref.toLang!));
         }
         if (pref.uiLang != null) {

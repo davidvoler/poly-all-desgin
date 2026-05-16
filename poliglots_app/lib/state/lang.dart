@@ -86,7 +86,8 @@ class SpeakLangNotifier extends Notifier<Lang> {
 
   void set(Lang lang) {
     state = lang;
-    ref.read(preferenceProvider.notifier).save(lang: lang.code);
+    // "I speak" is the student's native language → server's `to_lang`.
+    ref.read(preferenceProvider.notifier).save(toLang: lang.code);
   }
 
   /// Seed from server preferences without echoing back a POST.
@@ -104,7 +105,8 @@ class LearningLangNotifier extends Notifier<Lang> {
 
   void set(Lang lang) {
     state = lang;
-    ref.read(preferenceProvider.notifier).save(toLang: lang.code);
+    // "Learning" is the language being studied → server's `lang`.
+    ref.read(preferenceProvider.notifier).save(lang: lang.code);
   }
 
   /// Seed from server preferences without echoing back a POST.
