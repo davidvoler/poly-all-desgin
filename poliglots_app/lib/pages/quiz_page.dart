@@ -23,6 +23,11 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   final Map<int, Set<int>> _selectedByIndex = {};
   // Indices the user has pressed "Check answer" on (feedback revealed).
   final Set<int> _checkedIndices = {};
+  // How many times the user tapped an option for each exercise — each
+  // change of mind counts (click A then B → 2 attempts).
+  final Map<int, int> _attemptsByIndex = {};
+  // When each exercise was first shown — used to derive answer_delay_ms.
+  final Map<int, DateTime> _shownAtByIndex = {};
   // Set once the user advances past the last exercise — swaps the quiz
   // body for the completion screen.
   bool _finished = false;
@@ -33,12 +38,15 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       _finished = false;
       _selectedByIndex.clear();
       _checkedIndices.clear();
+      _attemptsByIndex.clear();
+      _shownAtByIndex.clear();
     });
   }
 
   /// Fired once, when the user reveals feedback for an exercise. POSTs
   /// the attempt (correct or not) so progress is tracked server-side.
-  void _submitResult(Exercise ex, Set<int> selected, int lessonId) {
+  void _submitResult(Exercise ex, Set<int> selected, int lessonId,
+      int attempts, int answerDelayMs) {
     final correctIdx = <int>{
       for (var k = 0; k < ex.options.length; k++)
         if (ex.options[k].correct) k,
@@ -64,7 +72,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
             word1: ex.word1,
             word2: ex.word2,
             word3: ex.word3,
-            attempts: 1,
+            answerDelayMs: '$answerDelayMs',
+            attempts: attempts,
             correct: isCorrect,
             correctRatio: correctRatio,
             incorrectCount: incorrectCount,
@@ -119,6 +128,11 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 final multi = ex.exerciseType == 'recognize';
                 final selected = _selectedByIndex[idx] ?? const <int>{};
                 final checked = _checkedIndices.contains(idx);
+                // Start the answer timer the first time this exercise
+                // is shown (and not yet answered).
+                if (!checked) {
+                  _shownAtByIndex.putIfAbsent(idx, DateTime.now);
+                }
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
@@ -141,10 +155,17 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                                 ..add(i);
                             }
                             _selectedByIndex[idx] = cur;
+                            _attemptsByIndex[idx] =
+                                (_attemptsByIndex[idx] ?? 0) + 1;
                           }),
                   onPrimary: () {
                     if (!checked) {
-                      _submitResult(ex, selected, lessonId);
+                      final shownAt = _shownAtByIndex[idx];
+                      final delayMs = shownAt == null
+                          ? 0
+                          : DateTime.now().difference(shownAt).inMilliseconds;
+                      _submitResult(ex, selected, lessonId,
+                          _attemptsByIndex[idx] ?? 0, delayMs);
                       setState(() => _checkedIndices.add(idx));
                     } else if (idx + 1 < exercises.length) {
                       setState(() => _exerciseIndex = idx + 1);

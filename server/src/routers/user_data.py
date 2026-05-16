@@ -6,9 +6,10 @@ from utils.db import run_query
 router = APIRouter()
 
 
-def calculate_mark(correct_ratio: float, incorrect_count: float) -> float:
+def calculate_mark(correct_ratio: float, incorrect_count: float, attempts: int) -> float:
     """mark = correct_ratio minus a 0.25 penalty per wrong pick,
     clamped to [0, 1]."""
+    print(correct_ratio, incorrect_count, attempts)
     mark = correct_ratio - 0.25 * incorrect_count
     return max(0.0, min(1.0, mark))
 
@@ -18,13 +19,18 @@ async def save_results(results: Results):
     mark = calculate_mark(
         results.correct_ratio or 0.0,
         results.incorrect_count or 0.0,
+        results.attempts or 0,
     )
+    try:
+        answer_delay_ms = int(results.answer_delay_ms or 0)
+    except (TypeError, ValueError):
+        answer_delay_ms = 0
     sql = """
     INSERT INTO user_data.results (
         user_id, course_id, module_id, lesson_id, exercise_id,
         word1, word2, word3, sentence_id,
-        attempts,  mark, lang
-    ) VALUES (%s, %s, %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s)
+        answer_delay_ms, attempts,  mark, lang
+    ) VALUES (%s, %s, %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         results.user_id,
@@ -36,11 +42,10 @@ async def save_results(results: Results):
         results.word2,
         results.word3,
         results.sentence_id,
+        answer_delay_ms,
         results.attempts,
         mark,
         results.lang,
      )
-    print(params)
-    print(results)
     await run_query(sql, params)
     return {"message": "Results saved successfully", "mark": mark}
