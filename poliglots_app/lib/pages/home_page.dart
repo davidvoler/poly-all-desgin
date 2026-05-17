@@ -82,11 +82,26 @@ class HomePage extends ConsumerWidget {
                   return GlassCard(
                     child: Row(
                       children: [
-                        _StatSeg(value: v((s) => s.words), label: t.home.stat_words),
+                        _StatSeg(
+                          value: v((s) => s.words),
+                          label: t.home.stat_words,
+                          onTap: () => Navigator.pushNamed(context, '/quiz',
+                              arguments: PracticeKind.words),
+                        ),
                         const _StatDivider(),
-                        _StatSeg(value: v((s) => s.sentences), label: t.home.stat_sentences),
+                        _StatSeg(
+                          value: v((s) => s.sentences),
+                          label: t.home.stat_sentences,
+                          onTap: () => Navigator.pushNamed(context, '/quiz',
+                              arguments: PracticeKind.sentences),
+                        ),
                         const _StatDivider(),
-                        _StatSeg(value: v((s) => s.exercises), label: t.home.stat_exercises),
+                        _StatSeg(
+                          value: v((s) => s.exercises),
+                          label: t.home.stat_exercises,
+                          onTap: () => Navigator.pushNamed(context, '/quiz',
+                              arguments: PracticeKind.exercises),
+                        ),
                       ],
                     ),
                   );
@@ -314,34 +329,39 @@ class _CourseCaption extends ConsumerWidget {
 class _StatSeg extends StatelessWidget {
   final String value;
   final String label;
-  const _StatSeg({required this.value, required this.label});
+  final VoidCallback? onTap;
+  const _StatSeg({required this.value, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        child: Column(
-          children: [
-            Text(value,
-                style: const TextStyle(
-                  fontSize: 18,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          child: Column(
+            children: [
+              Text(value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.0,
+                    letterSpacing: -0.36,
+                  )),
+              const SizedBox(height: 4),
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  height: 1.0,
-                  letterSpacing: -0.36,
-                )),
-            const SizedBox(height: 4),
-            Text(
-              label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.08,
-                color: Colors.white.withValues(alpha: 0.75),
+                  letterSpacing: 1.08,
+                  color: Colors.white.withValues(alpha: 0.75),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

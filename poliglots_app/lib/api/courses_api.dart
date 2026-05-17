@@ -146,6 +146,20 @@ class CoursesRepository {
     );
     return UserStats.fromJson(res.data ?? const {});
   }
+
+  /// `GET /api/v1/practice/<kind>?user_id=…&lang=…` — a fresh set of
+  /// exercises to drill, scoped to the language being learned.
+  Future<List<Exercise>> fetchPractice(PracticeKind kind, String lang) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/practice/${kind.path}',
+      queryParameters: {'user_id': kCurrentUserId, 'lang': lang},
+    );
+    final data = res.data ?? const [];
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(Exercise.fromJson)
+        .toList();
+  }
 }
 
 final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {
@@ -191,6 +205,28 @@ final exercisesProvider =
     FutureProvider.family<List<Exercise>, int>((ref, lessonId) {
   final repo = ref.watch(coursesRepositoryProvider);
   return repo.fetchExercises(lessonId);
+});
+
+/// Practice modes — each maps to a `/api/v1/practice/<path>` endpoint
+/// and the quiz-screen title shown when drilling that set.
+enum PracticeKind {
+  words('by_words', 'Practicing words'),
+  sentences('by_sentences', 'Practicing sentences'),
+  exercises('by_exercises', 'Practicing exercises');
+
+  final String path;
+  final String title;
+  const PracticeKind(this.path, this.title);
+}
+
+/// Practice exercises for a given mode, scoped to the language being
+/// learned (same lang source as [userStatsProvider]).
+final practiceExercisesProvider =
+    FutureProvider.family<List<Exercise>, PracticeKind>((ref, kind) {
+  final repo = ref.watch(coursesRepositoryProvider);
+  final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
+  final learning = ref.watch(learningLangProvider);
+  return repo.fetchPractice(kind, prefLang ?? learning.code);
 });
 
 /// Which module is currently open on the course page. `null` means

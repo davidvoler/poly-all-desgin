@@ -62,7 +62,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
   /// Fired once, when the user reveals feedback for an exercise. POSTs
   /// the attempt (correct or not) so progress is tracked server-side.
-  void _submitResult(Exercise ex, Set<int> selected, int lessonId,
+  void _submitResult(Exercise ex, Set<int> selected, int? lessonId,
       int attempts, int answerDelayMs) {
     final correctIdx = <int>{
       for (var k = 0; k < ex.options.length; k++)
@@ -100,8 +100,31 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    final lessonId = (ModalRoute.of(context)?.settings.arguments as int?) ?? 1;
-    final exercisesAsync = ref.watch(exercisesProvider(lessonId));
+    // Route arg is either a lesson id (int, lesson mode) or a
+    // PracticeKind (practice mode launched from the home stats).
+    final arg = ModalRoute.of(context)?.settings.arguments;
+    final practice = arg is PracticeKind ? arg : null;
+    final lessonId = arg is int ? arg : null;
+    final exercisesAsync = practice != null
+        ? ref.watch(practiceExercisesProvider(practice))
+        : ref.watch(exercisesProvider(lessonId ?? 1));
+
+    // Nav-bar title: practice mode label, else the current lesson's
+    // title resolved from the module's lessons (falls back to "Lesson").
+    final String pageTitle;
+    if (practice != null) {
+      pageTitle = practice.title;
+    } else {
+      final moduleId =
+          ref.watch(preferenceProvider.select((p) => p.value?.moduleId));
+      final lessons = moduleId == null
+          ? const <Lesson>[]
+          : (ref.watch(lessonsProvider(moduleId)).value ?? const <Lesson>[]);
+      final li = lessons.indexWhere((l) => l.id == lessonId);
+      pageTitle = (li != -1 && lessons[li].title.isNotEmpty)
+          ? lessons[li].title
+          : 'Lesson';
+    }
 
     return Scaffold(
       body: PhoneBackground(
@@ -126,7 +149,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 if (exercises.isEmpty) {
                   return Center(
                     child: Text(
-                      'No exercises in this lesson',
+                      practice != null
+                          ? 'Nothing to practice right now'
+                          : 'No exercises in this lesson',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -137,6 +162,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 if (_finished) {
                   return _QuizComplete(
                     lessonId: lessonId,
+                    practice: practice,
                     onRepeat: _restartLesson,
                   );
                 }
@@ -154,6 +180,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   index: idx,
                   total: exercises.length,
                   exercise: ex,
+                  title: pageTitle,
                   selected: selected,
                   checked: checked,
                   onSelect: checked
@@ -214,12 +241,29 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 /// `moduleId` + [lessonsProvider]); falls back to popping back to the
 /// course page when this is the module's last lesson.
 class _QuizComplete extends ConsumerWidget {
-  final int lessonId;
+  final int? lessonId;
+  final PracticeKind? practice;
   final VoidCallback onRepeat;
-  const _QuizComplete({required this.lessonId, required this.onRepeat});
+  const _QuizComplete({
+    required this.lessonId,
+    required this.practice,
+    required this.onRepeat,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Practice mode: no lesson chain — just finish or drill again.
+    if (practice != null) {
+      return _CompleteScaffold(
+        heading: '${practice!.title} — done!',
+        subtitle: 'Nice work — keep the streak going.',
+        primaryLabel: 'Back home',
+        onPrimary: () => Navigator.maybePop(context),
+        repeatLabel: 'Practice again',
+        onRepeat: onRepeat,
+      );
+    }
+
     final moduleId =
         ref.watch(preferenceProvider.select((p) => p.value?.moduleId));
     final lessons = moduleId == null
@@ -234,6 +278,48 @@ class _QuizComplete extends ConsumerWidget {
     String name(Lesson? l) =>
         (l != null && l.title.isNotEmpty) ? l.title : 'this lesson';
 
+    return _CompleteScaffold(
+      heading: 'Lesson ${name(current)} completed',
+      subtitle: next != null
+          ? 'Nice work — ready for the next one?'
+          : "You've finished the last lesson in this module.",
+      primaryLabel:
+          next != null ? 'Continue to ${name(next)}' : 'Back to course',
+      onPrimary: () {
+        if (next != null) {
+          ref.read(preferenceProvider.notifier).save(lessonId: next.id);
+          Navigator.pushReplacementNamed(context, '/quiz',
+              arguments: next.id);
+        } else {
+          Navigator.maybePop(context);
+        }
+      },
+      repeatLabel: 'Repeat lesson',
+      onRepeat: onRepeat,
+    );
+  }
+}
+
+/// Shared completion layout for both lesson- and practice-finished
+/// states.
+class _CompleteScaffold extends StatelessWidget {
+  final String heading;
+  final String subtitle;
+  final String primaryLabel;
+  final VoidCallback onPrimary;
+  final String repeatLabel;
+  final VoidCallback onRepeat;
+  const _CompleteScaffold({
+    required this.heading,
+    required this.subtitle,
+    required this.primaryLabel,
+    required this.onPrimary,
+    required this.repeatLabel,
+    required this.onRepeat,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -250,7 +336,7 @@ class _QuizComplete extends ConsumerWidget {
         const Icon(Icons.celebration, size: 64, color: Colors.white),
         const SizedBox(height: 16),
         Text(
-          'Lesson ${name(current)} completed',
+          heading,
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 22,
@@ -261,9 +347,7 @@ class _QuizComplete extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          next != null
-              ? 'Nice work — ready for the next one?'
-              : "You've finished the last lesson in this module.",
+          subtitle,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
@@ -272,21 +356,13 @@ class _QuizComplete extends ConsumerWidget {
         ),
         const Spacer(),
         CtaButton(
-          label: next != null ? 'Continue to ${name(next)}' : 'Back to course',
+          label: primaryLabel,
           trailingIcon: Icons.arrow_forward,
-          onTap: () {
-            if (next != null) {
-              ref.read(preferenceProvider.notifier).save(lessonId: next.id);
-              Navigator.pushReplacementNamed(context, '/quiz',
-                  arguments: next.id);
-            } else {
-              Navigator.maybePop(context);
-            }
-          },
+          onTap: onPrimary,
         ),
         const SizedBox(height: 10),
         _SecondaryButton(
-          label: 'Repeat lesson',
+          label: repeatLabel,
           icon: Icons.refresh,
           onTap: onRepeat,
         ),
@@ -347,6 +423,8 @@ class _QuizBody extends StatelessWidget {
   final int index;
   final int total;
   final Exercise exercise;
+  // Page title shown in the nav bar (lesson title or practice mode).
+  final String title;
   final Set<int> selected;
   final bool checked;
   // Null while the user hasn't answered yet (or after Check, when tiles
@@ -361,6 +439,7 @@ class _QuizBody extends StatelessWidget {
     required this.index,
     required this.total,
     required this.exercise,
+    required this.title,
     required this.selected,
     required this.checked,
     required this.onSelect,
@@ -417,7 +496,7 @@ class _QuizBody extends StatelessWidget {
         const SizedBox(height: 18),
 
         _QuizNav(
-          questionLabel: 'Question ${index + 1}',
+          title: title,
           onBack: index > 0 ? onBack : null,
           onSkip: index < total - 1 ? onSkip : null,
         ),
@@ -510,10 +589,10 @@ class _QuizBody extends StatelessWidget {
 }
 
 class _QuizNav extends StatelessWidget {
-  final String questionLabel;
+  final String title;
   final VoidCallback? onBack;
   final VoidCallback? onSkip;
-  const _QuizNav({required this.questionLabel, this.onBack, this.onSkip});
+  const _QuizNav({required this.title, this.onBack, this.onSkip});
 
   @override
   Widget build(BuildContext context) {
@@ -534,7 +613,10 @@ class _QuizNav extends StatelessWidget {
           Expanded(
             child: Center(
               child: Text(
-                questionLabel.toUpperCase(),
+                title.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,

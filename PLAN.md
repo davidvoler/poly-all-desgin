@@ -66,14 +66,8 @@ Implement basic stats in home page
 *** RTL/LTR Language aware  Done ***
 - add language awareness of RTL and LTR
 
-*** Week 5 - Course Data Improvements ***
 
-1. limits wring options when creating a quiz - now we have 10
-2. identify words - use variable number of words 
-3. load lesson - consider loading only a limited number exercises 10 or 15
-
-
-*** practice words/sentences ***
+*** practice words/sentences - Done ***
 
 REQUIRES DESIGN 
 
@@ -86,6 +80,16 @@ Just create a quiz with exercise from different lessons using a certain word
     - search exercise with a certain words - from current course 
 - sentences 
     - repeat sentences you have already learned 
+
+
+*** Week 5 - Course Data Improvements ***
+
+1. limits wring options when creating a quiz - now we have 10
+2. identify words - use variable number of words 
+3. load lesson - consider loading only a limited number exercises 10 or 15
+
+
+
 
 *** Week 6 - Deploy  ***
 
