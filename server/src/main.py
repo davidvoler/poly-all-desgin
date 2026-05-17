@@ -8,7 +8,8 @@ from routers import (
     exercise,
     user_data, 
     preference,
-    user_stats
+    user_stats, 
+    practice
 )
 
 app = FastAPI()
@@ -42,3 +43,7 @@ app.include_router(preference.router,
 app.include_router(user_stats.router,
     prefix="/api/v1/user_stats",
     tags=["user_stats"])
+
+app.include_router(practice.router,
+    prefix="/api/v1/practice",
+    tags=["practice"])

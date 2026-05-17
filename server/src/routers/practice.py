@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from server.src.routers.exercise import get_exercises
 from utils.db import get_query_results
 from models.course import Exercise
 import random
@@ -22,11 +21,12 @@ async def  get_sentences_for_practice(user_id: int, lang: str):
     
 async def  get_words_for_practice(user_id: int, lang: str):
     sql = """
-    select word1, sum(mark), max(create_at) from user_data.results 
+    select word1, sum(mark) from user_data.results 
     where user_id = %s and lang = %s
     group by 1
     having sum(mark) < 3
     """
+    
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
     words =  [r.get('word1') for r in res] if res else []
@@ -52,10 +52,10 @@ async def get_exercises_by_words(lang:str,words: list[str]):
     sql = f"""
     SELECT *  
     FROM course_simple.exercise
-    WHERE lang = %s and ( 
-    word1 IN ({placehoslder}) or word2 IN ({placehoslder}) 
+    WHERE( 
+    word1 IN ({placehoslder}) or word2 IN ({placehoslder}) )
     """
-    params = (lang, *words, *words)
+    params = (*words, *words)
     res = await get_query_results(sql, params)
     results = []
     for r in res:
@@ -71,11 +71,9 @@ async def get_exercises_by_sentences(lang:str,sentences: list[int]):
     sql = f"""
     SELECT *  
     FROM course_simple.exercise
-    WHERE lang = %s 
-    and sentence_id IN ({placehoslder})
+    WHERE sentence_id IN ({placehoslder})
     """
-    params = (lang, *sentences)
-    res = await get_query_results(sql, params)
+    res = await get_query_results(sql, sentences)
     results = []
     for r in res:
         exercise = Exercise(**r)
@@ -102,7 +100,7 @@ async def get_exercises_by_exercises(lang:str,exercises: list[int]):
 @router.get("/by_words", response_model=list[Exercise])
 async def exercise_by_words(user_id: int, lang: str):
     words = await get_words_for_practice(user_id, lang)
-    exercises = await get_exercises(lang, words)
+    exercises = await get_exercises_by_words(lang, words)
     return exercises
     
 
