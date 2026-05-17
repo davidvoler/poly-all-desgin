@@ -12,7 +12,7 @@ async def  get_sentences_for_practice(user_id: int, lang: str):
     select sentence_id, sum(mark) as sum_mark from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) <= 3
+    having sum(mark) < 3
     """
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
@@ -25,7 +25,7 @@ async def  get_words_for_practice(user_id: int, lang: str):
     select word1, sum(mark), max(create_at) from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) <= 3 
+    having sum(mark) < 3
     """
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
@@ -33,6 +33,19 @@ async def  get_words_for_practice(user_id: int, lang: str):
     random.shuffle(words)
     return words[:10]
 
+
+async def  get_exercises_for_practice(user_id: int, lang: str):
+    sql = """
+    select exercise_id, sum(mark) as sum_mark from user_data.results 
+    where user_id = %s and lang = %s
+    group by 1
+    having sum(mark) < 3
+    """
+    params = (str(user_id), lang)
+    res = await get_query_results(sql, params)
+    exercises =  [r.get('exercise_id') for r in res] if res else []
+    random.shuffle(exercises)
+    return exercises[:10]
 
 async def get_exercises_by_words(lang:str,words: list[str]):
     placehoslder = ', '.join(['%s'] * len(words))
@@ -70,6 +83,22 @@ async def get_exercises_by_sentences(lang:str,sentences: list[int]):
     random.shuffle(results)
     return results[:10]
 
+async def get_exercises_by_exercises(lang:str,exercises: list[int]):
+    placehoslder = ', '.join(['%s'] * len(exercises))
+    sql = f"""
+    SELECT *  
+    FROM course_simple.exercise
+    WHERE exercise_id IN ({placehoslder})
+    """
+    res = await get_query_results(sql, exercises)
+    results = []
+    for r in res:
+        exercise = Exercise(**r)
+        results.append(exercise)
+    random.shuffle(results)
+    return results[:10]
+
+
 @router.get("/by_words", response_model=list[Exercise])
 async def exercise_by_words(user_id: int, lang: str):
     words = await get_words_for_practice(user_id, lang)
@@ -84,4 +113,10 @@ async def exercise_by_sentences(user_id: int, lang: str):
     return exercises
 
 
+
+@router.get("/by_exercises", response_model=list[Exercise])
+async def exercise_by_exercises(user_id: int, lang: str):
+    exercises = await get_exercises_for_practice(user_id, lang)
+    exercises = await get_exercises_by_exercises(lang, exercises)
+    return exercises
 
