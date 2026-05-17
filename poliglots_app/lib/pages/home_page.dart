@@ -84,9 +84,9 @@ class HomePage extends ConsumerWidget {
                       children: [
                         _StatSeg(value: v((s) => s.words), label: t.home.stat_words),
                         const _StatDivider(),
-                        _StatSeg(value: v((s) => s.lessons), label: t.home.stat_lessons),
-                        const _StatDivider(),
                         _StatSeg(value: v((s) => s.sentences), label: t.home.stat_sentences),
+                        const _StatDivider(),
+                        _StatSeg(value: v((s) => s.exercises), label: t.home.stat_exercises),
                       ],
                     ),
                   );

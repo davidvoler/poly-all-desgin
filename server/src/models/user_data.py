@@ -27,6 +27,7 @@ class UserStats(BaseModel):
     lessons: int
     words: int
     sentences: int
+    exercises: int = 0
 
 class UserData(BaseModel):
     user_id: int

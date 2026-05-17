@@ -101,11 +101,11 @@ class TranslationsHomeEn {
 	/// en: 'Words'
 	String get stat_words => 'Words';
 
-	/// en: 'Lessons'
-	String get stat_lessons => 'Lessons';
-
 	/// en: 'Sentences'
 	String get stat_sentences => 'Sentences';
+
+	/// en: 'Exercises'
+	String get stat_exercises => 'Exercises';
 
 	/// en: 'Practice Now'
 	String get practice_now => 'Practice Now';
@@ -135,8 +135,8 @@ extension on Translations {
 			'home.tap_to_change' => 'TAP TO CHANGE',
 			'home.vocabulary_label' => '— Your Vocabulary —',
 			'home.stat_words' => 'Words',
-			'home.stat_lessons' => 'Lessons',
 			'home.stat_sentences' => 'Sentences',
+			'home.stat_exercises' => 'Exercises',
 			'home.practice_now' => 'Practice Now',
 			'home.settings_tooltip' => 'Settings',
 			_ => null,

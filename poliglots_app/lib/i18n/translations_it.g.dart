@@ -72,8 +72,8 @@ class _TranslationsHomeIt extends TranslationsHomeEn {
 	@override String get tap_to_change => 'Tocca per cambiare';
 	@override String get vocabulary_label => '— Il tuo vocabolario —';
 	@override String get stat_words => 'Parole';
-	@override String get stat_lessons => 'Lezioni';
 	@override String get stat_sentences => 'Frasi';
+	@override String get stat_exercises => 'Esercizi';
 	@override String get practice_now => 'Esercitati ora';
 	@override String get settings_tooltip => 'Impostazioni';
 }
@@ -99,8 +99,8 @@ extension on TranslationsIt {
 			'home.tap_to_change' => 'Tocca per cambiare',
 			'home.vocabulary_label' => '— Il tuo vocabolario —',
 			'home.stat_words' => 'Parole',
-			'home.stat_lessons' => 'Lezioni',
 			'home.stat_sentences' => 'Frasi',
+			'home.stat_exercises' => 'Esercizi',
 			'home.practice_now' => 'Esercitati ora',
 			'home.settings_tooltip' => 'Impostazioni',
 			_ => null,

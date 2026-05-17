@@ -256,17 +256,20 @@ class UserStats {
   final int lessons;
   final int words;
   final int sentences;
+  final int exercises;
 
   const UserStats({
     this.lessons = 0,
     this.words = 0,
     this.sentences = 0,
+    this.exercises = 0,
   });
 
   factory UserStats.fromJson(Map<String, dynamic> j) => UserStats(
         lessons: (j['lessons'] as int?) ?? 0,
         words: (j['words'] as int?) ?? 0,
         sentences: (j['sentences'] as int?) ?? 0,
+        exercises: (j['exercises'] as int?) ?? 0,
       );
 }
 

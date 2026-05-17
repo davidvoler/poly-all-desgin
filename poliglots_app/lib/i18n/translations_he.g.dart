@@ -72,8 +72,8 @@ class _TranslationsHomeHe extends TranslationsHomeEn {
 	@override String get tap_to_change => 'הקש לשינוי';
 	@override String get vocabulary_label => '— אוצר המילים שלך —';
 	@override String get stat_words => 'מילים';
-	@override String get stat_lessons => 'שיעורים';
 	@override String get stat_sentences => 'משפטים';
+	@override String get stat_exercises => 'תרגילים';
 	@override String get practice_now => 'תרגל עכשיו';
 	@override String get settings_tooltip => 'הגדרות';
 }
@@ -99,8 +99,8 @@ extension on TranslationsHe {
 			'home.tap_to_change' => 'הקש לשינוי',
 			'home.vocabulary_label' => '— אוצר המילים שלך —',
 			'home.stat_words' => 'מילים',
-			'home.stat_lessons' => 'שיעורים',
 			'home.stat_sentences' => 'משפטים',
+			'home.stat_exercises' => 'תרגילים',
 			'home.practice_now' => 'תרגל עכשיו',
 			'home.settings_tooltip' => 'הגדרות',
 			_ => null,
