@@ -17,6 +17,21 @@ const String _kBaseUrl = String.fromEnvironment(
   defaultValue: 'http://127.0.0.1:8004',
 );
 
+/// Base URL for exercise audio (served by the nginx audio container).
+/// Override with `--dart-define=AUDIO_BASE_URL=…`. Exercise `audio`
+/// paths are absolute (e.g. `/ar/ara/x.mp3`) so they append directly.
+const String _kAudioBaseUrl = String.fromEnvironment(
+  'AUDIO_BASE_URL',
+  defaultValue: 'http://127.0.0.1:3002/audio',
+);
+
+/// Full URL for an exercise's `audio` path, or `null` when empty.
+String? audioUrl(String audioPath) {
+  if (audioPath.isEmpty) return null;
+  final sep = audioPath.startsWith('/') ? '' : '/';
+  return '$_kAudioBaseUrl$sep$audioPath';
+}
+
 /// Single shared Dio instance for the app. Kept as a Provider so tests
 /// can `overrideWith` a mock client.
 final dioProvider = Provider<Dio>((ref) {

@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,6 +32,21 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   // Set once the user advances past the last exercise — swaps the quiz
   // body for the completion screen.
   bool _finished = false;
+
+  final AudioPlayer _audio = AudioPlayer();
+
+  @override
+  void dispose() {
+    _audio.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playAudio(String audioPath) async {
+    final url = audioUrl(audioPath);
+    if (url == null) return;
+    await _audio.stop();
+    await _audio.play(UrlSource(url));
+  }
 
   void _restartLesson() {
     setState(() {
@@ -179,6 +195,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   onBack: idx > 0
                       ? () => setState(() => _exerciseIndex = idx - 1)
                       : null,
+                  onPlayAudio: ex.audio.isEmpty
+                      ? null
+                      : () => _playAudio(ex.audio),
                 );
               },
             ),
@@ -335,6 +354,7 @@ class _QuizBody extends StatelessWidget {
   final VoidCallback onPrimary;
   final VoidCallback? onSkip;
   final VoidCallback? onBack;
+  final VoidCallback? onPlayAudio;
 
   const _QuizBody({
     required this.index,
@@ -346,6 +366,7 @@ class _QuizBody extends StatelessWidget {
     required this.onPrimary,
     required this.onSkip,
     required this.onBack,
+    required this.onPlayAudio,
   });
 
   @override
@@ -442,7 +463,7 @@ class _QuizBody extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 8),
-              _AudioButton(onTap: () {}),
+              _AudioButton(onTap: onPlayAudio),
             ],
           ),
         ),
@@ -586,12 +607,13 @@ class _QnavButton extends StatelessWidget {
 }
 
 class _AudioButton extends StatelessWidget {
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _AudioButton({required this.onTap});
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return Material(
-      color: Colors.white.withValues(alpha: 0.10),
+      color: Colors.white.withValues(alpha: enabled ? 0.10 : 0.04),
       shape: const CircleBorder(),
       child: InkWell(
         onTap: onTap,
@@ -604,7 +626,9 @@ class _AudioButton extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
-          child: const Icon(Icons.volume_up, size: 17, color: Colors.white),
+          child: Icon(Icons.volume_up,
+              size: 17,
+              color: Colors.white.withValues(alpha: enabled ? 1.0 : 0.35)),
         ),
       ),
     );
