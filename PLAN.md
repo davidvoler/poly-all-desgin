@@ -49,6 +49,16 @@ if words count > 4
 *** Week 3 - Example Courses - Done ***
 
 *** Week 4 - Course Learning End to End - Done ***
+*** Stats Done ***
+Implement basic stats in home page 
+
+*** App UX improvements *** 
+
+- modules vertical and lessons horizontal
+- design and implement quiz end page. - Done - needs some improvements 
+    - repeat lesson 
+    - next lesson 
+
 
 *** Week 5 - Add Audio ***
 
@@ -58,21 +68,16 @@ if words count > 4
 2. identify words - use variable number of words 
 3. load lesson - consider loading only a limited number exercises 10 or 15
 
-*** practice ***
+
+*** practice words/sentences ***
+
+REQUIRES DESIGN 
 
 - implement practice for words and sentences 
 - words 
     - search exercise with a certain words - from current course 
 - sentences 
     - repeat sentences you have already learned 
-
-*** App UX improvements *** 
-
-- modules vertical and lessons horizontal
-- design and implement quiz end page. 
-    - repeat lesson 
-    - next lesson 
-- add end of quiz page
 
 *** Week 6 - Deploy  ***
 

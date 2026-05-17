@@ -147,11 +147,14 @@ final coursesListProvider = FutureProvider<List<CourseSummary>>((ref) {
 });
 
 /// Mastery counts for the current user, scoped to the language being
-/// learned. Refetches when the learning language changes.
+/// learned. Sources the language from the saved preference (the
+/// authoritative `lang`), falling back to the in-memory learning lang
+/// before preferences have loaded. Refetches when either changes.
 final userStatsProvider = FutureProvider<UserStats>((ref) {
   final repo = ref.watch(coursesRepositoryProvider);
+  final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
   final learning = ref.watch(learningLangProvider);
-  return repo.fetchUserStats(kCurrentUserId, learning.code);
+  return repo.fetchUserStats(kCurrentUserId, prefLang ?? learning.code);
 });
 
 /// Modules for a course; keyed by course id.
