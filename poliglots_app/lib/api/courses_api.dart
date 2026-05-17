@@ -122,6 +122,15 @@ class CoursesRepository {
       data: results.toJson(),
     );
   }
+
+  /// `GET /api/v1/user_stats/?user_id=…&lang=…` — mastered counts.
+  Future<UserStats> fetchUserStats(int userId, String lang) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/user_stats/',
+      queryParameters: {'user_id': userId, 'lang': lang},
+    );
+    return UserStats.fromJson(res.data ?? const {});
+  }
 }
 
 final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {
@@ -135,6 +144,14 @@ final coursesListProvider = FutureProvider<List<CourseSummary>>((ref) {
   final native = ref.watch(speakLangProvider);
   final learning = ref.watch(learningLangProvider);
   return repo.fetchCourses(learning: learning, native: native);
+});
+
+/// Mastery counts for the current user, scoped to the language being
+/// learned. Refetches when the learning language changes.
+final userStatsProvider = FutureProvider<UserStats>((ref) {
+  final repo = ref.watch(coursesRepositoryProvider);
+  final learning = ref.watch(learningLangProvider);
+  return repo.fetchUserStats(kCurrentUserId, learning.code);
 });
 
 /// Modules for a course; keyed by course id.

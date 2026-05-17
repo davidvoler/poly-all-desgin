@@ -250,6 +250,26 @@ class Results {
       };
 }
 
+/// Aggregate per-user mastery counts returned by
+/// `GET /api/v1/user_stats/?user_id=…&lang=…`.
+class UserStats {
+  final int lessons;
+  final int words;
+  final int sentences;
+
+  const UserStats({
+    this.lessons = 0,
+    this.words = 0,
+    this.sentences = 0,
+  });
+
+  factory UserStats.fromJson(Map<String, dynamic> j) => UserStats(
+        lessons: (j['lessons'] as int?) ?? 0,
+        words: (j['words'] as int?) ?? 0,
+        sentences: (j['sentences'] as int?) ?? 0,
+      );
+}
+
 /// Shape returned by `GET /api/v1/lesson/?module_id=…` — one lesson
 /// card. `completed` is the server's 0/1 flag.
 class Lesson {

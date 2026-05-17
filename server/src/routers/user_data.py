@@ -1,6 +1,4 @@
-from email import utils
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from models.user_data import Results
 from utils.db import run_query
 router = APIRouter()

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/courses_api.dart';
+import '../api/models.dart';
 import '../i18n/translations.g.dart';
 import '../state/lang.dart';
 import '../theme.dart';
@@ -72,17 +73,24 @@ class HomePage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 7),
-                GlassCard(
-                  child: Row(
-                    children: [
-                      _StatSeg(value: '248', label: t.home.stat_words),
-                      const _StatDivider(),
-                      _StatSeg(value: '12', label: t.home.stat_lessons),
-                      const _StatDivider(),
-                      _StatSeg(value: '86', label: t.home.stat_sentences),
-                    ],
-                  ),
-                ),
+                Consumer(builder: (context, ref, _) {
+                  final stats = ref.watch(userStatsProvider);
+                  String v(int Function(UserStats) pick) => stats.maybeWhen(
+                        data: (s) => '${pick(s)}',
+                        orElse: () => '…',
+                      );
+                  return GlassCard(
+                    child: Row(
+                      children: [
+                        _StatSeg(value: v((s) => s.words), label: t.home.stat_words),
+                        const _StatDivider(),
+                        _StatSeg(value: v((s) => s.lessons), label: t.home.stat_lessons),
+                        const _StatDivider(),
+                        _StatSeg(value: v((s) => s.sentences), label: t.home.stat_sentences),
+                      ],
+                    ),
+                  );
+                }),
 
                 const Spacer(),
 

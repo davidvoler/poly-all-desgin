@@ -21,7 +21,12 @@ class Results(BaseModel):
 
 
 
-
+class UserStats(BaseModel):
+    user_id: int
+    lang: str
+    lessons: int
+    words: int
+    sentences: int
 
 class UserData(BaseModel):
     user_id: int
