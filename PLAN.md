@@ -63,10 +63,10 @@ Implement basic stats in home page
 *** Week 5 - Add Audio - Done ***
 
 
-*** RTL/LTR Language aware  ***
+*** RTL/LTR Language aware  Done ***
 - add language awareness of RTL and LTR
 
-*** Week 5 - Improvements ***
+*** Week 5 - Course Data Improvements ***
 
 1. limits wring options when creating a quiz - now we have 10
 2. identify words - use variable number of words 
