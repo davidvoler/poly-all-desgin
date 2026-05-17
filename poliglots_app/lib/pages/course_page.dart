@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/courses_api.dart';
 import '../api/models.dart' as api;
 import '../theme.dart';
+import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
 
 class CoursePage extends ConsumerWidget {
@@ -505,7 +506,7 @@ class _LessonCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AutoText(
                       lesson.jp,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -517,7 +518,7 @@ class _LessonCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    AutoText(
                       lesson.en,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

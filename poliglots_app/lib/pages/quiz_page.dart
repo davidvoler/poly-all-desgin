@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/courses_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
 
 class QuizPage extends ConsumerStatefulWidget {
@@ -433,7 +434,7 @@ class _QuizBody extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Column(
             children: [
-              Text(
+              AutoText(
                 exercise.sentence,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -720,7 +721,7 @@ class _AnswerTile extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
+                child: AutoText(
                   label,
                   style: const TextStyle(
                     fontSize: 14,

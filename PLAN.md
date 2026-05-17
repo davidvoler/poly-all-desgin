@@ -52,7 +52,7 @@ if words count > 4
 *** Stats Done ***
 Implement basic stats in home page 
 
-*** App UX improvements *** 
+*** App UX improvements DONE *** 
 
 - modules vertical and lessons horizontal
 - design and implement quiz end page. - Done - needs some improvements 
@@ -60,11 +60,11 @@ Implement basic stats in home page
     - next lesson 
 
 
+*** Week 5 - Add Audio - Done ***
+
+
 *** RTL/LTR Language aware  ***
 - add language awareness of RTL and LTR
-
-
-*** Week 5 - Add Audio ***
 
 *** Week 5 - Improvements ***
 
@@ -76,6 +76,10 @@ Implement basic stats in home page
 *** practice words/sentences ***
 
 REQUIRES DESIGN 
+
+The simple solution
+Just create a quiz with exercise from different lessons using a certain word
+
 
 - implement practice for words and sentences 
 - words 
