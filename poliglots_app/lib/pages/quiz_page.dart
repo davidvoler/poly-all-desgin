@@ -449,6 +449,15 @@ class _QuizBody extends StatelessWidget {
     required this.onPlayAudio,
   });
 
+  /// Per-option visual state once the answer is revealed: every correct
+  /// option turns green, a wrong pick turns red, the rest stay neutral.
+  _TileFeedback _feedbackFor(int i) {
+    if (!checked) return _TileFeedback.none;
+    if (exercise.options[i].correct) return _TileFeedback.correct;
+    if (selected.contains(i)) return _TileFeedback.wrong;
+    return _TileFeedback.none;
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = total == 0 ? 0.0 : (index + 1) / total;
@@ -550,31 +559,35 @@ class _QuizBody extends StatelessWidget {
         const SizedBox(height: 18),
 
         Expanded(
-          child: ListView.separated(
-            padding: EdgeInsets.zero,
-            itemCount: exercise.options.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) {
-              final opt = exercise.options[i];
-              _TileFeedback feedback;
-              if (!checked) {
-                feedback = _TileFeedback.none;
-              } else if (opt.correct) {
-                feedback = _TileFeedback.correct;
-              } else if (selected.contains(i)) {
-                feedback = _TileFeedback.wrong;
-              } else {
-                feedback = _TileFeedback.none;
-              }
-              return _AnswerTile(
-                letter: String.fromCharCode(65 + i),
-                label: opt.text,
-                selected: selected.contains(i),
-                feedback: feedback,
-                onTap: onSelect == null ? null : () => onSelect!(i),
-              );
-            },
-          ),
+          child: exercise.exerciseType == 'recognize'
+              // Tag-style chips that wrap to the next line; no A/B/C.
+              ? SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (var i = 0; i < exercise.options.length; i++)
+                        _AnswerChip(
+                          label: exercise.options[i].text,
+                          selected: selected.contains(i),
+                          feedback: _feedbackFor(i),
+                          onTap: onSelect == null ? null : () => onSelect!(i),
+                        ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: EdgeInsets.zero,
+                  itemCount: exercise.options.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) => _AnswerTile(
+                    letter: String.fromCharCode(65 + i),
+                    label: exercise.options[i].text,
+                    selected: selected.contains(i),
+                    feedback: _feedbackFor(i),
+                    onTap: onSelect == null ? null : () => onSelect!(i),
+                  ),
+                ),
         ),
 
         const SizedBox(height: 14),
@@ -719,6 +732,72 @@ class _AudioButton extends StatelessWidget {
 }
 
 enum _TileFeedback { none, correct, wrong }
+
+/// Tag/pill option used for `recognize` exercises — wraps to the next
+/// line, no A/B/C badge. Shares the selection/feedback colour language
+/// with [_AnswerTile].
+class _AnswerChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final _TileFeedback feedback;
+  final VoidCallback? onTap;
+  const _AnswerChip({
+    required this.label,
+    required this.selected,
+    required this.feedback,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isCorrect = feedback == _TileFeedback.correct;
+    final isWrong = feedback == _TileFeedback.wrong;
+    final accent = isCorrect
+        ? PolyColors.green500
+        : isWrong
+            ? PolyColors.red400
+            : null;
+    final fillAlpha = accent != null ? 0.22 : (selected ? 0.18 : 0.06);
+    final borderColor =
+        accent ?? Colors.white.withValues(alpha: selected ? 0.45 : 0.16);
+
+    return Material(
+      color: accent != null
+          ? accent.withValues(alpha: fillAlpha)
+          : Colors.white.withValues(alpha: fillAlpha),
+      borderRadius: PolyRadii.pill,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: PolyRadii.pill,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: PolyRadii.pill,
+            border: Border.all(color: borderColor),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (accent != null) ...[
+                Icon(isCorrect ? Icons.check : Icons.close,
+                    size: 14, color: Colors.white),
+                const SizedBox(width: 6),
+              ],
+              AutoText(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _AnswerTile extends StatelessWidget {
   final String letter;

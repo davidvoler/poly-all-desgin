@@ -204,7 +204,7 @@ def g_module(m:dict):
 
 def gen_course(lang, to_lang, rank = False):
     module = yaml.safe_load(open(f'../data/content/gen_v3/{lang}_{to_lang}_course.yaml', 'r'))
-    modules = module.get('modules', [])[:2]
+    modules = module.get('modules', [])
     with Pool(processes=len(modules)) as pool:
         pool.map(g_module, modules)
 if __name__ == '__main__':

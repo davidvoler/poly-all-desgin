@@ -84,8 +84,8 @@ async def load_course_from_folder(folder_path: str, course_name: str, lang: str,
 
 
 if __name__ == '__main__':
-    folder_path = '../data/content/gen_v1'
-    course_name = 'Arabic Course v1'
+    folder_path = '../data/content/gen_v3'
+    course_name = 'Arabic Course v3'
     lang = 'ar'
     to_lang = 'en'
     asyncio.run(load_course_from_folder(folder_path, course_name, lang, to_lang))
