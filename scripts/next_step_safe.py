@@ -143,7 +143,7 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
     else:
         ex.append({
         'type': 'simple',    
-        'text': text,
+        'text': text_alt1,
         'options': op,
         'voice': audio,
         'sentence_id': id,
