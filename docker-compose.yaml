@@ -47,7 +47,7 @@
       - "0.0.0.0:3002:3002"
     volumes:
       - ./conf/audio.conf:/etc/nginx/conf.d/default.conf
-      - ./data/audio:/usr/share/nginx/newaudio/newaudio
+      - ./data/audio:/usr/share/nginx/audio/audio
   # web:
   #   container_name: web
   #   image: nginx:alpine

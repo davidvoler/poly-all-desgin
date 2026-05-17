@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,6 +69,19 @@ class _PreferenceBootstrap extends ConsumerWidget {
   }
 }
 
+/// Lets scrollables (esp. horizontal lists like the course-page module
+/// strip) be dragged with a mouse/trackpad on web & desktop, where the
+/// default behavior only accepts touch and ignores the wheel sideways.
+class _DragScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+      };
+}
+
 class PolyglotsApp extends StatelessWidget {
   const PolyglotsApp({super.key});
 
@@ -76,6 +90,7 @@ class PolyglotsApp extends StatelessWidget {
     return MaterialApp(
       title: 'Polyglots',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: _DragScrollBehavior(),
       // Keep MaterialApp's locale in sync with slang's so MaterialLocalizations,
       // WidgetsLocalizations, etc. follow the same language.
       locale: TranslationProvider.of(context).flutterLocale,
