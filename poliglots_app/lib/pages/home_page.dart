@@ -262,6 +262,22 @@ class _CourseCaption extends ConsumerWidget {
           },
           orElse: () => t.home.course_title,
         );
+
+    // Resolve the last lesson the user was on (preference `lessonId`)
+    // to its title, via the current module's lessons.
+    final moduleId = ref.watch(
+      preferenceProvider.select((p) => p.value?.moduleId),
+    );
+    final lessonId = ref.watch(
+      preferenceProvider.select((p) => p.value?.lessonId),
+    );
+    final lessons = moduleId == null
+        ? const <Lesson>[]
+        : (ref.watch(lessonsProvider(moduleId)).value ?? const <Lesson>[]);
+    final li = lessons.indexWhere((l) => l.id == lessonId);
+    final lessonLabel = (li != -1 && lessons[li].title.isNotEmpty)
+        ? 'Continue lesson · ${lessons[li].title}'
+        : 'Continue lesson';
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(14)),
       child: BackdropFilter(
@@ -294,7 +310,10 @@ class _CourseCaption extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                t.home.course_module,
+                lessonLabel,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.7),
