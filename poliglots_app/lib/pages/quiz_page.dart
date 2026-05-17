@@ -517,7 +517,7 @@ class _QuizBody extends StatelessWidget {
                 exercise.sentence,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                   letterSpacing: -0.4,
@@ -806,7 +806,7 @@ class _AnswerTile extends StatelessWidget {
                 child: AutoText(
                   label,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),

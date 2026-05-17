@@ -1,9 +1,23 @@
 from db import get_query_results
+import yaml
 import asyncio
 import random
 
 
 LESSONS_PER_MODULE = 30
+
+MAX_SENTENCE_USE = 1
+USED_SENTENCES = {}
+
+
+def add_sentences_to_used(s):
+    global USED_SENTENCES
+    if s in USED_SENTENCES:
+        USED_SENTENCES[s] += 1
+    else:
+        USED_SENTENCES[s] = 1
+    return USED_SENTENCES[s] - 1
+    
 
 
 def get_lessons_per_module(lesson_no):
@@ -20,15 +34,6 @@ def get_lessons_per_module(lesson_no):
     else:
         return 100
 
-def get_greetings_words():
-    return [
-        "مرحبا",
-        "أهلا",
-        "السلام عليكم",
-        "صباح الخير",
-        "مساء الخير",
-        "كيف حالك؟",            
-    ]
 
 async def get_all_words(lang:str):
     sql = """
@@ -41,9 +46,7 @@ async def get_all_words(lang:str):
     or w_count4_5 >4 
     or w_count6_9 >3 
     or w_count10_20 >0)
-    
     order by w_count1_3  desc, w_count4_5 desc, w_count6_9  desc, w_count10_20 desc 
-    
     """
     res =  await get_query_results(sql, (lang,))
     return [r['word'] for r in res]
@@ -57,14 +60,17 @@ async def get_all_words_by_rank(lang:str):
     (w_count1_3>5 
     or w_count4_5 >4 
     or w_count6_9 >3 
-    or w_count10_20 >1)
+    or w_count10_20 >0)
     order by rank 
     offset 35
     """
     res = await get_query_results(sql, (lang,))
     return [r['word'] for r in res]
 
-async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
+
+
+
+async def get_sentences_for_words(lang,to_lang,  word,min_words, max_words = 0, word_num = 1):
     sql = f"""
     select lang.text as text, sentences.text as to_text, trans.id as id, trans.to_id as to_id
     from content_raw.sentence_elements_simple2 lang
@@ -73,19 +79,20 @@ async def get_sentences_for_words(lang,to_lang,  word, max_words = 0):
     join content_raw.sentences sentences
     on sentences.id = trans.to_id
     where sentences.lang = %s 
-    and lang.word1 = %s 
-    limit 30
+    and (lang.word1 = %s or lang.word2 = %s or lang.word3 = %s)
     """
-    res = await get_query_results(sql, (lang, to_lang,to_lang, word))
+    res = await get_query_results(sql, (lang, to_lang,to_lang, word, word, word))
     # res =  [(r['text'], r['to_text'], r['id'], r['to_id']) for r in res]
     selected_sentences = []
     for r in res:
-        txt = r['text']
-        if max_words > 0 and len(txt.split()) > max_words:
+        txt = r.get('text')
+        num_words = len(txt.split())
+        if num_words < min_words or (max_words > 0 and num_words > max_words):
             continue
-        selected_sentences.append(r)
+        if add_sentences_to_used(r['id']) < MAX_SENTENCE_USE:
+            selected_sentences.append(r)
     random.shuffle(selected_sentences)
-    return selected_sentences[:12]
+    return selected_sentences[:10]
 
 
 def words_per_lesson(words_count):
@@ -122,27 +129,22 @@ def get_sort_for_sentences():
     elif lesson_no < 2100:
         return ""
 
-def get_max_words_for_sentences(words_so_far):
-    if words_so_far < 200:
-        return 3
-    elif words_so_far < 400:
-        return 4
+def get_min_max_words_for_sentences(words_so_far):
+    if words_so_far < 300:
+        return 1,3
     elif words_so_far < 600:
-        return 5
-    elif words_so_far < 800:
-        return 6
-    elif words_so_far < 1000:
-        return 8
+        return 1,4
     elif words_so_far < 1200:
-        return 10
+        return 1,5
+    elif words_so_far < 1800:
+        return 1,6
+    elif words_so_far < 3000:
+        return 2,8
+    elif words_so_far < 5000:
+        return 3,10
     else:
-        return 0
+        return 4,30
 
-def get_sentence_audio(sentences_id, lang):
-    pass
-
-
-        
 async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
     r = "_by_rank" if rank else ""
     modules = []
@@ -164,23 +166,37 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
         if  is_arabic(w):
             words_to_use.append(w)
     words = words_to_use
+    
+    unused_words = []
     # words = words[:100]
     while len(words) > 0:
-        wc = words_per_lesson(len(words_so_far))
-        words_so_far += words[:wc]
-        lesson_words = words[:wc]
-        
+        lesson_words = []
         sentences = []
-        for w in lesson_words:
-            sentences += await get_sentences_for_words(lang, to_lang, w, max_words = get_max_words_for_sentences(len(words_so_far)))
-
+        min_words, max_words = get_min_max_words_for_sentences(len(words_so_far))
+        while len(sentences) < 10:
+            try:
+                w = words.pop(0)
+            except IndexError:
+                break
+            w_sentences = await get_sentences_for_words(lang, to_lang, w, min_words, max_words)
+            if len(w_sentences) > 0:
+                sentences.extend(w_sentences)
+                lesson_words.append(w)
+                words_so_far.append(w)
+            else:
+                print(f"no sentences for {w}")
+                unused_words.append(w)
+        if len(lesson_words) >4:
+            lesson_title = f"words: {', '.join(lesson_words[:3])} ..."
+        else:
+            lesson_title = f"words: {', '.join(lesson_words)}"
         lesson = {
-            'lesson': f"lesson {i}",
+            'lesson': lesson_title,
             'words': lesson_words,
             'sentences': sentences
         }
+        
         module['lessons'].append(lesson)
-        words = words[wc:]
         lessons_per_module = get_lessons_per_module(i)
         if i % lessons_per_module == 0:
             modules.append(module)
@@ -191,24 +207,10 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
             }
         i+=1
     modules.append(module)
-    yaml.safe_dump({'modules': modules}, open(f"../data/content/{lang}_{to_lang}_course{r}_v2.yaml", "w"), allow_unicode=True)
-def open_yaml(lang, to_lang, rank = False):
-    r = "_by_rank" if rank else ""
-    with open(f'../data/content/{lang}_{to_lang}_course{r}.yaml', 'r') as f:
-        data = yaml.safe_load(f)
-    print(type(data))
-    for key, val in data.items():
-        print(key)
-        print(type(val))
-        for module in val:
-            print(type(module))
-            for k, v in module.items():
-                print(k)
-
+    print("unused words:", len(unused_words))
+    yaml.safe_dump({'modules': modules}, open(f"../data/content/gen_v3/{lang}_{to_lang}_course{r}.yaml", "w"), allow_unicode=True)
 
     
-import yaml
 if __name__ == "__main__":
     asyncio.run(generate_course_by_rank("ar", "en", rank=False))
-    # open_yaml("ar", "en", rank=False)
     

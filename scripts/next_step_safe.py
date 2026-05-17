@@ -95,9 +95,10 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
     to_options = r.get('to_options', [])
     # print(type(to_options), to_options)
     random.shuffle(options)
-    options = options[:4]
+    number_of_options = random.randint(2,4)
+    options = options[:number_of_options]
     random.shuffle(to_options)
-    to_options = to_options[:4]
+    to_options = to_options[:number_of_options]
     op = [{"text":o} for o in to_options]
     op.append({"text": to_text, "correct": True})
     split_words = text.split()
@@ -110,13 +111,15 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
         if audio:
             if len(words_for_recognize)> 10:
                 if len(split_words) >= 3:
-                    w_correct = random.sample(split_words, k=2)
-                    w_wrong = random.sample(list(words_for_recognize), k=4)
+                    w_correct = split_words
+                    w_wrong = random.sample(list(words_for_recognize), k=7)
                     all_words = list(set(w_correct + w_wrong))
                     opt = [{"text": w, "correct": w in w_correct} for w in all_words]
+                    random.shuffle(opt)
+                    opt = opt[:8]
                     ex.append({
                         'type': 'recognize',
-                        'text': text,
+                        'text': text_alt1,
                         'to_text': to_text,
                         'options': opt,
                         'voice': audio,
@@ -126,7 +129,8 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
                         'word2': word2, 
                         'word3': word3,
                     })
-    elif rnd > 8:
+                    return ex
+    if rnd > 8:
         op = [{"text":o} for o in options]
         op.append({"text": text, "correct": True})
         ex.append({
@@ -140,10 +144,11 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
             'word2': word2, 
             'word3': word3,
         })
+        return ex
     else:
         ex.append({
         'type': 'simple',    
-        'text': text_alt1,
+        'text': text_alt2,
         'options': op,
         'voice': audio,
         'sentence_id': id,
@@ -193,7 +198,7 @@ async def gen_module(m:dict):
 async def gen_and_save_module(m:dict):
     gen_m =  await gen_module(m)
     module_no = int(m.get('module'))
-    yaml.safe_dump({'modules': [gen_m]}, open(f"../data/content/gen_v2/module_{module_no}.yaml", "w"), allow_unicode=True)
+    yaml.safe_dump({'modules': [gen_m]}, open(f"../data/content/gen_v3/module_{module_no}.yaml", "w"), allow_unicode=True)
 def g_module(m:dict):
     asyncio.run(gen_and_save_module(m))
 
