@@ -60,6 +60,10 @@ Implement basic stats in home page
     - next lesson 
 
 
+*** RTL/LTR Language aware  ***
+- add language awareness of RTL and LTR
+
+
 *** Week 5 - Add Audio ***
 
 *** Week 5 - Improvements ***

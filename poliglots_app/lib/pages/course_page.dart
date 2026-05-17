@@ -124,9 +124,9 @@ class CoursePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
 
-                // Modules — vertical scroll, fixed height
+                // Modules — horizontal scroll, fixed height
                 SizedBox(
-                  height: 240,
+                  height: 92,
                   child: modulesAsync.when(
                     loading: () => const Center(
                       child: CircularProgressIndicator(color: Colors.white),
@@ -144,10 +144,11 @@ class CoursePage extends ConsumerWidget {
                     data: (modules) {
                       final effId = effectiveModuleId(modules);
                       return ListView.separated(
+                        scrollDirection: Axis.horizontal,
                         padding: EdgeInsets.zero,
                         itemCount: modules.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, i) => _ModuleRow(
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        itemBuilder: (context, i) => _ModuleCard(
                           module: _infoFromServer(modules, i, effId),
                           onTap: () => ref
                               .read(selectedModuleIdProvider.notifier)
@@ -176,7 +177,7 @@ class CoursePage extends ConsumerWidget {
                     ),
                     const Spacer(),
                     Text(
-                      'swipe →',
+                      'scroll for more',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -188,9 +189,8 @@ class CoursePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
 
-                // Lessons — horizontal scroll, fetched per-module
-                SizedBox(
-                  height: 150,
+                // Lessons — vertical scroll, fetched per-module
+                Expanded(
                   child: modulesAsync.maybeWhen(
                     data: (modules) {
                       final id = effectiveModuleId(modules);
@@ -201,7 +201,7 @@ class CoursePage extends ConsumerWidget {
                   ),
                 ),
 
-                const Spacer(),
+                const SizedBox(height: 14),
 
                 CtaButton(
                   label: 'Continue Lesson',
@@ -251,10 +251,10 @@ _ModuleInfo _infoFromServer(List<api.Module> modules, int i, int? effId) {
   );
 }
 
-class _ModuleRow extends StatelessWidget {
+class _ModuleCard extends StatelessWidget {
   final _ModuleInfo module;
   final VoidCallback onTap;
-  const _ModuleRow({required this.module, required this.onTap});
+  const _ModuleCard({required this.module, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +267,7 @@ class _ModuleRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: PolyRadii.cardSm,
         child: Container(
+          width: 168,
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           decoration: BoxDecoration(
             borderRadius: PolyRadii.cardSm,
@@ -274,50 +275,48 @@ class _ModuleRow extends StatelessWidget {
               color: Colors.white.withValues(alpha: selected ? 0.32 : 0.10),
             ),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _ModuleNum(state: module.state, number: module.number),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      module.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 80,
-                          child: PolyProgressBar(value: module.progress, height: 3),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          module.pct,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withValues(alpha: 0.65),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              Row(
+                children: [
+                  _ModuleNum(state: module.state, number: module.number),
+                  const Spacer(),
+                  Icon(
+                    selected ? Icons.expand_more : Icons.chevron_right,
+                    size: 18,
+                    color: Colors.white.withValues(alpha: selected ? 1.0 : 0.5),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                module.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  height: 1.2,
                 ),
               ),
-              Icon(
-                selected ? Icons.expand_more : Icons.chevron_right,
-                size: 18,
-                color: Colors.white.withValues(alpha: selected ? 1.0 : 0.5),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: PolyProgressBar(value: module.progress, height: 3),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    module.pct,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withValues(alpha: 0.65),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -411,10 +410,9 @@ class _LessonsSection extends ConsumerWidget {
         ),
       ),
       data: (lessons) => ListView.separated(
-        scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
         itemCount: lessons.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, i) {
           final info = _lessonInfoFromServer(lessons, i);
           return _LessonCard(
@@ -471,8 +469,7 @@ class _LessonCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          width: 130,
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
@@ -482,18 +479,19 @@ class _LessonCard extends StatelessWidget {
                 ? [
                     BoxShadow(
                         color: Colors.black.withValues(alpha: 0.30),
-                        offset: const Offset(0, 10),
-                        blurRadius: 24),
+                        offset: const Offset(0, 8),
+                        blurRadius: 20),
                   ]
                 : null,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
                       lesson.num,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -506,35 +504,36 @@ class _LessonCard extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.55),
                       ),
                     ),
-                  ),
-                  _LessonBadge(done: lesson.done, selected: selected),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                lesson.jp,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? PolyColors.brandPrimary : Colors.white,
-                  height: 1.2,
+                    const SizedBox(height: 4),
+                    Text(
+                      lesson.jp,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? PolyColors.brandPrimary : Colors.white,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      lesson.en,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: selected
+                            ? Colors.grey.shade700
+                            : Colors.white.withValues(alpha: 0.6),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                lesson.en,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: selected
-                      ? Colors.grey.shade700
-                      : Colors.white.withValues(alpha: 0.6),
-                  height: 1.3,
-                ),
-              ),
+              const SizedBox(width: 10),
+              _LessonBadge(done: lesson.done, selected: selected),
             ],
           ),
         ),
