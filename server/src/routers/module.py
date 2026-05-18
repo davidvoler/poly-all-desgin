@@ -10,7 +10,7 @@ async def get_modules(course_id: int):
     SELECT *  
     FROM course_simple.module
     WHERE course_id = %s
-    order by module_id
+    order by weight
     """
     params = (course_id,)
     res = await get_query_results(sql, params)

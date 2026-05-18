@@ -57,7 +57,12 @@ class HomePage extends ConsumerWidget {
                     const SizedBox(height: 16),
                     InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: () => Navigator.pushNamed(context, '/course'),
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        '/course',
+                        arguments:
+                            ref.read(preferenceProvider).value?.courseId,
+                      ),
                       child: const _CourseCaption(),
                     ),
                   ],
