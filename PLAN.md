@@ -94,3 +94,108 @@ Just create a quiz with exercise from different lessons using a certain word
 *** Week 6 - Deploy  ***
 
 
+
+
+*** tasks  ***
+
+
+## Design
+
+1. different design touch for each question type 
+
+
+## UI
+1. load entire course - all modules 
+2. Options
+    - auto play
+    - Select text type - (diacritic signs in arabic,hebrew - Hiragan, katakana, romanji in japanese  )
+    - font size 
+3. add explanations to lesson
+
+
+
+
+## Backend
+
+
+## content creation 
+
+Look for alternatives to tatoeba - it is not great with the repeating names - and simplified sentences. 
+Handle a youtube subtitle - this of how to do it 
+Create course in  
+Create Data for hebrew 
+Create
+
+
+## Editor 
+1. define the full yaml structure 
+2. search for alternative for yaml that would be great for people 
+
+
+
+simple format suggestion by gemini 
+original 
+
+=== EXERCISE ===
+type: simple
+id: 345341121
+to_id: 2529262219
+voice: /ar/ara/ar-xa_1d7b008f78e3ae12faf005971d454701a25d0961.mp3
+words: ها | أريد | ''
+
+text:
+أُرِيدَ التَّحَلُّصُ مِنْهَا
+
+options:
+[CORRECT] I want to get rid of it.
+[-] He wants to expand his Berber vocabulary.
+[-] I guess I'm a little antsy.
+[-] I want to get rid of Tom.
+
+
+simplified 
+
+=== EXERCISE ===
+text:
+مُوسِيقَاهَا رَائِعَةُ
+options:
+[-] My favorite is Italian.
+[-] My favorite is lasagna.
+[+] Her music is great.
+
+
+=== EXERCISE ===
+find words in sentences 
+text:
+مُوسِيقَاهَا رَائِعَةُ
+options:
+[+] مُوسِيقَاهَا
+[-] مُوسِيقَاهَا 
+[+] رَائِعَةُ
+
+---
+sentence:
+أُرِيدَ التَّحَلُّصُ مِنْهَا
+options:
+[+] I want to get rid of it.
+[-] He wants to expand his Berber vocabulary.
+[-] I guess I'm a little antsy.
+[-] I want to get rid of Tom.
+---explanation
+some long text with be written here. 
+--- words in text
+text:
+ أُرِيدَ التَّحَلُّصُ مِنْهَا
+[+]مِنْهَا
+[+]أُرِيدَ
+[-] be
+[-] bee
+[+]التَّحَلُّصُ
+--- 
+Walking on the moon
+[-] مِنْهَا
+[-] مِنْهَا
+[-] مِنْهَا
+[+] مِنْهَا
+
+
