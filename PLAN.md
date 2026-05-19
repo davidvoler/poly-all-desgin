@@ -141,7 +141,7 @@ implement annotated sentence in text
     - select a single translation
     - select all the words you hear in the sentence
     - select all correct answers 
-
+5. words page
 
 
 *** content creation *** 

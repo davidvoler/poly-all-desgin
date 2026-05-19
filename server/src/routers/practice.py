@@ -34,6 +34,24 @@ async def  get_words_for_practice(user_id: int, lang: str):
     return words[:10]
 
 
+async def  get_user_words(user_id: int, lang: str):
+    sql = """
+    select word1, word2 
+    from user_data.results 
+    where user_id = %s and lang = %s
+    group by 1,2
+    """
+    
+    params = (str(user_id), lang)
+    res = await get_query_results(sql, params)
+    word1 =  [r.get('word1') for r in res] if res else []
+    word2 =  [r.get('word2') for r in res] if res else []
+    words = word1 + word2
+    words = list(set(words))
+    return words
+
+
+
 async def  get_exercises_for_practice(user_id: int, lang: str):
     sql = """
     select exercise_id, sum(mark) as sum_mark from user_data.results 
@@ -103,6 +121,10 @@ async def exercise_by_words(user_id: int, lang: str):
     exercises = await get_exercises_by_words(lang, words)
     return exercises
     
+@router.get("/words", response_model=list[str])
+async def exercise_by_words(user_id: int, lang: str):
+    return await get_user_words(user_id, lang)
+
 
 @router.get("/by_sentences", response_model=list[Exercise])
 async def exercise_by_sentences(user_id: int, lang: str):
