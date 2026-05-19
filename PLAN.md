@@ -134,7 +134,7 @@ implement annotated sentence in text
 1. load entire course - all modules 
 2. Options
     - auto play
-    - Select text type - (diacritic signs in arabic,hebrew - Hiragan, katakana, Romanji in japanese  )
+    - Select text type - (diacritic signs in arabic,hebrew - Hiragana, katakana, Romanji in japanese  )
     - font size 
 3. add explanations to lesson
 4. Add description of the task 

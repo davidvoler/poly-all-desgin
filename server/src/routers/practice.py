@@ -44,10 +44,11 @@ async def  get_user_words(user_id: int, lang: str):
     
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
-    word1 =  [r.get('word1') for r in res] if res else []
+    word1 =  [r.get('word1') for r in res ] if res else []
     word2 =  [r.get('word2') for r in res] if res else []
     words = word1 + word2
     words = list(set(words))
+    words = [w for w in words if w.strip()]
     return words
 
 

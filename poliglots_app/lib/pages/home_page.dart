@@ -72,9 +72,26 @@ class HomePage extends ConsumerWidget {
 
                 // Stats label + glass capsule
                 Center(
-                  child: Text(
-                    t.home.vocabulary_label,
-                    style: PolyText.sectionLabel(color: PolyColors.white(0.5)),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => Navigator.pushNamed(context, '/words'),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            t.home.vocabulary_label,
+                            style: PolyText.sectionLabel(
+                                color: PolyColors.white(0.5)),
+                          ),
+                          const SizedBox(width: 5),
+                          Icon(Icons.chevron_right,
+                              size: 13, color: PolyColors.white(0.5)),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 7),
@@ -123,6 +140,14 @@ class HomePage extends ConsumerWidget {
                         leadingIcon: Icons.play_arrow,
                         onTap: () => Navigator.pushNamed(context, '/quiz'),
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    RoundIconButton(
+                      icon: Icons.menu_book,
+                      tooltip: 'Words learned',
+                      iconSize: 18,
+                      size: 40,
+                      onTap: () => Navigator.pushNamed(context, '/words'),
                     ),
                     const SizedBox(width: 8),
                     RoundIconButton(

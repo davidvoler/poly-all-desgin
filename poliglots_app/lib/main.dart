@@ -11,6 +11,7 @@ import 'pages/course_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/home_page.dart';
 import 'pages/quiz_page.dart';
+import 'pages/words_page.dart';
 import 'state/lang.dart';
 import 'theme.dart';
 
@@ -116,6 +117,7 @@ class PolyglotsApp extends StatelessWidget {
         '/courses': (context) => const CoursesPage(),
         '/course': (context) => const CoursePage(),
         '/quiz': (context) => const QuizPage(),
+        '/words': (context) => const WordsPage(),
         '/annotated': (context) => const AnnotatedPage(),
       },
     );
