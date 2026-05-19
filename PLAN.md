@@ -127,75 +127,26 @@ Create Data for hebrew
 Create
 
 
-## Editor 
+*** Editor - DONE  ***
 1. define the full yaml structure 
 2. search for alternative for yaml that would be great for people 
+3. implement simple export 
+4. implement simple import 
 
 
+The current import export assume a single minimum 
+that exercises are separated by a ---
 
-simple format suggestion by gemini 
-original 
+Done implemented a real simple format 
 
-=== EXERCISE ===
-type: simple
-id: 345341121
-to_id: 2529262219
-voice: /ar/ara/ar-xa_1d7b008f78e3ae12faf005971d454701a25d0961.mp3
-words: ها | أريد | ''
+folder 
+course/module/lesson.txt
 
-text:
-أُرِيدَ التَّحَلُّصُ مِنْهَا
+TODO: course and module description 
 
-options:
-[CORRECT] I want to get rid of it.
-[-] He wants to expand his Berber vocabulary.
-[-] I guess I'm a little antsy.
-[-] I want to get rid of Tom.
-
-
-simplified 
-
-=== EXERCISE ===
-text:
-مُوسِيقَاهَا رَائِعَةُ
-options:
-[-] My favorite is Italian.
-[-] My favorite is lasagna.
-[+] Her music is great.
-
-
-=== EXERCISE ===
-find words in sentences 
-text:
-مُوسِيقَاهَا رَائِعَةُ
-options:
-[+] مُوسِيقَاهَا
-[-] مُوسِيقَاهَا 
-[+] رَائِعَةُ
-
+---simple
+دَعْنِي أَحَصِّلُ عَلَى اثْنَيْنِ
+[+] Let me get two.
+[-] Let's plan it.
+[-] Yes, let’s do it!
 ---
-sentence:
-أُرِيدَ التَّحَلُّصُ مِنْهَا
-options:
-[+] I want to get rid of it.
-[-] He wants to expand his Berber vocabulary.
-[-] I guess I'm a little antsy.
-[-] I want to get rid of Tom.
----explanation
-some long text with be written here. 
---- words in text
-text:
- أُرِيدَ التَّحَلُّصُ مِنْهَا
-[+]مِنْهَا
-[+]أُرِيدَ
-[-] be
-[-] bee
-[+]التَّحَلُّصُ
---- 
-Walking on the moon
-[-] مِنْهَا
-[-] مِنْهَا
-[-] مِنْهَا
-[+] مِنْهَا
-
-
