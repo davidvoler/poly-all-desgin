@@ -82,49 +82,11 @@ Just create a quiz with exercise from different lessons using a certain word
     - repeat sentences you have already learned 
 
 
-*** Week 5 - Course Data Improvements ***
+*** Week 5 - Course Data Improvements - Done ***
 
 1. limits wring options when creating a quiz - now we have 10
 2. identify words - use variable number of words 
 3. load lesson - consider loading only a limited number exercises 10 or 15
-
-
-
-
-*** Week 6 - Deploy  ***
-
-
-
-
-*** tasks  ***
-
-
-## Design
-
-1. different design touch for each question type 
-
-
-## UI
-1. load entire course - all modules 
-2. Options
-    - auto play
-    - Select text type - (diacritic signs in arabic,hebrew - Hiragan, katakana, romanji in japanese  )
-    - font size 
-3. add explanations to lesson
-
-
-
-
-## Backend
-
-
-## content creation 
-
-Look for alternatives to tatoeba - it is not great with the repeating names - and simplified sentences. 
-Handle a youtube subtitle - this of how to do it 
-Create course in  
-Create Data for hebrew 
-Create
 
 
 *** Editor - DONE  ***
@@ -150,3 +112,47 @@ TODO: course and module description
 [-] Let's plan it.
 [-] Yes, let’s do it!
 ---
+
+*** Youtube usage ***
+
+1. download srt format
+2. break the text into sentences 
+3. break the video into time line - say 5 minutes each
+4. generate question 
+
+*** annotated sentence ***
+
+implement annotated sentence in text 
+
+
+***  Design ***
+
+1. different design touch for each question type 
+
+
+*** UI ***
+1. load entire course - all modules 
+2. Options
+    - auto play
+    - Select text type - (diacritic signs in arabic,hebrew - Hiragan, katakana, Romanji in japanese  )
+    - font size 
+3. add explanations to lesson
+4. Add description of the task 
+    - select a single translation
+    - select all the words you hear in the sentence
+    - select all correct answers 
+
+
+
+*** content creation *** 
+
+Look for alternatives to tatoeba - it is not great with the repeating names - and simplified sentences. 
+Handle a youtube subtitle - this of how to do it 
+Create course in  
+Create Data for hebrew 
+Create
+
+
+
+
+*** Week 6 - Deploy  ***
