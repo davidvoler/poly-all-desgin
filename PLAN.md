@@ -128,14 +128,14 @@ implement annotated sentence in text
 
 
 ***  Design ***
-
 1. different design touch for each question type 
 
 
+
 *** UI ***
-1. load entire course - all modules - done
+1. [v] load entire course - all modules - done
 2. Options
-    - auto play
+    - auto play audio
     - Select text type - (diacritic signs in arabic,hebrew - Hiragana, katakana, Romanji in japanese  )
     - font size 
 3. add explanations to lesson
@@ -148,6 +148,12 @@ implement annotated sentence in text
     - server - show words in the order we have learned them
 6. correct/incorrect notification 
 
+7. Lesson Complete = Page 
+- [] skip - should get you to the end of lesson end ot practice page
+- [] calculate mark on client side (or serer side can return mark) - show mark after each question - show real mark where the heart icon on top
+- [] end of lesson - show some data on lesson - how many exercise were answered correctly, how many wrong, how many skipped and the final score of the lesson
+- [] show list of words in the lesson - optional
+- [] recommend: on repeat - or next lesson
 
 
 
@@ -307,4 +313,12 @@ Evaluate carefully, may regret:
 - [] server implementation 
 
 
+
+
+*** DB Changes ***
+- [] replace mark with score
+
 *** Week 6 - Deploy  ***
+
+
+TIME FOR DETAILS - LET'S COMPLETE THE UI. 

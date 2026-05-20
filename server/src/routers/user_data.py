@@ -4,8 +4,8 @@ from utils.db import run_query
 router = APIRouter()
 
 
-def calculate_mark(correct_ratio: float, incorrect_count: float, attempts: int) -> float:
-    """Calculate a mark for an exercise attempt based on the correct ratio, incorrect count, and number of attempts."""
+def calculate_score(correct_ratio: float, incorrect_count: float, attempts: int) -> float:
+    """Calculate a score for an exercise attempt based on the correct ratio, incorrect count, and number of attempts."""
     print(correct_ratio, incorrect_count, attempts)
     if correct_ratio == 1 and incorrect_count == 0:
         if attempts == 1:
@@ -20,7 +20,7 @@ def calculate_mark(correct_ratio: float, incorrect_count: float, attempts: int) 
 
 @router.post("/")
 async def save_results(results: Results):
-    mark = calculate_mark(
+    score = calculate_score(
         results.correct_ratio or 0.0,
         results.incorrect_count or 0.0,
         results.attempts or 0,
@@ -33,7 +33,7 @@ async def save_results(results: Results):
     INSERT INTO user_data.results (
         user_id, course_id, module_id, lesson_id, exercise_id,
         word1, word2, word3, sentence_id,
-        answer_delay_ms, attempts,  mark, lang
+        answer_delay_ms, attempts,  score, lang
     ) VALUES (%s, %s, %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
@@ -48,8 +48,8 @@ async def save_results(results: Results):
         results.sentence_id,
         answer_delay_ms,
         results.attempts,
-        mark,
+        score,
         results.lang,
      )
     await run_query(sql, params)
-    return {"message": "Results saved successfully", "mark": mark}
+    return {"message": "Results saved successfully", "score": score}
