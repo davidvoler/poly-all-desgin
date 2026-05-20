@@ -120,10 +120,7 @@ TODO: course and module description
 - [v] break the video into time line - say 5 minutes each
 - [v] generate question 
 - [] handle multiple translation for a given language 
-- [] generate words 
-Do we have translation for the lesson
-
-
+- [] extract zipf words  
 
 *** annotated sentence ***
 
