@@ -1,0 +1,738 @@
+/* Motivation — Design Experiments
+   Phone-frame mockups for the consumer Polyglots app's motivation
+   surfaces. Pure CSS, no JS. Matches design tokens from the Flutter
+   theme (see poliglots_app/lib/theme.dart). */
+
+:root {
+  --brand:    #1E88E5;
+  --blue-700: #1976D2;
+  --blue-800: #1565C0;
+  --blue-900: #0D47A1;
+  --dark-bg:  #0C0F1A;
+  --orange:   #FFB74D;
+  --green:    #4CAF50;
+  --red:      #EF5350;
+
+  --w-90: rgba(255,255,255,0.90);
+  --w-70: rgba(255,255,255,0.70);
+  --w-55: rgba(255,255,255,0.55);
+  --w-35: rgba(255,255,255,0.35);
+  --w-18: rgba(255,255,255,0.18);
+  --w-14: rgba(255,255,255,0.14);
+  --w-08: rgba(255,255,255,0.08);
+  --w-06: rgba(255,255,255,0.06);
+  --w-04: rgba(255,255,255,0.04);
+
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  color: var(--w-90);
+  background: var(--dark-bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Page layout ====================================================== */
+.page-head {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 16px;
+}
+.page-head h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin: 0 0 6px;
+}
+.page-head .lede {
+  font-size: 13px;
+  color: var(--w-70);
+  line-height: 1.55;
+  max-width: 760px;
+  margin: 0 0 10px;
+}
+.page-head .lede b { color: #fff; }
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--w-55);
+  margin-top: 8px;
+}
+.legend .ring {
+  width: 12px; height: 12px;
+  border-radius: 4px;
+  border: 2px solid rgba(76,175,80,0.7);
+  box-shadow: 0 0 10px rgba(76,175,80,0.4);
+}
+
+/* === Gallery grid ===================================================== */
+.gallery {
+  max-width: 1280px;
+  margin: 24px auto 64px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+@media (max-width: 1200px) { .gallery { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px)  { .gallery { grid-template-columns: 1fr; } }
+
+.mock { margin: 0; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.cap {
+  width: 100%;
+  max-width: 360px;
+}
+.cap .num {
+  display: inline-block;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  text-align: center;
+  font-size: 11px; font-weight: 700;
+  line-height: 20px;
+  margin-right: 8px;
+}
+.cap .ttl {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.16px;
+  display: inline;
+}
+.cap .sub {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--w-70);
+  line-height: 1.55;
+}
+.cap .sub b { color: #fff; }
+.cap .sub .ch { color: #b9f6ca; }
+.cap .sub .ac { color: #ffe082; }
+.cap .sub .el { color: var(--w-55); }
+
+/* === Phone frame ====================================================== */
+.phone {
+  width: 360px;
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  min-height: 640px;
+  background:
+    radial-gradient(140% 80% at 50% 100%,
+      var(--brand) 0%, var(--blue-800) 25%,
+      var(--blue-900) 55%, var(--dark-bg) 100%);
+  box-shadow: 0 22px 60px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+}
+.ph-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 18px 16px 0;
+}
+.brand-mark {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-70);
+}
+.ph-right { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+.ph-content {
+  flex: 1;
+  padding: 18px 18px 22px;
+  display: flex; flex-direction: column;
+  gap: 14px;
+}
+
+/* === Reusable phone-internal components ============================== */
+.gc {
+  border-radius: 14px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  padding: 12px 14px;
+}
+.gc.lg { padding: 16px; border-radius: 16px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  font-size: 10px;
+  font-weight: 700;
+}
+.pill .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 8px rgba(255,183,77,0.8);
+}
+.pill .dot.green { background: var(--green); box-shadow: 0 0 8px rgba(76,175,80,0.8); }
+
+.chip-lang {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  font-size: 11px; font-weight: 600;
+}
+
+.btn-primary {
+  background: #fff;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  border-radius: 999px;
+  padding: 11px 16px;
+  border: 0;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-ghost {
+  background: var(--w-08);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: 1px solid var(--w-18);
+  cursor: pointer;
+}
+
+.icon-btn {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Medallion (smaller, abstracted from the home page) */
+.medal {
+  width: 140px; height: 140px;
+  margin: 6px auto 4px;
+  border-radius: 50%;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  border: 2px solid var(--w-18);
+  background: radial-gradient(circle, rgba(255,255,255,0.08), rgba(255,255,255,0));
+}
+.medal.has-ring {
+  border-color: rgba(255,183,77,0.85);
+  box-shadow: 0 0 32px rgba(255,183,77,0.35);
+}
+.medal .pair {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--w-70);
+  margin-bottom: 4px;
+}
+.medal .native {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  text-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+.medal .pct {
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  color: var(--w-70);
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* Course caption (continue lesson) */
+.caption {
+  text-align: center;
+  border-radius: 12px;
+  border: 1px solid var(--w-14);
+  background: var(--w-06);
+  padding: 10px 14px;
+}
+.caption .overline {
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-55);
+  text-transform: uppercase;
+}
+.caption .title {
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -0.14px;
+  margin-top: 3px;
+}
+.caption .sub {
+  font-size: 10px; color: var(--w-55);
+  margin-top: 4px;
+}
+
+/* Vocabulary label row */
+.vocab-row {
+  display: flex; justify-content: center; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--w-55);
+  text-transform: uppercase;
+}
+
+/* Stats card (Words / Sentences / Exercises segments) */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-radius: 14px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  padding: 10px 4px;
+}
+.stats .seg {
+  text-align: center;
+  padding: 6px 4px;
+  border-right: 1px solid var(--w-08);
+}
+.stats .seg:last-child { border-right: 0; }
+.stats .seg .v {
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.stats .seg .v .of {
+  font-size: 10px; font-weight: 600;
+  color: var(--w-55);
+  letter-spacing: 0;
+}
+.stats .seg .l {
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--w-70);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Bottom CTA row (Practice Now + icons) */
+.cta-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: auto;
+}
+.cta-row .btn-primary { flex: 1; }
+
+/* === Focal highlight — green ring around motivation surfaces ========= */
+.focal {
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(76,175,80,0.7),
+              0 0 22px rgba(76,175,80,0.35);
+  border-radius: 14px;
+}
+.focal-pill {
+  box-shadow: 0 0 0 2px rgba(76,175,80,0.7),
+              0 0 14px rgba(76,175,80,0.35);
+}
+
+/* Progress bar (used in milestone strips + goal cards) */
+.bar {
+  width: 100%; height: 6px;
+  border-radius: 999px;
+  background: var(--w-08);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.bar > i { display: block; height: 100%; background: #fff; }
+.bar.thick { height: 8px; }
+.bar.warm > i { background: linear-gradient(90deg, #ffb74d, #ef5350); }
+
+/* === Mockup-specific blocks ========================================== */
+
+/* Welcome-back hero (mockup 2) */
+.wb-hero {
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 80% at 30% 20%, rgba(255,183,77,0.18), transparent 60%),
+    var(--w-06);
+  border: 1px solid var(--w-18);
+  padding: 20px 18px;
+  display: flex; flex-direction: column;
+  gap: 10px;
+}
+.wb-hero .eyebrow {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--orange);
+  text-transform: uppercase;
+}
+.wb-hero h2 {
+  margin: 0;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.wb-hero p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--w-70);
+  line-height: 1.45;
+}
+.wb-hero .meta {
+  font-size: 10px;
+  color: var(--w-55);
+  margin-top: 2px;
+}
+
+/* Goal card (mockup 3) */
+.goal-card {
+  border-radius: 14px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  padding: 12px 14px;
+}
+.goal-card .overline {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-55);
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px;
+}
+.goal-card .title {
+  font-size: 14px; font-weight: 700;
+  margin: 4px 0 0;
+  letter-spacing: -0.16px;
+}
+.goal-card .meta {
+  font-size: 10px;
+  color: var(--w-55);
+  margin-top: 6px;
+}
+
+/* Compound projection card (mockup 3) */
+.proj-card {
+  border-radius: 14px;
+  background: var(--w-04);
+  border: 1px dashed var(--w-18);
+  padding: 12px 14px;
+}
+.proj-card .eyebrow {
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-55);
+  text-transform: uppercase;
+}
+.proj-card .big {
+  font-size: 13px; font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: -0.1px;
+}
+.proj-card .big b { font-size: 17px; color: #fff; }
+
+/* Practice menu CTA (mockup 3) */
+.mix-cta {
+  border-radius: 999px;
+  background: #fff;
+  color: var(--brand);
+  padding: 12px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+.mix-cta .arrow { font-size: 14px; }
+.mix-cta .edit {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--brand);
+  opacity: 0.65;
+  padding: 2px 8px;
+  border: 1px solid rgba(30,136,229,0.35);
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+/* Words page (mockup 4) — milestone strip + chip cloud */
+.ph-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700;
+  color: var(--w-70);
+  text-decoration: none;
+}
+.words-title {
+  text-align: center;
+  margin-top: 6px;
+}
+.words-title .overline {
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-55);
+  text-transform: uppercase;
+}
+.words-title h2 {
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -0.14px;
+  margin: 2px 0 0;
+}
+.milestone-strip {
+  border-radius: 14px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+.milestone-strip .overline {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--orange);
+  text-transform: uppercase;
+}
+.milestone-strip .row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 6px;
+}
+.milestone-strip .progress-label {
+  font-size: 11px; font-weight: 700;
+}
+.milestone-strip .progress-label b { color: var(--orange); }
+.milestone-strip .meta {
+  font-size: 10px;
+  color: var(--w-55);
+  margin-top: 6px;
+}
+.word-count {
+  text-align: center;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-55);
+  text-transform: uppercase;
+  margin: 12px 0 4px;
+}
+.word-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: flex-start;
+}
+.word-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  font-size: 12px;
+  font-weight: 600;
+  direction: rtl;
+}
+
+/* Quiz mid-screen (mockup 5) */
+.quiz-top {
+  display: flex; align-items: center; gap: 8px;
+}
+.quiz-top .prog {
+  flex: 1; height: 6px;
+  background: var(--w-08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.quiz-top .prog > i {
+  display: block; height: 100%;
+  background: #fff;
+}
+.quiz-top .frac {
+  font-size: 10px; font-weight: 700;
+  color: #fff;
+}
+.quiz-nav {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--w-04);
+  border: 1px solid var(--w-08);
+}
+.quiz-nav .btn {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  font-size: 9px; font-weight: 700;
+  color: #fff;
+}
+.quiz-nav .ttl {
+  flex: 1; text-align: center;
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--w-55);
+  text-transform: uppercase;
+}
+.q-prompt-label {
+  text-align: center;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--w-55);
+  text-transform: uppercase;
+}
+.q-card {
+  border-radius: 18px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  padding: 18px 16px;
+  text-align: center;
+}
+.q-card .sentence {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.4px;
+  direction: rtl;
+  text-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+.q-card .audio {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 10px;
+}
+
+.q-opt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--w-06);
+  border: 1px solid var(--w-14);
+  font-size: 12px; font-weight: 600;
+}
+.q-opt .letter {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  color: var(--w-70);
+  flex-shrink: 0;
+}
+.q-opt.correct {
+  background: rgba(76,175,80,0.22);
+  border-color: rgba(76,175,80,0.65);
+}
+.q-opt.correct .letter {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+.q-opt.correct .letter::after { content: "✓"; }
+.q-opt.correct .letter > span { display: none; }
+
+/* Long-dormant celebration banner inside quiz */
+.dormant-celebrate {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 80% at 10% 0%, rgba(76,175,80,0.18), transparent 70%),
+    rgba(76,175,80,0.10);
+  border: 1px solid rgba(76,175,80,0.5);
+}
+.dormant-celebrate .row {
+  display: flex; align-items: center; gap: 8px;
+}
+.dormant-celebrate .spark {
+  font-size: 16px;
+  filter: drop-shadow(0 0 6px rgba(76,175,80,0.7));
+}
+.dormant-celebrate .ttl {
+  font-size: 12px; font-weight: 700;
+  color: #c8e6c9;
+}
+.dormant-celebrate .meta {
+  font-size: 11px;
+  color: var(--w-70);
+  margin-top: 3px;
+}
+
+/* Quiz-complete (mockup 6) */
+.qc-stage {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  text-align: center;
+}
+.qc-trophy {
+  font-size: 56px;
+  filter:
+    drop-shadow(0 0 20px rgba(255,183,77,0.6))
+    drop-shadow(0 0 32px rgba(255,183,77,0.35));
+}
+.qc-stage .module-line {
+  font-size: 13px; color: var(--w-70);
+}
+.qc-stage .module-line b { color: #fff; font-weight: 700; }
+
+.milestone-overlay {
+  width: 100%;
+  border-radius: 16px;
+  padding: 18px 16px;
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(255,183,77,0.20), transparent 60%),
+    rgba(255,183,77,0.10);
+  border: 1px solid rgba(255,183,77,0.55);
+  text-align: left;
+}
+.milestone-overlay .overline {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--orange);
+  text-transform: uppercase;
+}
+.milestone-overlay h3 {
+  font-size: 17px; font-weight: 700;
+  letter-spacing: -0.2px;
+  margin: 4px 0 6px;
+}
+.milestone-overlay p {
+  font-size: 12px; color: var(--w-70);
+  margin: 0;
+  line-height: 1.5;
+}
+.milestone-overlay .next {
+  font-size: 10px;
+  color: var(--w-55);
+  margin-top: 8px;
+  text-align: center;
+}
+.qc-actions {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%;
+  margin-top: auto;
+}
+.qc-actions .btn-primary { width: 100%; }
+.qc-actions .btn-ghost {
+  width: 100%;
+  text-align: center;
+  padding: 10px 14px;
+  background: var(--w-08);
+  border: 1px solid var(--w-18);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* Faded body content (mockup 2) so the hero stands out */
+.faded { opacity: 0.45; pointer-events: none; }
+
+/* === Footer note ===================================================== */
+.footnote {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px 80px;
+  font-size: 12px;
+  color: var(--w-55);
+  line-height: 1.6;
+}
+.footnote b { color: var(--w-90); }
+.footnote a { color: var(--w-90); text-underline-offset: 3px; }

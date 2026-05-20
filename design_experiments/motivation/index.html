@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Motivation — Design Experiments · Polyglots</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="motivation.css" />
+</head>
+<body>
+
+<header class="page-head">
+  <h1>Motivation — Design Experiments</h1>
+  <p class="lede">
+    Every motivator has two faces: <b>the challenge</b> (a CTA that says
+    "here is something worth doing") and <b>the accomplishment</b> (the
+    moment of payoff that says "you did it"). Each mockup below labels
+    both, plus the <b>eligibility condition</b> — when the challenge
+    should actually appear. A "master 50 words" challenge shown to a
+    user who has only seen 12 is demoralizing; the same challenge shown
+    when they're at 38/50 is irresistible.
+  </p>
+  <p class="lede">
+    The <b>50-words milestone</b> is the canonical case — it runs as a
+    thread through <b>#1 → #4 → #6</b> so you can trace the
+    challenge → progress → payoff arc end-to-end.
+  </p>
+  <div class="legend"><span class="ring"></span> green ring marks the motivation surface in each mockup</div>
+</header>
+
+<div class="gallery">
+
+  <!-- ===== MOCKUP 1 — Home: milestone chip + still-recall stat ===== -->
+  <figure class="mock">
+    <figcaption class="cap">
+      <span class="num">1</span><span class="ttl">Home · Milestone chip + still-recall stat</span>
+      <div class="sub">
+        <span class="ch">Challenge:</span> top-right chip <b>"Master 50 words · 32/50"</b>
+        replaces the streak chip.<br>
+        <span class="ac">Accomplishment:</span> the <b>"Still recall: 67 of 142"</b> segment
+        grows each session. Medallion earns a ring at 50.<br>
+        <span class="el">Eligible:</span> challenge appears once user has ≥50 words in their
+        vocabulary (seen).
+      </div>
+    </figcaption>
+
+    <div class="phone">
+      <div class="ph-bar">
+        <span class="brand-mark">POLYGLOTS</span>
+        <div class="ph-right">
+          <span class="chip-lang">🇺🇸 ▾</span>
+          <span class="pill focal-pill"><span class="dot"></span> Master 50 words · 32/50</span>
+        </div>
+      </div>
+
+      <div class="ph-content">
+        <div class="medal">
+          <div class="pair">🇺🇸 → 🇮🇱</div>
+          <div class="native">עברית</div>
+          <div class="pct">45% COMPLETE</div>
+        </div>
+
+        <div class="caption">
+          <div class="overline">Hebrew · A1 Foundations</div>
+          <div class="title">Continue lesson</div>
+          <div class="sub">Module 3 · Greetings</div>
+        </div>
+
+        <div class="vocab-row">— Your Vocabulary · → —</div>
+
+        <div class="stats focal">
+          <div class="seg">
+            <div class="v">67<span class="of">/142</span></div>
+            <div class="l">Still recall</div>
+          </div>
+          <div class="seg">
+            <div class="v">38</div>
+            <div class="l">Sentences</div>
+          </div>
+          <div class="seg">
+            <div class="v">12</div>
+            <div class="l">Exercises</div>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <button class="btn-primary">▶ Practice Now</button>
+          <span class="icon-btn">📚</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ===== MOCKUP 2 — Home: Welcome-back hero ===== -->
+  <figure class="mock">
+    <figcaption class="cap">
+      <span class="num">2</span><span class="ttl">Home · Welcome-back hero (the anti-streak)</span>
+      <div class="sub">
+        <span class="ch">Challenge:</span> hero takeover offers a tailored re-warm session
+        instead of guilt for the gap.<br>
+        <span class="ac">Accomplishment:</span> the end-of-re-warm screen says
+        <b>"You kept 6 of 8 still on lock"</b> — confirms memory, doesn't punish absence.<br>
+        <span class="el">Eligible:</span> last session ≥7 days ago. The longer the break,
+        the warmer the copy.
+      </div>
+    </figcaption>
+
+    <div class="phone">
+      <div class="ph-bar">
+        <span class="brand-mark">POLYGLOTS</span>
+        <div class="ph-right">
+          <span class="chip-lang">🇺🇸 ▾</span>
+          <!-- intentionally NO streak chip here -->
+        </div>
+      </div>
+
+      <div class="ph-content">
+        <div class="wb-hero focal">
+          <div class="eyebrow">Welcome back, Lena</div>
+          <h2>It's been 12 days.</h2>
+          <p>Let's re-warm <b>8 words</b> you've learned before any new material. No counter to lose — skip if you want.</p>
+          <div class="meta">→ projected recall on 5 words is fading below 60%</div>
+          <button class="btn-primary" style="margin-top:6px;">Start re-warm →</button>
+        </div>
+
+        <div class="vocab-row faded">— Your Vocabulary · → —</div>
+
+        <div class="stats faded">
+          <div class="seg"><div class="v">67<span class="of">/142</span></div><div class="l">Still recall</div></div>
+          <div class="seg"><div class="v">38</div><div class="l">Sentences</div></div>
+          <div class="seg"><div class="v">12</div><div class="l">Exercises</div></div>
+        </div>
+
+        <div class="cta-row faded">
+          <button class="btn-ghost" style="flex:1;">Skip warm-up — jump to new lesson</button>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ===== MOCKUP 3 — Home: Goal card + compound projection + practice mix ===== -->
+  <figure class="mock">
+    <figcaption class="cap">
+      <span class="num">3</span><span class="ttl">Home · Goal · projection · practice mix</span>
+      <div class="sub">
+        <span class="ch">Challenge:</span> <b>goal card</b> shows the deadline + progress.
+        The CTA is a chosen <b>practice mix</b> (autonomy), not a generic "Practice now".<br>
+        <span class="ac">Accomplishment:</span> full-screen overlay when the goal is met —
+        <b>"🎯 You did it — order coffee in Hebrew"</b>.<br>
+        <span class="el">Eligible:</span> user set a goal, not past deadline, not yet met.
+        Projection eligible after ≥14 days of data.
+      </div>
+    </figcaption>
+
+    <div class="phone">
+      <div class="ph-bar">
+        <span class="brand-mark">POLYGLOTS</span>
+        <div class="ph-right">
+          <span class="chip-lang">🇺🇸 ▾</span>
+          <span class="pill"><span class="dot green"></span> 14/40</span>
+        </div>
+      </div>
+
+      <div class="ph-content">
+        <div class="caption">
+          <div class="overline">Hebrew · A1 Foundations</div>
+          <div class="title">Continue lesson</div>
+          <div class="sub">Module 3 · Greetings</div>
+        </div>
+
+        <div class="goal-card focal">
+          <div class="overline">🎯 Goal · 22 days left</div>
+          <div class="title">Order coffee in Hebrew</div>
+          <div class="bar thick"><i style="width:35%"></i></div>
+          <div class="meta">14 / 40 phrases learned · on track</div>
+        </div>
+
+        <div class="vocab-row">— Your Vocabulary · → —</div>
+        <div class="stats">
+          <div class="seg"><div class="v">67<span class="of">/142</span></div><div class="l">Still recall</div></div>
+          <div class="seg"><div class="v">38</div><div class="l">Sentences</div></div>
+          <div class="seg"><div class="v">12</div><div class="l">Exercises</div></div>
+        </div>
+
+        <div class="proj-card focal">
+          <div class="eyebrow">At your pace</div>
+          <div class="big">In 60 days you'll know <b>+240</b> more words.</div>
+        </div>
+
+        <div class="mix-cta focal">
+          <span>▶ Today: 8 min listen + 4 min read</span>
+          <span class="edit">EDIT MIX ▾</span>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ===== MOCKUP 4 — Words page: milestone progress strip ===== -->
+  <figure class="mock">
+    <figcaption class="cap">
+      <span class="num">4</span><span class="ttl">Words page · Milestone progress strip</span>
+      <div class="sub">
+        <span class="ch">Challenge:</span> <b>"Master your first 50 · 32/50"</b> strip pinned
+        to the page header. Replaced by next tier (100) as crossed.<br>
+        <span class="ac">Accomplishment:</span> see mockup #6 — fires at the next quiz-end
+        when the 50th word is mastered.<br>
+        <span class="el">Eligible:</span> user has ≥50 words in their vocabulary (seen). The
+        50-word tier disappears entirely once mastered.
+      </div>
+    </figcaption>
+
+    <div class="phone">
+      <div class="ph-bar">
+        <span class="ph-back" style="flex:1;">← <span style="font-weight:700;">Back</span></span>
+        <div class="ph-right">
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="ph-content">
+        <div class="words-title">
+          <div class="overline">Your vocabulary</div>
+          <h2>Words learned</h2>
+        </div>
+
+        <div class="milestone-strip focal">
+          <div class="overline">🎯 Master your first 50</div>
+          <div class="row">
+            <div class="progress-label"><b>32</b> / 50</div>
+            <div class="bar" style="flex:1; margin-top:0;"><i style="width:64%"></i></div>
+          </div>
+          <div class="meta">18 more to go · about 3 lessons at your pace</div>
+        </div>
+
+        <div class="word-count">142 עברית words</div>
+
+        <div class="word-chips">
+          <span class="word-chip">שלום</span>
+          <span class="word-chip">תודה</span>
+          <span class="word-chip">בית</span>
+          <span class="word-chip">ספר</span>
+          <span class="word-chip">סליחה</span>
+          <span class="word-chip">ילד</span>
+          <span class="word-chip">ילדה</span>
+          <span class="word-chip">אמא</span>
+          <span class="word-chip">אבא</span>
+          <span class="word-chip">סבא</span>
+          <span class="word-chip">מים</span>
+          <span class="word-chip">לחם</span>
+          <span class="word-chip">בוקר טוב</span>
+          <span class="word-chip">לילה טוב</span>
+          <span class="word-chip">אהבה</span>
+          <span class="word-chip">שמש</span>
+          <span class="word-chip">ירח</span>
+          <span class="word-chip">חבר</span>
+          <span class="word-chip">חברה</span>
+          <span class="word-chip">בית-ספר</span>
+          <span class="word-chip">מורה</span>
+          <span class="word-chip">…</span>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ===== MOCKUP 5 — Quiz mid-screen: long-dormant-word celebration ===== -->
+  <figure class="mock">
+    <figcaption class="cap">
+      <span class="num">5</span><span class="ttl">Quiz mid-screen · Long-dormant-word celebration</span>
+      <div class="sub">
+        <span class="ch">Challenge:</span> none — this one is passive, emerges from regular
+        practice.<br>
+        <span class="ac">Accomplishment:</span> the answered chip glows green + a soft inline
+        banner <b>"You still know this — last seen 47 days ago"</b>.<br>
+        <span class="el">Eligible:</span> word's previous correct answer was &gt;30 days ago
+        AND current answer was first-try correct.
+      </div>
+    </figcaption>
+
+    <div class="phone">
+      <div class="ph-bar">
+        <span class="icon-btn">×</span>
+        <div class="quiz-top" style="flex:1;">
+          <div class="prog"><i style="width:50%"></i></div>
+          <div class="frac">5 / 10</div>
+        </div>
+      </div>
+
+      <div class="ph-content">
+        <div class="quiz-nav">
+          <span class="btn">← Back</span>
+          <span class="ttl">Conversational Hebrew</span>
+          <span class="btn">Skip →</span>
+        </div>
+
+        <div class="q-prompt-label">— Translate this sentence —</div>
+
+        <div class="q-card">
+          <div class="sentence">אבא שלי מורה</div>
+          <div class="audio">🔊</div>
+        </div>
+
+        <div class="q-opt correct focal">
+          <span class="letter"></span>
+          <span>My father is a teacher</span>
+        </div>
+
+        <div class="dormant-celebrate focal">
+          <div class="row">
+            <span class="spark">✨</span>
+            <div>
+              <div class="ttl">You still know this!</div>
+              <div class="meta">Last seen 47 days ago · memory milestone</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q-opt"><span class="letter">B</span><span>My brother is a student</span></div>
+        <div class="q-opt"><span class="letter">C</span><span>My mother is a doctor</span></div>
+
+        <div style="margin-top:auto;">
+          <button class="btn-primary" style="width:100%;">Continue →</button>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ===== MOCKUP 6 — Quiz-complete: First 50 words milestone overlay ===== -->
+  <figure class="mock">
+    <figcaption class="cap">
+      <span class="num">6</span><span class="ttl">Quiz-complete · First-50-words milestone overlay</span>
+      <div class="sub">
+        <span class="ch">Challenge:</span> the milestone chip from mockup #1 and the
+        progress strip from mockup #4 set this up — by the time the user gets here,
+        they've watched 32 → 50 climb.<br>
+        <span class="ac">Accomplishment:</span> overlay extends the existing
+        <b>_QuizComplete</b> screen — bigger trophy, copy that names the milestone,
+        medallion earns a persistent ring.<br>
+        <span class="el">Eligible:</span> fires at the first quiz-end after the user's
+        50th mastered word.
+      </div>
+    </figcaption>
+
+    <div class="phone">
+      <div class="ph-bar">
+        <span class="icon-btn">×</span>
+      </div>
+
+      <div class="ph-content">
+        <div class="qc-stage">
+          <div class="qc-trophy">🏆</div>
+          <div class="module-line">Module <b>Greetings</b> completed</div>
+
+          <div class="milestone-overlay focal">
+            <div class="overline">🎯 Vocabulary milestone</div>
+            <h3>First 50 words mastered</h3>
+            <p>You can now actually recall <b>fifty Hebrew words</b> — not just
+              seen them. Your medallion earns a ring that stays.</p>
+            <div class="next">Next tier: 100 words · 50 to go</div>
+          </div>
+        </div>
+
+        <div class="qc-actions">
+          <button class="btn-primary">Continue to next lesson →</button>
+          <button class="btn-ghost">↻ Repeat lesson</button>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+</div>
+
+<aside class="footnote">
+  <p>
+    <b>What's not yet mocked:</b> the forgetting-curve calendar, voice diary, memory map,
+    study-buddy duo cards, reviewer-note inbox, share-a-sentence flow, native-artifact
+    unlocks. Each follows the same two-element pattern; add a mockup per idea as it
+    becomes the next-most-likely-to-build.
+  </p>
+  <p>
+    <b>What this gallery deliberately avoids:</b> any streak counter, any
+    days-in-a-row metric, any chip that decays on absence. The whole point is to
+    reward what you can still <b>remember</b>, not whether you tapped in yesterday.
+  </p>
+  <p>
+    See <a href="../../PLAN.md">PLAN.md → student motivation</a> for the underlying
+    catalogue of ideas this gallery draws from.
+  </p>
+</aside>
+
+</body>
+</html>

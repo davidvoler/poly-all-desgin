@@ -198,6 +198,9 @@ breaks often drives quitting (not retry). We want signals that reward what
 the student can still remember, not how many days in a row they tapped in.
 
 
+
+
+
 Memory-aware metrics (the streak replacements):
 - [] "Words you can still recall" — distinct from "words you've seen".
      Re-test old words on a spaced schedule; count the ones still recalled.
