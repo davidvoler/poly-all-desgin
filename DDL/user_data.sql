@@ -1,16 +1,19 @@
-
+drop TABLE IF EXISTS user_data.users;
 CREATE TABLE user_data.users (
+	user_id serial4 NOT NULL,
+	school VARCHAR(255) default 'pgs',
+	email_hash varchar(100) NOT NULL,
 	email varchar(200) NOT NULL,
-	user_id varchar(100) NOT NULL,
 	last_login timestamp DEFAULT now() NULL,
 	first_login timestamp DEFAULT now() NULL,
 	CONSTRAINT users_pkey PRIMARY KEY (email, user_id)
 );
 
 
---drop table user_data.preference;
+drop table user_data.preference;
 CREATE TABLE IF NOT EXISTS user_data.preference (
-    user_id   serial4  NOT NULL,
+    user_id   int4 NOT NULL,
+	school VARCHAR(255) default 'pgs',
     ui_lang   VARCHAR(12),
     lang   VARCHAR(12)  NULL DEFAULT '',
     to_lang   VARCHAR(12) NULL DEFAULT '',
@@ -26,11 +29,11 @@ CREATE TABLE IF NOT EXISTS user_data.preference (
 
 -- Drop table
 
--- DROP TABLE users_data.results;
+DROP TABLE IF EXISTS user_data.results;
 
 CREATE TABLE user_data.results (
     id SERIAL4 PRIMARY KEY NOT NULL,
-	user_id varchar(100),
+	user_id int4 NOT NULL,
 	lang varchar(12) NOT NULL,
 	to_lang varchar(12) NULL,
 	course_id int8 DEFAULT 0 NULL,

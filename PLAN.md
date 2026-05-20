@@ -115,7 +115,7 @@ TODO: course and module description
 
 *** Youtube usage - .srt file - Started ***
 
-- [] download srt format
+- [v] download srt format
 - [v] break the text into sentences 
 - [v] break the video into time line - say 5 minutes each
 - [v] generate question 
@@ -133,7 +133,7 @@ implement annotated sentence in text
 
 
 *** UI ***
-1. load entire course - all modules 
+1. load entire course - all modules - done
 2. Options
     - auto play
     - Select text type - (diacritic signs in arabic,hebrew - Hiragana, katakana, Romanji in japanese  )
@@ -146,6 +146,7 @@ implement annotated sentence in text
 5. words page
     - practice words when selection 
     - server - show words in the order we have learned them
+6. correct/incorrect notification 
 
 
 
@@ -154,15 +155,55 @@ implement annotated sentence in text
 
 Look for alternatives to tatoeba - it is not great with the repeating names - and simplified sentences. 
 Handle a youtube subtitle - this of how to do it 
-Create course in  
+Create Course in  
 Create Data for hebrew 
-Create
-
-
-
+Create German
+Create 
+Arabic course 
+    - the diactirization is not great do not use it for now 
+    - prefer sentences with sound
 
 
 *** implementing school ***
+
+- [] UI - requirement - show the school somewhere in the home page - maybe in the round area 
+- [] UI - list of languages for school only 
+
+- [v] Decision - for now schools is supported only in db and ui - later on we can get school from url
+- [v] server - course search will require school context 
+- [v] DB - Add school to course
+- [v] DB - Add school to users
+
+
+How to manage schools 
+- course only - single site - url - schools are part of the course 
+- school on a completely different domain/sub domain
+
+
+
+*** course completion ***
+
+maybe we should go simple 
+When a user finises write it in the db 
+course,module,lesson
+alternative - get it from results
+
+we need number of lesson and exercises to do this calculation
+
+*** milestone notification ***
+- start from design - 
+- it can be part of the end lesson - or end exercise
+
+
+*** School dashboard ***
+
+- [] select languages
+- [] create content example download and upload 
+- [] add students - invite by email
+- [] basic student board
+
+
+
 
 
 *** Week 6 - Deploy  ***

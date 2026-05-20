@@ -13,7 +13,7 @@ async def  get_sentences(user_id: int, lang):
     having sum(mark) >= 1
     ) 
     """
-    params = (str(user_id), lang)
+    params = (user_id, lang)
     res = await get_query_results(sql, params)
     return res[0]['sentences_count'] if res else 0
     
@@ -26,7 +26,7 @@ async def  get_words(user_id: int, lang):
     having sum(mark) >= 1
     ) 
     """
-    params = (str(user_id), lang)
+    params = (user_id, lang)
     res = await get_query_results(sql, params)
     return res[0]['words_count'] if res else 0
 
@@ -40,7 +40,7 @@ async def  get_lessons(user_id: int, lang):
     having sum(mark) >= 1
     ) 
     """
-    params = (str(user_id), lang)
+    params = (user_id, lang)
     res = await get_query_results(sql, params)
     return res[0]['lessons_count'] if res else 0
 
@@ -54,7 +54,7 @@ async def  get_exercises(user_id: int, lang):
     having sum(mark) >= 1
     )
     """
-    params = (str(user_id), lang)
+    params = (user_id, lang)
     res = await get_query_results(sql, params)
     return res[0]['exercises_count'] if res else 0
 
