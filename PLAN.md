@@ -113,12 +113,17 @@ TODO: course and module description
 [-] Yes, let’s do it!
 ---
 
-*** Youtube usage ***
+*** Youtube usage - .srt file - Started ***
 
-1. download srt format
-2. break the text into sentences 
-3. break the video into time line - say 5 minutes each
-4. generate question 
+- [] download srt format
+- [v] break the text into sentences 
+- [v] break the video into time line - say 5 minutes each
+- [v] generate question 
+- [] handle multiple translation for a given language 
+- [] generate words 
+Do we have translation for the lesson
+
+
 
 *** annotated sentence ***
 
@@ -142,6 +147,10 @@ implement annotated sentence in text
     - select all the words you hear in the sentence
     - select all correct answers 
 5. words page
+    - practice words when selection 
+    - server - show words in the order we have learned them
+
+
 
 
 *** content creation *** 
@@ -153,6 +162,10 @@ Create Data for hebrew
 Create
 
 
+
+
+
+*** implementing school ***
 
 
 *** Week 6 - Deploy  ***

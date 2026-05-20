@@ -1,4 +1,4 @@
-from db import get_query_results, run_query
+from utils.db import get_query_results, run_query
 import yaml
 import os
 import asyncio

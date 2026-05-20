@@ -1,5 +1,5 @@
 import os
-from db import get_query_results
+from utils.db import get_query_results
 import asyncio
 BASE_DIR = '../data/content/'
 

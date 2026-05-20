@@ -1,5 +1,5 @@
 import yaml
-from db import get_query_results
+from utils.db import get_query_results
 import random
 import asyncio
 words_for_recognize = set()
