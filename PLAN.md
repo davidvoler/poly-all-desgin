@@ -187,23 +187,121 @@ maybe we should go simple
 When a user finises write it in the db 
 course,module,lesson
 alternative - get it from results
-
 we need number of lesson and exercises to do this calculation
 
-*** milestone notification ***
-- start from design - 
-- it can be part of the end lesson - or end exercise
+*** student motivation *** 
+
+First principle: reward *retention*, not *attendance*.
+Streaks are intentionally OFF the list — they reward consecutive presence, 
+encourage minimum-effort daily clicks, and the loss-aversion when a streak 
+breaks often drives quitting (not retry). We want signals that reward what 
+the student can still remember, not how many days in a row they tapped in.
+
+
+Memory-aware metrics (the streak replacements):
+- [] "Words you can still recall" — distinct from "words you've seen".
+     Re-test old words on a spaced schedule; count the ones still recalled.
+     The home stats card today shows mastered counts only; add the gap as 
+     a separate signal.
+- [] Today's recall % — how well did you remember yesterday's lesson today?
+     Honest number, immediately actionable. Low values do NOT punish; they 
+     just suggest a re-warm session.
+- [] Long-dormant-word celebration — when a word last seen 30+ days ago is 
+     recalled correctly, a small inline "you still know this!" moment. 
+     The data is already there in user_data.results.
+- [] Forgetting-curve calendar — small visualization of what's about to 
+     fade. Informative, not punitive — no streak-loss feel.
+
+
+Identity & autonomy (why are you learning?):
+- [] On-boarding question: "Why are you learning <lang>?"
+     travel · family · faith · work · music · curiosity. Bias lesson order 
+     and messaging accordingly.
+- [] Self-set monthly goals — "Order coffee in Hebrew without English by 
+     July", "Read a newspaper headline". Mid-arc feedback on trajectory.
+- [] Daily practice menu — let the user pick today's mix (more listening / 
+     reading / speaking). Autonomy is itself motivating.
+
+
+Re-entry warmth (the anti-streak):
+- [] Welcome-back session — when you return after a break, the app 
+     re-warms 5-10 old items before any new material. No counter reset, 
+     no guilt screen. The longer the break, the warmer the welcome.
+- [] Soft cadence — "You aim for 3 sessions/week" shown as a rolling 
+     4-week average. Missing a week dips the average, doesn't zero it.
+
+
+Earned content (intrinsic, story-driven):
+- [] Story-arc courses — when you master a unit, unlock the next chapter 
+     / verse / recipe. Polyglots Open's "Cooking with Imma", "Songs & 
+     Lyrics", "Biblical Reader" format already fits this. Curiosity 
+     drives return — "what happens next" beats "don't lose your streak".
+- [] Native artifact unlocks — short videos, news clips, real letters 
+     tied to mastery thresholds. The *content* is the reward.
+- [] "You can now read…" prompt — at each level threshold, surface a 
+     real-world sample they can actually understand (a sign, a tweet, a 
+     menu, a song lyric). Concrete proof that the work pays off.
+
+
+Small social loops (no leaderboards):
+- [] Study buddies — pair two learners by language + level. They see 
+     each other's progress; it's a duo, not a ranking.
+- [] Family circles — small private groups (grandparent + grandchild 
+     learning Hebrew together is a real motivator we haven't surfaced).
+- [] Note from your reviewer — when a course reviewer notices a 
+     student's progress on a course they made, send a small personal 
+     encouragement. Intermittent, human, not gamified.
+- [] Share-a-sentence — record yourself reading a hard sentence, share 
+     to your private circle. Intrinsic pride, not extrinsic ranking.
+
+
+Hearable / visible growth:
+- [] Voice diary — record yourself on day 1, day 30, day 90. Let the 
+     user *hear* their own improvement. Likely the strongest intrinsic 
+     motivator on this list.
+- [] Memory map — visualization of the words/sentences you can recall, 
+     grouped by domain (family · food · travel · faith). A growing 
+     artifact, not a counter.
+- [] Compound projection — "at this pace, in 60 days you'll know X 
+     more words". Forward-looking framing instead of retrospective.
+
+
+Milestone notifications (the original item — expanded):
+- [] First 100 words owned
+- [] First sentence read fluently (low error, decent pace)
+- [] First time recalling a word after a 30+ day gap (memory milestone, 
+     not effort milestone)
+- [] First completed module / course
+- start from design — same visual treatment as the existing 
+  quiz-completion screen; trigger at exercise/lesson end so the 
+  celebration lands at a natural pause point.
+
+
+Evaluate carefully, may regret:
+- [] Variable rewards on hard items — leans into gambling mechanics if 
+     overdone; use sparingly and only for genuine surprise difficulty.
+- [] Public profile / authored-course pride — more relevant to 
+     school_public than the consumer app; keep an eye on whether 
+     "showing off" undermines intrinsic motivation.
 
 
 *** School dashboard ***
 
-- [] select languages
-- [] create content example download and upload 
-- [] add students - invite by email
-- [] basic student board
+- [v] select languages
+- [v] create content example download and upload 
+- [v] add students - invite by email
+- [v] basic student board
 
+- [] database
+- [] UI implementation 
+- [] server implementation 
 
+*** public content dashboard *** 
 
+- [v] initial design
+- [] database
+- [] UI implementation 
+- [] server implementation 
 
 
 *** Week 6 - Deploy  ***
