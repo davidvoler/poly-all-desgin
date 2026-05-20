@@ -7,10 +7,10 @@ router = APIRouter()
 async def  get_sentences(user_id: int, lang):
     sql = """
     select count(*) as sentences_count from (
-    select sentence_id, sum(mark) as sum_mark from user_data.results 
+    select sentence_id, sum(score) as sum_score from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) >= 1
+    having sum(score) >= 1
     ) 
     """
     params = (user_id, lang)
@@ -20,10 +20,10 @@ async def  get_sentences(user_id: int, lang):
 async def  get_words(user_id: int, lang):
     sql = """
     select count(*) as words_count from (
-    select word1, sum(mark) as sum_mark from user_data.results 
+    select word1, sum(score) as sum_score from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) >= 1
+    having sum(score) >= 1
     ) 
     """
     params = (user_id, lang)
@@ -34,10 +34,10 @@ async def  get_words(user_id: int, lang):
 async def  get_lessons(user_id: int, lang):
     sql = """
     select count(*) as lessons_count from (
-    select lesson_id, sum(mark) as sum_mark from user_data.results 
+    select lesson_id, sum(score) as sum_score from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) >= 1
+    having sum(score) >= 1
     ) 
     """
     params = (user_id, lang)
@@ -48,10 +48,10 @@ async def  get_lessons(user_id: int, lang):
 async def  get_exercises(user_id: int, lang):
     sql = """
     select count(*) as exercises_count from (
-    select exercise_id, sum(mark) as sum_mark from user_data.results
+    select exercise_id, sum(score) as sum_score from user_data.results
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) >= 1
+    having sum(score) >= 1
     )
     """
     params = (user_id, lang)

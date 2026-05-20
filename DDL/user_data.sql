@@ -41,7 +41,7 @@ CREATE TABLE user_data.results (
 	lesson_id int8 DEFAULT 0 NULL,
 	exercise_id int8 DEFAULT 0 NULL,
 	exercise_type varchar(100) DEFAULT ''::character varying NULL,
-	mark REAL DEFAULT 0.0 NULL,
+	score REAL DEFAULT 0.0 NULL,
 	attempts SMALLINT DEFAULT 0 NULL,
 	answer_delay_ms int4 DEFAULT 0 NULL,
     word varchar(255) NULL,

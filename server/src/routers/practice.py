@@ -8,10 +8,10 @@ router = APIRouter()
 
 async def  get_sentences_for_practice(user_id: int, lang: str):
     sql = """
-    select sentence_id, sum(mark) as sum_mark from user_data.results 
+    select sentence_id, sum(score) as sum_score from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) < 3
+    having sum(score) < 3
     """
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
@@ -21,10 +21,10 @@ async def  get_sentences_for_practice(user_id: int, lang: str):
     
 async def  get_words_for_practice(user_id: int, lang: str):
     sql = """
-    select word1, sum(mark) from user_data.results 
+    select word1, sum(score) from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) < 3
+    having sum(score) < 3
     """
     
     params = (str(user_id), lang)
@@ -55,10 +55,10 @@ async def  get_user_words(user_id: int, lang: str):
 
 async def  get_exercises_for_practice(user_id: int, lang: str):
     sql = """
-    select exercise_id, sum(mark) as sum_mark from user_data.results 
+    select exercise_id, sum(score) as sum_score from user_data.results 
     where user_id = %s and lang = %s
     group by 1
-    having sum(mark) < 3
+    having sum(score) < 3
     """
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
