@@ -148,16 +148,17 @@ class CoursesRepository {
   }
 
   /// `GET /api/v1/practice/words?user_id=…&lang=…` — every distinct
-  /// word (both sides) the user has encountered, scoped to the language
-  /// being learned.
-  Future<List<String>> fetchWords(String lang) async {
+  /// word the user has encountered, with the server-side mastery score
+  /// and the timestamp of the last practice attempt.
+  Future<List<LearnedWord>> fetchWords(String lang) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/practice/words',
       queryParameters: {'user_id': kCurrentUserId, 'lang': lang},
     );
     return (res.data ?? const [])
-        .cast<String>()
-        .where((w) => w.trim().isNotEmpty)
+        .cast<Map<String, dynamic>>()
+        .map(LearnedWord.fromJson)
+        .where((w) => w.word.trim().isNotEmpty)
         .toList();
   }
 
@@ -203,7 +204,7 @@ final userStatsProvider = FutureProvider<UserStats>((ref) {
 /// Every word the user has seen so far, scoped to the language being
 /// learned (same lang source as [userStatsProvider]). Refetches when
 /// the learning language changes.
-final wordsListProvider = FutureProvider<List<String>>((ref) {
+final wordsListProvider = FutureProvider<List<LearnedWord>>((ref) {
   final repo = ref.watch(coursesRepositoryProvider);
   final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
   final learning = ref.watch(learningLangProvider);

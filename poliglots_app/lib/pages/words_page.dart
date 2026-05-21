@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/courses_api.dart';
+import '../api/models.dart';
 import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/auto_text.dart';
@@ -92,8 +93,8 @@ class WordsPage extends ConsumerWidget {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
-                                  for (final w in words)
-                                    _WordChip(label: w),
+                                  for (final LearnedWord w in words)
+                                    _WordChip(label: w.word, score: w.score),
                                 ],
                               ),
                             ),
@@ -112,21 +113,36 @@ class WordsPage extends ConsumerWidget {
   }
 }
 
-/// Read-only glass tag-pill. Mirrors the quiz page's answer chip look,
-/// minus the selection/feedback states. [AutoText] keeps RTL scripts
-/// (Arabic/Hebrew) rendering correctly inside the LTR layout.
+/// Read-only glass tag-pill tinted by mastery score:
+///   ≥3      → green   (well retained)
+///   1.5..3  → amber   (getting there)
+///   0..1.5  → orange  (still shaky)
+///   <0      → red     (repeatedly missed)
+/// [AutoText] keeps RTL scripts (Arabic/Hebrew) rendering correctly
+/// inside the LTR layout.
 class _WordChip extends StatelessWidget {
   final String label;
-  const _WordChip({required this.label});
+  final double score;
+  const _WordChip({required this.label, required this.score});
+
+  static const Color _amber = Color(0xFFFFD54F);
+
+  Color get _color {
+    if (score >= 3) return PolyColors.green500;
+    if (score >= 1.5) return _amber;
+    if (score >= 0) return PolyColors.orange300;
+    return PolyColors.red400;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final c = _color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: c.withValues(alpha: 0.18),
         borderRadius: PolyRadii.pill,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(color: c.withValues(alpha: 0.55)),
       ),
       child: AutoText(
         label,

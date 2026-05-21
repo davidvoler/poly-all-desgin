@@ -298,3 +298,28 @@ class Lesson {
         completed: ((j['completed'] as int?) ?? 0) == 1,
       );
 }
+
+/// One row from `GET /api/v1/practice/words`. `score` is the
+/// server-side mastery aggregate — higher = better recalled, can be
+/// negative for words the user repeatedly gets wrong. `lastPracticed`
+/// is null when the server omits the field.
+class LearnedWord {
+  final String word;
+  final DateTime? lastPracticed;
+  final double score;
+
+  const LearnedWord({
+    required this.word,
+    required this.lastPracticed,
+    required this.score,
+  });
+
+  factory LearnedWord.fromJson(Map<String, dynamic> j) {
+    final lp = j['last_practiced'];
+    return LearnedWord(
+      word: (j['word'] as String?) ?? '',
+      lastPracticed: lp is String ? DateTime.tryParse(lp) : null,
+      score: (j['score'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
