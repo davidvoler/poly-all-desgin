@@ -316,7 +316,7 @@ Evaluate carefully, may regret:
 
 
 *** DB Changes ***
-- [] replace mark with score
+- [v] replace mark with score
 
 *** Week 6 - Deploy  ***
 

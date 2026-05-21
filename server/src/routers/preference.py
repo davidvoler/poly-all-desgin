@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from utils.db import get_query_results
+from utils.db import get_query_results, run_query
 from models.preference import Preference
 router = APIRouter()
 
@@ -16,6 +16,7 @@ async def get_user_preferences(user_id: int | None = None):
 
 @router.post("/")
 async def update_user_preferences(preferences: Preference):
+    print(preferences)
     query = """
     UPDATE user_data.preference
     SET course_id = %s, module_id = %s, lesson_id = %s,
@@ -31,5 +32,5 @@ async def update_user_preferences(preferences: Preference):
         preferences.to_lang,
         preferences.user_id
     )
-    await get_query_results(query, params)
+    await run_query(query, params)
     return preferences
