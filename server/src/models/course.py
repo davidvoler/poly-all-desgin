@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime as DateTime
 
 class UserCourseProgress(BaseModel):
     user_id: int
@@ -42,3 +43,9 @@ class Exercise(BaseModel):
     word3: str | None = ''
     sentence_id: int |  None = None
     to_sentence_id: int | None = None
+
+
+class Word(BaseModel):
+    word: str
+    last_practiced: DateTime | None = None
+    score: float | None = None

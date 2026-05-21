@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from utils.db import get_query_results
-from models.course import Exercise
+from models.course import Exercise, Word
+
 import random
 
 router = APIRouter()
@@ -36,19 +37,16 @@ async def  get_words_for_practice(user_id: int, lang: str):
 
 async def  get_user_words(user_id: int, lang: str):
     sql = """
-    select word1, word2 
+    select word1 as word, sum(score) as score, max(created_at) as last_practiced
     from user_data.results 
     where user_id = %s and lang = %s
-    group by 1,2
+    group by 1
+    order by last_practiced desc
     """
     
     params = (str(user_id), lang)
     res = await get_query_results(sql, params)
-    word1 =  [r.get('word1') for r in res ] if res else []
-    word2 =  [r.get('word2') for r in res] if res else []
-    words = word1 + word2
-    words = list(set(words))
-    words = [w for w in words if w.strip()]
+    words = [Word(**r) for r in res ] if res else []
     return words
 
 
@@ -122,7 +120,7 @@ async def exercise_by_words(user_id: int, lang: str):
     exercises = await get_exercises_by_words(lang, words)
     return exercises
     
-@router.get("/words", response_model=list[str])
+@router.get("/words", response_model=list[Word])
 async def exercise_by_words(user_id: int, lang: str):
     return await get_user_words(user_id, lang)
 

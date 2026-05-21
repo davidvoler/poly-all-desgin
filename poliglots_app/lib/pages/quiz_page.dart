@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/courses_api.dart';
 import '../api/models.dart';
+import '../score.dart';
 import '../theme.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
@@ -30,6 +31,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   final Map<int, int> _attemptsByIndex = {};
   // When each exercise was first shown — used to derive answer_delay_ms.
   final Map<int, DateTime> _shownAtByIndex = {};
+  // Local mirror of the server's score for each checked exercise, so the
+  // question card can render a small icon (good / medium / wrong) without
+  // a round-trip. Same formula as the server (see lib/score.dart).
+  final Map<int, double> _scoreByIndex = {};
   // Set once the user advances past the last exercise — swaps the quiz
   // body for the completion screen.
   bool _finished = false;
@@ -57,12 +62,14 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       _checkedIndices.clear();
       _attemptsByIndex.clear();
       _shownAtByIndex.clear();
+      _scoreByIndex.clear();
     });
   }
 
   /// Fired once, when the user reveals feedback for an exercise. POSTs
-  /// the attempt (correct or not) so progress is tracked server-side.
-  void _submitResult(Exercise ex, Set<int> selected, int? lessonId,
+  /// the attempt and returns the locally-computed score so the caller
+  /// can display it without waiting for the round-trip.
+  double _submitResult(Exercise ex, Set<int> selected, int? lessonId,
       int attempts, int answerDelayMs) {
     final correctIdx = <int>{
       for (var k = 0; k < ex.options.length; k++)
@@ -96,6 +103,11 @@ class _QuizPageState extends ConsumerState<QuizPage> {
             incorrectCount: incorrectCount,
           ),
         );
+    return calculateScore(
+      correctRatio: correctRatio,
+      incorrectCount: incorrectCount,
+      attempts: attempts,
+    );
   }
 
   @override
@@ -160,10 +172,49 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   );
                 }
                 if (_finished) {
+                  // Pre-compute the per-lesson summary from the
+                  // per-exercise state we accumulated during the quiz.
+                  // Correct = checked AND score > 0; Wrong = checked AND
+                  // score <= 0; Skipped = never checked.
+                  var correct = 0;
+                  var wrong = 0;
+                  for (var k = 0; k < exercises.length; k++) {
+                    if (!_checkedIndices.contains(k)) continue;
+                    final s = _scoreByIndex[k] ?? 0;
+                    if (s > 0) {
+                      correct++;
+                    } else {
+                      wrong++;
+                    }
+                  }
+                  final skipped =
+                      exercises.length - _checkedIndices.length;
+                  final totalScore = _scoreByIndex.values
+                      .fold<double>(0, (a, b) => a + b);
+                  // Unique words across all exercises, in
+                  // first-encountered order.
+                  final seenWords = <String>{};
+                  final words = <String>[];
+                  for (final ex in exercises) {
+                    for (final w in [ex.word1, ex.word2, ex.word3]) {
+                      final t = w.trim();
+                      if (t.isNotEmpty && seenWords.add(t)) {
+                        words.add(t);
+                      }
+                    }
+                  }
                   return _QuizComplete(
                     lessonId: lessonId,
                     practice: practice,
                     onRepeat: _restartLesson,
+                    summary: _LessonSummary(
+                      correct: correct,
+                      wrong: wrong,
+                      skipped: skipped,
+                      totalScore: totalScore,
+                      totalCount: exercises.length,
+                      words: words,
+                    ),
                   );
                 }
                 final idx = _exerciseIndex.clamp(0, exercises.length - 1);
@@ -179,6 +230,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
+                  score: _scoreByIndex[idx],
                   exercise: ex,
                   title: pageTitle,
                   selected: selected,
@@ -208,18 +260,25 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                       final delayMs = shownAt == null
                           ? 0
                           : DateTime.now().difference(shownAt).inMilliseconds;
-                      _submitResult(ex, selected, lessonId,
+                      final score = _submitResult(ex, selected, lessonId,
                           _attemptsByIndex[idx] ?? 0, delayMs);
-                      setState(() => _checkedIndices.add(idx));
+                      setState(() {
+                        _checkedIndices.add(idx);
+                        _scoreByIndex[idx] = score;
+                      });
                     } else if (idx + 1 < exercises.length) {
                       setState(() => _exerciseIndex = idx + 1);
                     } else {
                       setState(() => _finished = true);
                     }
                   },
-                  onSkip: idx < exercises.length - 1
-                      ? () => setState(() => _exerciseIndex = idx + 1)
-                      : null,
+                  onSkip: () {
+                    if (idx + 1 < exercises.length) {
+                      setState(() => _exerciseIndex = idx + 1);
+                    } else {
+                      setState(() => _finished = true);
+                    }
+                  },
                   onBack: idx > 0
                       ? () => setState(() => _exerciseIndex = idx - 1)
                       : null,
@@ -236,6 +295,25 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
 }
 
+/// Per-quiz summary computed at finish time and shown on the
+/// _QuizComplete screen.
+class _LessonSummary {
+  final int correct;
+  final int wrong;
+  final int skipped;
+  final double totalScore;
+  final int totalCount;
+  final List<String> words;
+  const _LessonSummary({
+    required this.correct,
+    required this.wrong,
+    required this.skipped,
+    required this.totalScore,
+    required this.totalCount,
+    required this.words,
+  });
+}
+
 /// Shown after the last exercise. "Next Lesson" jumps to the following
 /// lesson in the current module (resolved via [preferenceProvider]'s
 /// `moduleId` + [lessonsProvider]); falls back to popping back to the
@@ -244,10 +322,12 @@ class _QuizComplete extends ConsumerWidget {
   final int? lessonId;
   final PracticeKind? practice;
   final VoidCallback onRepeat;
+  final _LessonSummary summary;
   const _QuizComplete({
     required this.lessonId,
     required this.practice,
     required this.onRepeat,
+    required this.summary,
   });
 
   @override
@@ -261,6 +341,7 @@ class _QuizComplete extends ConsumerWidget {
         onPrimary: () => Navigator.maybePop(context),
         repeatLabel: 'Practice again',
         onRepeat: onRepeat,
+        summary: summary,
       );
     }
 
@@ -296,12 +377,14 @@ class _QuizComplete extends ConsumerWidget {
       },
       repeatLabel: 'Repeat lesson',
       onRepeat: onRepeat,
+      summary: summary,
     );
   }
 }
 
 /// Shared completion layout for both lesson- and practice-finished
-/// states.
+/// states. Middle scrolls; close button on top and CTA pair at the
+/// bottom stay pinned.
 class _CompleteScaffold extends StatelessWidget {
   final String heading;
   final String subtitle;
@@ -309,6 +392,7 @@ class _CompleteScaffold extends StatelessWidget {
   final VoidCallback onPrimary;
   final String repeatLabel;
   final VoidCallback onRepeat;
+  final _LessonSummary summary;
   const _CompleteScaffold({
     required this.heading,
     required this.subtitle,
@@ -316,6 +400,7 @@ class _CompleteScaffold extends StatelessWidget {
     required this.onPrimary,
     required this.repeatLabel,
     required this.onRepeat,
+    required this.summary,
   });
 
   @override
@@ -332,29 +417,115 @@ class _CompleteScaffold extends StatelessWidget {
             ),
           ],
         ),
-        const Spacer(),
-        const Icon(Icons.celebration, size: 64, color: Colors.white),
-        const SizedBox(height: 16),
-        Text(
-          heading,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: -0.4,
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 24),
+                const Center(
+                  child: Icon(Icons.celebration,
+                      size: 64, color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  heading,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Final score
+                GlassCard(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${summary.totalScore.toStringAsFixed(1)} / ${summary.totalCount}',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: -0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('FINAL SCORE',
+                          style: PolyText.sectionLabel(
+                              color: PolyColors.white(0.6))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Correct / wrong / skipped breakdown
+                GlassCard(
+                  child: Row(
+                    children: [
+                      _SummaryStat(
+                        icon: Icons.celebration,
+                        color: PolyColors.green500,
+                        value: summary.correct,
+                        label: 'Correct',
+                      ),
+                      const _SummaryDivider(),
+                      _SummaryStat(
+                        icon: Icons.refresh,
+                        color: PolyColors.red400,
+                        value: summary.wrong,
+                        label: 'Wrong',
+                      ),
+                      const _SummaryDivider(),
+                      _SummaryStat(
+                        icon: Icons.skip_next,
+                        color: PolyColors.white(0.6),
+                        value: summary.skipped,
+                        label: 'Skipped',
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Words in this lesson (dedup, first-encountered order)
+                if (summary.words.isNotEmpty) ...[
+                  const SizedBox(height: 22),
+                  Center(
+                    child: Text(
+                      'WORDS IN THIS LESSON',
+                      style: PolyText.sectionLabel(
+                          color: PolyColors.white(0.55)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final w in summary.words)
+                        _SummaryWordChip(label: w),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-        ),
-        const Spacer(),
         CtaButton(
           label: primaryLabel,
           trailingIcon: Icons.arrow_forward,
@@ -367,6 +538,93 @@ class _CompleteScaffold extends StatelessWidget {
           onTap: onRepeat,
         ),
       ],
+    );
+  }
+}
+
+/// One tier of the lesson-end summary card — icon + count + small label.
+class _SummaryStat extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final int value;
+  final String label;
+  const _SummaryStat({
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: -0.36,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.08,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryDivider extends StatelessWidget {
+  const _SummaryDivider();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 44,
+      color: Colors.white.withValues(alpha: 0.10),
+    );
+  }
+}
+
+/// Pill chip for a single word in the lesson-summary "Words in this
+/// lesson" wrap. Same visual language as the Words page chip.
+class _SummaryWordChip extends StatelessWidget {
+  final String label;
+  const _SummaryWordChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: PolyRadii.pill,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      ),
+      child: AutoText(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 }
@@ -427,6 +685,10 @@ class _QuizBody extends StatelessWidget {
   final String title;
   final Set<int> selected;
   final bool checked;
+  // Local score for the answered exercise; null until the user checks.
+  // Mirrors the server's calculate_score formula via lib/score.dart so
+  // we can render feedback without waiting for the POST round-trip.
+  final double? score;
   // Null while the user hasn't answered yet (or after Check, when tiles
   // are locked); set once Check or Continue can fire.
   final ValueChanged<int>? onSelect;
@@ -442,6 +704,7 @@ class _QuizBody extends StatelessWidget {
     required this.title,
     required this.selected,
     required this.checked,
+    required this.score,
     required this.onSelect,
     required this.onPrimary,
     required this.onSkip,
@@ -507,7 +770,7 @@ class _QuizBody extends StatelessWidget {
         _QuizNav(
           title: title,
           onBack: index > 0 ? onBack : null,
-          onSkip: index < total - 1 ? onSkip : null,
+          onSkip: onSkip,
         ),
         const SizedBox(height: 14),
 
@@ -553,6 +816,10 @@ class _QuizBody extends StatelessWidget {
               ],
               const SizedBox(height: 8),
               _AudioButton(onTap: onPlayAudio),
+              if (checked && score != null) ...[
+                const SizedBox(height: 12),
+                _ScoreIcon(score: score!),
+              ],
             ],
           ),
         ),
@@ -895,6 +1162,43 @@ class _AnswerTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Three-tier feedback glyph for the per-question score (see lib/score.dart).
+/// Good (≥0.9) → celebration in green; medium (>0 and <0.9) → thumbs-up in
+/// orange; wrong (≤0) → refresh in red ("try this one again", framed forward
+/// rather than as a verdict). The score function currently produces only
+/// the good/wrong tiers, but the medium branch is here so future scoring
+/// tweaks don't silently fall through.
+class _ScoreIcon extends StatelessWidget {
+  final double score;
+  const _ScoreIcon({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    final IconData icon;
+    final Color color;
+    if (score >= 0.9) {
+      icon = Icons.celebration;
+      color = PolyColors.green500;
+    } else if (score > 0) {
+      icon = Icons.thumb_up;
+      color = PolyColors.orange300;
+    } else {
+      icon = Icons.refresh;
+      color = PolyColors.red400;
+    }
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.18),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Icon(icon, color: color, size: 26),
     );
   }
 }

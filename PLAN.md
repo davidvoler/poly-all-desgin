@@ -14,7 +14,7 @@ Design a step based plan for getting to some target every week
 - words in sentence
 - explanation
 
-- [] start generating a course for arabic
+- [v] start generating a course for arabic
 
 - maybe we need to add a new field for the text with diacritical signs (use python library)
 - In Poly_all we did not break arabic to elements - maybe we need to do it again 
@@ -132,13 +132,13 @@ implement annotated sentence in text
 
 
 
-*** UI ***
+*** UI  Improvements ***
 1. [v] load entire course - all modules - done
 2. Options
     - auto play audio
     - Select text type - (diacritic signs in arabic,hebrew - Hiragana, katakana, Romanji in japanese  )
     - font size 
-3. add explanations to lesson
+3. [] add explanations to lesson
 4. Add description of the task 
     - select a single translation
     - select all the words you hear in the sentence
@@ -146,14 +146,14 @@ implement annotated sentence in text
 5. words page
     - practice words when selection 
     - server - show words in the order we have learned them
-6. correct/incorrect notification 
+6. [v] correct/incorrect notification 
 
 7. Lesson Complete = Page 
-- [] skip - should get you to the end of lesson end ot practice page
-- [] calculate mark on client side (or serer side can return mark) - show mark after each question - show real mark where the heart icon on top
-- [] end of lesson - show some data on lesson - how many exercise were answered correctly, how many wrong, how many skipped and the final score of the lesson
-- [] show list of words in the lesson - optional
-- [] recommend: on repeat - or next lesson
+- [v] skip - should get you to the end of lesson end ot practice page
+- [v] calculate score on client side (or serer side can return mark) - show mark after each question - show real mark where the heart icon on top
+- [v] end of lesson - show some data on lesson - how many exercise were answered correctly, how many wrong, how many skipped and the final score of the lesson
+- [v] show list of words in the lesson - optional
+- [L] recommend: on repeat - or next lesson 
 
 
 
