@@ -70,12 +70,13 @@ create table if not exists user_data.lesson_status (
 );
 
 
+drop TABLE IF EXISTS user_data.achievements;
 create table if not exists user_data.achievements (
 	achievement_id SERIAL4 PRIMARY KEY NOT NULL,
 	user_id int4 NOT NULL,
 	course_id int8 DEFAULT 0 NULL,
 	lang varchar(12) NOT NULL,
-	title varchar(255) NULL,
-	description text NULL,
-	date_earned timestamp DEFAULT now()
+	achievement_type varchar(50) NOT NULL,
+	count_elements int2 DEFAULT 0 NULL,
+	created_at timestamp DEFAULT now()
 );
