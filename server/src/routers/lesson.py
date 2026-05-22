@@ -25,12 +25,6 @@ async def get_lessons(module_id: int):
 @router.post("/completed")
 async def lesson_completed(lesson_completed: LessonCompleted):
     """Handle lesson completion."""
-    """TODO:
-    - [v] set lesson as completed correct >= X 
-    - [w] set course progress % (or calculated by lesson)
-    - [] set current lesson to next lesson - if it is not done already
-    """
-
     sql = """
     INSERT INTO user_data.lesson_completed (
         user_id, course_id, module_id, lesson_id, lang, score, skipped_count, correct_count, incorrect_count, course_lessons_count

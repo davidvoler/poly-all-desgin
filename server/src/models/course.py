@@ -65,6 +65,7 @@ class SelectedWords(BaseModel):
 
 class LessonCompleted(BaseModel):
     user_id: int
+    lang: str| None = ''
     course_id: int = 0
     module_id: int = 0
     lesson_id: int

@@ -36,14 +36,24 @@ async def get_courses(lang: str , to_lang: str, school: str| None = None, user_i
     school_where = "school = %s" if school else ""
     sql = f"""
     SELECT c.course_id, c.title, c.description, c.lang, c.to_lang, c.lesson_count,
-    ul.user_lessons_done, ul.avg_score
+    ul.user_lessons_done, ul.avg_score,
+    u_last.module_id as current_module, u_last.lesson_id as current_lesson
     FROM course_simple.course c 
-    left join (
+    LEFT JOIN (
     SELECT course_id, count(*) as user_lessons_done, avg(score) as avg_score
     FROM user_data.lesson_status
     where user_id = %s
     group by 1) AS ul on c.course_id = ul.course_id
+    LEFT JOIN (
+    SELECT course_id, module_id, lesson_id 
+    FROM user_data.lesson_status
+    ORDER BY created_at DESC
+    LIMIT 1
+    ) AS u_last on c.course_id = u_last.course_id
+    
     WHERE c.lang = %s AND c.to_lang = %s 
+    
+
     {school_where}
     """
     params = (user_id, lang, to_lang)
