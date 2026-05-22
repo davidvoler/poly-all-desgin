@@ -39,6 +39,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   // Set once the user advances past the last exercise — swaps the quiz
   // body for the completion screen.
   bool _finished = false;
+  // Computed once at completion (in _completeLesson) and reused on every
+  // rebuild of the _QuizComplete screen.
+  _LessonSummary? _summary;
 
   final AudioPlayer _audio = AudioPlayer();
 
@@ -59,6 +62,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     setState(() {
       _exerciseIndex = 0;
       _finished = false;
+      _summary = null;
       _selectedByIndex.clear();
       _checkedIndices.clear();
       _attemptsByIndex.clear();
@@ -109,6 +113,67 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       incorrectCount: incorrectCount,
       attempts: attempts,
     );
+  }
+
+  /// Aggregate the per-exercise state we accumulated during the quiz
+  /// into one [_LessonSummary]. Pure read of the maps — no mutation.
+  _LessonSummary _buildSummary(List<Exercise> exercises) {
+    var correct = 0;
+    var wrong = 0;
+    for (var k = 0; k < exercises.length; k++) {
+      if (!_checkedIndices.contains(k)) continue;
+      final s = _scoreByIndex[k] ?? 0;
+      if (s > 0) {
+        correct++;
+      } else {
+        wrong++;
+      }
+    }
+    final skipped = exercises.length - _checkedIndices.length;
+    final totalScore =
+        _scoreByIndex.values.fold<double>(0, (a, b) => a + b);
+    // Unique words across all exercises, first-encountered order.
+    final seenWords = <String>{};
+    final words = <String>[];
+    for (final ex in exercises) {
+      for (final w in [ex.word1, ex.word2, ex.word3]) {
+        final t = w.trim();
+        if (t.isNotEmpty && seenWords.add(t)) {
+          words.add(t);
+        }
+      }
+    }
+    return _LessonSummary(
+      correct: correct,
+      wrong: wrong,
+      skipped: skipped,
+      totalScore: totalScore,
+      totalCount: exercises.length,
+      words: words,
+    );
+  }
+
+  /// Fires once when the user reaches the end of the quiz. Builds the
+  /// summary, flips into the completion screen, and POSTs the lesson
+  /// result (only in lesson mode — practice modes have no lesson id).
+  void _completeLesson(List<Exercise> exercises, int? lessonId) {
+    final summary = _buildSummary(exercises);
+    setState(() {
+      _finished = true;
+      _summary = summary;
+    });
+    if (lessonId == null) return;
+    final pref = ref.read(preferenceProvider).value;
+    ref.read(coursesRepositoryProvider).saveLessonCompleted(
+          lang: pref?.lang ?? '',
+          courseId: pref?.courseId,
+          moduleId: pref?.moduleId,
+          lessonId: lessonId,
+          score: summary.totalScore,
+          correctCount: summary.correct,
+          wrongCount: summary.wrong,
+          skippedCount: summary.skipped,
+        );
   }
 
   @override
@@ -192,49 +257,11 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   );
                 }
                 if (_finished) {
-                  // Pre-compute the per-lesson summary from the
-                  // per-exercise state we accumulated during the quiz.
-                  // Correct = checked AND score > 0; Wrong = checked AND
-                  // score <= 0; Skipped = never checked.
-                  var correct = 0;
-                  var wrong = 0;
-                  for (var k = 0; k < exercises.length; k++) {
-                    if (!_checkedIndices.contains(k)) continue;
-                    final s = _scoreByIndex[k] ?? 0;
-                    if (s > 0) {
-                      correct++;
-                    } else {
-                      wrong++;
-                    }
-                  }
-                  final skipped =
-                      exercises.length - _checkedIndices.length;
-                  final totalScore = _scoreByIndex.values
-                      .fold<double>(0, (a, b) => a + b);
-                  // Unique words across all exercises, in
-                  // first-encountered order.
-                  final seenWords = <String>{};
-                  final words = <String>[];
-                  for (final ex in exercises) {
-                    for (final w in [ex.word1, ex.word2, ex.word3]) {
-                      final t = w.trim();
-                      if (t.isNotEmpty && seenWords.add(t)) {
-                        words.add(t);
-                      }
-                    }
-                  }
                   return _QuizComplete(
                     lessonId: lessonId,
                     practice: practice,
                     onRepeat: _restartLesson,
-                    summary: _LessonSummary(
-                      correct: correct,
-                      wrong: wrong,
-                      skipped: skipped,
-                      totalScore: totalScore,
-                      totalCount: exercises.length,
-                      words: words,
-                    ),
+                    summary: _summary!,
                   );
                 }
                 final idx = _exerciseIndex.clamp(0, exercises.length - 1);
@@ -289,14 +316,14 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     } else if (idx + 1 < exercises.length) {
                       setState(() => _exerciseIndex = idx + 1);
                     } else {
-                      setState(() => _finished = true);
+                      _completeLesson(exercises, lessonId);
                     }
                   },
                   onSkip: () {
                     if (idx + 1 < exercises.length) {
                       setState(() => _exerciseIndex = idx + 1);
                     } else {
-                      setState(() => _finished = true);
+                      _completeLesson(exercises, lessonId);
                     }
                   },
                   onBack: idx > 0

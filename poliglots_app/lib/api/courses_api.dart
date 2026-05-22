@@ -138,6 +138,37 @@ class CoursesRepository {
     );
   }
 
+  /// `POST /api/v1/lesson/completed` — record that the user finished a
+  /// lesson, with the summary the client computed at end-of-quiz. Called
+  /// once when the lesson-complete screen first appears.
+  Future<void> saveLessonCompleted({
+    required String lang,
+    required int? courseId,
+    required int? moduleId,
+    required int lessonId,
+    required double score,
+    required int correctCount,
+    required int wrongCount,
+    required int skippedCount,
+    int courseLessonsCount = 0,
+  }) async {
+    await _dio.post<dynamic>(
+      '/api/v1/lesson/completed',
+      data: {
+        'user_id': kCurrentUserId,
+        'lang': lang,
+        'course_id': courseId,
+        'module_id': moduleId,
+        'lesson_id': lessonId,
+        'score': score,
+        'skipped_count': skippedCount,
+        'correct_count': correctCount,
+        'wrong_count': wrongCount,
+        'course_lessons_count': courseLessonsCount,
+      },
+    );
+  }
+
   /// `GET /api/v1/user_stats/?user_id=…&lang=…` — mastered counts.
   Future<UserStats> fetchUserStats(int userId, String lang) async {
     final res = await _dio.get<Map<String, dynamic>>(
