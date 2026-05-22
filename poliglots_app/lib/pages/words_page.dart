@@ -9,15 +9,43 @@ import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
 
 /// Scrollable gallery of every word the user has encountered so far in
-/// the language they're learning. Words render as glass tag-pills that
-/// wrap to the next line. Data: [wordsListProvider].
-class WordsPage extends ConsumerWidget {
+/// the language they're learning. Tapping a chip toggles selection; when
+/// any word is selected the primary CTA narrows the practice to just
+/// those words via [practiceByWordsProvider]. Data: [wordsListProvider].
+class WordsPage extends ConsumerStatefulWidget {
   const WordsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WordsPage> createState() => _WordsPageState();
+}
+
+class _WordsPageState extends ConsumerState<WordsPage> {
+  final Set<String> _selected = {};
+
+  void _toggle(String word) {
+    setState(() {
+      if (!_selected.remove(word)) _selected.add(word);
+    });
+  }
+
+  void _clearSelection() => setState(_selected.clear);
+
+  void _startPractice() {
+    if (_selected.isEmpty) {
+      Navigator.pushNamed(context, '/quiz',
+          arguments: PracticeKind.words);
+    } else {
+      // Sorted so the cache key is stable regardless of pick order.
+      final words = _selected.toList()..sort();
+      Navigator.pushNamed(context, '/quiz', arguments: words);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final wordsAsync = ref.watch(wordsListProvider);
     final learning = ref.watch(learningLangProvider);
+    final hasSelection = _selected.isNotEmpty;
 
     return Scaffold(
       body: PhoneBackground(
@@ -27,7 +55,7 @@ class WordsPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top bar — back + title + balancing spacer.
+                // Top bar — back + title + clear-selection (only when picking).
                 Row(
                   children: [
                     RoundIconButton(
@@ -43,8 +71,23 @@ class WordsPage extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 36),
+                    hasSelection
+                        ? RoundIconButton(
+                            icon: Icons.close,
+                            tooltip: 'Clear selection',
+                            onTap: _clearSelection,
+                          )
+                        : const SizedBox(width: 36),
                   ],
+                ),
+                const SizedBox(height: 18),
+
+                CtaButton(
+                  label: hasSelection
+                      ? 'Practice ${_selected.length} selected'
+                      : 'Practice words',
+                  leadingIcon: Icons.play_arrow,
+                  onTap: _startPractice,
                 ),
                 const SizedBox(height: 18),
 
@@ -81,7 +124,9 @@ class WordsPage extends ConsumerWidget {
                         children: [
                           Center(
                             child: Text(
-                              '${words.length} ${learning.native} words',
+                              hasSelection
+                                  ? '${words.length} ${learning.native} words · ${_selected.length} selected'
+                                  : '${words.length} ${learning.native} words · tap to pick',
                               style: PolyText.sectionLabel(
                                   color: PolyColors.white(0.5)),
                             ),
@@ -94,7 +139,12 @@ class WordsPage extends ConsumerWidget {
                                 runSpacing: 8,
                                 children: [
                                   for (final LearnedWord w in words)
-                                    _WordChip(label: w.word, score: w.score),
+                                    _WordChip(
+                                      label: w.word,
+                                      score: w.score,
+                                      selected: _selected.contains(w.word),
+                                      onTap: () => _toggle(w.word),
+                                    ),
                                 ],
                               ),
                             ),
@@ -113,17 +163,26 @@ class WordsPage extends ConsumerWidget {
   }
 }
 
-/// Read-only glass tag-pill tinted by mastery score:
+/// Glass tag-pill tinted by mastery score, tappable to toggle a
+/// selection set on the parent page:
 ///   ≥3      → green   (well retained)
 ///   1.5..3  → amber   (getting there)
 ///   0..1.5  → orange  (still shaky)
 ///   <0      → red     (repeatedly missed)
-/// [AutoText] keeps RTL scripts (Arabic/Hebrew) rendering correctly
-/// inside the LTR layout.
+/// Selected chips swap their score-colored border for a bright white
+/// ring (same width, no layout shift). [AutoText] keeps RTL scripts
+/// rendering correctly inside the LTR layout.
 class _WordChip extends StatelessWidget {
   final String label;
   final double score;
-  const _WordChip({required this.label, required this.score});
+  final bool selected;
+  final VoidCallback? onTap;
+  const _WordChip({
+    required this.label,
+    required this.score,
+    required this.selected,
+    required this.onTap,
+  });
 
   static const Color _amber = Color(0xFFFFD54F);
 
@@ -137,19 +196,30 @@ class _WordChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = _color;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.18),
+    return Material(
+      color: c.withValues(alpha: selected ? 0.32 : 0.18),
+      borderRadius: PolyRadii.pill,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: PolyRadii.pill,
-        border: Border.all(color: c.withValues(alpha: 0.55)),
-      ),
-      child: AutoText(
-        label,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: PolyRadii.pill,
+            border: Border.all(
+              color: selected
+                  ? Colors.white.withValues(alpha: 0.90)
+                  : c.withValues(alpha: 0.55),
+            ),
+          ),
+          child: AutoText(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );

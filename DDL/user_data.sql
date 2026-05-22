@@ -52,4 +52,30 @@ CREATE TABLE user_data.results (
 	created_at timestamp DEFAULT now()
 );
 
-CREATE INDEX idx_results_user_lang_course ON users_data.results (user_id, lang, course_id, lesson_id);
+CREATE INDEX idx_results_user_lang_course ON users_data.results (user_id, lang, course_id, lesson_id); 
+
+drop table if exests user_data.lesson_status;
+create table if not exists user_data.lesson_status (
+	user_id int4 NOT NULL,
+	lang varchar(12) NOT NULL,
+	course_id int8 DEFAULT 0 NULL,
+	module_id int8 DEFAULT 0 NULL,
+	lesson_id int8 DEFAULT 0 NULL,
+	score REAL DEFAULT 0.0 NULL,
+	skipped_count int2 DEFAULT 0,
+	correct_count int2 DEFAULT 0,
+	wrong_count int2 DEFAULT 0,	
+	created_at timestamp DEFAULT now(),
+	CONSTRAINT lesson_status_pkey PRIMARY KEY (user_id, lesson_id)
+);
+
+
+create table if not exists user_data.achievements (
+	achievement_id SERIAL4 PRIMARY KEY NOT NULL,
+	user_id int4 NOT NULL,
+	course_id int8 DEFAULT 0 NULL,
+	lang varchar(12) NOT NULL,
+	title varchar(255) NULL,
+	description text NULL,
+	date_earned timestamp DEFAULT now()
+);

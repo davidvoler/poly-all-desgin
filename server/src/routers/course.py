@@ -3,6 +3,21 @@ from models.course import Course
 from utils.db import get_query_results
 router = APIRouter()
 
+
+async def user_course_status(user_id: int, course_id: int, course_lessons_count: int):
+    sql = """
+    select lesson_id, max(score) as max_score, sum(score) as total_score,count(*) as num_attempts from user_data.lesson_completed
+    where user_id = %s and course_id = %s
+    group by 1
+    """
+    params = (user_id, course_id)
+    res = await get_query_results(sql, params)
+    lesson_status = {r.get('lesson_id'): r.get('max_score') for r in res} if res else {}
+    return lesson_status
+
+
+
+
 async def get_user_courses(user_id: int):
     sql = """
 

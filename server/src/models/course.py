@@ -49,3 +49,31 @@ class Word(BaseModel):
     word: str
     last_practiced: DateTime | None = None
     score: float | None = None
+
+
+class SelectedWords(BaseModel):
+    user_id: int
+    lang: str
+    words: list[str] = []
+
+
+class LessonCompleted(BaseModel):
+    user_id: int
+    course_id: int = 0
+    module_id: int = 0
+    lesson_id: int
+    score: float = 0.0
+    skipped_count: int = 0
+    correct_count: int = 0
+    wrong_count: int = 0
+    course_lessons_count: int = 0
+
+
+class CourseStatus(BaseModel):
+    course_id: int
+    progress: int 
+    lessons_completed: int
+    total_lessons: int
+    module_completed: int
+    total_modules: int
+    

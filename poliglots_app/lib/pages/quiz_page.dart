@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/courses_api.dart';
 import '../api/models.dart';
 import '../score.dart';
+import '../state/lang.dart';
 import '../theme.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
@@ -112,19 +113,38 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Route arg is either a lesson id (int, lesson mode) or a
-    // PracticeKind (practice mode launched from the home stats).
+    // Route arg is one of: an int lesson id (lesson mode), a PracticeKind
+    // (practice mode launched from the home stats), or a List<String> of
+    // words (practice narrowed to a hand-picked subset, launched from the
+    // Words page).
     final arg = ModalRoute.of(context)?.settings.arguments;
     final practice = arg is PracticeKind ? arg : null;
     final lessonId = arg is int ? arg : null;
-    final exercisesAsync = practice != null
-        ? ref.watch(practiceExercisesProvider(practice))
-        : ref.watch(exercisesProvider(lessonId ?? 1));
+    final selectedWords = arg is List<String> ? arg : null;
+
+    final AsyncValue<List<Exercise>> exercisesAsync;
+    if (selectedWords != null) {
+      final prefLang =
+          ref.watch(preferenceProvider.select((p) => p.value?.lang));
+      final learning = ref.watch(learningLangProvider);
+      exercisesAsync = ref.watch(practiceByWordsProvider(
+        PracticeByWordsKey(
+          lang: prefLang ?? learning.code,
+          words: selectedWords,
+        ),
+      ));
+    } else if (practice != null) {
+      exercisesAsync = ref.watch(practiceExercisesProvider(practice));
+    } else {
+      exercisesAsync = ref.watch(exercisesProvider(lessonId ?? 1));
+    }
 
     // Nav-bar title: practice mode label, else the current lesson's
     // title resolved from the module's lessons (falls back to "Lesson").
     final String pageTitle;
-    if (practice != null) {
+    if (selectedWords != null) {
+      pageTitle = 'Practicing ${selectedWords.length} selected words';
+    } else if (practice != null) {
       pageTitle = practice.title;
     } else {
       final moduleId =
@@ -815,11 +835,17 @@ class _QuizBody extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 8),
-              _AudioButton(onTap: onPlayAudio),
-              if (checked && score != null) ...[
-                const SizedBox(height: 12),
-                _ScoreIcon(score: score!),
-              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _AudioButton(onTap: onPlayAudio),
+                  if (checked && score != null) ...[
+                    const SizedBox(width: 12),
+                    _ScoreIcon(score: score!),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
@@ -1191,14 +1217,15 @@ class _ScoreIcon extends StatelessWidget {
       color = PolyColors.red400;
     }
     return Container(
-      width: 48,
-      height: 48,
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withValues(alpha: 0.18),
         border: Border.all(color: color.withValues(alpha: 0.55)),
       ),
-      child: Icon(icon, color: color, size: 26),
+      child: Icon(icon, color: color, size: 17),
     );
   }
 }

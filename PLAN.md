@@ -138,7 +138,7 @@ implement annotated sentence in text
     - auto play audio
     - Select text type - (diacritic signs in arabic,hebrew - Hiragana, katakana, Romanji in japanese  )
     - font size 
-3. [] add explanations to lesson
+3. [] add explanations exercise to lesson
 4. Add description of the task 
     - select a single translation
     - select all the words you hear in the sentence
@@ -153,7 +153,10 @@ implement annotated sentence in text
 - [v] calculate score on client side (or serer side can return mark) - show mark after each question - show real mark where the heart icon on top
 - [v] end of lesson - show some data on lesson - how many exercise were answered correctly, how many wrong, how many skipped and the final score of the lesson
 - [v] show list of words in the lesson - optional
-- [L] recommend: on repeat - or next lesson 
+
+- []  
+
+- [] recommend: on repeat - or next lesson 
 
 
 
@@ -322,3 +325,12 @@ Evaluate carefully, may regret:
 
 
 TIME FOR DETAILS - LET'S COMPLETE THE UI. 
+
+
+*** all small task as we go ***
+- [] end of lesson endpoint - lesson complete - achievements
+- [] achievements - decide what achievements we start with
+     - number of lessons per day/week
+     - number of new words per day/week
+- [] end of practice - similar to end of lesson - achievements
+- [] 

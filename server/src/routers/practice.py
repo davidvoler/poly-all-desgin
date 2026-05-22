@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from utils.db import get_query_results
-from models.course import Exercise, Word
+from models.course import Exercise, Word, SelectedWords
 
 import random
 
@@ -82,7 +82,6 @@ async def get_exercises_by_words(lang:str,words: list[str]):
     return results[:10]
 
 
-
 async def get_exercises_by_sentences(lang:str,sentences: list[int]):
     placehoslder = ', '.join(['%s'] * len(sentences))
     sql = f"""
@@ -119,7 +118,15 @@ async def exercise_by_words(user_id: int, lang: str):
     words = await get_words_for_practice(user_id, lang)
     exercises = await get_exercises_by_words(lang, words)
     return exercises
-    
+
+@router.post("/by_selected_words", response_model=list[Exercise])
+async def exercise_by_selected_words(selected_words: SelectedWords):
+    words = selected_words.words
+    exercises = await get_exercises_by_words(selected_words.lang, words)
+    return exercises
+
+
+
 @router.get("/words", response_model=list[Word])
 async def exercise_by_words(user_id: int, lang: str):
     return await get_user_words(user_id, lang)

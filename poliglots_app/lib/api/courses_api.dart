@@ -175,6 +175,27 @@ class CoursesRepository {
         .map(Exercise.fromJson)
         .toList();
   }
+
+  /// `POST /api/v1/practice/by_selected_words` — exercises focused on
+  /// the explicit list of words the user picked on the Words page.
+  Future<List<Exercise>> fetchPracticeByWords({
+    required List<String> words,
+    required String lang,
+  }) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/practice/by_selected_words',
+      data: {
+        'user_id': kCurrentUserId,
+        'lang': lang,
+        'words': words,
+      },
+    );
+    final data = res.data ?? const [];
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(Exercise.fromJson)
+        .toList();
+  }
 }
 
 final coursesRepositoryProvider = Provider<CoursesRepository>((ref) {
@@ -252,6 +273,37 @@ final practiceExercisesProvider =
   final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
   final learning = ref.watch(learningLangProvider);
   return repo.fetchPractice(kind, prefLang ?? learning.code);
+});
+
+/// Family key for [practiceByWordsProvider]. List equality is by element
+/// so re-entering the quiz with the same word selection hits the cache
+/// instead of re-fetching.
+class PracticeByWordsKey {
+  final String lang;
+  final List<String> words;
+  const PracticeByWordsKey({required this.lang, required this.words});
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! PracticeByWordsKey) return false;
+    if (other.lang != lang) return false;
+    if (other.words.length != words.length) return false;
+    for (var i = 0; i < words.length; i++) {
+      if (other.words[i] != words[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(lang, Object.hashAll(words));
+}
+
+/// Practice exercises for a user-picked subset of words. autoDispose so
+/// each unique selection doesn't pile up in the provider cache.
+final practiceByWordsProvider = FutureProvider.autoDispose
+    .family<List<Exercise>, PracticeByWordsKey>((ref, key) {
+  final repo = ref.watch(coursesRepositoryProvider);
+  return repo.fetchPracticeByWords(words: key.words, lang: key.lang);
 });
 
 /// Which module is currently open on the course page. `null` means
