@@ -29,7 +29,6 @@ async def lesson_completed(lesson_completed: LessonCompleted):
     - [v] set lesson as completed correct >= X 
     - [w] set course progress % (or calculated by lesson)
     - [] set current lesson to next lesson - if it is not done already
-    - [] check for achievements 
     """
 
     sql = """
