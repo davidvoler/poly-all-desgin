@@ -4,7 +4,7 @@ from datetime import datetime as DateTime
 class UserCourseProgress(BaseModel):
     user_id: int
     course_id: int
-    progress: float = 0.0
+    progress: int| None = 0
     current_module: int = 1
     current_lesson: int = 1
 
@@ -29,7 +29,13 @@ class Course(BaseModel):
     lang: str
     to_lang: str 
     tags : list[str] | None = []
-    user_course_progress: UserCourseProgress | None = None
+    lesson_count: int | None = 0
+    user_lessons_done: int | None = 0
+    avg_score: float | None = 0.0
+    progress: int | None = 0
+    current_module: int | None = 1
+    current_lesson: int | None = 1
+
 
 
 class Exercise(BaseModel):

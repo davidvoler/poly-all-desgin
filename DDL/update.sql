@@ -7,3 +7,4 @@ ALTER TABLE course_simple.course ADD COLUMN school VARCHAR(255) default 'pgs';
 
 
 alter table user_data.results RENAME COLUMN mark TO score;
+ALTER TABLE course_simple.course ADD COLUMN lesson_count int2 default 0;

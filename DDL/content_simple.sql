@@ -12,6 +12,7 @@ CREATE TABLE course_simple.course (
 	title varchar(255) NOT NULL,
 	description text NULL,
 	level int2 DEFAULT 0 NULL,
+	lesson_count int2 DEFAULT 0 NULL,
 	created_at timestamp DEFAULT now() NULL,
 	updated_at timestamp DEFAULT now() NULL,
 	CONSTRAINT course_pkey PRIMARY KEY (course_id)

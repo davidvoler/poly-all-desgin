@@ -32,19 +32,27 @@ async def get_user_courses(user_id: int):
 
 
 @router.get("/", response_model=list[Course])
-async def get_courses(lang: str , to_lang: str, school: str| None = None):
+async def get_courses(lang: str , to_lang: str, school: str| None = None, user_id: int = 1):
     school_where = "school = %s" if school else ""
     sql = f"""
-    SELECT *  
-    FROM course_simple.course
-    WHERE lang = %s AND to_lang = %s {school_where}
+    SELECT c.course_id, c.title, c.description, c.lang, c.to_lang, c.lesson_count,
+    ul.user_lessons_done, ul.avg_score
+    FROM course_simple.course c 
+    left join (
+    SELECT course_id, count(*) as user_lessons_done, avg(score) as avg_score
+    FROM user_data.lesson_status
+    where user_id = %s
+    group by 1) AS ul on c.course_id = ul.course_id
+    WHERE c.lang = %s AND c.to_lang = %s 
+    {school_where}
     """
-    params = (lang, to_lang)
+    params = (user_id, lang, to_lang)
     if school:
-        params = (lang, to_lang, school)
+        params = (user_id, lang, to_lang, school)
     res = await get_query_results(sql, params)
     results = []
     for r in res:
         course = Course(**r)
         results.append(course)
+    
     return results
