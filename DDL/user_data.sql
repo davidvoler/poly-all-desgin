@@ -80,3 +80,20 @@ create table if not exists user_data.achievements (
 	count_elements int2 DEFAULT 0 NULL,
 	created_at timestamp DEFAULT now()
 );
+
+
+drop table if exists user_data.practice_status;
+create table if not exists user_data.practice_status (
+	id SERIAL4 PRIMARY KEY NOT NULL,
+	user_id int4 NOT NULL,
+	lang varchar(12) NOT NULL,
+	course_id int8 DEFAULT 0 NULL,
+	words_count int2 DEFAULT 0 NULL,
+	score REAL DEFAULT 0.0 NULL,
+	skipped_count int2 DEFAULT 0,
+	correct_count int2 DEFAULT 0,
+	wrong_count int2 DEFAULT 0,	
+	created_at timestamp DEFAULT now()
+);
+
+

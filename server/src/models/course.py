@@ -76,6 +76,20 @@ class LessonCompleted(BaseModel):
     course_lessons_count: int = 0
 
 
+class PracticeCompleted(BaseModel):
+    user_id: int
+    lang: str| None = ''
+    course_id: int = 0
+    score: float = 0.0
+    skipped_count: int = 0
+    correct_count: int = 0
+    wrong_count: int = 0
+    words_count: int = 0
+    course_lessons_count: int = 0
+
+
+
+
 class CourseStatus(BaseModel):
     course_id: int
     progress: int 

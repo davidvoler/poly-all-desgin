@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
-from utils.db import get_query_results
-from models.course import Exercise, Word, SelectedWords
+from routers.lesson import lesson_completed
+from utils.db import get_query_results, run_query
+from models.course import Exercise, PracticeCompleted, Word, SelectedWords
 
 import random
 
@@ -146,3 +147,27 @@ async def exercise_by_exercises(user_id: int, lang: str):
     exercises = await get_exercises_by_exercises(lang, exercises)
     return exercises
 
+
+
+
+@router.post("/completed")
+async def practice_completed(practice_completed: PracticeCompleted):
+    """Handle practice completion."""
+    sql = """
+    INSERT INTO user_data.practice_status (
+        user_id, course_id, lang, score, skipped_count, correct_count, incorrect_count, words_count, course_lessons_count
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    params = (
+        practice_completed.user_id,
+        practice_completed.course_id,
+        practice_completed.lang,
+        practice_completed.score,
+        practice_completed.skipped_count,
+        practice_completed.correct_count,
+        practice_completed.wrong_count,
+        practice_completed.words_count,
+        practice_completed.course_lessons_count
+    )
+    await run_query(sql, params)
+    return {"message": "Practice completion recorded successfully."}

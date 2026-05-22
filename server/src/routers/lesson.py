@@ -26,7 +26,7 @@ async def get_lessons(module_id: int):
 async def lesson_completed(lesson_completed: LessonCompleted):
     """Handle lesson completion."""
     sql = """
-    INSERT INTO user_data.lesson_completed (
+    INSERT INTO user_data.lesson_status (
         user_id, course_id, module_id, lesson_id, lang, score, skipped_count, correct_count, incorrect_count, course_lessons_count
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
