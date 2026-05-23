@@ -1,16 +1,16 @@
 # Polyglots API
 
-Minimal FastAPI server for the Polyglots Flutter client.
+FastAPI server for the Polyglots Flutter client.
+
+We have a single server now that serves both poliglots_app and dashboard
 
 ## Run
 
 ```bash
-cd server
-uv sync                      # install deps into .venv
-uv run uvicorn main:app --reload --port 8000
+docker compose up -d
 ```
 
-OpenAPI docs: <http://localhost:8000/docs>
+OpenAPI docs: <http://localhost:8004/docs>
 
 ## Endpoints
 

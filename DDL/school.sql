@@ -44,7 +44,11 @@ DROP TABLE IF EXISTS school.school_users CASCADE;
 CREATE TABLE school.school_users (
     school_user_id      serial4 PRIMARY KEY,
     school_id           int4         NOT NULL,
-    user_id             int4         NOT NULL,
+    -- NULL until the invitee accepts and we link to user_data.users.
+    user_id             int4         NULL,
+    name                varchar(200) NOT NULL DEFAULT '',
+    email               varchar(200) NOT NULL,
+    password_hash       varchar(200) NULL,                       -- bcrypt; NULL until they accept an invite
     role                varchar(20)  NOT NULL DEFAULT 'editor',  -- owner | editor | viewer
     assigned_languages  _varchar     NOT NULL DEFAULT '{}',      -- empty array = all
     courses_owned       int4         NOT NULL DEFAULT 0,
@@ -52,6 +56,7 @@ CREATE TABLE school.school_users (
     status              varchar(20)  NOT NULL DEFAULT 'active',  -- active | suspended
     created_at          timestamp    NOT NULL DEFAULT now(),
     CONSTRAINT school_users_uq UNIQUE (school_id, user_id),
+    CONSTRAINT school_users_email_uq UNIQUE (school_id, email),
     CONSTRAINT school_users_role_chk CHECK (role IN ('owner','editor','viewer'))
 );
 CREATE INDEX IF NOT EXISTS school_users_school_idx ON school.school_users (school_id);
@@ -128,6 +133,20 @@ CREATE TABLE school.activity_log (
 );
 CREATE INDEX IF NOT EXISTS activity_log_school_idx
     ON school.activity_log (school_id, created_at DESC);
+
+-- -------------------------------------------------------------
+-- course_simple.course — review workflow column.
+-- Courses move draft → review → published. The Editors dashboard lists
+-- everything; the public Polyglots app only serves status='published'.
+-- -------------------------------------------------------------
+ALTER TABLE course_simple.course
+    ADD COLUMN IF NOT EXISTS status varchar(20) NOT NULL DEFAULT 'draft';
+
+ALTER TABLE course_simple.course
+    DROP CONSTRAINT IF EXISTS course_status_chk;
+ALTER TABLE course_simple.course
+    ADD CONSTRAINT course_status_chk
+        CHECK (status IN ('draft','review','published','archived'));
 
 -- -------------------------------------------------------------
 -- Seed: one Riverside Academy + its owner, matching the mocks.

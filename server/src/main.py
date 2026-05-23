@@ -6,11 +6,19 @@ from routers import (
     course,
     module,
     exercise,
-    user_data, 
+    user_data,
     preference,
-    user_stats, 
-    practice, 
+    user_stats,
+    practice,
     achievement
+)
+from school.routes import school as school_routes, users as school_users
+from editor.routes import (
+    upload_course,
+    export_course,
+    editor_courses,
+    review as editor_review,
+    lesson as editor_lesson,
 )
 
 app = FastAPI()
@@ -49,3 +57,28 @@ app.include_router(practice.router,
 app.include_router(achievement.router,
     prefix="/api/v1/achievement",
     tags=["achievement"])
+
+# --- School-admin dashboard ---------------------------------------------------
+app.include_router(school_routes.router,
+    prefix="/api/v1/school",
+    tags=["school"])
+app.include_router(school_users.router,
+    prefix="/api/v1/school_users",
+    tags=["school_users"])
+
+# --- Course editor (dashboard-side, not the public app) -----------------------
+app.include_router(upload_course.router,
+    prefix="/api/v1/editor/upload",
+    tags=["editor_upload"])
+app.include_router(export_course.router,
+    prefix="/api/v1/editor/export",
+    tags=["editor_export"])
+app.include_router(editor_courses.router,
+    prefix="/api/v1/editor/courses",
+    tags=["editor_courses"])
+app.include_router(editor_review.router,
+    prefix="/api/v1/editor/review",
+    tags=["editor_review"])
+app.include_router(editor_lesson.router,
+    prefix="/api/v1/editor/lesson",
+    tags=["editor_lesson"])

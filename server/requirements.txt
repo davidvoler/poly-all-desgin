@@ -9,3 +9,5 @@ passlib[bcrypt]
 jose
 jwt
 psycopg
+python-multipart
+PyYAML
