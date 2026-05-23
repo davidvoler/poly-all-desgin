@@ -78,7 +78,7 @@ async def check_new_achievement(user_id:int, lang:str,  course_id:int=None):
 
     # update new achievements in database
     for a in new_achievement:
-        await run_query(f"""INSERT INTO achievements (user_id, course_id, lang, achievement_type, count_elements, created_at) 
+        await run_query(f"""INSERT INTO user_data.achievements (user_id, course_id, lang, achievement_type, count_elements, created_at) 
                             VALUES (%s, %s, %s, %s, %s, %s)""",
                             (a.user_id, a.course_id, a.lang, a.achievement_type.value, a.count_elements, a.created_at))       
     return new_achievement
@@ -106,6 +106,6 @@ async def get_achievements(user_id, course_id: int, lang: str):
     return await user_achievements(user_id, lang, course_id)
 
 
-@router.post("/check_achievements", response_model=list[Achievement])
-async def check_achievements(user_id, course_id: int, lang: str):
+@router.post("/check_new_achievements", response_model=list[Achievement])
+async def new_achievements(user_id, course_id: int, lang: str):
     return await check_new_achievement(user_id, lang, course_id)
