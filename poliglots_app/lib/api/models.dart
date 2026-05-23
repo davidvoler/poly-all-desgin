@@ -299,6 +299,64 @@ class Lesson {
       );
 }
 
+/// Mirrors the server's `AchievementType` enum. Unknown values from the
+/// server map to [AchievementType.unknown] so a new badge type doesn't
+/// crash older clients.
+enum AchievementType {
+  lessonsCompleted('lessons_completed'),
+  wordsLearned('words_learned'),
+  unknown('');
+
+  final String wire;
+  const AchievementType(this.wire);
+
+  static AchievementType fromWire(String? s) {
+    for (final t in AchievementType.values) {
+      if (t.wire == s) return t;
+    }
+    return AchievementType.unknown;
+  }
+}
+
+/// Shape returned by `GET /api/v1/achievement/get_achievements` and the
+/// `POST .../check_new_achievements` endpoint. `isNew` is true only on
+/// the freshly-awarded entries returned by the check endpoint.
+class Achievement {
+  final int achievementId;
+  final int userId;
+  final int courseId;
+  final String lang;
+  final AchievementType type;
+  final int countElements;
+  final DateTime? createdAt;
+  final bool isNew;
+
+  const Achievement({
+    required this.achievementId,
+    required this.userId,
+    required this.courseId,
+    required this.lang,
+    required this.type,
+    required this.countElements,
+    required this.createdAt,
+    required this.isNew,
+  });
+
+  factory Achievement.fromJson(Map<String, dynamic> j) {
+    final created = j['created_at'];
+    return Achievement(
+      achievementId: (j['achievement_id'] as int?) ?? 0,
+      userId: (j['user_id'] as int?) ?? 0,
+      courseId: (j['course_id'] as int?) ?? 0,
+      lang: (j['lang'] as String?) ?? '',
+      type: AchievementType.fromWire(j['achievement_type'] as String?),
+      countElements: (j['count_elements'] as int?) ?? 0,
+      createdAt: created is String ? DateTime.tryParse(created) : null,
+      isNew: (j['is_new'] as bool?) ?? false,
+    );
+  }
+}
+
 /// One row from `GET /api/v1/practice/words`. `score` is the
 /// server-side mastery aggregate — higher = better recalled, can be
 /// negative for words the user repeatedly gets wrong. `lastPracticed`

@@ -90,11 +90,11 @@ async def check_new_achievement(user_id:int, lang:str,  course_id:int=None):
 async def user_achievements(user_id, lang: str, course_id: int):
     # get user last achievement
     query = f"""SELECT achievement_id, user_id, course_id, lang, achievement_type, count_elements, created_at
-                FROM achievements
+                FROM user_data.achievements
                 WHERE user_id = %s AND course_id = %s AND lang = %s
                 ORDER BY created_at DESC
                 LIMIT 5"""
-    results = await get_query_results(query)
+    results = await get_query_results(query, (user_id, course_id, lang))
     achievements = [achievement.Achievement(**a) for a in results]
     return achievements
  

@@ -207,6 +207,47 @@ class CoursesRepository {
         .toList();
   }
 
+  /// `GET /api/v1/achievement/get_achievements` — most recent badges
+  /// for the user on the given course/lang.
+  Future<List<Achievement>> fetchAchievements({
+    required int courseId,
+    required String lang,
+  }) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/achievement/get_achievements',
+      queryParameters: {
+        'user_id': kCurrentUserId,
+        'course_id': courseId,
+        'lang': lang,
+      },
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(Achievement.fromJson)
+        .toList();
+  }
+
+  /// `POST /api/v1/achievement/check_new_achievements` — server-side
+  /// scan that issues any newly-earned badges and returns them. Empty
+  /// list when nothing new was unlocked.
+  Future<List<Achievement>> checkNewAchievements({
+    required int courseId,
+    required String lang,
+  }) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/achievement/check_new_achievements',
+      queryParameters: {
+        'user_id': kCurrentUserId,
+        'course_id': courseId,
+        'lang': lang,
+      },
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(Achievement.fromJson)
+        .toList();
+  }
+
   /// `POST /api/v1/practice/by_selected_words` — exercises focused on
   /// the explicit list of words the user picked on the Words page.
   Future<List<Exercise>> fetchPracticeByWords({
@@ -261,6 +302,23 @@ final wordsListProvider = FutureProvider<List<LearnedWord>>((ref) {
   final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
   final learning = ref.watch(learningLangProvider);
   return repo.fetchWords(prefLang ?? learning.code);
+});
+
+/// Achievements earned by the current user for the active course/lang.
+/// Resolves the lang the same way [userStatsProvider] does (saved
+/// preference, fall back to in-memory learning lang) and is keyed on the
+/// course id from the preference. Refetches whenever either changes.
+final achievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+  final repo = ref.watch(coursesRepositoryProvider);
+  final courseId =
+      ref.watch(preferenceProvider.select((p) => p.value?.courseId));
+  final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
+  final learning = ref.watch(learningLangProvider);
+  if (courseId == null) return const [];
+  return repo.fetchAchievements(
+    courseId: courseId,
+    lang: prefLang ?? learning.code,
+  );
 });
 
 /// Modules for a course; keyed by course id.

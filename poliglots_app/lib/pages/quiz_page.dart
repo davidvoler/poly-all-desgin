@@ -42,6 +42,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   // Computed once at completion (in _completeLesson) and reused on every
   // rebuild of the _QuizComplete screen.
   _LessonSummary? _summary;
+  // Achievements unlocked by this lesson (server-derived). Populated
+  // asynchronously after _completeLesson POSTs the lesson result; null
+  // while in-flight so the UI can show a tiny loading hint.
+  List<Achievement>? _newAchievements;
 
   final AudioPlayer _audio = AudioPlayer();
 
@@ -63,6 +67,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       _exerciseIndex = 0;
       _finished = false;
       _summary = null;
+      _newAchievements = null;
       _selectedByIndex.clear();
       _checkedIndices.clear();
       _attemptsByIndex.clear();
@@ -154,26 +159,54 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
 
   /// Fires once when the user reaches the end of the quiz. Builds the
-  /// summary, flips into the completion screen, and POSTs the lesson
-  /// result (only in lesson mode — practice modes have no lesson id).
-  void _completeLesson(List<Exercise> exercises, int? lessonId) {
+  /// summary, flips into the completion screen, POSTs the lesson result
+  /// (only in lesson mode — practice modes have no lesson id), then
+  /// asks the server whether the user just unlocked any achievements
+  /// and surfaces them on the completion screen.
+  Future<void> _completeLesson(List<Exercise> exercises, int? lessonId) async {
     final summary = _buildSummary(exercises);
     setState(() {
       _finished = true;
       _summary = summary;
+      _newAchievements = null;
     });
     if (lessonId == null) return;
     final pref = ref.read(preferenceProvider).value;
-    ref.read(coursesRepositoryProvider).saveLessonCompleted(
-          lang: pref?.lang ?? '',
-          courseId: pref?.courseId,
-          moduleId: pref?.moduleId,
-          lessonId: lessonId,
-          score: summary.totalScore,
-          correctCount: summary.correct,
-          wrongCount: summary.wrong,
-          skippedCount: summary.skipped,
-        );
+    final repo = ref.read(coursesRepositoryProvider);
+    await repo.saveLessonCompleted(
+      lang: pref?.lang ?? '',
+      courseId: pref?.courseId,
+      moduleId: pref?.moduleId,
+      lessonId: lessonId,
+      score: summary.totalScore,
+      correctCount: summary.correct,
+      wrongCount: summary.wrong,
+      skippedCount: summary.skipped,
+    );
+    // After the lesson is recorded, ask the server to scan for badges
+    // the user has just earned. courseId is required by the endpoint —
+    // skip the check (and the celebration) when we don't have one yet.
+    final courseId = pref?.courseId;
+    final lang = pref?.lang;
+    if (courseId == null || lang == null || lang.isEmpty) return;
+    try {
+      final unlocked = await repo.checkNewAchievements(
+        courseId: courseId,
+        lang: lang,
+      );
+      if (!mounted) return;
+      setState(() => _newAchievements = unlocked);
+      if (unlocked.isNotEmpty) {
+        // Refresh the cached achievement list so other surfaces see the
+        // new entries the next time they read the provider.
+        ref.invalidate(achievementsProvider);
+      }
+    } catch (_) {
+      // Network or server hiccup — keep the completion screen usable
+      // and just don't show the celebration card.
+      if (!mounted) return;
+      setState(() => _newAchievements = const []);
+    }
   }
 
   @override
@@ -262,6 +295,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     practice: practice,
                     onRepeat: _restartLesson,
                     summary: _summary!,
+                    newAchievements: _newAchievements,
                   );
                 }
                 final idx = _exerciseIndex.clamp(0, exercises.length - 1);
@@ -370,11 +404,16 @@ class _QuizComplete extends ConsumerWidget {
   final PracticeKind? practice;
   final VoidCallback onRepeat;
   final _LessonSummary summary;
+  // Null while the server check is still in flight (only meaningful in
+  // lesson mode). Empty list means "checked, nothing new". Non-empty
+  // means a celebration card is shown above the score breakdown.
+  final List<Achievement>? newAchievements;
   const _QuizComplete({
     required this.lessonId,
     required this.practice,
     required this.onRepeat,
     required this.summary,
+    required this.newAchievements,
   });
 
   @override
@@ -389,6 +428,7 @@ class _QuizComplete extends ConsumerWidget {
         repeatLabel: 'Practice again',
         onRepeat: onRepeat,
         summary: summary,
+        newAchievements: null,
       );
     }
 
@@ -425,6 +465,7 @@ class _QuizComplete extends ConsumerWidget {
       repeatLabel: 'Repeat lesson',
       onRepeat: onRepeat,
       summary: summary,
+      newAchievements: newAchievements,
     );
   }
 }
@@ -440,6 +481,9 @@ class _CompleteScaffold extends StatelessWidget {
   final String repeatLabel;
   final VoidCallback onRepeat;
   final _LessonSummary summary;
+  // Forwarded from _QuizComplete. Null = check still in flight (or not
+  // applicable in practice mode). Empty = nothing new to celebrate.
+  final List<Achievement>? newAchievements;
   const _CompleteScaffold({
     required this.heading,
     required this.subtitle,
@@ -448,6 +492,7 @@ class _CompleteScaffold extends StatelessWidget {
     required this.repeatLabel,
     required this.onRepeat,
     required this.summary,
+    required this.newAchievements,
   });
 
   @override
@@ -495,6 +540,13 @@ class _CompleteScaffold extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // New achievements unlocked by finishing this lesson —
+                // shown only when the server returned a non-empty list.
+                if (newAchievements != null && newAchievements!.isNotEmpty) ...[
+                  _NewAchievementsCard(achievements: newAchievements!),
+                  const SizedBox(height: 12),
+                ],
 
                 // Final score
                 GlassCard(
@@ -645,6 +697,119 @@ class _SummaryDivider extends StatelessWidget {
       width: 1,
       height: 44,
       color: Colors.white.withValues(alpha: 0.10),
+    );
+  }
+}
+
+/// Celebration card shown above the score breakdown on the lesson-
+/// completion screen when `check_new_achievements` returned anything.
+/// Lists each unlocked badge with its icon, headline, and the count
+/// (e.g. "10 words learned").
+class _NewAchievementsCard extends StatelessWidget {
+  final List<Achievement> achievements;
+  const _NewAchievementsCard({required this.achievements});
+
+  static String _headline(AchievementType t) {
+    switch (t) {
+      case AchievementType.lessonsCompleted:
+        return 'Lessons milestone';
+      case AchievementType.wordsLearned:
+        return 'Vocabulary milestone';
+      case AchievementType.unknown:
+        return 'Achievement unlocked';
+    }
+  }
+
+  static String _detail(Achievement a) {
+    switch (a.type) {
+      case AchievementType.lessonsCompleted:
+        return '${a.countElements} lessons completed';
+      case AchievementType.wordsLearned:
+        return '${a.countElements} words learned';
+      case AchievementType.unknown:
+        return 'Keep it up!';
+    }
+  }
+
+  static IconData _icon(AchievementType t) {
+    switch (t) {
+      case AchievementType.lessonsCompleted:
+        return Icons.menu_book;
+      case AchievementType.wordsLearned:
+        return Icons.translate;
+      case AchievementType.unknown:
+        return Icons.emoji_events;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.emoji_events,
+                  color: PolyColors.orange300, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                achievements.length == 1
+                    ? 'NEW ACHIEVEMENT'
+                    : 'NEW ACHIEVEMENTS',
+                style: PolyText.sectionLabel(color: PolyColors.orange300),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < achievements.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: PolyColors.orange300.withValues(alpha: 0.18),
+                    border: Border.all(
+                        color: PolyColors.orange300.withValues(alpha: 0.55)),
+                  ),
+                  child: Icon(_icon(achievements[i].type),
+                      color: PolyColors.orange300, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _headline(achievements[i].type),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _detail(achievements[i]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
