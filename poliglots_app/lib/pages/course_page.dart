@@ -16,6 +16,23 @@ class CoursePage extends ConsumerWidget {
     final modulesAsync = ref.watch(modulesProvider(courseId));
     final selectedId = ref.watch(selectedModuleIdProvider);
 
+    // Course title + overline come from the courses list, looked up by
+    // id. Empty strings while loading or not found — the rest of the
+    // page still renders.
+    final course = ref.watch(coursesListProvider).maybeWhen(
+      data: (courses) {
+        for (final c in courses) {
+          if (c.id == courseId.toString()) return c;
+        }
+        return null;
+      },
+      orElse: () => null,
+    );
+    final courseTitle = course?.title ?? '';
+    final courseOverline = course == null
+        ? ''
+        : '${course.targetLang.englishName} · ${course.targetLang.native}';
+
     // Effective module id once modules load: explicit selection wins,
     // otherwise default to the first module so lessons still render.
     int? effectiveModuleId(List<api.Module> modules) {
@@ -41,11 +58,12 @@ class CoursePage extends ConsumerWidget {
                       tooltip: 'Back',
                       onTap: () => Navigator.maybePop(context),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Center(
                         child: TitleBlock(
-                            overline: 'Japanese · Nihongo',
-                            title: 'Japanese for Beginners'),
+                          overline: courseOverline,
+                          title: courseTitle,
+                        ),
                       ),
                     ),
                     const StreakChip(text: '5'),
