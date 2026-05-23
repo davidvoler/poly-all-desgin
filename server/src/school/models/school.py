@@ -88,6 +88,7 @@ class Plan(BaseModel):
     featured: bool = False
     weight: int = 0
     features: list[PlanFeature] = []
+    subscriber_count: int = 0       # COUNT(DISTINCT user_id) from enrollments
 
 
 class PlanWrite(BaseModel):

@@ -32,13 +32,15 @@ async def list_editor_courses(
     school_id: int,
     status: str | None = None,
     lang: str | None = None,
+    q: str | None = None,
 ):
     """Powers the Courses table on the school dashboard. Joins three
     sources in one query:
       - course_simple.course → title/lang/status (source of truth)
       - school.course_access  → per-school access overlay
       - school.student_enrollments → student count per course
-    Filter by status (e.g. 'review' to see the review queue) or lang."""
+    Filter by status (e.g. 'review' to see the review queue), lang, or
+    a free-text `q` matched against title/description."""
     where = ["ca.school_id = %s"]
     params: list = [school_id]
     if status:
@@ -47,6 +49,10 @@ async def list_editor_courses(
     if lang:
         where.append("c.lang = %s")
         params.append(lang)
+    if q and q.strip():
+        where.append("(c.title ILIKE %s OR c.description ILIKE %s)")
+        like = f"%{q.strip()}%"
+        params.extend([like, like])
 
     sql = f"""
         SELECT

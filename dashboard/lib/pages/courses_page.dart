@@ -8,6 +8,7 @@ import '../theme.dart';
 import '../util/download.dart';
 import '../widgets/common.dart';
 import '../widgets/data_table.dart';
+import '../widgets/search_field.dart';
 import '../widgets/shell.dart';
 
 /// Local mirror of the server-side course-status state graph in
@@ -179,12 +180,19 @@ class _Dropzone extends StatelessWidget {
   }
 }
 
-class _CoursesPanel extends ConsumerWidget {
+class _CoursesPanel extends ConsumerStatefulWidget {
   const _CoursesPanel();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(editorCoursesProvider);
+  ConsumerState<_CoursesPanel> createState() => _CoursesPanelState();
+}
+
+class _CoursesPanelState extends ConsumerState<_CoursesPanel> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(editorCoursesProvider(CoursesFilter(q: _q)));
     return async.when(
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: 48),
@@ -215,6 +223,12 @@ class _CoursesPanel extends ConsumerWidget {
               label: 'All courses',
               subtitle:
                   '·  ${rows.length} total · $published published, $draft draft, $review in review',
+              trailing: [
+                SearchField(
+                  hint: 'Search title or description…',
+                  onChanged: (v) => setState(() => _q = v),
+                ),
+              ],
             ),
             if (rows.isEmpty)
               _empty(context)

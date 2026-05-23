@@ -150,6 +150,34 @@ class DashboardApi {
         .toList();
   }
 
+  Future<LessonDetailRemote> fetchLessonDetail(int lessonId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/editor/lesson/$lessonId',
+    );
+    return LessonDetailRemote.fromJson(res.data ?? const {});
+  }
+
+  Future<void> saveLessonDetail({
+    required int courseId,
+    required int moduleId,
+    int? lessonId,
+    required String title,
+    required List<String> words,
+    required List<Map<String, dynamic>> exercises,
+  }) async {
+    await _dio.post<dynamic>(
+      '/api/v1/editor/lesson/',
+      data: {
+        'course_id': courseId,
+        'module_id': moduleId,
+        'lesson_id': ?lessonId,
+        'title': title,
+        'words': words,
+        'exercises': exercises,
+      },
+    );
+  }
+
   Future<EditorCourseDetail> fetchCourseDetail({
     required int courseId,
     required int schoolId,
@@ -162,13 +190,14 @@ class DashboardApi {
   }
 
   Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
-      {String? status, String? lang}) async {
+      {String? status, String? lang, String? q}) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/editor/courses/',
       queryParameters: {
         'school_id': schoolId,
         'status': ?status,
         'lang': ?lang,
+        'q': ?q,
       },
     );
     return (res.data ?? const [])
@@ -178,12 +207,13 @@ class DashboardApi {
   }
 
   Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
-      {String? role}) async {
+      {String? role, String? q}) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/school_users/',
       queryParameters: {
         'school_id': schoolId,
         'role': ?role,
+        'q': ?q,
       },
     );
     return (res.data ?? const [])
@@ -193,12 +223,13 @@ class DashboardApi {
   }
 
   Future<List<StudentRowRemote>> fetchStudents(int schoolId,
-      {String? lang, String? status, int limit = 200}) async {
+      {String? lang, String? status, String? q, int limit = 200}) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/school/$schoolId/students',
       queryParameters: {
         'lang': ?lang,
         'status': ?status,
+        'q': ?q,
         'limit': limit,
       },
     );
@@ -552,30 +583,79 @@ final languagesProvider = FutureProvider<List<LanguageSummary>>((ref) async {
   return ref.read(dashboardApiProvider).fetchLanguages(me.schoolId);
 });
 
-final editorCoursesProvider = FutureProvider<List<EditorCourse>>((ref) async {
+/// Free-text search key reused by every page that lists from the
+/// server. Empty string means "no filter". Kept as a value class so
+/// the FutureProvider.family memoises by string equality (instead of
+/// fetching on every keystroke a TextField would otherwise trigger).
+class CoursesFilter {
+  final String q;
+  final String? status;
+  final String? lang;
+  const CoursesFilter({this.q = '', this.status, this.lang});
+
+  @override
+  bool operator ==(Object other) =>
+      other is CoursesFilter &&
+      other.q == q &&
+      other.status == status &&
+      other.lang == lang;
+
+  @override
+  int get hashCode => Object.hash(q, status, lang);
+}
+
+final editorCoursesProvider = FutureProvider.family<List<EditorCourse>,
+    CoursesFilter>((ref, filter) async {
   final me = ref.watch(currentUserProvider);
   if (me == null) return const [];
-  return ref.read(dashboardApiProvider).fetchEditorCourses(me.schoolId);
+  return ref.read(dashboardApiProvider).fetchEditorCourses(
+        me.schoolId,
+        status: filter.status,
+        lang: filter.lang,
+        q: filter.q.isEmpty ? null : filter.q,
+      );
 });
 
-final schoolUsersProvider = FutureProvider<List<SchoolUser>>((ref) async {
+class EditorsFilter {
+  final String q;
+  final String? role;
+  const EditorsFilter({this.q = '', this.role});
+
+  @override
+  bool operator ==(Object other) =>
+      other is EditorsFilter && other.q == q && other.role == role;
+
+  @override
+  int get hashCode => Object.hash(q, role);
+}
+
+final schoolUsersProvider = FutureProvider.family<List<SchoolUser>,
+    EditorsFilter>((ref, filter) async {
   final me = ref.watch(currentUserProvider);
   if (me == null) return const [];
-  return ref.read(dashboardApiProvider).fetchSchoolUsers(me.schoolId);
+  return ref.read(dashboardApiProvider).fetchSchoolUsers(
+        me.schoolId,
+        role: filter.role,
+        q: filter.q.isEmpty ? null : filter.q,
+      );
 });
 
 /// Filter key for [studentsProvider] — kept tiny so it equals cleanly.
 class StudentsFilter {
+  final String q;
   final String? lang;
   final String? status;
-  const StudentsFilter({this.lang, this.status});
+  const StudentsFilter({this.q = '', this.lang, this.status});
 
   @override
   bool operator ==(Object other) =>
-      other is StudentsFilter && other.lang == lang && other.status == status;
+      other is StudentsFilter &&
+      other.q == q &&
+      other.lang == lang &&
+      other.status == status;
 
   @override
-  int get hashCode => Object.hash(lang, status);
+  int get hashCode => Object.hash(q, lang, status);
 }
 
 final studentsProvider = FutureProvider.family<List<StudentRowRemote>,
@@ -586,6 +666,7 @@ final studentsProvider = FutureProvider.family<List<StudentRowRemote>,
         me.schoolId,
         lang: filter.lang,
         status: filter.status,
+        q: filter.q.isEmpty ? null : filter.q,
       );
 });
 
@@ -616,4 +697,11 @@ final courseDetailProvider =
         courseId: courseId,
         schoolId: me.schoolId,
       );
+});
+
+/// Lesson + exercises for the per-lesson editor dialog. Keyed by
+/// lesson id; reuses the standard FutureProvider error handling.
+final lessonDetailProvider =
+    FutureProvider.family<LessonDetailRemote, int>((ref, lessonId) async {
+  return ref.read(dashboardApiProvider).fetchLessonDetail(lessonId);
 });

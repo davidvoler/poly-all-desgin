@@ -360,12 +360,14 @@ async def get_students(
     school_id: int,
     lang: str | None = None,
     status: str | None = None,
+    q: str | None = None,
     limit: int = 200,
 ):
     """Roster for the Students page. Joins enrollment rows with
     user_data.users (for name/email) and course_simple.course (for the
     course label). Filter by `lang` (the language the student is
-    learning) or `status` (active|slowing|inactive|no_course)."""
+    learning), `status` (active|slowing|inactive|no_course), or `q`
+    (case-insensitive substring of email)."""
     where = ["se.school_id = %s"]
     params: list = [school_id]
     if lang:
@@ -374,6 +376,12 @@ async def get_students(
     if status:
         where.append("se.status = %s")
         params.append(status)
+    if q and q.strip():
+        # user_data.users doesn't store a separate name column today,
+        # so search hits the email — same source the dashboard builds
+        # the displayed name from.
+        where.append("u.email ILIKE %s")
+        params.append(f"%{q.strip()}%")
 
     sql = f"""
         SELECT
@@ -588,9 +596,12 @@ async def enroll_students_csv(
 # =============================================================
 
 async def _plan_with_features(plan_row: dict) -> Plan:
-    """Hydrate a `school.plans` row with its features. Used by every
-    plans-endpoint response so the dashboard never has to round-trip
-    twice for a single card."""
+    """Hydrate a `school.plans` row with its features + subscriber
+    count. Used by every plans-endpoint response so the dashboard never
+    has to round-trip twice for a single card. The subscriber count is
+    `COUNT(DISTINCT user_id)` from `school.student_enrollments` where
+    plan_id matches — students who haven't been assigned a plan yet
+    don't get counted."""
     plan_id = plan_row['plan_id']
     feats = await get_query_results(
         """
@@ -601,6 +612,15 @@ async def _plan_with_features(plan_row: dict) -> Plan:
         """,
         (plan_id,),
     )
+    sub_rows = await get_query_results(
+        """
+        SELECT COUNT(DISTINCT user_id) AS c
+        FROM school.student_enrollments
+        WHERE plan_id = %s
+        """,
+        (plan_id,),
+    )
+    subs = int((sub_rows[0] if sub_rows else {}).get('c') or 0)
     return Plan(
         plan_id=plan_id,
         school_id=plan_row['school_id'],
@@ -615,6 +635,7 @@ async def _plan_with_features(plan_row: dict) -> Plan:
             included=bool(f.get('included')),
             weight=int(f.get('weight') or 0),
         ) for f in feats],
+        subscriber_count=subs,
     )
 
 

@@ -744,6 +744,10 @@ class _PlanCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
+              Text(
+                _subscribers,
+                style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+              ),
               const Spacer(),
               IconButton(
                 tooltip: 'Delete',
@@ -758,6 +762,13 @@ class _PlanCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String get _subscribers {
+    final n = (plan['subscriber_count'] as int?) ?? 0;
+    if (n == 0) return 'No subscribers yet';
+    if (n == 1) return '1 subscriber';
+    return '$n subscribers';
   }
 }
 

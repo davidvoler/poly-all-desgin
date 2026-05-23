@@ -6,14 +6,22 @@ import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/data_table.dart';
+import '../widgets/search_field.dart';
 import '../widgets/shell.dart';
 
-class EditorsPage extends ConsumerWidget {
+class EditorsPage extends ConsumerStatefulWidget {
   const EditorsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(schoolUsersProvider);
+  ConsumerState<EditorsPage> createState() => _EditorsPageState();
+}
+
+class _EditorsPageState extends ConsumerState<EditorsPage> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(schoolUsersProvider(EditorsFilter(q: _q)));
     return DashboardShell(
       title: 'Editors',
       activeRoute: '/editors',
@@ -47,6 +55,12 @@ class EditorsPage extends ConsumerWidget {
               HeadRow(
                 label: 'Team',
                 subtitle: '·  **$activeCount** active',
+                trailing: [
+                  SearchField(
+                    hint: 'Search name or email…',
+                    onChanged: (v) => setState(() => _q = v),
+                  ),
+                ],
               ),
               if (rows.isEmpty)
                 _emptyState()
@@ -64,7 +78,9 @@ class EditorsPage extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 32),
       alignment: Alignment.center,
       child: Text(
-        'No editors yet — invite the first one above.',
+        _q.isNotEmpty
+            ? 'No editors match "$_q".'
+            : 'No editors yet — invite the first one above.',
         style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
       ),
     );

@@ -244,6 +244,42 @@ String _humanizeIso(String? iso) {
   return '${delta.inDays ~/ 365} years ago';
 }
 
+/// Full lesson + exercise list as returned by
+/// GET /api/v1/editor/lesson/{id}. Exercises are kept as a list of
+/// loosely-typed maps because the schema includes optional fields
+/// the dashboard editor doesn't have to fully understand to render.
+class LessonDetailRemote {
+  final int lessonId;
+  final int courseId;
+  final int moduleId;
+  final String title;
+  final String description;
+  final List<String> words;
+  final List<Map<String, dynamic>> exercises;
+
+  const LessonDetailRemote({
+    required this.lessonId,
+    required this.courseId,
+    required this.moduleId,
+    required this.title,
+    required this.description,
+    required this.words,
+    required this.exercises,
+  });
+
+  factory LessonDetailRemote.fromJson(Map<String, dynamic> j) =>
+      LessonDetailRemote(
+        lessonId: j['lesson_id'] as int,
+        courseId: j['course_id'] as int,
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        words: ((j['words'] as List?) ?? const []).cast<String>(),
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>(),
+      );
+}
+
 class EditorLessonRemote {
   final int lessonId;
   final String title;

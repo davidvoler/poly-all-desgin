@@ -71,3 +71,16 @@ class LessonData(BaseModel):
     title: str = ''
     words: list[str] = []
     exercises: list[dict] = []
+
+
+class LessonDetail(BaseModel):
+    """Read-side shape served by GET /api/v1/editor/lesson/{id}. Same
+    structure as LessonData on the way out so the dashboard can hand
+    the response straight back as a write payload."""
+    lesson_id: int
+    course_id: int
+    module_id: int
+    title: str = ''
+    description: str = ''
+    words: list[str] = []
+    exercises: list[dict] = []

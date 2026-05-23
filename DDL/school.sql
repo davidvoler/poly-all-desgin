@@ -91,6 +91,7 @@ CREATE TABLE school.student_enrollments (
     school_id       int4         NOT NULL,
     user_id         int4         NOT NULL,
     course_id       int4         NULL,                          -- NULL = student with no course yet
+    plan_id         int4         NULL,                          -- which subscription plan they're on
     lang            varchar(12)  NULL,
     cohort          varchar(80)  NULL,                          -- e.g. 'Spring-A'
     progress        real         NOT NULL DEFAULT 0.0,          -- 0..1

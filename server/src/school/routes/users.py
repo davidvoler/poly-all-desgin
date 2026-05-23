@@ -55,16 +55,25 @@ def _row_to_user(row: dict) -> SchoolUser:
 
 
 @router.get("/", response_model=list[SchoolUser])
-async def list_school_users(school_id: int, role: str | None = None):
+async def list_school_users(
+    school_id: int,
+    role: str | None = None,
+    q: str | None = None,
+):
     """Roster for the Editors page. Optional `role` filter so the UI
-    can request just owners/editors/viewers."""
+    can request just owners/editors/viewers. Optional `q` matches
+    name/email (case-insensitive substring)."""
     sql = f"SELECT {_USER_COLS} FROM school.school_users WHERE school_id = %s"
-    params: tuple = (school_id,)
+    params: list = [school_id]
     if role:
         sql += " AND role = %s"
-        params = (school_id, role)
+        params.append(role)
+    if q and q.strip():
+        sql += " AND (name ILIKE %s OR email ILIKE %s)"
+        like = f"%{q.strip()}%"
+        params.extend([like, like])
     sql += " ORDER BY (role = 'owner') DESC, created_at"
-    rows = await get_query_results(sql, params)
+    rows = await get_query_results(sql, tuple(params))
     return [_row_to_user(r) for r in rows]
 
 

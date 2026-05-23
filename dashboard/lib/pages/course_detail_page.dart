@@ -5,6 +5,7 @@ import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/lesson_editor_dialog.dart';
 import '../widgets/shell.dart';
 
 /// Drill-in view for a single course — modules collapse/expand to

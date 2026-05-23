@@ -7,6 +7,7 @@ import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/data_table.dart';
+import '../widgets/search_field.dart';
 import '../widgets/shell.dart';
 
 class StudentsPage extends ConsumerStatefulWidget {
@@ -21,13 +22,15 @@ class _StudentsPageState extends ConsumerState<StudentsPage> {
   String? _lang;
   // null = "All statuses"; otherwise active|slowing|inactive|no_course
   String? _status;
+  // Free-text search debounced to 300ms by SearchField.
+  String _q = '';
 
   @override
   Widget build(BuildContext context) {
     final stats = ref.watch(schoolStatsProvider).value;
     final langs = ref.watch(languagesProvider).value ?? const <LanguageSummary>[];
     final teaching = langs.where((l) => l.role == 'teach').toList();
-    final filter = StudentsFilter(lang: _lang, status: _status);
+    final filter = StudentsFilter(q: _q, lang: _lang, status: _status);
     final async = ref.watch(studentsProvider(filter));
 
     return DashboardShell(
@@ -43,6 +46,12 @@ class _StudentsPageState extends ConsumerState<StudentsPage> {
             label: 'Roster',
             subtitle:
                 '·  **${stats?.students ?? '…'}** students total',
+            trailing: [
+              SearchField(
+                hint: 'Search email…',
+                onChanged: (v) => setState(() => _q = v),
+              ),
+            ],
           ),
           _FilterRow(
             lang: _lang,
