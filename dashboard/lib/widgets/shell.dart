@@ -9,15 +9,19 @@ import '../data/mock.dart';
 import '../theme.dart';
 import 'common.dart';
 
-/// One entry in the sidebar nav.
+/// One entry in the sidebar nav. `adminOnly` items are hidden from
+/// non-admin sessions (mirrors the route-level guard in main.dart so
+/// the sidebar matches what the user can actually open).
 class NavItem {
   final String label;
   final IconData icon;
   final String route;
+  final bool adminOnly;
   const NavItem({
     required this.label,
     required this.icon,
     required this.route,
+    this.adminOnly = false,
   });
 }
 
@@ -25,9 +29,11 @@ const List<NavItem> kNavItems = [
   NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/'),
   NavItem(label: 'Languages', icon: Icons.language, route: '/languages'),
   NavItem(label: 'Courses', icon: Icons.menu_book_outlined, route: '/courses'),
-  NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors'),
+  NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
+      adminOnly: true),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),
-  NavItem(label: 'Settings', icon: Icons.tune, route: '/settings'),
+  NavItem(label: 'Settings', icon: Icons.tune, route: '/settings',
+      adminOnly: true),
 ];
 
 /// The full dashboard chrome: gradient background, sticky sidebar, topbar,
@@ -95,12 +101,20 @@ class DashboardShell extends StatelessWidget {
   }
 }
 
-class _Sidebar extends StatelessWidget {
+class _Sidebar extends ConsumerWidget {
   final String activeRoute;
   const _Sidebar({required this.activeRoute});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final me = ref.watch(currentUserProvider);
+    final isAdmin = me?.isAdmin ?? false;
+    // Hide admin-only items from non-admin sessions so the sidebar
+    // matches what /editors and /settings actually let them open.
+    final items = [
+      for (final i in kNavItems)
+        if (!i.adminOnly || isAdmin) i,
+    ];
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
       child: Container(
@@ -128,7 +142,7 @@ class _Sidebar extends StatelessWidget {
             const SizedBox(height: 14),
             const _SchoolBadge(),
             const SizedBox(height: 18),
-            for (final item in kNavItems)
+            for (final item in items)
               _NavRow(item: item, active: item.route == activeRoute),
             const Spacer(),
             const Divider(color: Color(0x14FFFFFF), height: 1),

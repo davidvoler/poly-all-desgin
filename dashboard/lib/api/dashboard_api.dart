@@ -90,6 +90,11 @@ class LoginInfo {
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
   }
+
+  /// Only admins can manage staff (Editors page) or change the school
+  /// itself (Settings page). Tolerate the pre-migration "owner" label
+  /// for sessions cached before the role rename.
+  bool get isAdmin => role == 'admin' || role == 'owner';
 }
 
 /// Thin client over the dashboard-side endpoints.

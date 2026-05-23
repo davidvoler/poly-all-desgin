@@ -74,15 +74,52 @@ async def upload_course(
     # Create the course row + access overlay so the dashboard's Courses
     # table picks it up immediately. We use sensible defaults; the
     # uploader can edit metadata after the fact.
+    course_lang = (lang or 'ar').lower()
+    course_to_lang = (to_lang or 'en').lower()
+
+    # Public schools accept any language; private schools restrict
+    # uploads to their `languages_taught` whitelist. Either way, when
+    # the upload's language isn't yet on the public school's record we
+    # auto-extend `languages_taught` so the Languages page picks it up.
+    school_rows = await get_query_results(
+        "SELECT is_public, languages_taught FROM school.schools WHERE school_id = %s",
+        (school_id,),
+    )
+    if not school_rows:
+        raise HTTPException(status_code=404, detail="School not found")
+    is_public = bool(school_rows[0].get('is_public'))
+    taught = list(school_rows[0].get('languages_taught') or [])
+
+    if not is_public and taught and course_lang not in taught:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Language '{course_lang}' isn't in this school's "
+                f"taught languages ({', '.join(taught)}). "
+                "Add it on the Languages page first."
+            ),
+        )
+
+    if is_public and course_lang not in taught:
+        await run_query(
+            """
+            UPDATE school.schools
+            SET languages_taught = array_append(languages_taught, %s),
+                updated_at = now()
+            WHERE school_id = %s
+            """,
+            (course_lang, school_id),
+        )
+
     course_id: int | None = None
     derived_title = course_title or _title_from_filename(file.filename)
     inserted = await get_query_results(
         """
-        INSERT INTO course_simple.course (title, lang, to_lang, status)
-        VALUES (%s, %s, %s, 'draft')
+        INSERT INTO course_simple.course (title, lang, to_lang, status, owner_user_id)
+        VALUES (%s, %s, %s, 'draft', %s)
         RETURNING course_id
         """,
-        (derived_title, lang or 'ar', to_lang or 'en'),
+        (derived_title, course_lang, course_to_lang, actor_user_id),
     )
     ingest = {'modules': 0, 'skipped': 0}
     if inserted:

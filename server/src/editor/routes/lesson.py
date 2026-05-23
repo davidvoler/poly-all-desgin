@@ -1,8 +1,9 @@
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 
 from editor.models.course import LessonData, LessonDetail
+from editor.utils.ownership import require_course_editor
 from utils.db import get_query_results, run_query
 
 router = APIRouter()
@@ -76,7 +77,10 @@ async def get_lesson_detail(lesson_id: int):
 
 
 @router.post("/")
-async def add_lesson_to_course(data: LessonData):
+async def add_lesson_to_course(
+    data: LessonData,
+    x_school_user_id: int | None = Header(default=None),
+):
     """Save (or overwrite) a single lesson's exercises without re-uploading
     the whole course. Used by the per-lesson editor on the dashboard.
 
@@ -85,7 +89,15 @@ async def add_lesson_to_course(data: LessonData):
       - With lesson_id → UPDATE the lesson row + replace its exercises
     Exercises are wiped-and-reinserted because the editor sends the full
     array; partial diffs would need stable per-exercise ids the UI
-    doesn't carry yet."""
+    doesn't carry yet.
+
+    Ownership: only the course owner (or admin / super_editor) can save
+    here. When the request comes without an auth header, the check
+    no-ops so existing demo flows keep working."""
+    await require_course_editor(
+        course_id=data.course_id,
+        school_user_id=x_school_user_id,
+    )
     if data.lesson_id is None:
         inserted = await get_query_results(
             """

@@ -1,0 +1,4 @@
+name: Italian for English Speakers
+description: A course designed to help English speakers learn Italian, covering essential grammar, vocabulary, and
+language: Italian
+student_languages: English

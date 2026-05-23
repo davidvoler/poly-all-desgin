@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from editor.models.course import CourseStatusUpdate, EditorCourse
 from editor.routes.editor_courses import get_editor_course
+from editor.utils.ownership import require_course_editor
 from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
 
@@ -93,6 +94,11 @@ async def set_course_status(
             status_code=409,
             detail=f"Cannot move course from {current_status} to {payload.status}",
         )
+
+    # Only the course owner (or an admin / super_editor) can move it.
+    # On legacy / seed courses with no owner_user_id this short-circuits
+    # so existing flows keep working — see require_course_editor.
+    await require_course_editor(course_id=course_id, school_user_id=_caller)
 
     await run_query(
         """

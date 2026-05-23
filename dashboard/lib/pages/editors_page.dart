@@ -278,19 +278,23 @@ class _EditorRowMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(currentUserProvider);
     final isSelf = me?.schoolUserId == user.schoolUserId;
-    final isOwner = user.role == EditorRoleWire.owner;
+    // Admins are the only role that can't be downgraded/removed from
+    // the dashboard — otherwise a school could be locked out of itself.
+    final isAdmin = user.role == EditorRoleWire.admin;
     final isActive = user.status == 'active';
     return PopupMenuButton<String>(
       tooltip: 'Actions',
       color: DashColors.darkBg.withValues(alpha: 0.96),
       onSelected: (key) {
         switch (key) {
+          case _kChangeRoleAdmin:
+            _update(context, ref, role: EditorRoleWire.admin);
+          case _kChangeRoleSuperEditor:
+            _update(context, ref, role: EditorRoleWire.superEditor);
           case _kChangeRoleEditor:
             _update(context, ref, role: EditorRoleWire.editor);
-          case _kChangeRoleViewer:
-            _update(context, ref, role: EditorRoleWire.viewer);
-          case _kChangeRoleOwner:
-            _update(context, ref, role: EditorRoleWire.owner);
+          case _kChangeRoleReviewer:
+            _update(context, ref, role: EditorRoleWire.reviewer);
           case _kSuspend:
             _update(context, ref, status: 'suspended');
           case _kActivate:
@@ -300,19 +304,20 @@ class _EditorRowMenu extends ConsumerWidget {
         }
       },
       itemBuilder: (context) => [
-        if (user.role != EditorRoleWire.owner) ...[
-          _item(_kChangeRoleOwner, Icons.star_border, 'Promote to Owner'),
-        ],
+        if (user.role != EditorRoleWire.admin)
+          _item(_kChangeRoleAdmin, Icons.star_border, 'Promote to Admin'),
+        if (user.role != EditorRoleWire.superEditor)
+          _item(_kChangeRoleSuperEditor, Icons.engineering, 'Make Super Editor'),
         if (user.role != EditorRoleWire.editor)
           _item(_kChangeRoleEditor, Icons.edit_outlined, 'Make Editor'),
-        if (user.role != EditorRoleWire.viewer)
-          _item(_kChangeRoleViewer, Icons.visibility_outlined, 'Make Viewer'),
+        if (user.role != EditorRoleWire.reviewer)
+          _item(_kChangeRoleReviewer, Icons.fact_check_outlined, 'Make Reviewer'),
         const PopupMenuDivider(),
-        if (!isOwner && isActive)
+        if (!isAdmin && isActive)
           _item(_kSuspend, Icons.pause_circle_outline, 'Suspend'),
-        if (!isOwner && !isActive)
+        if (!isAdmin && !isActive)
           _item(_kActivate, Icons.play_circle_outline, 'Reactivate'),
-        if (!isOwner && !isSelf)
+        if (!isAdmin && !isSelf)
           _item(_kDelete, Icons.delete_outline, 'Remove',
               color: DashColors.red400),
       ],
@@ -453,7 +458,7 @@ class _InviteEditorDialogState extends ConsumerState<_InviteEditorDialog> {
                 Wrap(
                   spacing: 6,
                   children: [
-                    for (final r in const ['owner', 'editor', 'viewer'])
+                    for (final r in const ['admin', 'editor', 'super_editor', 'reviewer'])
                       ChoiceChip(
                         label: Text(r.toUpperCase(),
                             style: const TextStyle(fontSize: 11)),

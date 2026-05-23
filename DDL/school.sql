@@ -211,12 +211,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS billing_primary_uq
     ON school.billing_methods (school_id) WHERE is_primary;
 
 -- -------------------------------------------------------------
--- course_simple.course — review workflow column.
+-- course_simple.course — review workflow column + ownership.
 -- Courses move draft → review → published. The Editors dashboard lists
 -- everything; the public Polyglots app only serves status='published'.
+-- owner_user_id stamps which school_users row uploaded the course; on
+-- public schools only that user (plus admins / super-editors) can edit
+-- it. NULL is allowed because the existing seed predates the column.
 -- -------------------------------------------------------------
 ALTER TABLE course_simple.course
     ADD COLUMN IF NOT EXISTS status varchar(20) NOT NULL DEFAULT 'draft';
+ALTER TABLE course_simple.course
+    ADD COLUMN IF NOT EXISTS owner_user_id int4 NULL;
 
 ALTER TABLE course_simple.course
     DROP CONSTRAINT IF EXISTS course_status_chk;

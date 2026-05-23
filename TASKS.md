@@ -113,12 +113,27 @@ for almost everything else in the Public School section, and the role
 rename is cheap to do while data is small. Deferring co-editing /
 terms-and-conditions since the user flagged them as needing planning.
 
-- [selected] Rename `school.school_users.role` enum from owner/editor/viewer to admin/editor/super_editor/reviewer/student. Migrate Lena → admin. Update the check constraint + server-side defaults + the `EditorRoleWire` enum on the client.
-- [selected] Page-level ACL on the dashboard — `Editors` and `Settings` nav items + routes only visible to role=admin; everyone else gets a 403-ish empty state if they deep-link.
-- [selected] Public school = any language — when `school.is_public=true`, skip the language whitelist on the upload endpoint and accept any 2-letter code (server already accepts any code; this is mostly the public-school check on the wizard).
-- [selected] Course ownership — add `owner_user_id` to `course_simple.course`; populated on upload from the uploader; `set_course_status` and `editor/lesson` save reject 403 when the caller isn't the owner (unless they're admin or super_editor).
+- [v] Role enum migrated to admin/editor/super_editor/reviewer/student. Data backfilled (owner→admin, viewer→reviewer); check constraint updated on `school_users` + `school_invites`; client `EditorRoleWire` enum + `roleToWire()` serialiser; tolerant of cached "owner" sessions from before the migration.
+- [v] Page-level ACL on the dashboard — `NavItem.adminOnly` filters Editors + Settings out of the sidebar for non-admin sessions; `_Guarded(adminOnly: true)` swaps in an `_AdminOnlyDenied` empty-state for deep links.
+- [v] Public school = any language — upload route checks `school.is_public`; private schools enforce `languages_taught` whitelist with a clear 400 message; public schools accept any code and auto-extend `languages_taught` so the Languages page picks it up.
+- [v] Course ownership — `owner_user_id` column on `course_simple.course`; populated from `actor_user_id` on upload; `require_course_editor` helper enforces 403 on `set_course_status` + lesson save when the caller isn't owner / admin / super_editor. NULL owner (legacy/seed rows) short-circuits to back-compat allow.
 - [ ] Terms-and-conditions acceptance for becoming an editor on a public school — deferred (needs UX + storage decisions).
 - [ ] Real co-editing (github/wikipedia-style) — deferred per spec.
+
+
+*** Content creation Formant  *** 
+We have 2 main way of creating content 
+1. Use the UI to create a course. lessons and modules 
+2. Import the content from a compresses folder
+- [v] We need an example course that users can export and extend - can be found in content/example_course
+
+- [] We need an explanation page describing the format - please create the format description from content/example_course
+
+
+
+
+
+
 
 *** tasks saved for later stage ***
 - [ ] I prefer using Oauth - so we can skip password change password functionality - for now at least
