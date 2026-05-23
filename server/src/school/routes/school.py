@@ -581,3 +581,191 @@ async def enroll_students_csv(
         'skipped': skipped,
         'errors': errors,
     }
+
+
+# =============================================================
+# Subscription plans  (Settings → Subscription plans card grid)
+# =============================================================
+
+async def _plan_with_features(plan_row: dict) -> Plan:
+    """Hydrate a `school.plans` row with its features. Used by every
+    plans-endpoint response so the dashboard never has to round-trip
+    twice for a single card."""
+    plan_id = plan_row['plan_id']
+    feats = await get_query_results(
+        """
+        SELECT label, included, weight
+        FROM school.plan_features
+        WHERE plan_id = %s
+        ORDER BY weight, plan_feature_id
+        """,
+        (plan_id,),
+    )
+    return Plan(
+        plan_id=plan_id,
+        school_id=plan_row['school_id'],
+        tier=plan_row['tier'],
+        price_cents=int(plan_row.get('price_cents') or 0),
+        cadence=plan_row.get('cadence') or 'monthly',
+        blurb=plan_row.get('blurb'),
+        featured=bool(plan_row.get('featured')),
+        weight=int(plan_row.get('weight') or 0),
+        features=[PlanFeature(
+            label=f.get('label') or '',
+            included=bool(f.get('included')),
+            weight=int(f.get('weight') or 0),
+        ) for f in feats],
+    )
+
+
+async def _replace_features(plan_id: int, features: list[PlanFeature]) -> None:
+    """Atomic 'set the feature list to exactly this' helper. Cheaper
+    than diffing for the small N we have, and avoids the editor having
+    to send stable feature ids."""
+    await run_query(
+        "DELETE FROM school.plan_features WHERE plan_id = %s",
+        (plan_id,),
+    )
+    for i, f in enumerate(features):
+        await run_query(
+            """
+            INSERT INTO school.plan_features (plan_id, label, included, weight)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (plan_id, f.label, f.included, f.weight or i),
+        )
+
+
+@router.get("/{school_id}/plans", response_model=list[Plan])
+async def list_plans(school_id: int):
+    rows = await get_query_results(
+        """
+        SELECT plan_id, school_id, tier, price_cents, cadence,
+               blurb, featured, weight
+        FROM school.plans
+        WHERE school_id = %s
+        ORDER BY weight, plan_id
+        """,
+        (school_id,),
+    )
+    out: list[Plan] = []
+    for r in rows:
+        out.append(await _plan_with_features(r))
+    return out
+
+
+@router.post("/{school_id}/plans", response_model=Plan)
+async def create_plan(school_id: int, payload: PlanWrite):
+    inserted = await get_query_results(
+        """
+        INSERT INTO school.plans
+            (school_id, tier, price_cents, cadence, blurb, featured, weight)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        RETURNING plan_id, school_id, tier, price_cents, cadence, blurb, featured, weight
+        """,
+        (school_id, payload.tier, payload.price_cents, payload.cadence,
+         payload.blurb, payload.featured, payload.weight),
+    )
+    if not inserted:
+        raise HTTPException(status_code=500, detail="Failed to create plan")
+    plan_id = inserted[0]['plan_id']
+    await _replace_features(plan_id, payload.features)
+    return await _plan_with_features(inserted[0])
+
+
+@router.put("/{school_id}/plans/{plan_id}", response_model=Plan)
+async def update_plan(school_id: int, plan_id: int, payload: PlanWrite):
+    updated = await get_query_results(
+        """
+        UPDATE school.plans
+        SET tier = %s, price_cents = %s, cadence = %s, blurb = %s,
+            featured = %s, weight = %s
+        WHERE plan_id = %s AND school_id = %s
+        RETURNING plan_id, school_id, tier, price_cents, cadence, blurb, featured, weight
+        """,
+        (payload.tier, payload.price_cents, payload.cadence, payload.blurb,
+         payload.featured, payload.weight, plan_id, school_id),
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    await _replace_features(plan_id, payload.features)
+    return await _plan_with_features(updated[0])
+
+
+@router.delete("/{school_id}/plans/{plan_id}")
+async def delete_plan(school_id: int, plan_id: int):
+    ok = await run_query(
+        "DELETE FROM school.plans WHERE plan_id = %s AND school_id = %s",
+        (plan_id, school_id),
+    )
+    return {"ok": ok}
+
+
+# =============================================================
+# Billing  (Settings → Billing card)
+# =============================================================
+
+@router.get("/{school_id}/billing", response_model=BillingMethod | None)
+async def get_billing(school_id: int):
+    """Returns the primary card or null when there isn't one. Returning
+    null (rather than 404) keeps the dashboard's "Manage payment" /
+    empty-state branching straightforward."""
+    rows = await get_query_results(
+        """
+        SELECT billing_method_id, school_id, brand, last4, exp_month,
+               exp_year, is_primary
+        FROM school.billing_methods
+        WHERE school_id = %s AND is_primary
+        LIMIT 1
+        """,
+        (school_id,),
+    )
+    if not rows:
+        return None
+    r = rows[0]
+    return BillingMethod(
+        billing_method_id=r['billing_method_id'],
+        school_id=r['school_id'],
+        brand=r.get('brand') or 'Card',
+        last4=r.get('last4') or '',
+        exp_month=int(r.get('exp_month') or 0),
+        exp_year=int(r.get('exp_year') or 0),
+        is_primary=bool(r.get('is_primary')),
+    )
+
+
+@router.put("/{school_id}/billing", response_model=BillingMethod)
+async def upsert_billing(school_id: int, payload: BillingMethodWrite):
+    """Upsert the primary card for a school. Implemented as
+    delete-then-insert (under the partial unique index `billing_primary_uq`)
+    so we don't have to track the row's id from the dashboard."""
+    if len(payload.last4) != 4 or not payload.last4.isdigit():
+        raise HTTPException(status_code=400, detail="last4 must be 4 digits")
+    if not (1 <= payload.exp_month <= 12):
+        raise HTTPException(status_code=400, detail="exp_month out of range")
+    await run_query(
+        "DELETE FROM school.billing_methods WHERE school_id = %s AND is_primary",
+        (school_id,),
+    )
+    inserted = await get_query_results(
+        """
+        INSERT INTO school.billing_methods
+            (school_id, brand, last4, exp_month, exp_year, is_primary)
+        VALUES (%s, %s, %s, %s, %s, true)
+        RETURNING billing_method_id, school_id, brand, last4, exp_month, exp_year, is_primary
+        """,
+        (school_id, payload.brand, payload.last4, payload.exp_month,
+         payload.exp_year),
+    )
+    if not inserted:
+        raise HTTPException(status_code=500, detail="Failed to save billing method")
+    r = inserted[0]
+    return BillingMethod(
+        billing_method_id=r['billing_method_id'],
+        school_id=r['school_id'],
+        brand=r['brand'],
+        last4=r['last4'],
+        exp_month=int(r['exp_month']),
+        exp_year=int(r['exp_year']),
+        is_primary=bool(r['is_primary']),
+    )

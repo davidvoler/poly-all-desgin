@@ -26,15 +26,21 @@
 - [v] Upload dropzone is visual only; wire it to POST /api/v1/editor/upload/ (multipart) + invalidate editorCoursesProvider on success
 - [v] Course row "Export" action — call GET /api/v1/editor/export/{id} and trigger a browser download
 - [v] Editors row actions (suspend / change role / delete) — server already supports PUT/DELETE on /api/v1/school_users/{id}; UI not wired yet
-- [v] "Add students" CTA on Students page — needs a POST /api/v1/school/{id}/students (enroll one) endpoint, plus a CSV upload variant
-   - Single-student enroll endpoint + dialog landed; CSV upload variant still TODO
-- [] Settings: subscription plans, billing card, danger-zone deletion all render but don't POST anywhere; needs plans/billing tables + endpoints
+- [v] "Add students" CTA on Students page — single-student enroll + CSV bulk upload both wired
+- [v] Settings: subscription plans, billing card, danger-zone deletion — DDL (`school.plans`, `school.plan_features`, `school.billing_methods`) + CRUD endpoints + UI all landed; danger-zone confirms by typing the school name then signs out
 - [v] Activity feed only captures course status transitions today; expand `school.activity_log` writes from the upload, invite, and enrollment endpoints so the Overview panel reflects more
 
 *** Still open ***
 
-- [] CSV bulk-enrol endpoint + Students-page CSV upload UI (POST /api/v1/school/{id}/students/csv?lang=ar accepting a CSV with email,name,course_id columns)
-- [] Settings page wiring — needs `school.plans`, `school.billing` tables; endpoints under /api/v1/school/{id}/plans and /billing; danger-zone DELETE /api/v1/school/{id} already exists but is unwired in the UI
-- [] Course detail page (drill-in from the Courses table) — modules / lessons / exercises editor
-- [] Real folder→DB ingestion at upload time (folder_to_db.load_course_from_folder isn't called from /editor/upload yet)
+- [v] CSV bulk-enrol endpoint + Students-page CSV upload UI (POST /api/v1/school/{id}/students/csv?lang=ar accepting a CSV with email,name,course_id columns)
+- [v] Settings page wiring — `school.plans`/`school.plan_features`/`school.billing_methods` tables seeded; full CRUD endpoints; danger-zone DELETE wired with type-name confirm + sign-out
+- [v] Course detail page (drill-in from the Courses table) — read-only modules / lessons tree at /course; a per-lesson editor is the next pass
+- [v] Real folder→DB ingestion at upload time — `editor.utils.folder_to_db.load_course_content` now runs after extraction; best-effort, swallows malformed modules
+
+*** Next pass (new work) ***
+
+- [] Per-lesson exercise editor inside the course detail page (uses existing POST /api/v1/editor/lesson/)
+- [] Show subscriber counts on plan cards (needs a plan_id column on `school.student_enrollments` or a separate `school.subscriptions` table)
+- [] Search box on the Courses / Students / Editors tables (server-side LIKE filter)
+- [] Real password reset flow (forgot-password link on login currently no-op)
 

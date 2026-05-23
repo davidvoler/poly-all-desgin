@@ -244,6 +244,104 @@ String _humanizeIso(String? iso) {
   return '${delta.inDays ~/ 365} years ago';
 }
 
+class EditorLessonRemote {
+  final int lessonId;
+  final String title;
+  final String description;
+  final List<String> words;
+  final int exerciseCount;
+  const EditorLessonRemote({
+    required this.lessonId,
+    required this.title,
+    required this.description,
+    required this.words,
+    required this.exerciseCount,
+  });
+  factory EditorLessonRemote.fromJson(Map<String, dynamic> j) =>
+      EditorLessonRemote(
+        lessonId: j['lesson_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        words: ((j['words'] as List?) ?? const []).cast<String>(),
+        exerciseCount: (j['exercise_count'] as int?) ?? 0,
+      );
+}
+
+class EditorModuleRemote {
+  final int moduleId;
+  final String title;
+  final String description;
+  final int weight;
+  final List<EditorLessonRemote> lessons;
+  const EditorModuleRemote({
+    required this.moduleId,
+    required this.title,
+    required this.description,
+    required this.weight,
+    required this.lessons,
+  });
+  factory EditorModuleRemote.fromJson(Map<String, dynamic> j) =>
+      EditorModuleRemote(
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        weight: (j['weight'] as int?) ?? 0,
+        lessons: ((j['lessons'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(EditorLessonRemote.fromJson)
+            .toList(),
+      );
+}
+
+class EditorCourseDetail {
+  final int courseId;
+  final String title;
+  final String description;
+  final String lang;
+  final String toLang;
+  final CourseStatusWire status;
+  final CourseAccessWire access;
+  final int lessonCount;
+  final int moduleCount;
+  final int studentCount;
+  final String updatedHuman;
+  final List<EditorModuleRemote> modules;
+
+  const EditorCourseDetail({
+    required this.courseId,
+    required this.title,
+    required this.description,
+    required this.lang,
+    required this.toLang,
+    required this.status,
+    required this.access,
+    required this.lessonCount,
+    required this.moduleCount,
+    required this.studentCount,
+    required this.updatedHuman,
+    required this.modules,
+  });
+
+  factory EditorCourseDetail.fromJson(Map<String, dynamic> j) =>
+      EditorCourseDetail(
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        lang: (j['lang'] as String?) ?? '',
+        toLang: (j['to_lang'] as String?) ?? '',
+        status: _statusFromWire(j['status'] as String?),
+        access: _accessFromWire(j['access'] as String?),
+        lessonCount: (j['lesson_count'] as int?) ?? 0,
+        moduleCount: (j['module_count'] as int?) ?? 0,
+        studentCount: (j['student_count'] as int?) ?? 0,
+        updatedHuman: _humanizeIso(j['updated_at'] as String?),
+        modules: ((j['modules'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(EditorModuleRemote.fromJson)
+            .toList(),
+      );
+}
+
 enum EditorRoleWire { owner, editor, viewer }
 
 EditorRoleWire _roleFromWire(String? s) {

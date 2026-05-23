@@ -365,11 +365,19 @@ class _CoursesTable extends ConsumerWidget {
       rows: [
         for (final c in rows)
           [
-            WhoCell(
-              initials: _mark(c),
-              avatarKey: _avatarKey(c.courseId),
-              name: c.title,
-              email: c.description,
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => Navigator.pushNamed(
+                context,
+                '/course',
+                arguments: c.courseId,
+              ),
+              child: WhoCell(
+                initials: _mark(c),
+                avatarKey: _avatarKey(c.courseId),
+                name: c.title,
+                email: c.description,
+              ),
             ),
             Text(c.lang.toUpperCase()),
             Text('${c.moduleCount} · ${c.lessonCount}'),

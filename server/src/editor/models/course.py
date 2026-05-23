@@ -27,6 +27,40 @@ class CourseStatusUpdate(BaseModel):
     note: str | None = None                 # optional reviewer comment, stored in activity_log
 
 
+class EditorLesson(BaseModel):
+    lesson_id: int
+    title: str = ''
+    description: str = ''
+    words: list[str] = []
+    exercise_count: int = 0
+
+
+class EditorModule(BaseModel):
+    module_id: int
+    title: str = ''
+    description: str = ''
+    weight: int = 0
+    lessons: list[EditorLesson] = []
+
+
+class EditorCourseDetail(BaseModel):
+    """Full nested structure for the course detail page — course row +
+    modules + lessons + per-lesson exercise counts. The dashboard
+    renders this as an expandable tree without further round-trips."""
+    course_id: int
+    title: str = ''
+    description: str = ''
+    lang: str
+    to_lang: str
+    status: str = 'draft'
+    access: str | None = None
+    lesson_count: int = 0
+    module_count: int = 0
+    student_count: int = 0
+    updated_at: DateTime | None = None
+    modules: list[EditorModule] = []
+
+
 class LessonData(BaseModel):
     """Payload for the per-lesson editor route — a single lesson worth of
     exercises that the dashboard can save without re-uploading the whole

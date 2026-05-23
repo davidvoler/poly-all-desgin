@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api/dashboard_api.dart';
+import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
@@ -56,6 +57,7 @@ class DashboardApp extends StatelessWidget {
       home: const _AuthGate(),
       routes: {
         '/courses': (_) => const _Guarded(child: CoursesPage()),
+        '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
         '/editors': (_) => const _Guarded(child: EditorsPage()),
         '/students': (_) => const _Guarded(child: StudentsPage()),

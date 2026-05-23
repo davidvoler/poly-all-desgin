@@ -150,6 +150,17 @@ class DashboardApi {
         .toList();
   }
 
+  Future<EditorCourseDetail> fetchCourseDetail({
+    required int courseId,
+    required int schoolId,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/editor/courses/$courseId/detail',
+      queryParameters: {'school_id': schoolId},
+    );
+    return EditorCourseDetail.fromJson(res.data ?? const {});
+  }
+
   Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
       {String? status, String? lang}) async {
     final res = await _dio.get<List<dynamic>>(
@@ -575,5 +586,34 @@ final studentsProvider = FutureProvider.family<List<StudentRowRemote>,
         me.schoolId,
         lang: filter.lang,
         status: filter.status,
+      );
+});
+
+/// All subscription plans for the current school — backs the
+/// Settings → Subscription plans grid.
+final plansProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchPlans(me.schoolId);
+});
+
+/// The primary billing method (or null when none exists). Settings →
+/// Billing renders an empty-state CTA when this resolves to null.
+final billingProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return null;
+  return ref.read(dashboardApiProvider).fetchBilling(me.schoolId);
+});
+
+/// Full nested detail for a single course — modules + lessons +
+/// per-lesson exercise counts. Keyed by course id; reuses the
+/// current user's schoolId scope.
+final courseDetailProvider =
+    FutureProvider.family<EditorCourseDetail?, int>((ref, courseId) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return null;
+  return ref.read(dashboardApiProvider).fetchCourseDetail(
+        courseId: courseId,
+        schoolId: me.schoolId,
       );
 });
