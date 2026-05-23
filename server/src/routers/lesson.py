@@ -25,10 +25,11 @@ async def get_lessons(module_id: int):
 @router.post("/completed")
 async def lesson_completed(lesson_completed: LessonCompleted):
     """Handle lesson completion."""
+    print(lesson_completed)
     sql = """
     INSERT INTO user_data.lesson_status (
-        user_id, course_id, module_id, lesson_id, lang, score, skipped_count, correct_count, incorrect_count, course_lessons_count
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        user_id, course_id, module_id, lesson_id, lang, score, skipped_count, correct_count, wrong_count
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         lesson_completed.user_id,
@@ -40,7 +41,6 @@ async def lesson_completed(lesson_completed: LessonCompleted):
         lesson_completed.skipped_count,
         lesson_completed.correct_count,
         lesson_completed.wrong_count,
-        lesson_completed.course_lessons_count
     )
     await run_query(sql, params)
 
