@@ -2,9 +2,9 @@
 
 - [v] create a flutter app called dashboard this app should be used for both public school and school dashboards - difference in the settings 
 
-- [] create the tables ddl from school in ./DDL in school schema  - schools, users, etc
+- [v] create the tables ddl from school in ./DDL in school schema  - schools, users, etc
 
-- [] Create initial design of the dashboard in ./dasboard flutter app based on the design in ./design_experiments/school_dashboard
+- [v] Create initial design of the dashboard in ./dasboard flutter app based on the design in ./design_experiments/school_dashboard
 
 - [] implement the python server code in server/school all school related api should be in this folder 
 
