@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'models.dart';
+
 /// Base URL for the Polyglots backend. Override at compile-time with
 ///
 ///     flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8004
@@ -80,8 +82,7 @@ class DashboardApi {
       data: {
         'email': email,
         'password': password,
-        if (schoolSlug != null && schoolSlug.isNotEmpty)
-          'school_slug': schoolSlug,
+        if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
       },
     );
     return LoginInfo.fromJson(res.data ?? const {});
@@ -98,13 +99,150 @@ class DashboardApi {
       '/api/v1/editor/review/$courseId/status',
       queryParameters: {
         'school_id': schoolId,
-        if (actorUserId != null) 'actor_user_id': actorUserId,
+        'actor_user_id': ?actorUserId,
       },
       data: {
         'status': status,
-        if (note != null && note.isNotEmpty) 'note': note,
+        if (note?.isNotEmpty ?? false) 'note': note,
       },
     );
+  }
+
+  // --- Reads --------------------------------------------------------
+
+  Future<SchoolInfo> fetchSchool(int schoolId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/school/$schoolId',
+    );
+    return SchoolInfo.fromJson(res.data ?? const {});
+  }
+
+  Future<SchoolStats> fetchSchoolStats(int schoolId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/school/$schoolId/stats',
+    );
+    return SchoolStats.fromJson(res.data ?? const {});
+  }
+
+  Future<List<ActivityRowRemote>> fetchActivity(int schoolId,
+      {int limit = 10}) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/school/$schoolId/activity',
+      queryParameters: {'limit': limit},
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(ActivityRowRemote.fromJson)
+        .toList();
+  }
+
+  Future<List<LanguageSummary>> fetchLanguages(int schoolId,
+      {String? role}) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/school/$schoolId/languages',
+      queryParameters: {
+        'role': ?role,
+      },
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(LanguageSummary.fromJson)
+        .toList();
+  }
+
+  Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
+      {String? status, String? lang}) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/editor/courses/',
+      queryParameters: {
+        'school_id': schoolId,
+        'status': ?status,
+        'lang': ?lang,
+      },
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(EditorCourse.fromJson)
+        .toList();
+  }
+
+  Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
+      {String? role}) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/school_users/',
+      queryParameters: {
+        'school_id': schoolId,
+        'role': ?role,
+      },
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(SchoolUser.fromJson)
+        .toList();
+  }
+
+  Future<List<StudentRowRemote>> fetchStudents(int schoolId,
+      {String? lang, String? status, int limit = 200}) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/school/$schoolId/students',
+      queryParameters: {
+        'lang': ?lang,
+        'status': ?status,
+        'limit': limit,
+      },
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(StudentRowRemote.fromJson)
+        .toList();
+  }
+
+  // --- Writes -------------------------------------------------------
+
+  Future<void> updateSchool({
+    required int schoolId,
+    required String name,
+    required String plan,
+    String? logoUrl,
+    required String primaryColor,
+    required List<String> languagesTaught,
+    required List<String> nativeLanguages,
+  }) async {
+    await _dio.put<dynamic>(
+      '/api/v1/school/$schoolId',
+      data: {
+        'school_id': schoolId,
+        'slug': '',
+        'name': name,
+        'plan': plan,
+        'logo_url': logoUrl,
+        'primary_color': primaryColor,
+        'languages_taught': languagesTaught,
+        'native_languages': nativeLanguages,
+      },
+    );
+  }
+
+  Future<SchoolUser> createSchoolUser({
+    required int schoolId,
+    required String name,
+    required String email,
+    String? password,
+    String role = 'editor',
+    List<String> assignedLanguages = const [],
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/school_users/',
+      data: {
+        'school_id': schoolId,
+        'name': name,
+        'email': email,
+        'password': ?password,
+        'role': role,
+        'assigned_languages': assignedLanguages,
+      },
+    );
+    return SchoolUser.fromJson(res.data ?? const {});
   }
 }
 
@@ -179,4 +317,72 @@ final authProvider =
 final currentUserProvider = Provider<LoginInfo?>((ref) {
   final s = ref.watch(authProvider);
   return s is AuthSignedIn ? s.info : null;
+});
+
+// --- Data providers ---------------------------------------------------------
+// Every page-level read goes through one of these. They watch
+// [currentUserProvider] so they automatically refetch when the user
+// signs in (and dispose when they sign out). When no one is signed in
+// they short-circuit with empty data so widgets render their loading
+// state without an extra null branch.
+
+final schoolProvider = FutureProvider<SchoolInfo?>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return null;
+  return ref.read(dashboardApiProvider).fetchSchool(me.schoolId);
+});
+
+final schoolStatsProvider = FutureProvider<SchoolStats>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const SchoolStats();
+  return ref.read(dashboardApiProvider).fetchSchoolStats(me.schoolId);
+});
+
+final activityProvider = FutureProvider<List<ActivityRowRemote>>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchActivity(me.schoolId);
+});
+
+final languagesProvider = FutureProvider<List<LanguageSummary>>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchLanguages(me.schoolId);
+});
+
+final editorCoursesProvider = FutureProvider<List<EditorCourse>>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchEditorCourses(me.schoolId);
+});
+
+final schoolUsersProvider = FutureProvider<List<SchoolUser>>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchSchoolUsers(me.schoolId);
+});
+
+/// Filter key for [studentsProvider] — kept tiny so it equals cleanly.
+class StudentsFilter {
+  final String? lang;
+  final String? status;
+  const StudentsFilter({this.lang, this.status});
+
+  @override
+  bool operator ==(Object other) =>
+      other is StudentsFilter && other.lang == lang && other.status == status;
+
+  @override
+  int get hashCode => Object.hash(lang, status);
+}
+
+final studentsProvider = FutureProvider.family<List<StudentRowRemote>,
+    StudentsFilter>((ref, filter) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchStudents(
+        me.schoolId,
+        lang: filter.lang,
+        status: filter.status,
+      );
 });

@@ -6,13 +6,12 @@
 
 - [v] Create initial design of the dashboard in ./dasboard flutter app based on the design in ./design_experiments/school_dashboard
 
-- [] implement the python server code in server/school all school related api should be in this folder 
+- [v] implement the python server code in server/school all school related api should be in this folder 
 
-- [] implement the python api for course editing - in server/editor - for simplicity we are editing now by importing and exporting a single compressed file
-- [] implement the review of a course on both server and client side, We need to add to the course a status field (review, published )
+- [v] implement the python api for course editing - in server/editor - for simplicity we are editing now by importing and exporting a single compressed file
+- [v] implement the review of a course on both server and client side, We need to add to the course a status field (review, published )
 
-- [] Add a login page to the dashboard.  
+- [v] Add a login page to the dashboard.  
 
 - [] Start implementing the dashboard with api to the server .  - write here tasks for any missing api end point
 
-- [] 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/mock.dart';
+import '../api/dashboard_api.dart';
+import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
@@ -10,13 +12,12 @@ class OverviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DashboardShell(
+    return const DashboardShell(
       title: 'Overview',
-      overline: MockData.school.name,
       activeRoute: '/',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: const [
+        children: [
           _StatGrid(),
           SizedBox(height: 22),
           _OverviewSplit(),
@@ -26,29 +27,84 @@ class OverviewPage extends StatelessWidget {
   }
 }
 
-class _StatGrid extends StatelessWidget {
+class _StatGrid extends ConsumerWidget {
   const _StatGrid();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(schoolStatsProvider);
     return LayoutBuilder(builder: (context, c) {
       final cols = c.maxWidth < 720 ? 2 : 4;
       const gap = 14.0;
       final tileWidth = (c.maxWidth - gap * (cols - 1)) / cols;
+      final tiles = _statTiles(stats);
       return Wrap(
         spacing: gap,
         runSpacing: gap,
         children: [
-          for (final s in MockData.overviewStats)
-            SizedBox(width: tileWidth, child: _StatTile(stat: s)),
+          for (final t in tiles)
+            SizedBox(width: tileWidth, child: _StatTile(stat: t)),
         ],
       );
     });
   }
+
+  /// Stat tile content. Server only returns the four counts; the
+  /// "detail" subtitle is rendered client-side from the same counts so
+  /// the design stays consistent with the static prototype.
+  List<_TileData> _statTiles(AsyncValue<SchoolStats> stats) {
+    String v(int Function(SchoolStats) pick) =>
+        stats.maybeWhen(data: (s) => '${pick(s)}', orElse: () => '…');
+    final s = stats.value;
+    return [
+      _TileData(
+        value: v((s) => s.activeLanguages),
+        label: 'Active languages',
+        detail: 'of 6 available',
+      ),
+      _TileData(
+        value: v((s) => s.courses),
+        label: 'Courses',
+        detail: s == null
+            ? '—'
+            : (s.courses > 0
+                ? '${s.courses} total'
+                : 'No courses yet'),
+      ),
+      _TileData(
+        value: v((s) => s.editors),
+        label: 'Editors',
+        detail: s == null
+            ? '—'
+            : (s.editors > 0 ? 'including owners' : 'invite the first one'),
+      ),
+      _TileData(
+        value: v((s) => s.students),
+        label: 'Students',
+        detail: s == null ? '—' : 'enrolled this term',
+        trend: TrendDirection.up,
+      ),
+    ];
+  }
 }
 
+class _TileData {
+  final String value;
+  final String label;
+  final String detail;
+  final TrendDirection trend;
+  const _TileData({
+    required this.value,
+    required this.label,
+    required this.detail,
+    this.trend = TrendDirection.flat,
+  });
+}
+
+enum TrendDirection { up, down, flat }
+
 class _StatTile extends StatelessWidget {
-  final StatTile stat;
+  final _TileData stat;
   const _StatTile({required this.stat});
 
   @override
@@ -91,7 +147,6 @@ class _OverviewSplit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, c) {
-      // 2fr · 1fr at ≥900px; stacks below that.
       if (c.maxWidth < 900) {
         return const Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -117,11 +172,12 @@ class _OverviewSplit extends StatelessWidget {
   }
 }
 
-class _ActivityPanel extends StatelessWidget {
+class _ActivityPanel extends ConsumerWidget {
   const _ActivityPanel();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activity = ref.watch(activityProvider);
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,18 +186,41 @@ class _ActivityPanel extends StatelessWidget {
             padding: EdgeInsets.only(bottom: 12),
             child: Text('Recent activity', style: DashText.h2),
           ),
-          for (var i = 0; i < MockData.activity.length; i++) ...[
-            if (i > 0) const SizedBox(height: 10),
-            _ActivityTile(row: MockData.activity[i]),
-          ],
+          activity.when(
+            loading: () => _empty('Loading activity…'),
+            error: (e, _) => _empty('Could not load activity'),
+            data: (rows) {
+              if (rows.isEmpty) {
+                return _empty('No activity yet — actions show up here.');
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < rows.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 10),
+                    _ActivityTile(row: rows[i]),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
   }
+
+  Widget _empty(String msg) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        alignment: Alignment.center,
+        child: Text(
+          msg,
+          style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+        ),
+      );
 }
 
 class _ActivityTile extends StatelessWidget {
-  final ActivityRow row;
+  final ActivityRowRemote row;
   const _ActivityTile({required this.row});
 
   Color _dotColor() => switch (row.kind) {
@@ -184,7 +263,7 @@ class _ActivityTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  row.actor,
+                  row.actorName,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -192,61 +271,19 @@ class _ActivityTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                _RichEmphasisText(text: row.summary),
+                Text(
+                  row.summary,
+                  style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            row.when,
+            row.whenHuman,
             style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Renders a string with `**bold**` and `*italic*` markers — used by the
-/// activity rows and head-row subtitles. Italic regions render in the
-/// same color but italic; bold regions render brighter (white).
-class _RichEmphasisText extends StatelessWidget {
-  final String text;
-  const _RichEmphasisText({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final spans = <TextSpan>[];
-    var rest = text;
-    final pattern = RegExp(r'(\*\*([^*]+)\*\*)|(\*([^*]+)\*)');
-    var pos = 0;
-    for (final m in pattern.allMatches(text)) {
-      if (m.start > pos) {
-        spans.add(TextSpan(text: rest.substring(pos, m.start)));
-      }
-      if (m.group(1) != null) {
-        spans.add(TextSpan(
-          text: m.group(2),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ));
-      } else {
-        spans.add(TextSpan(
-          text: m.group(4),
-          style: const TextStyle(fontStyle: FontStyle.italic),
-        ));
-      }
-      pos = m.end;
-    }
-    if (pos < text.length) {
-      spans.add(TextSpan(text: text.substring(pos)));
-    }
-    return Text.rich(
-      TextSpan(
-        style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
-        children: spans,
       ),
     );
   }

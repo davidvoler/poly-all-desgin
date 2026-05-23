@@ -1,61 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/mock.dart';
+import '../api/dashboard_api.dart';
+import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
 
-class LanguagesPage extends StatelessWidget {
+class LanguagesPage extends ConsumerWidget {
   const LanguagesPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(languagesProvider);
     return DashboardShell(
       title: 'Languages',
-      overline: MockData.school.name,
       activeRoute: '/languages',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HeadRow(
-            label: 'Languages we teach',
-            subtitle:
-                '·  **3** active · what your courses are in',
-            trailing: [
-              GhostButton(
-                label: 'Add language',
-                leading: Icons.add,
-                onTap: () {},
-              ),
-            ],
+      child: async.when(
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 48),
+            child: CircularProgressIndicator(color: Colors.white),
           ),
-          _LanguageGrid(cards: MockData.taughtLanguages),
-          const SizedBox(height: 32),
-          HeadRow(
-            label: 'Student languages',
-            subtitle:
-                '·  **3** native languages · what your students already speak',
-            trailing: [
-              GhostButton(
-                label: 'Add language',
-                leading: Icons.add,
-                onTap: () {},
+        ),
+        error: (e, _) => _Error(message: 'Could not load languages\n$e'),
+        data: (rows) {
+          final teach = rows.where((r) => r.role == 'teach').toList();
+          final native = rows.where((r) => r.role == 'native').toList();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HeadRow(
+                label: 'Languages we teach',
+                subtitle:
+                    '·  **${teach.length}** active · what your courses are in',
+                trailing: [
+                  GhostButton(
+                    label: 'Add language',
+                    leading: Icons.add,
+                    onTap: () {},
+                  ),
+                ],
               ),
+              _LanguageGrid(cards: teach),
+              const SizedBox(height: 32),
+              HeadRow(
+                label: 'Student languages',
+                subtitle:
+                    '·  **${native.length}** native languages · what your students already speak',
+                trailing: [
+                  GhostButton(
+                    label: 'Add language',
+                    leading: Icons.add,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+              _LanguageGrid(cards: native),
             ],
-          ),
-          _LanguageGrid(cards: MockData.nativeLanguages),
-        ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Error extends StatelessWidget {
+  final String message;
+  const _Error({required this.message});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Center(
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+        ),
       ),
     );
   }
 }
 
 class _LanguageGrid extends StatelessWidget {
-  final List<LanguageCard> cards;
+  final List<LanguageSummary> cards;
   const _LanguageGrid({required this.cards});
 
   @override
   Widget build(BuildContext context) {
+    if (cards.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        alignment: Alignment.center,
+        child: Text(
+          'No languages here yet.',
+          style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+        ),
+      );
+    }
     return LayoutBuilder(builder: (context, c) {
       final cols = c.maxWidth < 720 ? 1 : (c.maxWidth < 1024 ? 2 : 3);
       const gap = 14.0;
@@ -73,17 +116,16 @@ class _LanguageGrid extends StatelessWidget {
 }
 
 class _LangTile extends StatelessWidget {
-  final LanguageCard card;
+  final LanguageSummary card;
   const _LangTile({required this.card});
 
   @override
   Widget build(BuildContext context) {
     return GlassCard(
       padding: const EdgeInsets.all(18),
-      // Fixed height (rather than just min-height) so the inner [Spacer]
-      // resolves. Wrap doesn't bound child height, so a min-only
-      // constraint would leave the column unbounded — Spacer would then
-      // hit a `hasBoundedHeight` assertion.
+      // Fixed height so the inner Spacer resolves (Wrap doesn't bound
+      // child height — without this, Spacer hits a hasBoundedHeight
+      // assertion).
       child: SizedBox(
         height: 170,
         child: Column(

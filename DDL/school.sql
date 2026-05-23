@@ -153,5 +153,5 @@ ALTER TABLE course_simple.course
 -- -------------------------------------------------------------
 INSERT INTO school.schools (slug, name, plan, streak_days, languages_taught, native_languages)
 VALUES ('riverside-academy', 'Riverside Academy', 'pro', 14,
-        '{ara,heb,ita}', '{eng,heb,ara}')
+        '{ar,he,it}', '{en,he,ar}')
 ON CONFLICT (slug) DO NOTHING;

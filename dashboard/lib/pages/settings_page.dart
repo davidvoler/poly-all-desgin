@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/dashboard_api.dart';
+import '../api/models.dart';
 import '../data/mock.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -175,107 +178,231 @@ class _SectionHead extends StatelessWidget {
   }
 }
 
-class _ProfileSection extends StatelessWidget {
+class _ProfileSection extends ConsumerStatefulWidget {
   const _ProfileSection({super.key});
 
   @override
+  ConsumerState<_ProfileSection> createState() => _ProfileSectionState();
+}
+
+class _ProfileSectionState extends ConsumerState<_ProfileSection> {
+  // Local edit copy of the editable fields. Seeded from the live
+  // [schoolProvider] once it loads; user edits are not pushed to the
+  // server until "Save changes" is tapped.
+  final _name = TextEditingController();
+  final _plan = TextEditingController();
+  final _primaryColor = TextEditingController();
+  String? _seedSlug; // pinned to detect when to re-seed on refetch
+  bool _busy = false;
+  String? _toast;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _plan.dispose();
+    _primaryColor.dispose();
+    super.dispose();
+  }
+
+  void _seedFrom(SchoolInfo s) {
+    if (_seedSlug == s.slug) return;
+    _seedSlug = s.slug;
+    _name.text = s.name;
+    _plan.text = s.plan;
+    _primaryColor.text = s.primaryColor;
+  }
+
+  Future<void> _save(SchoolInfo s) async {
+    setState(() {
+      _busy = true;
+      _toast = null;
+    });
+    try {
+      await ref.read(dashboardApiProvider).updateSchool(
+            schoolId: s.schoolId,
+            name: _name.text.trim(),
+            plan: _plan.text.trim(),
+            logoUrl: s.logoUrl,
+            primaryColor: _primaryColor.text.trim(),
+            languagesTaught: s.languagesTaught,
+            nativeLanguages: s.nativeLanguages,
+          );
+      ref.invalidate(schoolProvider);
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _toast = 'Saved.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _toast = 'Could not save: $e';
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final async = ref.watch(schoolProvider);
     return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _SectionHead(
-            title: 'School profile',
-            subtitle:
-                '·  How your school appears to students and editors',
+      child: async.when(
+        loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: Center(child: CircularProgressIndicator(color: Colors.white)),
+        ),
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Text(
+            'Could not load school profile\n$e',
+            style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
           ),
-          const _Field(label: 'School name', value: 'Riverside Academy'),
-          const SizedBox(height: 16),
-          const _Field(
-            label: 'URL slug',
-            value: 'riverside',
-            prefix: 'polyglots.app/',
-            hint: 'Students will join at polyglots.app/riverside',
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: const [
-              Expanded(
-                child: _Field(
-                  label: 'Contact email',
-                  value: 'hello@riverside.edu',
-                ),
-              ),
-              SizedBox(width: 14),
-              Expanded(
-                child: _Field(
-                  label: 'Custom domain',
-                  value: 'learn.riverside.edu',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: const [
-              Expanded(
-                child: _Field(
-                  label: 'Time zone',
-                  value: 'America/New_York (EDT, UTC−4)',
-                  trailing: Icons.expand_more,
-                ),
-              ),
-              SizedBox(width: 14),
-              Expanded(
-                child: _Field(
-                  label: 'Default invite language',
-                  value: '🇺🇸 English',
-                  trailing: Icons.expand_more,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text('SCHOOL LOGO', style: DashText.sectionLabel(size: 10)),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [DashColors.brand, DashColors.blue900],
-                  ),
-                ),
-                child: Text(
-                  MockData.school.mark,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              GhostButton(
-                label: 'Upload image',
-                leading: Icons.file_upload_outlined,
-                onTap: () {},
-              ),
-              const SizedBox(width: 14),
-              Text(
-                'PNG or SVG · 256×256+ recommended',
+        ),
+        data: (school) {
+          if (school == null) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Sign in to edit profile.',
                 style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
               ),
+            );
+          }
+          _seedFrom(school);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SectionHead(
+                title: 'School profile',
+                subtitle:
+                    '·  How your school appears to students and editors',
+                right: [
+                  PrimaryButton(
+                    label: _busy ? 'Saving…' : 'Save changes',
+                    leading: Icons.save_outlined,
+                    onTap: _busy ? null : () => _save(school),
+                  ),
+                ],
+              ),
+              _EditableField(controller: _name, label: 'School name'),
+              const SizedBox(height: 16),
+              _Field(
+                label: 'URL slug',
+                value: school.slug,
+                prefix: 'polyglots.app/',
+                hint: 'Students join at polyglots.app/${school.slug}',
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _EditableField(controller: _plan, label: 'Plan'),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _EditableField(
+                      controller: _primaryColor,
+                      label: 'Primary color',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text('SCHOOL LOGO', style: DashText.sectionLabel(size: 10)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [DashColors.brand, DashColors.blue900],
+                      ),
+                    ),
+                    child: Text(
+                      school.mark,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  GhostButton(
+                    label: 'Upload image',
+                    leading: Icons.file_upload_outlined,
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    'PNG or SVG · 256×256+ recommended',
+                    style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+                  ),
+                ],
+              ),
+              if (_toast != null) ...[
+                const SizedBox(height: 14),
+                Text(
+                  _toast!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _toast == 'Saved.'
+                        ? DashColors.green500
+                        : DashColors.red400,
+                  ),
+                ),
+              ],
             ],
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+}
+
+class _EditableField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  const _EditableField({required this.controller, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(), style: DashText.sectionLabel(size: 10)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          style: const TextStyle(fontSize: 13, color: Colors.white),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: DashColors.w(0.04),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide:
+                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -285,13 +412,11 @@ class _Field extends StatelessWidget {
   final String value;
   final String? prefix;
   final String? hint;
-  final IconData? trailing;
   const _Field({
     required this.label,
     required this.value,
     this.prefix,
     this.hint,
-    this.trailing,
   });
 
   @override
@@ -341,12 +466,6 @@ class _Field extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Icon(trailing,
-                      size: 16, color: DashColors.w(0.55)),
-                ),
             ],
           ),
         ),

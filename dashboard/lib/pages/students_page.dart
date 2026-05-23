@@ -1,35 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/mock.dart';
+import '../api/dashboard_api.dart';
+import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/data_table.dart';
 import '../widgets/shell.dart';
 
-class StudentsPage extends StatefulWidget {
+class StudentsPage extends ConsumerStatefulWidget {
   const StudentsPage({super.key});
 
   @override
-  State<StudentsPage> createState() => _StudentsPageState();
+  ConsumerState<StudentsPage> createState() => _StudentsPageState();
 }
 
-class _StudentsPageState extends State<StudentsPage> {
-  String _activeFilter = 'All languages';
-  int _page = 1;
-
-  static const _langChips = [
-    'All languages',
-    '🇸🇦 Arabic · 112',
-    '🇮🇱 Hebrew · 94',
-    '🇮🇹 Italian · 42',
-  ];
-  static const _statusChips = ['Active', 'Inactive 14d+', 'No course yet'];
+class _StudentsPageState extends ConsumerState<StudentsPage> {
+  // null = "All languages" (no filter); otherwise a 2-letter ISO code.
+  String? _lang;
+  // null = "All statuses"; otherwise active|slowing|inactive|no_course
+  String? _status;
 
   @override
   Widget build(BuildContext context) {
+    final stats = ref.watch(schoolStatsProvider).value;
+    final langs = ref.watch(languagesProvider).value ?? const <LanguageSummary>[];
+    final teaching = langs.where((l) => l.role == 'teach').toList();
+    final filter = StudentsFilter(lang: _lang, status: _status);
+    final async = ref.watch(studentsProvider(filter));
+
     return DashboardShell(
       title: 'Students',
-      overline: MockData.school.name,
       activeRoute: '/students',
       topbarTrailing: [
         PrimaryButton(
@@ -41,23 +42,52 @@ class _StudentsPageState extends State<StudentsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const HeadRow(
+          HeadRow(
             label: 'Roster',
             subtitle:
-                '·  **248** students · 142 active in the last 24h',
+                '·  **${stats?.students ?? '…'}** students total',
           ),
           _FilterRow(
-            activeFilter: _activeFilter,
-            langChips: _langChips,
-            statusChips: _statusChips,
-            onSelect: (label) => setState(() => _activeFilter = label),
+            lang: _lang,
+            status: _status,
+            taughtLanguages: teaching,
+            onLang: (l) => setState(() => _lang = l),
+            onStatus: (s) => setState(() => _status = s),
           ),
           const SizedBox(height: 14),
-          const _StudentsTable(),
-          const SizedBox(height: 18),
-          _Pager(
-            current: _page,
-            onTap: (p) => setState(() => _page = p),
+          async.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                  child: CircularProgressIndicator(color: Colors.white)),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Text(
+                  'Could not load students\n$e',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+                ),
+              ),
+            ),
+            data: (rows) {
+              if (rows.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text(
+                      _lang != null || _status != null
+                          ? 'No students match this filter.'
+                          : 'No students enrolled yet.',
+                      style: TextStyle(
+                          fontSize: 12, color: DashColors.w(0.55)),
+                    ),
+                  ),
+                );
+              }
+              return _StudentsTable(rows: rows);
+            },
           ),
         ],
       ),
@@ -66,15 +96,17 @@ class _StudentsPageState extends State<StudentsPage> {
 }
 
 class _FilterRow extends StatelessWidget {
-  final String activeFilter;
-  final List<String> langChips;
-  final List<String> statusChips;
-  final ValueChanged<String> onSelect;
+  final String? lang;
+  final String? status;
+  final List<LanguageSummary> taughtLanguages;
+  final ValueChanged<String?> onLang;
+  final ValueChanged<String?> onStatus;
   const _FilterRow({
-    required this.activeFilter,
-    required this.langChips,
-    required this.statusChips,
-    required this.onSelect,
+    required this.lang,
+    required this.status,
+    required this.taughtLanguages,
+    required this.onLang,
+    required this.onStatus,
   });
 
   @override
@@ -83,11 +115,34 @@ class _FilterRow extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        for (final c in langChips)
-          _Chip(label: c, on: c == activeFilter, onTap: () => onSelect(c)),
+        _Chip(
+          label: 'All languages',
+          on: lang == null,
+          onTap: () => onLang(null),
+        ),
+        for (final l in taughtLanguages)
+          _Chip(
+            label: '${l.flag} ${l.english} · ${l.students}',
+            on: lang == l.lang,
+            onTap: () => onLang(l.lang),
+          ),
         const SizedBox(width: 8),
-        for (final c in statusChips)
-          _Chip(label: c, on: c == activeFilter, onTap: () => onSelect(c)),
+        _Chip(
+          label: 'Any status',
+          on: status == null,
+          onTap: () => onStatus(null),
+        ),
+        for (final s in const [
+          ('active', 'Active'),
+          ('slowing', 'Slowing'),
+          ('inactive', 'Inactive'),
+          ('no_course', 'No course'),
+        ])
+          _Chip(
+            label: s.$2,
+            on: status == s.$1,
+            onTap: () => onStatus(s.$1),
+          ),
       ],
     );
   }
@@ -130,34 +185,23 @@ class _Chip extends StatelessWidget {
 }
 
 class _StudentsTable extends StatelessWidget {
-  const _StudentsTable();
+  final List<StudentRowRemote> rows;
+  const _StudentsTable({required this.rows});
 
-  StatusPill _statusPill(StudentStatus s) {
+  StatusPill _statusPill(StudentStatusWire s) {
     switch (s) {
-      case StudentStatus.active:
+      case StudentStatusWire.active:
         return const StatusPill(
-          label: 'Active',
-          kind: PillKind.active,
-          swatch: true,
-        );
-      case StudentStatus.slowing:
+            label: 'Active', kind: PillKind.active, swatch: true);
+      case StudentStatusWire.slowing:
         return const StatusPill(
-          label: 'Slowing',
-          kind: PillKind.draft,
-          swatch: true,
-        );
-      case StudentStatus.inactive:
+            label: 'Slowing', kind: PillKind.draft, swatch: true);
+      case StudentStatusWire.inactive:
         return const StatusPill(
-          label: 'Inactive',
-          kind: PillKind.error,
-          swatch: true,
-        );
-      case StudentStatus.noCourse:
+            label: 'Inactive', kind: PillKind.error, swatch: true);
+      case StudentStatusWire.noCourse:
         return const StatusPill(
-          label: 'No course',
-          kind: PillKind.draft,
-          swatch: true,
-        );
+            label: 'No course', kind: PillKind.draft, swatch: true);
     }
   }
 
@@ -174,7 +218,7 @@ class _StudentsTable extends StatelessWidget {
         DashCol(label: '', width: 48),
       ],
       rows: [
-        for (final s in MockData.students)
+        for (final s in rows)
           [
             WhoCell(
               initials: s.initials,
@@ -189,7 +233,7 @@ class _StudentsTable extends StatelessWidget {
             ),
             TableProgressBar(value: s.progress),
             Text(
-              s.lastSeen,
+              s.lastSeenHuman,
               style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
             ),
             Align(alignment: Alignment.centerLeft, child: _statusPill(s.status)),
@@ -199,66 +243,6 @@ class _StudentsTable extends StatelessWidget {
             ),
           ],
       ],
-    );
-  }
-}
-
-class _Pager extends StatelessWidget {
-  final int current;
-  final ValueChanged<int> onTap;
-  const _Pager({required this.current, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Wrap(
-        spacing: 6,
-        children: [
-          _PgButton(label: '‹', onTap: () {}),
-          _PgButton(label: '1', on: current == 1, onTap: () => onTap(1)),
-          _PgButton(label: '2', on: current == 2, onTap: () => onTap(2)),
-          _PgButton(label: '3', on: current == 3, onTap: () => onTap(3)),
-          _PgButton(label: '…', onTap: () {}),
-          _PgButton(label: '31', on: current == 31, onTap: () => onTap(31)),
-          _PgButton(label: '›', onTap: () {}),
-        ],
-      ),
-    );
-  }
-}
-
-class _PgButton extends StatelessWidget {
-  final String label;
-  final bool on;
-  final VoidCallback onTap;
-  const _PgButton({required this.label, this.on = false, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: on ? DashColors.w(0.14) : DashColors.w(0.04),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: on ? DashColors.w(0.18) : DashColors.w(0.08),
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: on ? Colors.white : DashColors.w(0.70),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

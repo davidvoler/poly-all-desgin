@@ -1,10 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/mock.dart';
+import '../api/dashboard_api.dart';
+import '../api/models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/data_table.dart';
 import '../widgets/shell.dart';
+
+/// Local mirror of the server-side course-status state graph in
+/// server/src/editor/routes/review.py. Keep in sync — the UI only
+/// offers transitions the server will accept.
+const Map<CourseStatusWire, Set<CourseStatusWire>> kAllowedTransitions = {
+  CourseStatusWire.draft: {CourseStatusWire.review, CourseStatusWire.archived},
+  CourseStatusWire.review: {
+    CourseStatusWire.draft,
+    CourseStatusWire.published,
+    CourseStatusWire.archived,
+  },
+  CourseStatusWire.published: {
+    CourseStatusWire.review,
+    CourseStatusWire.archived,
+  },
+  CourseStatusWire.archived: {CourseStatusWire.draft},
+};
+
+const Map<CourseStatusWire, String> kStatusWire = {
+  CourseStatusWire.draft: 'draft',
+  CourseStatusWire.review: 'review',
+  CourseStatusWire.published: 'published',
+  CourseStatusWire.archived: 'archived',
+};
+
+const Map<CourseStatusWire, String> kStatusLabel = {
+  CourseStatusWire.draft: 'Move to Draft',
+  CourseStatusWire.review: 'Submit for Review',
+  CourseStatusWire.published: 'Publish',
+  CourseStatusWire.archived: 'Archive',
+};
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
@@ -13,7 +46,6 @@ class CoursesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return DashboardShell(
       title: 'Courses',
-      overline: MockData.school.name,
       activeRoute: '/courses',
       topbarTrailing: [
         PrimaryButton(
@@ -27,11 +59,7 @@ class CoursesPage extends StatelessWidget {
         children: const [
           _Dropzone(),
           SizedBox(height: 18),
-          HeadRow(
-            label: 'All courses',
-            subtitle: '·  14 total · 11 published, 3 draft',
-          ),
-          _CoursesTable(),
+          _CoursesPanel(),
         ],
       ),
     );
@@ -98,11 +126,178 @@ class _Dropzone extends StatelessWidget {
   }
 }
 
-class _CoursesTable extends StatelessWidget {
-  const _CoursesTable();
+class _CoursesPanel extends ConsumerWidget {
+  const _CoursesPanel();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(editorCoursesProvider);
+    return async.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Center(
+          child: Text(
+            'Could not load courses\n$e',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+          ),
+        ),
+      ),
+      data: (rows) {
+        final published = rows
+            .where((c) => c.status == CourseStatusWire.published)
+            .length;
+        final draft =
+            rows.where((c) => c.status == CourseStatusWire.draft).length;
+        final review =
+            rows.where((c) => c.status == CourseStatusWire.review).length;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            HeadRow(
+              label: 'All courses',
+              subtitle:
+                  '·  ${rows.length} total · $published published, $draft draft, $review in review',
+            ),
+            if (rows.isEmpty)
+              _empty(context)
+            else
+              _CoursesTable(rows: rows),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _empty(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      alignment: Alignment.center,
+      child: Text(
+        'No courses yet — upload one above.',
+        style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+      ),
+    );
+  }
+}
+
+class _CoursesTable extends ConsumerWidget {
+  final List<EditorCourse> rows;
+  const _CoursesTable({required this.rows});
+
+  StatusPill _statusPill(CourseStatusWire s) {
+    switch (s) {
+      case CourseStatusWire.draft:
+        return const StatusPill(
+          label: 'Draft',
+          kind: PillKind.muted,
+          swatch: true,
+        );
+      case CourseStatusWire.review:
+        return const StatusPill(
+          label: 'In review',
+          kind: PillKind.draft,
+          swatch: true,
+        );
+      case CourseStatusWire.published:
+        return const StatusPill(
+          label: 'Published',
+          kind: PillKind.active,
+          swatch: true,
+        );
+      case CourseStatusWire.archived:
+        return const StatusPill(
+          label: 'Archived',
+          kind: PillKind.error,
+          swatch: true,
+        );
+      case CourseStatusWire.unknown:
+        return const StatusPill(
+          label: 'Unknown',
+          kind: PillKind.muted,
+          swatch: true,
+        );
+    }
+  }
+
+  Future<void> _setStatus(
+    BuildContext context,
+    WidgetRef ref,
+    EditorCourse course,
+    CourseStatusWire next,
+  ) async {
+    final me = ref.read(currentUserProvider);
+    if (me == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final api = ref.read(dashboardApiProvider);
+    try {
+      await api.setCourseStatus(
+        courseId: course.courseId,
+        schoolId: me.schoolId,
+        actorUserId: me.schoolUserId,
+        status: kStatusWire[next]!,
+      );
+      // Refetch list + activity so the UI reflects the change.
+      ref.invalidate(editorCoursesProvider);
+      ref.invalidate(activityProvider);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Moved "${course.title}" to ${kStatusLabel[next]}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not change status: $e')),
+      );
+    }
+  }
+
+  String _accessLabel(CourseAccessWire a) {
+    switch (a) {
+      case CourseAccessWire.public:
+        return 'Public';
+      case CourseAccessWire.members:
+        return 'Members';
+      case CourseAccessWire.unknown:
+        return '—';
+    }
+  }
+
+  IconData _accessIcon(CourseAccessWire a) =>
+      a == CourseAccessWire.public ? Icons.public : Icons.lock_outline;
+
+  PillKind _accessKind(CourseAccessWire a) {
+    switch (a) {
+      case CourseAccessWire.public:
+        return PillKind.public;
+      case CourseAccessWire.members:
+        return PillKind.members;
+      case CourseAccessWire.unknown:
+        return PillKind.muted;
+    }
+  }
+
+  /// Deterministic 2-char avatar mark per course (first two letters of
+  /// the title's first word, uppercase). Falls back to the course id.
+  String _mark(EditorCourse c) {
+    final title = c.title.trim();
+    if (title.isEmpty) return '#${c.courseId}';
+    final first = title.split(RegExp(r'\s+')).first;
+    return first.substring(0, first.length >= 2 ? 2 : 1).toUpperCase();
+  }
+
+  String _avatarKey(int courseId) {
+    const keys = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    return keys[courseId.abs() % keys.length];
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return DashTable(
       columns: const [
         DashCol(label: 'Course', flex: 4),
@@ -115,51 +310,103 @@ class _CoursesTable extends StatelessWidget {
         DashCol(label: '', width: 48),
       ],
       rows: [
-        for (final c in MockData.courses)
+        for (final c in rows)
           [
             WhoCell(
-              initials: c.mark,
-              avatarKey: c.avatarKey,
+              initials: _mark(c),
+              avatarKey: _avatarKey(c.courseId),
               name: c.title,
-              email: c.tagline,
+              email: c.description,
             ),
-            Text('${c.langFlag} ${c.langName}'),
-            Text('${c.modules} · ${c.lessons}'),
-            Text('${c.students}'),
+            Text(c.lang.toUpperCase()),
+            Text('${c.moduleCount} · ${c.lessonCount}'),
+            Text('${c.studentCount}'),
             Align(
               alignment: Alignment.centerLeft,
               child: StatusPill(
-                label: c.access == CourseAccess.public ? 'Public' : 'Members',
-                leading: c.access == CourseAccess.public
-                    ? Icons.public
-                    : Icons.lock_outline,
-                kind: c.access == CourseAccess.public
-                    ? PillKind.public
-                    : PillKind.members,
+                label: _accessLabel(c.access),
+                leading: _accessIcon(c.access),
+                kind: _accessKind(c.access),
               ),
             ),
             Align(
-              alignment: Alignment.centerLeft,
-              child: StatusPill(
-                label: c.status == CourseStatus.published
-                    ? 'Published'
-                    : 'Draft',
-                kind: c.status == CourseStatus.published
-                    ? PillKind.active
-                    : PillKind.draft,
-                swatch: true,
-              ),
-            ),
+                alignment: Alignment.centerLeft,
+                child: _statusPill(c.status)),
             Text(
-              c.updated,
+              c.updatedHuman,
               style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
             ),
-            const Align(
+            Align(
               alignment: Alignment.centerRight,
-              child: RowActionButton(),
+              child: _StatusMenu(
+                current: c.status,
+                onPick: (next) => _setStatus(context, ref, c, next),
+              ),
             ),
           ],
       ],
+    );
+  }
+}
+
+/// Three-dot menu listing only server-legal transitions.
+class _StatusMenu extends StatelessWidget {
+  final CourseStatusWire current;
+  final ValueChanged<CourseStatusWire> onPick;
+  const _StatusMenu({required this.current, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    final allowed = kAllowedTransitions[current] ?? const <CourseStatusWire>{};
+    return PopupMenuButton<CourseStatusWire>(
+      tooltip: 'Status',
+      onSelected: onPick,
+      color: DashColors.darkBg.withValues(alpha: 0.96),
+      itemBuilder: (context) => [
+        for (final s in allowed)
+          PopupMenuItem<CourseStatusWire>(
+            value: s,
+            child: Row(
+              children: [
+                _statusDot(s),
+                const SizedBox(width: 10),
+                Text(
+                  kStatusLabel[s]!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: DashColors.w(0.04),
+          border: Border.all(color: DashColors.w(0.08)),
+        ),
+        child: Icon(Icons.more_horiz, size: 14, color: DashColors.w(0.70)),
+      ),
+    );
+  }
+
+  Widget _statusDot(CourseStatusWire s) {
+    final color = switch (s) {
+      CourseStatusWire.draft => DashColors.w(0.55),
+      CourseStatusWire.review => DashColors.orange300,
+      CourseStatusWire.published => DashColors.green500,
+      CourseStatusWire.archived => DashColors.red400,
+      CourseStatusWire.unknown => DashColors.w(0.55),
+    };
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }

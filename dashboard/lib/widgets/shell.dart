@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
+import '../api/models.dart';
 import '../data/mock.dart';
 import '../theme.dart';
 import 'common.dart';
@@ -140,11 +141,19 @@ class _Sidebar extends StatelessWidget {
   }
 }
 
-class _SchoolBadge extends StatelessWidget {
+class _SchoolBadge extends ConsumerWidget {
   const _SchoolBadge();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Read from the live school first; fall back to LoginInfo's name
+    // while the GET /school/{id} is in flight, and to mock data on
+    // signed-out designs/tests.
+    final SchoolInfo? live = ref.watch(schoolProvider).value;
+    final me = ref.watch(currentUserProvider);
+    final String mark = live?.mark ?? _initialsFrom(me?.schoolName ?? MockData.school.name);
+    final String name = live?.name ?? me?.schoolName ?? MockData.school.name;
+    final String plan = '${live?.plan ?? MockData.school.plan} plan';
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -174,7 +183,7 @@ class _SchoolBadge extends StatelessWidget {
               ],
             ),
             child: Text(
-              MockData.school.mark,
+              mark,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -188,7 +197,8 @@ class _SchoolBadge extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  MockData.school.name,
+                  name,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -198,7 +208,7 @@ class _SchoolBadge extends StatelessWidget {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  MockData.school.plan.toUpperCase(),
+                  plan.toUpperCase(),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -212,6 +222,14 @@ class _SchoolBadge extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _initialsFrom(String s) {
+    final parts = s.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return 'PG';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 }
 
@@ -302,7 +320,7 @@ class _SidebarFooter extends ConsumerWidget {
   }
 }
 
-class _Topbar extends StatelessWidget {
+class _Topbar extends ConsumerWidget {
   final String title;
   final String? overline;
   final List<Widget> trailing;
@@ -313,7 +331,12 @@ class _Topbar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final school = ref.watch(schoolProvider).value;
+    final me = ref.watch(currentUserProvider);
+    final streakDays = school?.streakDays ?? MockData.school.streakDays;
+    final effectiveOverline =
+        overline ?? school?.name ?? me?.schoolName ?? MockData.school.name;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -331,9 +354,9 @@ class _Topbar extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (overline != null)
+                    if (effectiveOverline.isNotEmpty)
                       Text(
-                        overline!.toUpperCase(),
+                        effectiveOverline.toUpperCase(),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -351,7 +374,7 @@ class _Topbar extends StatelessWidget {
                 const SizedBox(width: 10),
               ],
               if (trailing.isEmpty) ...[
-                StreakChip(days: MockData.school.streakDays),
+                StreakChip(days: streakDays),
                 const SizedBox(width: 10),
                 const DashIconButton(icon: Icons.search, tooltip: 'Search'),
               ],
