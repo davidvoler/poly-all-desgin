@@ -1,14 +1,23 @@
+import logging
+import secrets
+from datetime import datetime, timedelta
+
 import bcrypt
 from fastapi import APIRouter, HTTPException
 
 from school.models.users import (
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     LoginRequest,
     LoginResponse,
+    ResetPasswordRequest,
     SchoolUser,
     SchoolUserCreate,
 )
 from school.utils.activity import log_activity
 from utils.db import get_query_results, run_query
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -251,3 +260,92 @@ async def login(payload: LoginRequest):
         email=row['email'],
         role=row['role'],
     )
+
+
+_RESET_TTL_MINUTES = 30
+
+
+@router.post("/forgot_password", response_model=ForgotPasswordResponse)
+async def forgot_password(payload: ForgotPasswordRequest):
+    """Issue a one-shot reset token. Always responds with `sent=true`
+    so callers can't enumerate which emails are registered; the token
+    is only returned when an account actually exists. In production
+    the token would land in an email; for the demo we also log it so
+    you can copy it from `docker logs server`."""
+    sql = """
+        SELECT u.school_user_id
+        FROM school.school_users u
+        JOIN school.schools s ON s.school_id = u.school_id
+        WHERE u.email = %s
+    """
+    params: tuple = (payload.email,)
+    if payload.school_slug:
+        sql += " AND s.slug = %s"
+        params = (payload.email, payload.school_slug)
+    sql += " ORDER BY u.created_at LIMIT 1"
+
+    rows = await get_query_results(sql, params)
+    if not rows:
+        # Same shape as the happy path — keeps enumeration harder.
+        return ForgotPasswordResponse(sent=True)
+
+    school_user_id = rows[0]['school_user_id']
+    token = secrets.token_urlsafe(24)
+    expires_at = datetime.utcnow() + timedelta(minutes=_RESET_TTL_MINUTES)
+    await run_query(
+        """
+        INSERT INTO school.password_resets
+            (school_user_id, token, expires_at)
+        VALUES (%s, %s, %s)
+        """,
+        (school_user_id, token, expires_at),
+    )
+
+    # Visible in `docker logs server` so a demo user can grab it.
+    print(f"[password-reset] {payload.email} → token={token} (expires {expires_at.isoformat()}Z)")
+    logger.info("password-reset issued for %s, expires %s",
+                payload.email, expires_at.isoformat())
+
+    return ForgotPasswordResponse(
+        sent=True,
+        token=token,
+        expires_at=expires_at.isoformat() + 'Z',
+    )
+
+
+@router.post("/reset_password")
+async def reset_password(payload: ResetPasswordRequest):
+    """Consume a one-shot token and set a new bcrypt-hashed password.
+    Rejects expired or already-used tokens. Returns {ok: true} on
+    success so the dashboard can show a "now sign in" toast."""
+    if not payload.token or not payload.new_password:
+        raise HTTPException(status_code=400, detail="Token and password required")
+
+    rows = await get_query_results(
+        """
+        SELECT reset_id, school_user_id, expires_at, consumed_at
+        FROM school.password_resets
+        WHERE token = %s
+        """,
+        (payload.token,),
+    )
+    if not rows:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    r = rows[0]
+
+    if r.get('consumed_at') is not None:
+        raise HTTPException(status_code=400, detail="Token already used")
+    expires = r.get('expires_at')
+    if expires is not None and expires < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Token expired")
+
+    pw_hash = _hash_password(payload.new_password)
+    await run_query(
+        "UPDATE school.school_users SET password_hash = %s WHERE school_user_id = %s",
+        (pw_hash, r['school_user_id']),
+    )
+    await run_query(
+        "UPDATE school.password_resets SET consumed_at = now() WHERE reset_id = %s",
+        (r['reset_id'],),
+    )
+    return {"ok": True}

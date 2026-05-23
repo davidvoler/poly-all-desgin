@@ -43,4 +43,14 @@
 - [] Show subscriber counts on plan cards (needs a plan_id column on `school.student_enrollments` or a separate `school.subscriptions` table)
 - [] Search box on the Courses / Students / Editors tables (server-side LIKE filter)
 - [] Real password reset flow (forgot-password link on login currently no-op)
+   Design decisions:
+   - Token delivery:
+     - [selected] Print token to server logs (no real email yet) — fastest, demo-friendly
+     - [ ] Send via SMTP — needs SMTP config + a sender lib
+   - Token storage:
+     - [selected] `school.password_resets` table with token + expires_at + consumed_at — same shape used elsewhere; easy to query
+     - [ ] JWT signed token — no DB row but harder to revoke
+   - UI shape:
+     - [selected] Step 1: forgot dialog on login (enter email → snackbar "check your inbox / logs"). Step 2: paste token + new password on a small reset dialog — keeps the dashboard single-page
+     - [ ] Dedicated /reset?token=... page parsed from URL
 

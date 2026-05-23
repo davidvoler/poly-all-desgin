@@ -309,45 +309,54 @@ class _LessonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 10, 16, 10),
-      child: Row(
-        children: [
-          Icon(Icons.menu_book_outlined,
-              size: 14, color: DashColors.w(0.55)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  lesson.title.isNotEmpty
-                      ? lesson.title
-                      : 'Lesson ${lesson.lessonId}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                if (lesson.words.isNotEmpty)
+    return InkWell(
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (_) => LessonEditorDialog(lessonId: lesson.lessonId),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(40, 10, 16, 10),
+        child: Row(
+          children: [
+            Icon(Icons.menu_book_outlined,
+                size: 14, color: DashColors.w(0.55)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    lesson.words.take(6).join(' · '),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: DashColors.w(0.55),
+                    lesson.title.isNotEmpty
+                        ? lesson.title
+                        : 'Lesson ${lesson.lessonId}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  if (lesson.words.isNotEmpty)
+                    Text(
+                      lesson.words.take(6).join(' · '),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: DashColors.w(0.55),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            '${lesson.exerciseCount} ex.',
-            style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
-          ),
-        ],
+            Text(
+              '${lesson.exerciseCount} ex.',
+              style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right,
+                size: 14, color: DashColors.w(0.35)),
+          ],
+        ),
       ),
     );
   }

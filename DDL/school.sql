@@ -136,6 +136,23 @@ CREATE INDEX IF NOT EXISTS activity_log_school_idx
     ON school.activity_log (school_id, created_at DESC);
 
 -- -------------------------------------------------------------
+-- school.password_resets — one-shot tokens for the forgot-password
+-- flow. Each row is consumed on use (consumed_at), or pruned when
+-- it passes expires_at. token must be globally unique so the reset
+-- endpoint can look it up without needing the email.
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS school.password_resets (
+    reset_id        serial4 PRIMARY KEY,
+    school_user_id  int4         NOT NULL,
+    token           varchar(120) NOT NULL UNIQUE,
+    expires_at      timestamp    NOT NULL,
+    consumed_at     timestamp    NULL,
+    created_at      timestamp    NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS password_resets_user_idx
+    ON school.password_resets (school_user_id, created_at DESC);
+
+-- -------------------------------------------------------------
 -- school.plans + school.plan_features — Subscription plans section
 -- on Settings. plan_features is a per-row feature list ("Audio
 -- downloads", "1:1 sessions", etc.) with an `included` flag that

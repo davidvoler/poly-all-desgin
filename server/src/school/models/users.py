@@ -39,6 +39,28 @@ class LoginRequest(BaseModel):
     school_slug: str | None = None
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+    # Optional — when set, narrows lookup to a specific school so two
+    # accounts with the same email at different schools don't collide.
+    school_slug: str | None = None
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Returned by POST /forgot_password. `token` is the one-shot
+    reset key; in a real deployment it would only land in the email,
+    but the demo also returns it inline so the dashboard can paste it
+    straight into the reset dialog."""
+    sent: bool
+    token: str | None = None
+    expires_at: str | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
 class LoginResponse(BaseModel):
     """Returned by POST /api/v1/school/login on success. The dashboard
     stores this in memory and uses school_id + role to gate UI."""

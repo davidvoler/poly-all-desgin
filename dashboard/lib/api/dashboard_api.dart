@@ -477,6 +477,40 @@ class DashboardApi {
   Future<void> deleteSchool(int schoolId) async {
     await _dio.delete<dynamic>('/api/v1/school/$schoolId');
   }
+
+  // --- Password reset ----------------------------------------------
+
+  /// Issue a one-shot reset token. Returns the token string for the
+  /// demo flow; in production this would only land in an email and
+  /// the dashboard would never see it. `null` means the call
+  /// succeeded but no account matched (caller still shows "check
+  /// your inbox" to avoid leaking which emails are registered).
+  Future<String?> forgotPassword({
+    required String email,
+    String? schoolSlug,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/school_users/forgot_password',
+      data: {
+        'email': email,
+        'school_slug': ?schoolSlug,
+      },
+    );
+    return (res.data?['token'] as String?);
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    await _dio.post<dynamic>(
+      '/api/v1/school_users/reset_password',
+      data: {
+        'token': token,
+        'new_password': newPassword,
+      },
+    );
+  }
 }
 
 final dashboardApiProvider = Provider<DashboardApi>((ref) {

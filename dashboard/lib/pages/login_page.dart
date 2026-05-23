@@ -146,7 +146,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             const SizedBox(height: 10),
                             Center(
                               child: TextButton(
-                                onPressed: () {},
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) => _ForgotPasswordDialog(
+                                    initialEmail: _email.text.trim(),
+                                    initialSlug: _schoolSlug.text.trim(),
+                                  ),
+                                ),
                                 style: TextButton.styleFrom(
                                   foregroundColor: DashColors.w(0.70),
                                 ),
@@ -363,6 +369,350 @@ class _PrimaryCta extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Two-step reset flow in one dialog:
+///   1. Enter email → server issues a one-shot token (visible in
+///      docker logs for the demo). Token is also returned inline so
+///      the user can copy it without leaving the dashboard.
+///   2. Paste the token + a new password → server consumes it and
+///      sets a fresh bcrypt hash.
+/// Pre-fills email + slug from the login form so the common path is
+/// a single tap.
+class _ForgotPasswordDialog extends ConsumerStatefulWidget {
+  final String initialEmail;
+  final String initialSlug;
+  const _ForgotPasswordDialog({
+    required this.initialEmail,
+    required this.initialSlug,
+  });
+
+  @override
+  ConsumerState<_ForgotPasswordDialog> createState() =>
+      _ForgotPasswordDialogState();
+}
+
+enum _ResetStep { askEmail, askToken, done }
+
+class _ForgotPasswordDialogState
+    extends ConsumerState<_ForgotPasswordDialog> {
+  late final TextEditingController _email;
+  late final TextEditingController _slug;
+  final _token = TextEditingController();
+  final _newPassword = TextEditingController();
+  _ResetStep _step = _ResetStep.askEmail;
+  bool _busy = false;
+  String? _error;
+  String? _devToken; // Inline token returned for the demo path
+
+  @override
+  void initState() {
+    super.initState();
+    _email = TextEditingController(text: widget.initialEmail);
+    _slug = TextEditingController(text: widget.initialSlug);
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _slug.dispose();
+    _token.dispose();
+    _newPassword.dispose();
+    super.dispose();
+  }
+
+  Future<void> _requestToken() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final token = await ref.read(dashboardApiProvider).forgotPassword(
+            email: _email.text.trim(),
+            schoolSlug: _slug.text.trim().isEmpty ? null : _slug.text.trim(),
+          );
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _step = _ResetStep.askToken;
+        _devToken = token;
+        if (token != null) _token.text = token;
+      });
+    } catch (e) {
+      setState(() {
+        _busy = false;
+        _error = 'Could not request reset: $e';
+      });
+    }
+  }
+
+  Future<void> _consumeToken() async {
+    if (_token.text.trim().isEmpty || _newPassword.text.isEmpty) {
+      setState(() => _error = 'Token and new password are required');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(dashboardApiProvider).resetPassword(
+            token: _token.text.trim(),
+            newPassword: _newPassword.text,
+          );
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _step = _ResetStep.done;
+      });
+    } catch (e) {
+      setState(() {
+        _busy = false;
+        _error = 'Could not reset password: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: GlassCard(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: switch (_step) {
+            _ResetStep.askEmail => _emailStep(),
+            _ResetStep.askToken => _tokenStep(),
+            _ResetStep.done => _doneStep(),
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _emailStep() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Forgot password',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "We'll issue a one-shot reset token. For this demo it also shows up here so you can paste it in the next step.",
+          style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+        ),
+        const SizedBox(height: 14),
+        _ResetField(controller: _email, label: 'Email'),
+        const SizedBox(height: 10),
+        _ResetField(controller: _slug, label: 'School slug (optional)'),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(_error!,
+              style: TextStyle(fontSize: 12, color: DashColors.red400)),
+        ],
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: _busy ? null : () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: DashColors.w(0.70),
+              ),
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: 8),
+            PrimaryButton(
+              label: _busy ? 'Sending…' : 'Send token',
+              leading: Icons.mail_outline,
+              onTap: _busy ? null : _requestToken,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _tokenStep() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Enter reset token',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 4),
+        if (_devToken != null)
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: DashColors.orange300.withValues(alpha: 0.10),
+              borderRadius: DashRadii.cardSm,
+              border: Border.all(
+                  color: DashColors.orange300.withValues(alpha: 0.45)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.science_outlined,
+                    size: 14, color: DashColors.orange300),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Demo: token returned inline (would normally be emailed).',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: DashColors.w(0.70),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              "Check your email (or 'docker logs server' for this demo) for the token.",
+              style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+            ),
+          ),
+        const SizedBox(height: 8),
+        _ResetField(controller: _token, label: 'Token'),
+        const SizedBox(height: 10),
+        _ResetField(
+          controller: _newPassword,
+          label: 'New password',
+          obscureText: true,
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(_error!,
+              style: TextStyle(fontSize: 12, color: DashColors.red400)),
+        ],
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: _busy ? null : () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: DashColors.w(0.70),
+              ),
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: 8),
+            PrimaryButton(
+              label: _busy ? 'Saving…' : 'Reset password',
+              leading: Icons.lock_reset,
+              onTap: _busy ? null : _consumeToken,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _doneStep() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.check_circle,
+                color: DashColors.green500, size: 22),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Password updated',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Sign in with your new password.',
+          style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerRight,
+          child: PrimaryButton(
+            label: 'Done',
+            leading: Icons.arrow_forward,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool obscureText;
+  const _ResetField({
+    required this.controller,
+    required this.label,
+    this.obscureText = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(), style: DashText.sectionLabel(size: 10)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          style: const TextStyle(fontSize: 13, color: Colors.white),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: DashColors.w(0.04),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide:
+                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
