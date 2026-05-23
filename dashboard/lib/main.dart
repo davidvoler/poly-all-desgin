@@ -30,6 +30,23 @@ class _DragScrollBehavior extends MaterialScrollBehavior {
       };
 }
 
+/// Skips Material's default page transition for every platform so
+/// switching between sidebar sections (Overview → Courses, etc.) is
+/// instant — the dashboard already shares its chrome across pages, so
+/// the default fade/zoom reads as flicker.
+class _NoTransitionsBuilder extends PageTransitionsBuilder {
+  const _NoTransitionsBuilder();
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      child;
+}
+
 class DashboardApp extends StatelessWidget {
   const DashboardApp({super.key});
 
@@ -50,6 +67,19 @@ class DashboardApp extends StatelessWidget {
         textTheme: const TextTheme().apply(
           bodyColor: Colors.white,
           displayColor: Colors.white,
+        ),
+        // Kill the per-platform page transition — the dashboard shares
+        // its chrome across pages, so the default fade/zoom reads as
+        // flicker when switching sidebar sections.
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _NoTransitionsBuilder(),
+            TargetPlatform.iOS: _NoTransitionsBuilder(),
+            TargetPlatform.linux: _NoTransitionsBuilder(),
+            TargetPlatform.macOS: _NoTransitionsBuilder(),
+            TargetPlatform.windows: _NoTransitionsBuilder(),
+            TargetPlatform.fuchsia: _NoTransitionsBuilder(),
+          },
         ),
       ),
       // Auth gate routes between login and the dashboard. Once signed
