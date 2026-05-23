@@ -39,18 +39,90 @@
 
 *** Next pass (new work) ***
 
-- [] Per-lesson exercise editor inside the course detail page (uses existing POST /api/v1/editor/lesson/)
-- [] Show subscriber counts on plan cards (needs a plan_id column on `school.student_enrollments` or a separate `school.subscriptions` table)
-- [] Search box on the Courses / Students / Editors tables (server-side LIKE filter)
-- [] Real password reset flow (forgot-password link on login currently no-op)
-   Design decisions:
-   - Token delivery:
-     - [selected] Print token to server logs (no real email yet) — fastest, demo-friendly
-     - [ ] Send via SMTP — needs SMTP config + a sender lib
-   - Token storage:
-     - [selected] `school.password_resets` table with token + expires_at + consumed_at — same shape used elsewhere; easy to query
-     - [ ] JWT signed token — no DB row but harder to revoke
-   - UI shape:
-     - [selected] Step 1: forgot dialog on login (enter email → snackbar "check your inbox / logs"). Step 2: paste token + new password on a small reset dialog — keeps the dashboard single-page
-     - [ ] Dedicated /reset?token=... page parsed from URL
+- [v] Per-lesson exercise editor inside the course detail page (GET /api/v1/editor/lesson/{id} added; click any lesson row → glass-card dialog with title + per-exercise editor)
+- [v] Show subscriber counts on plan cards — `plan_id` added to `school.student_enrollments`; `Plan.subscriber_count` populated server-side from COUNT(DISTINCT user_id); rendered on cards
+- [v] Search box on the Courses / Students / Editors tables — server `q` filter (ILIKE on title/description/email/name) + debounced `SearchField` widget on all three pages
+- [v] Real password reset flow — `school.password_resets` token table; POST /forgot_password issues + logs a 30-min token, POST /reset_password consumes it; login page has a two-step dialog (email → token + new password) with inline token shown for the demo
+- [v] Remove page transition between sidebar sections — `_NoTransitionsBuilder` registered per platform
 
+*** Dev notes ***
+
+- Default seeded credentials: `lena@riverside.edu` / `changeme` (owner of "Riverside Academy", school_id=1)
+- Reset tokens print to `docker logs server` and also return inline in the API response for the demo flow
+
+*** Next pass (selected this round) ***
+
+Candidates considered (recommendation chosen because they round out the
+auth+onboarding story without adding entirely new UX surfaces):
+
+- [v] Persistent auth — `shared_preferences` cache; `AuthRestoring` state during cold-boot lookup; cleared on sign-out.
+- [v] Create-school onboarding wizard at `/create-school` — auto-derives slug from name; `is_public` toggle (defaults on); POSTs `/api/v1/school/` + auto-logs in via `adoptSession`; linked from login page. Added `is_public` column to `school.schools` as part of this.
+- [v] Auth middleware — `school.utils.auth.require_school_member` reads `X-School-User-Id` header, verifies caller belongs to requested school (path or query). 401 on bogus header, 403 on mismatch, 200 when header missing (back-compat). Wired into school stats/activity/languages/students/plans/billing + editor courses/review/upload + school_users list. Client Dio stamps the header on sign-in/restore, clears on sign-out.
+
+
+*** School Types ***
+We can have the following school types - with priority 1-4 
+1. Public schools - Open content anyone can create content - user reviewed - open to anyone - priority 1
+2. No Charge school - A real school or university that teaches languages and want to use our technology for enhancing the learning pace for its students - it may want also to open the content to others. Priority 2 
+3. Private school that charges the students per course, monthly or annually - priority 4
+
+
+*** Public School ***
+Let's first define what is a public school 
+- In a public school all content is free - no charge for learning 
+- Initially we can have a single public school - maybe later we may think that different groups would like to maintain, different public schools. 
+- It would be best if the public school would use the same functionality with the following differences 
+
+- []  We do not limit languages - when a user creates a course - he can choose any language
+- We keep the language page to see in what languages we already have courses 
+- [] For now only I can edit my courses - 
+- [] We may want to allow co-editing - We need a plan first on how it would happen - we need to think of concepts like in github or wikipedia - but it requires planning.
+- [] Editor page - currently accessible on to admins - where you can see a list of contributors   
+- [] settings - also accessible only to admins  
+- [] We need to implement a simple ACL for public school - actually we need it also for private school
+ 
+  Roles are
+    - Admin
+      Edit LAnguages 
+      Edit settings 
+      Add remove users 
+
+    - Editor
+      Edit your courses
+      Add courses 
+      Upload and download your courses  
+    - Super Editor
+      Edit other people's courses - Only on private for now  
+    - Reviewer 
+      - can write review comments 
+      - can authorize a course to be published 
+    - Student
+      - can write review comments 
+  In public school to become an editor you have to agree to the -  terms and conditions 
+  maybe we need terms and condition for all roles even for student
+  You see the ui according to your role
+  
+
+
+
+
+*** Next pass (selected this round) ***
+
+Picking the ACL + public-school foundations now — they're the prerequisite
+for almost everything else in the Public School section, and the role
+rename is cheap to do while data is small. Deferring co-editing /
+terms-and-conditions since the user flagged them as needing planning.
+
+- [selected] Rename `school.school_users.role` enum from owner/editor/viewer to admin/editor/super_editor/reviewer/student. Migrate Lena → admin. Update the check constraint + server-side defaults + the `EditorRoleWire` enum on the client.
+- [selected] Page-level ACL on the dashboard — `Editors` and `Settings` nav items + routes only visible to role=admin; everyone else gets a 403-ish empty state if they deep-link.
+- [selected] Public school = any language — when `school.is_public=true`, skip the language whitelist on the upload endpoint and accept any 2-letter code (server already accepts any code; this is mostly the public-school check on the wizard).
+- [selected] Course ownership — add `owner_user_id` to `course_simple.course`; populated on upload from the uploader; `set_course_status` and `editor/lesson` save reject 403 when the caller isn't the owner (unless they're admin or super_editor).
+- [ ] Terms-and-conditions acceptance for becoming an editor on a public school — deferred (needs UX + storage decisions).
+- [ ] Real co-editing (github/wikipedia-style) — deferred per spec.
+
+*** tasks saved for later stage ***
+- [ ] I prefer using Oauth - so we can skip password change password functionality - for now at least
+- [] Real SMTP for password reset — out of scope without infrastructure.
+- [ ] Pagination on Students table (currently capped at 200).
+- [ ] Cohort filter chips on Students page.
+- [ ] Public-school sibling site (community-contributor variant from design_experiments/school_public/) — substantial new UI; deferred to dedicated pass.

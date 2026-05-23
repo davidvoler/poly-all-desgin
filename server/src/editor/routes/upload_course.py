@@ -2,10 +2,11 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from editor.utils.folder_to_db import load_course_content
 from school.utils.activity import log_activity
+from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
 
 router = APIRouter()
@@ -21,6 +22,7 @@ async def upload_course(
     lang: str | None = Form(None),
     to_lang: str | None = Form(None),
     file: UploadFile = File(...),
+    _caller: int | None = Depends(require_school_member),
 ):
     """Accept a .zip course archive, extract it under TEMP_FOLDER, and
     return the destination path + file listing.

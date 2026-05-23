@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from editor.models.course import CourseStatusUpdate, EditorCourse
 from editor.routes.editor_courses import get_editor_course
+from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
 
 router = APIRouter()
@@ -19,7 +20,7 @@ _VALID = {'draft', 'review', 'published', 'archived'}
 
 
 @router.get("/queue", response_model=list[EditorCourse])
-async def review_queue(school_id: int):
+async def review_queue(school_id: int, _caller: int | None = Depends(require_school_member)):
     """Convenience endpoint — every course this school has in 'review'.
     The Editors dashboard's Courses page has a tab/filter that hits this
     instead of the general list endpoint."""
@@ -61,6 +62,7 @@ async def set_course_status(
     payload: CourseStatusUpdate,
     school_id: int,
     actor_user_id: int | None = None,
+    _caller: int | None = Depends(require_school_member),
 ):
     """Change a course's review status. Validates the transition against
     a small state graph so the API can't be coaxed into illegal moves

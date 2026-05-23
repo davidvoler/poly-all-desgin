@@ -102,10 +102,16 @@ class _EditorsTable extends ConsumerWidget {
 
   StatusPill _rolePill(EditorRoleWire role) {
     switch (role) {
-      case EditorRoleWire.owner:
+      case EditorRoleWire.admin:
         return const StatusPill(
-          label: 'Owner',
+          label: 'Admin',
           kind: PillKind.white,
+          swatch: true,
+        );
+      case EditorRoleWire.superEditor:
+        return const StatusPill(
+          label: 'Super Editor',
+          kind: PillKind.active,
           swatch: true,
         );
       case EditorRoleWire.editor:
@@ -114,9 +120,15 @@ class _EditorsTable extends ConsumerWidget {
           kind: PillKind.neutral,
           swatch: true,
         );
-      case EditorRoleWire.viewer:
+      case EditorRoleWire.reviewer:
         return const StatusPill(
-          label: 'Viewer',
+          label: 'Reviewer',
+          kind: PillKind.draft,
+          swatch: true,
+        );
+      case EditorRoleWire.student:
+        return const StatusPill(
+          label: 'Student',
           kind: PillKind.muted,
           swatch: true,
         );
@@ -151,7 +163,7 @@ class _EditorsTable extends ConsumerWidget {
             WhoCell(
               initials: e.initials,
               avatarKey:
-                  e.role == EditorRoleWire.owner ? 'lh' : _avatarKey(e.schoolUserId),
+                  e.role == EditorRoleWire.admin ? 'lh' : _avatarKey(e.schoolUserId),
               name: e.name.isNotEmpty ? e.name : e.email,
               email: e.email,
             ),
@@ -189,8 +201,9 @@ class _EditorRowMenu extends ConsumerWidget {
   const _EditorRowMenu({required this.user});
 
   static const String _kChangeRoleEditor = 'role_editor';
-  static const String _kChangeRoleViewer = 'role_viewer';
-  static const String _kChangeRoleOwner = 'role_owner';
+  static const String _kChangeRoleSuperEditor = 'role_super_editor';
+  static const String _kChangeRoleReviewer = 'role_reviewer';
+  static const String _kChangeRoleAdmin = 'role_admin';
   static const String _kSuspend = 'suspend';
   static const String _kActivate = 'activate';
   static const String _kDelete = 'delete';

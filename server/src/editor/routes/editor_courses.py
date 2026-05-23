@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from editor.models.course import (
     EditorCourse,
@@ -6,6 +6,7 @@ from editor.models.course import (
     EditorLesson,
     EditorModule,
 )
+from school.utils.auth import require_school_member
 from utils.db import get_query_results
 
 router = APIRouter()
@@ -33,6 +34,7 @@ async def list_editor_courses(
     status: str | None = None,
     lang: str | None = None,
     q: str | None = None,
+    _caller: int | None = Depends(require_school_member),
 ):
     """Powers the Courses table on the school dashboard. Joins three
     sources in one query:
@@ -83,7 +85,7 @@ async def list_editor_courses(
 
 
 @router.get("/{course_id}", response_model=EditorCourse)
-async def get_editor_course(course_id: int, school_id: int):
+async def get_editor_course(course_id: int, school_id: int, _caller: int | None = Depends(require_school_member)):
     """Single-row variant — used when opening a course detail page."""
     rows = await get_query_results(
         """
@@ -107,7 +109,7 @@ async def get_editor_course(course_id: int, school_id: int):
 
 
 @router.get("/{course_id}/detail", response_model=EditorCourseDetail)
-async def get_course_detail(course_id: int, school_id: int):
+async def get_course_detail(course_id: int, school_id: int, _caller: int | None = Depends(require_school_member)):
     """Full nested structure for the course detail page — one round
     trip for course + modules + lessons + per-lesson exercise counts.
     The dashboard page renders an expandable module/lesson tree from

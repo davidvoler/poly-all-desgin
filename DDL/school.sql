@@ -27,8 +27,9 @@ CREATE TABLE school.schools (
     slug               varchar(64)  NOT NULL,
     name               varchar(255) NOT NULL,
     plan               varchar(32)  NOT NULL DEFAULT 'free',  -- free | pro | enterprise
+    is_public          bool         NOT NULL DEFAULT false,   -- public school = free content, no language whitelist
     streak_days        int4         NOT NULL DEFAULT 0,
-    languages_taught   _varchar     NOT NULL DEFAULT '{}',    -- e.g. {ara,heb,ita}
+    languages_taught   _varchar     NOT NULL DEFAULT '{}',    -- e.g. {ara,heb,ita}; ignored when is_public
     native_languages   _varchar     NOT NULL DEFAULT '{}',    -- student native langs
     logo_url           varchar(500) NULL,
     primary_color      varchar(8)   NOT NULL DEFAULT '#1E88E5',
@@ -49,7 +50,7 @@ CREATE TABLE school.school_users (
     name                varchar(200) NOT NULL DEFAULT '',
     email               varchar(200) NOT NULL,
     password_hash       varchar(200) NULL,                       -- bcrypt; NULL until they accept an invite
-    role                varchar(20)  NOT NULL DEFAULT 'editor',  -- owner | editor | viewer
+    role                varchar(20)  NOT NULL DEFAULT 'editor',  -- admin | editor | super_editor | reviewer | student
     assigned_languages  _varchar     NOT NULL DEFAULT '{}',      -- empty array = all
     courses_owned       int4         NOT NULL DEFAULT 0,
     last_seen           timestamp    NULL,
@@ -57,7 +58,7 @@ CREATE TABLE school.school_users (
     created_at          timestamp    NOT NULL DEFAULT now(),
     CONSTRAINT school_users_uq UNIQUE (school_id, user_id),
     CONSTRAINT school_users_email_uq UNIQUE (school_id, email),
-    CONSTRAINT school_users_role_chk CHECK (role IN ('owner','editor','viewer'))
+    CONSTRAINT school_users_role_chk CHECK (role IN ('admin','editor','super_editor','reviewer','student'))
 );
 CREATE INDEX IF NOT EXISTS school_users_school_idx ON school.school_users (school_id);
 CREATE INDEX IF NOT EXISTS school_users_user_idx   ON school.school_users (user_id);
@@ -78,7 +79,7 @@ CREATE TABLE school.school_invites (
     expires_at          timestamp    NULL,
     created_at          timestamp    NOT NULL DEFAULT now(),
     CONSTRAINT school_invites_uq UNIQUE (school_id, email),
-    CONSTRAINT school_invites_role_chk CHECK (role IN ('owner','editor','viewer'))
+    CONSTRAINT school_invites_role_chk CHECK (role IN ('admin','editor','super_editor','reviewer','student'))
 );
 CREATE INDEX IF NOT EXISTS school_invites_token_idx ON school.school_invites (token);
 

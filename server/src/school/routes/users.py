@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime, timedelta
 
 import bcrypt
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from school.models.users import (
     ForgotPasswordRequest,
@@ -15,6 +15,7 @@ from school.models.users import (
     SchoolUserCreate,
 )
 from school.utils.activity import log_activity
+from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ async def list_school_users(
     school_id: int,
     role: str | None = None,
     q: str | None = None,
+    _caller: int | None = Depends(require_school_member),
 ):
     """Roster for the Editors page. Optional `role` filter so the UI
     can request just owners/editors/viewers. Optional `q` matches
@@ -81,7 +83,8 @@ async def list_school_users(
         sql += " AND (name ILIKE %s OR email ILIKE %s)"
         like = f"%{q.strip()}%"
         params.extend([like, like])
-    sql += " ORDER BY (role = 'owner') DESC, created_at"
+    # Admin first so the Editors page always leads with the school's owner.
+    sql += " ORDER BY (role = 'admin') DESC, created_at"
     rows = await get_query_results(sql, tuple(params))
     return [_row_to_user(r) for r in rows]
 

@@ -7,6 +7,7 @@ class SchoolInfo {
   final String slug;
   final String name;
   final String plan;
+  final bool isPublic;
   final int streakDays;
   final List<String> languagesTaught;
   final List<String> nativeLanguages;
@@ -18,6 +19,7 @@ class SchoolInfo {
     required this.slug,
     required this.name,
     required this.plan,
+    required this.isPublic,
     required this.streakDays,
     required this.languagesTaught,
     required this.nativeLanguages,
@@ -30,6 +32,7 @@ class SchoolInfo {
         slug: (j['slug'] as String?) ?? '',
         name: (j['name'] as String?) ?? '',
         plan: (j['plan'] as String?) ?? 'free',
+        isPublic: (j['is_public'] as bool?) ?? false,
         streakDays: (j['streak_days'] as int?) ?? 0,
         languagesTaught:
             ((j['languages_taught'] as List?) ?? const []).cast<String>(),
@@ -378,18 +381,40 @@ class EditorCourseDetail {
       );
 }
 
-enum EditorRoleWire { owner, editor, viewer }
+/// Role enum in lockstep with `school.school_users.role` on the
+/// server. Order matters: admin > super_editor > editor > reviewer >
+/// student is the rough "powers" gradient the UI uses for ACL gating.
+enum EditorRoleWire { admin, editor, superEditor, reviewer, student }
 
 EditorRoleWire _roleFromWire(String? s) {
   switch (s) {
+    case 'admin':
+    // Tolerate old persisted sessions that still say "owner" — we
+    // migrated server-side but a cached LoginInfo from before the
+    // migration might still carry the old label.
     case 'owner':
-      return EditorRoleWire.owner;
+      return EditorRoleWire.admin;
+    case 'super_editor':
+      return EditorRoleWire.superEditor;
+    case 'reviewer':
     case 'viewer':
-      return EditorRoleWire.viewer;
+      return EditorRoleWire.reviewer;
+    case 'student':
+      return EditorRoleWire.student;
     default:
       return EditorRoleWire.editor;
   }
 }
+
+/// Wire string used when sending the role back to the server. Stays
+/// in lockstep with the check constraint in DDL/school.sql.
+String roleToWire(EditorRoleWire role) => switch (role) {
+      EditorRoleWire.admin => 'admin',
+      EditorRoleWire.editor => 'editor',
+      EditorRoleWire.superEditor => 'super_editor',
+      EditorRoleWire.reviewer => 'reviewer',
+      EditorRoleWire.student => 'student',
+    };
 
 class SchoolUser {
   final int schoolUserId;

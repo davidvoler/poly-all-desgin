@@ -168,11 +168,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(height: 16),
                     Center(
-                      child: Text(
-                        'No school yet?  Create one →',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: DashColors.w(0.55),
+                      child: InkWell(
+                        onTap: () => Navigator.of(context)
+                            .pushNamed('/create-school'),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 4),
+                          child: Text.rich(
+                            TextSpan(
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: DashColors.w(0.70),
+                              ),
+                              children: [
+                                const TextSpan(text: 'No school yet?  '),
+                                TextSpan(
+                                  text: 'Create one →',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),

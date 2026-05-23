@@ -1,7 +1,22 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models.dart';
+
+/// Key under which the signed-in [LoginInfo] is cached in
+/// SharedPreferences. Bumped only if the cache shape changes
+/// incompatibly.
+const String _kAuthCacheKey = 'poly_dashboard_auth_v1';
+
+/// Header the server's `require_school_member` dependency reads. The
+/// auth notifier stamps the current school_user_id here whenever a
+/// session opens or restores, and clears it on sign-out — so every
+/// subsequent Dio request rides the right ID without per-call
+/// plumbing.
+const String _kAuthHeader = 'X-School-User-Id';
 
 /// Base URL for the Polyglots backend. Override at compile-time with
 ///
@@ -57,6 +72,16 @@ class LoginInfo {
         email: (j['email'] as String?) ?? '',
         role: (j['role'] as String?) ?? 'editor',
       );
+
+  Map<String, dynamic> toJson() => {
+        'school_user_id': schoolUserId,
+        'school_id': schoolId,
+        'school_slug': schoolSlug,
+        'school_name': schoolName,
+        'name': name,
+        'email': email,
+        'role': role,
+      };
 
   String get initials {
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -245,6 +270,7 @@ class DashboardApi {
     required int schoolId,
     required String name,
     required String plan,
+    required bool isPublic,
     String? logoUrl,
     required String primaryColor,
     required List<String> languagesTaught,
@@ -257,6 +283,7 @@ class DashboardApi {
         'slug': '',
         'name': name,
         'plan': plan,
+        'is_public': isPublic,
         'logo_url': logoUrl,
         'primary_color': primaryColor,
         'languages_taught': languagesTaught,
@@ -295,7 +322,7 @@ class DashboardApi {
         'school_id': u.schoolId,
         'name': u.name,
         'email': u.email,
-        'role': u.role.name,
+        'role': roleToWire(u.role),
         'assigned_languages': u.assignedLanguages,
         'courses_owned': u.coursesOwned,
         'status': u.status,
@@ -511,15 +538,53 @@ class DashboardApi {
       },
     );
   }
+
+  /// Create a brand-new school + seed its owner in one shot, then log
+  /// in so the dashboard can drop the caller into the new tenant. The
+  /// server's POST /api/v1/school/ returns the created [SchoolInfo]
+  /// but not a login session — we follow it with a normal login call
+  /// using the same credentials.
+  Future<LoginInfo> createSchoolAndSignIn({
+    required String slug,
+    required String name,
+    required String plan,
+    required bool isPublic,
+    required String ownerName,
+    required String ownerEmail,
+    required String ownerPassword,
+  }) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/v1/school/',
+      data: {
+        'slug': slug,
+        'name': name,
+        'plan': plan,
+        'is_public': isPublic,
+        'owner_name': ownerName,
+        'owner_email': ownerEmail,
+        'owner_password': ownerPassword,
+      },
+    );
+    return login(email: ownerEmail, password: ownerPassword);
+  }
 }
 
 final dashboardApiProvider = Provider<DashboardApi>((ref) {
   return DashboardApi(ref.watch(dioProvider));
 });
 
-/// Three states the app routes off of: signedOut, signingIn, signedIn.
+/// Four states the app routes off of: restoring (cache lookup in flight
+/// on app start), signedOut, signingIn, signedIn.
 sealed class AuthState {
   const AuthState();
+}
+
+/// Initial state — we haven't asked SharedPreferences yet whether a
+/// previous session was cached. The router shows a blank gate for this
+/// brief window so we don't flash the login page when the user is
+/// already signed in.
+class AuthRestoring extends AuthState {
+  const AuthRestoring();
 }
 
 class AuthSignedOut extends AuthState {
@@ -541,7 +606,46 @@ class AuthSignedIn extends AuthState {
 /// router watches it to decide between the LoginPage and the dashboard.
 class AuthNotifier extends Notifier<AuthState> {
   @override
-  AuthState build() => const AuthSignedOut();
+  AuthState build() {
+    // Kick off the cache restore on first watch. The fire-and-forget
+    // is fine — the only consumer is the router, which already gates
+    // on AuthRestoring.
+    Future.microtask(_restore);
+    return const AuthRestoring();
+  }
+
+  Future<void> _restore() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kAuthCacheKey);
+      if (raw == null || raw.isEmpty) {
+        _clearAuthHeader();
+        state = const AuthSignedOut();
+        return;
+      }
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        _clearAuthHeader();
+        state = const AuthSignedOut();
+        return;
+      }
+      final info = LoginInfo.fromJson(decoded);
+      _setAuthHeader(info.schoolUserId);
+      state = AuthSignedIn(info);
+    } catch (_) {
+      // Corrupt cache → just go to login. Don't propagate.
+      _clearAuthHeader();
+      state = const AuthSignedOut();
+    }
+  }
+
+  void _setAuthHeader(int schoolUserId) {
+    ref.read(dioProvider).options.headers[_kAuthHeader] = '$schoolUserId';
+  }
+
+  void _clearAuthHeader() {
+    ref.read(dioProvider).options.headers.remove(_kAuthHeader);
+  }
 
   Future<void> signIn({
     required String email,
@@ -555,6 +659,8 @@ class AuthNotifier extends Notifier<AuthState> {
             password: password,
             schoolSlug: schoolSlug,
           );
+      await _persist(info);
+      _setAuthHeader(info.schoolUserId);
       state = AuthSignedIn(info);
     } on DioException catch (e) {
       // 401 is the common path — surface the server's `detail` string
@@ -570,8 +676,29 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  void signOut() {
+  /// Programmatic sign-in used by the create-school wizard — the
+  /// server response includes everything we need to mint a session,
+  /// so we can skip the password round-trip.
+  Future<void> adoptSession(LoginInfo info) async {
+    await _persist(info);
+    _setAuthHeader(info.schoolUserId);
+    state = AuthSignedIn(info);
+  }
+
+  Future<void> signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kAuthCacheKey);
+    } catch (_) {/* keep going even if storage flakes */}
+    _clearAuthHeader();
     state = const AuthSignedOut();
+  }
+
+  Future<void> _persist(LoginInfo info) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kAuthCacheKey, jsonEncode(info.toJson()));
+    } catch (_) {/* non-fatal — the in-memory state is still valid */}
   }
 }
 

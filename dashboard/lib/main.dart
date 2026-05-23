@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api/dashboard_api.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
+import 'pages/create_school_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
 import 'pages/login_page.dart';
@@ -86,6 +87,10 @@ class DashboardApp extends StatelessWidget {
       // in, named routes navigate inside the dashboard normally.
       home: const _AuthGate(),
       routes: {
+        // Onboarding wizard — intentionally NOT wrapped in _Guarded
+        // since the whole point is to run before the user has any
+        // school to sign into.
+        '/create-school': (_) => const CreateSchoolPage(),
         '/courses': (_) => const _Guarded(child: CoursesPage()),
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
@@ -98,14 +103,18 @@ class DashboardApp extends StatelessWidget {
 }
 
 /// Picks between the login page and the dashboard based on auth state.
-/// The login page is rendered without scaffold chrome; the dashboard's
-/// pages bring their own.
+/// While AuthRestoring (cold-boot lookup of the cached session) we
+/// show the gradient background only so we don't flash the login form
+/// before deciding where the user belongs.
 class _AuthGate extends ConsumerWidget {
   const _AuthGate();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
+    if (auth is AuthRestoring) {
+      return Container(decoration: kDashBackground);
+    }
     if (auth is AuthSignedIn) return const OverviewPage();
     return const LoginPage();
   }

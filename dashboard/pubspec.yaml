@@ -45,6 +45,11 @@ dependencies:
   # and the Export action (pick a save location). Works on web,
   # desktop, and mobile.
   file_picker: ^8.0.0
+  # Persists the signed-in LoginInfo across page reloads (localStorage
+  # on web, plist/registry on desktop). No external auth service — the
+  # cached row + bcrypt password verification on the server is enough
+  # for the demo.
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:

@@ -222,6 +222,7 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
             schoolId: s.schoolId,
             name: _name.text.trim(),
             plan: _plan.text.trim(),
+            isPublic: s.isPublic,
             logoUrl: s.logoUrl,
             primaryColor: _primaryColor.text.trim(),
             languagesTaught: s.languagesTaught,

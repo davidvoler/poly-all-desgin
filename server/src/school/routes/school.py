@@ -2,7 +2,7 @@ import csv
 import io
 from datetime import datetime
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from school.models.school import (
     ActivityRow,
@@ -20,6 +20,7 @@ from school.models.school import (
 )
 from school.routes.users import _hash_password
 from school.utils.activity import log_activity
+from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
 
 router = APIRouter()
@@ -75,7 +76,7 @@ def _humanize(dt: datetime | None) -> str:
 
 
 _SCHOOL_COLS = (
-    "school_id, slug, name, plan, streak_days, languages_taught, "
+    "school_id, slug, name, plan, is_public, streak_days, languages_taught, "
     "native_languages, logo_url, primary_color, created_at, updated_at"
 )
 
@@ -89,6 +90,7 @@ def _row_to_school(row: dict) -> School:
         slug=row.get('slug') or '',
         name=row.get('name') or '',
         plan=row.get('plan') or 'free',
+        is_public=bool(row.get('is_public')),
         streak_days=row.get('streak_days') or 0,
         languages_taught=list(row.get('languages_taught') or []),
         native_languages=list(row.get('native_languages') or []),
@@ -111,7 +113,7 @@ async def list_schools():
 
 
 @router.get("/{school_id}", response_model=School)
-async def get_school(school_id: int):
+async def get_school(school_id: int, _caller: int | None = Depends(require_school_member)):
     rows = await get_query_results(
         f"SELECT {_SCHOOL_COLS} FROM school.schools WHERE school_id = %s",
         (school_id,),
@@ -146,11 +148,11 @@ async def create_school(payload: SchoolCreate):
 
     insert = await get_query_results(
         """
-        INSERT INTO school.schools (slug, name, plan)
-        VALUES (%s, %s, %s)
+        INSERT INTO school.schools (slug, name, plan, is_public)
+        VALUES (%s, %s, %s, %s)
         RETURNING school_id
         """,
-        (payload.slug, payload.name, payload.plan),
+        (payload.slug, payload.name, payload.plan, payload.is_public),
     )
     if not insert:
         raise HTTPException(status_code=500, detail="Failed to create school")
@@ -163,7 +165,7 @@ async def create_school(payload: SchoolCreate):
         """
         INSERT INTO school.school_users
             (school_id, user_id, name, email, password_hash, role)
-        VALUES (%s, NULL, %s, %s, %s, 'owner')
+        VALUES (%s, NULL, %s, %s, %s, 'admin')
         """,
         (school_id, payload.owner_name, payload.owner_email, pw_hash),
     )
@@ -171,26 +173,27 @@ async def create_school(payload: SchoolCreate):
 
 
 @router.put("/{school_id}", response_model=School)
-async def update_school(school_id: int, payload: School):
+async def update_school(school_id: int, payload: School, _caller: int | None = Depends(require_school_member)):
     """Partial update — only the fields the Settings page actually edits."""
     await run_query(
         """
         UPDATE school.schools
-        SET name = %s, plan = %s, logo_url = %s, primary_color = %s,
+        SET name = %s, plan = %s, is_public = %s, logo_url = %s, primary_color = %s,
             languages_taught = %s, native_languages = %s,
             updated_at = now()
         WHERE school_id = %s
         """,
         (
-            payload.name, payload.plan, payload.logo_url, payload.primary_color,
-            payload.languages_taught, payload.native_languages, school_id,
+            payload.name, payload.plan, payload.is_public, payload.logo_url,
+            payload.primary_color, payload.languages_taught, payload.native_languages,
+            school_id,
         ),
     )
     return await get_school(school_id)
 
 
 @router.delete("/{school_id}")
-async def delete_school(school_id: int):
+async def delete_school(school_id: int, _caller: int | None = Depends(require_school_member)):
     ok = await run_query(
         "DELETE FROM school.schools WHERE school_id = %s",
         (school_id,),
@@ -199,7 +202,7 @@ async def delete_school(school_id: int):
 
 
 @router.get("/{school_id}/stats", response_model=SchoolStats)
-async def get_school_stats(school_id: int):
+async def get_school_stats(school_id: int, _caller: int | None = Depends(require_school_member)):
     """Counts shown in the Overview header tiles. One round-trip; each
     sub-query is independent so the planner can parallelise."""
     rows = await get_query_results(
@@ -210,7 +213,7 @@ async def get_school_stats(school_id: int):
             (SELECT COUNT(*) FROM school.course_access
                 WHERE school_id = %s) AS courses,
             (SELECT COUNT(*) FROM school.school_users
-                WHERE school_id = %s AND role IN ('owner','editor')) AS editors,
+                WHERE school_id = %s AND role IN ('admin','editor','super_editor')) AS editors,
             (SELECT COUNT(DISTINCT user_id) FROM school.student_enrollments
                 WHERE school_id = %s) AS students
         """,
@@ -227,7 +230,7 @@ async def get_school_stats(school_id: int):
 
 
 @router.get("/{school_id}/activity", response_model=list[ActivityRow])
-async def get_activity(school_id: int, limit: int = 10):
+async def get_activity(school_id: int, limit: int = 10, _caller: int | None = Depends(require_school_member)):
     """Feeds the Overview "Recent activity" panel. Joins to
     school_users so we can render the actor's name (NULL when the row
     represents a system event, e.g. an automated import)."""
@@ -263,7 +266,7 @@ async def get_activity(school_id: int, limit: int = 10):
 
 
 @router.get("/{school_id}/languages", response_model=list[LanguageSummary])
-async def get_languages_summary(school_id: int, role: str | None = None):
+async def get_languages_summary(school_id: int, role: str | None = None, _caller: int | None = Depends(require_school_member)):
     """Powers both halves of the Languages page. With `role` omitted,
     returns both lists ('teach' before 'native'); pass role='teach' or
     role='native' to filter to one. Per-language counts come from
@@ -362,6 +365,7 @@ async def get_students(
     status: str | None = None,
     q: str | None = None,
     limit: int = 200,
+    _caller: int | None = Depends(require_school_member),
 ):
     """Roster for the Students page. Joins enrollment rows with
     user_data.users (for name/email) and course_simple.course (for the
@@ -474,7 +478,7 @@ async def _upsert_enrollment(
 
 
 @router.post("/{school_id}/students", response_model=StudentRow)
-async def enroll_student(school_id: int, payload: EnrollStudentRequest):
+async def enroll_student(school_id: int, payload: EnrollStudentRequest, _caller: int | None = Depends(require_school_member)):
     """Single-student enrollment from the dashboard's "Add student"
     dialog. Either reuses an existing user_data.users row (matched by
     email) or creates a fresh one, then upserts the enrollment.
@@ -521,6 +525,7 @@ async def enroll_students_csv(
     lang: str,
     cohort: str | None = None,
     file: UploadFile = File(...),
+    _caller: int | None = Depends(require_school_member),
 ):
     """Bulk enrollment from a CSV upload. Expected columns (header row
     required): `email`, `name` (optional), `course_id` (optional).
@@ -658,7 +663,7 @@ async def _replace_features(plan_id: int, features: list[PlanFeature]) -> None:
 
 
 @router.get("/{school_id}/plans", response_model=list[Plan])
-async def list_plans(school_id: int):
+async def list_plans(school_id: int, _caller: int | None = Depends(require_school_member)):
     rows = await get_query_results(
         """
         SELECT plan_id, school_id, tier, price_cents, cadence,
@@ -676,7 +681,7 @@ async def list_plans(school_id: int):
 
 
 @router.post("/{school_id}/plans", response_model=Plan)
-async def create_plan(school_id: int, payload: PlanWrite):
+async def create_plan(school_id: int, payload: PlanWrite, _caller: int | None = Depends(require_school_member)):
     inserted = await get_query_results(
         """
         INSERT INTO school.plans
@@ -695,7 +700,7 @@ async def create_plan(school_id: int, payload: PlanWrite):
 
 
 @router.put("/{school_id}/plans/{plan_id}", response_model=Plan)
-async def update_plan(school_id: int, plan_id: int, payload: PlanWrite):
+async def update_plan(school_id: int, plan_id: int, payload: PlanWrite, _caller: int | None = Depends(require_school_member)):
     updated = await get_query_results(
         """
         UPDATE school.plans
@@ -714,7 +719,7 @@ async def update_plan(school_id: int, plan_id: int, payload: PlanWrite):
 
 
 @router.delete("/{school_id}/plans/{plan_id}")
-async def delete_plan(school_id: int, plan_id: int):
+async def delete_plan(school_id: int, plan_id: int, _caller: int | None = Depends(require_school_member)):
     ok = await run_query(
         "DELETE FROM school.plans WHERE plan_id = %s AND school_id = %s",
         (plan_id, school_id),
@@ -727,7 +732,7 @@ async def delete_plan(school_id: int, plan_id: int):
 # =============================================================
 
 @router.get("/{school_id}/billing", response_model=BillingMethod | None)
-async def get_billing(school_id: int):
+async def get_billing(school_id: int, _caller: int | None = Depends(require_school_member)):
     """Returns the primary card or null when there isn't one. Returning
     null (rather than 404) keeps the dashboard's "Manage payment" /
     empty-state branching straightforward."""
@@ -756,7 +761,7 @@ async def get_billing(school_id: int):
 
 
 @router.put("/{school_id}/billing", response_model=BillingMethod)
-async def upsert_billing(school_id: int, payload: BillingMethodWrite):
+async def upsert_billing(school_id: int, payload: BillingMethodWrite, _caller: int | None = Depends(require_school_member)):
     """Upsert the primary card for a school. Implemented as
     delete-then-insert (under the partial unique index `billing_primary_uq`)
     so we don't have to track the row's id from the dashboard."""

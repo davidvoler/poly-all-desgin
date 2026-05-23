@@ -8,6 +8,7 @@ class School(BaseModel):
     slug: str
     name: str
     plan: str = 'free'                       # free | pro | enterprise
+    is_public: bool = False                  # public schools: all content free, no language whitelist
     streak_days: int = 0
     languages_taught: list[str] = []
     native_languages: list[str] = []
@@ -23,6 +24,7 @@ class SchoolCreate(BaseModel):
     slug: str
     name: str
     plan: str = 'free'
+    is_public: bool = False
     owner_name: str
     owner_email: str
     owner_password: str
