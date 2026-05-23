@@ -82,3 +82,63 @@ async def load_course_from_folder(folder_path: str, course_name: str, lang: str,
             await load_module(course_id, data, m_no)
 
 
+async def load_course_content(course_id: int, folder_path: str) -> dict:
+    """Best-effort ingestion into an existing `course_simple.course`
+    row — used by /api/v1/editor/upload/ after the zip is extracted.
+    Walks the folder for module YAML/JSON files matching
+    `module_<n>.{yaml,json}` (and a few other shapes the test fixtures
+    use) and loads each one. Silently skips files we don't understand
+    so a partial archive still creates the course shell.
+
+    Returns a small counts dict for the API response."""
+    if not os.path.isdir(folder_path):
+        return {'modules': 0, 'skipped': 0}
+
+    # Look one level deep too — uploaded zips sometimes wrap their
+    # contents in a single top-level directory.
+    candidates: list[str] = []
+    for fname in sorted(os.listdir(folder_path)):
+        full = os.path.join(folder_path, fname)
+        if os.path.isdir(full):
+            for inner in sorted(os.listdir(full)):
+                candidates.append(os.path.join(full, inner))
+        else:
+            candidates.append(full)
+
+    modules_loaded = 0
+    skipped = 0
+    module_no = 1
+    for path in candidates:
+        if not os.path.isfile(path):
+            continue
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in ('.yaml', '.yml', '.json'):
+            continue
+        # Pull the module index from `module_<n>` when present so
+        # weights stay stable across re-imports; otherwise auto-number.
+        stem = os.path.splitext(os.path.basename(path))[0]
+        m_no = module_no
+        if stem.startswith('module_'):
+            try:
+                m_no = int(stem.split('_', 1)[1])
+            except ValueError:
+                pass
+        try:
+            with open(path, 'r', encoding='utf-8') as fh:
+                data = yaml.safe_load(fh) if ext != '.json' else json.load(fh)
+        except Exception:
+            skipped += 1
+            continue
+        if not isinstance(data, dict):
+            skipped += 1
+            continue
+        try:
+            await load_module(course_id, data, m_no)
+            modules_loaded += 1
+            module_no += 1
+        except Exception:
+            skipped += 1
+
+    return {'modules': modules_loaded, 'skipped': skipped}
+
+

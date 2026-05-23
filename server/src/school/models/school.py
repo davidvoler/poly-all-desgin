@@ -67,6 +67,74 @@ class LanguageSummary(BaseModel):
     active: bool = True
 
 
+class PlanFeature(BaseModel):
+    """One row in `school.plan_features` — a feature label + an
+    `included` flag that drives the green check / grey dash on the
+    Settings → Subscription plans cards."""
+    label: str
+    included: bool = True
+    weight: int = 0
+
+
+class Plan(BaseModel):
+    """One row in `school.plans` with its features inlined so the
+    Settings page can render an entire plan card from a single GET."""
+    plan_id: int | None = None
+    school_id: int
+    tier: str
+    price_cents: int = 0
+    cadence: str = 'monthly'        # monthly | yearly
+    blurb: str | None = None
+    featured: bool = False
+    weight: int = 0
+    features: list[PlanFeature] = []
+
+
+class PlanWrite(BaseModel):
+    """Write-side shape for POST/PUT — no plan_id and no school_id (the
+    latter comes from the URL). Features are sent inline so the editor
+    can rearrange the checklist atomically."""
+    tier: str
+    price_cents: int = 0
+    cadence: str = 'monthly'
+    blurb: str | None = None
+    featured: bool = False
+    weight: int = 0
+    features: list[PlanFeature] = []
+
+
+class BillingMethod(BaseModel):
+    """One row in `school.billing_methods`. Only the primary card is
+    surfaced on the dashboard for now; the table supports additional
+    rows so a second-card flow is a one-field UI change later."""
+    billing_method_id: int | None = None
+    school_id: int
+    brand: str = 'Card'
+    last4: str
+    exp_month: int
+    exp_year: int
+    is_primary: bool = True
+
+
+class BillingMethodWrite(BaseModel):
+    brand: str = 'Card'
+    last4: str
+    exp_month: int
+    exp_year: int
+
+
+class EnrollStudentRequest(BaseModel):
+    """Payload for POST /api/v1/school/{id}/students — single-student
+    enrollment from the Students-page dialog. `course_id` is optional;
+    when omitted the student lands in the "no course yet" bucket and
+    the dashboard surfaces them under that filter chip."""
+    email: str
+    name: str = ''
+    lang: str
+    course_id: int | None = None
+    cohort: str | None = None
+
+
 class StudentRow(BaseModel):
     """Roster row on the Students page. Joins user_data.users with
     school.student_enrollments to give the dashboard everything it

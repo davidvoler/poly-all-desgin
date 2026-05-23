@@ -13,5 +13,28 @@
 
 - [v] Add a login page to the dashboard.  
 
-- [] Start implementing the dashboard with api to the server .  - write here tasks for any missing api end point
+- [v] Start implementing the dashboard with api to the server .  - write here tasks for any missing api end point
+   - [v] Overview → GET /api/v1/school/{id}/stats + GET /api/v1/school/{id}/activity
+   - [v] Languages → GET /api/v1/school/{id}/languages (added; per-language teach/native cards)
+   - [v] Courses → GET /api/v1/editor/courses/ + POST /api/v1/editor/review/{id}/status (status menu)
+   - [v] Editors → GET /api/v1/school_users/ + POST /api/v1/school_users/ (invite dialog)
+   - [v] Students → GET /api/v1/school/{id}/students (filterable by lang + status)
+   - [v] Settings → PUT /api/v1/school/{id} (editable profile)
+
+*** Follow-ups — known gaps ***
+
+- [v] Upload dropzone is visual only; wire it to POST /api/v1/editor/upload/ (multipart) + invalidate editorCoursesProvider on success
+- [v] Course row "Export" action — call GET /api/v1/editor/export/{id} and trigger a browser download
+- [v] Editors row actions (suspend / change role / delete) — server already supports PUT/DELETE on /api/v1/school_users/{id}; UI not wired yet
+- [v] "Add students" CTA on Students page — needs a POST /api/v1/school/{id}/students (enroll one) endpoint, plus a CSV upload variant
+   - Single-student enroll endpoint + dialog landed; CSV upload variant still TODO
+- [] Settings: subscription plans, billing card, danger-zone deletion all render but don't POST anywhere; needs plans/billing tables + endpoints
+- [v] Activity feed only captures course status transitions today; expand `school.activity_log` writes from the upload, invite, and enrollment endpoints so the Overview panel reflects more
+
+*** Still open ***
+
+- [] CSV bulk-enrol endpoint + Students-page CSV upload UI (POST /api/v1/school/{id}/students/csv?lang=ar accepting a CSV with email,name,course_id columns)
+- [] Settings page wiring — needs `school.plans`, `school.billing` tables; endpoints under /api/v1/school/{id}/plans and /billing; danger-zone DELETE /api/v1/school/{id} already exists but is unwired in the UI
+- [] Course detail page (drill-in from the Courses table) — modules / lessons / exercises editor
+- [] Real folder→DB ingestion at upload time (folder_to_db.load_course_from_folder isn't called from /editor/upload yet)
 

@@ -80,7 +80,7 @@ class EditorsPage extends ConsumerWidget {
   }
 }
 
-class _EditorsTable extends StatelessWidget {
+class _EditorsTable extends ConsumerWidget {
   final List<SchoolUser> rows;
   const _EditorsTable({required this.rows});
 
@@ -118,7 +118,7 @@ class _EditorsTable extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return DashTable(
       columns: const [
         DashCol(label: 'Editor', flex: 4),
@@ -154,12 +154,167 @@ class _EditorsTable extends StatelessWidget {
                 swatch: true,
               ),
             ),
-            const Align(
+            Align(
               alignment: Alignment.centerRight,
-              child: RowActionButton(),
+              child: _EditorRowMenu(user: e),
             ),
           ],
       ],
+    );
+  }
+}
+
+/// Three-dot menu for an editor row. Owners can't be suspended or
+/// demoted from the dashboard (would lock the school out of itself),
+/// so the menu hides those entries for them. Server-side PUT/DELETE
+/// don't enforce the same rule — that's a follow-up.
+class _EditorRowMenu extends ConsumerWidget {
+  final SchoolUser user;
+  const _EditorRowMenu({required this.user});
+
+  static const String _kChangeRoleEditor = 'role_editor';
+  static const String _kChangeRoleViewer = 'role_viewer';
+  static const String _kChangeRoleOwner = 'role_owner';
+  static const String _kSuspend = 'suspend';
+  static const String _kActivate = 'activate';
+  static const String _kDelete = 'delete';
+
+  Future<void> _update(
+    BuildContext context,
+    WidgetRef ref, {
+    EditorRoleWire? role,
+    String? status,
+  }) async {
+    final api = ref.read(dashboardApiProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final next = SchoolUser(
+      schoolUserId: user.schoolUserId,
+      schoolId: user.schoolId,
+      name: user.name,
+      email: user.email,
+      role: role ?? user.role,
+      assignedLanguages: user.assignedLanguages,
+      coursesOwned: user.coursesOwned,
+      lastSeenHuman: user.lastSeenHuman,
+      status: status ?? user.status,
+    );
+    try {
+      await api.updateSchoolUser(next);
+      ref.invalidate(schoolUsersProvider);
+      ref.invalidate(schoolStatsProvider);
+      ref.invalidate(activityProvider);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Update failed: $e')));
+    }
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    // Capture the messenger before any await so we don't dereference
+    // a stale BuildContext after the confirm dialog returns.
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: DashColors.darkBg,
+        title: const Text('Remove editor', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Remove ${user.name.isNotEmpty ? user.name : user.email} from the school? This cannot be undone.',
+          style: TextStyle(color: DashColors.w(0.70), fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: DashColors.red400),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(dashboardApiProvider).deleteSchoolUser(user.schoolUserId);
+      ref.invalidate(schoolUsersProvider);
+      ref.invalidate(schoolStatsProvider);
+      ref.invalidate(activityProvider);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final me = ref.watch(currentUserProvider);
+    final isSelf = me?.schoolUserId == user.schoolUserId;
+    final isOwner = user.role == EditorRoleWire.owner;
+    final isActive = user.status == 'active';
+    return PopupMenuButton<String>(
+      tooltip: 'Actions',
+      color: DashColors.darkBg.withValues(alpha: 0.96),
+      onSelected: (key) {
+        switch (key) {
+          case _kChangeRoleEditor:
+            _update(context, ref, role: EditorRoleWire.editor);
+          case _kChangeRoleViewer:
+            _update(context, ref, role: EditorRoleWire.viewer);
+          case _kChangeRoleOwner:
+            _update(context, ref, role: EditorRoleWire.owner);
+          case _kSuspend:
+            _update(context, ref, status: 'suspended');
+          case _kActivate:
+            _update(context, ref, status: 'active');
+          case _kDelete:
+            _delete(context, ref);
+        }
+      },
+      itemBuilder: (context) => [
+        if (user.role != EditorRoleWire.owner) ...[
+          _item(_kChangeRoleOwner, Icons.star_border, 'Promote to Owner'),
+        ],
+        if (user.role != EditorRoleWire.editor)
+          _item(_kChangeRoleEditor, Icons.edit_outlined, 'Make Editor'),
+        if (user.role != EditorRoleWire.viewer)
+          _item(_kChangeRoleViewer, Icons.visibility_outlined, 'Make Viewer'),
+        const PopupMenuDivider(),
+        if (!isOwner && isActive)
+          _item(_kSuspend, Icons.pause_circle_outline, 'Suspend'),
+        if (!isOwner && !isActive)
+          _item(_kActivate, Icons.play_circle_outline, 'Reactivate'),
+        if (!isOwner && !isSelf)
+          _item(_kDelete, Icons.delete_outline, 'Remove',
+              color: DashColors.red400),
+      ],
+      child: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: DashColors.w(0.04),
+          border: Border.all(color: DashColors.w(0.08)),
+        ),
+        child: Icon(Icons.more_horiz, size: 14, color: DashColors.w(0.70)),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _item(String key, IconData icon, String label,
+      {Color? color}) {
+    return PopupMenuItem<String>(
+      value: key,
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color ?? DashColors.w(0.70)),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(color: color ?? Colors.white, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,16 +1,25 @@
+import csv
+import io
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from school.models.school import (
     ActivityRow,
+    BillingMethod,
+    BillingMethodWrite,
+    EnrollStudentRequest,
     LanguageSummary,
+    Plan,
+    PlanFeature,
+    PlanWrite,
     School,
     SchoolCreate,
     SchoolStats,
     StudentRow,
 )
 from school.routes.users import _hash_password
+from school.utils.activity import log_activity
 from utils.db import get_query_results, run_query
 
 router = APIRouter()
@@ -405,3 +414,170 @@ async def get_students(
             status=r.get('status') or 'active',
         ))
     return out
+
+
+async def _upsert_enrollment(
+    *,
+    school_id: int,
+    email: str,
+    name: str,
+    lang: str,
+    course_id: int | None,
+    cohort: str | None,
+) -> int:
+    """Shared find-or-create user + upsert enrollment used by both the
+    single-add endpoint and the bulk CSV endpoint. Returns user_id."""
+    user_rows = await get_query_results(
+        "SELECT user_id FROM user_data.users WHERE email = %s LIMIT 1",
+        (email,),
+    )
+    if user_rows:
+        user_id = user_rows[0]['user_id']
+    else:
+        # email_hash is NOT NULL in user_data.users — use the email as
+        # a placeholder hash for now (real auth flow swaps this).
+        inserted = await get_query_results(
+            """
+            INSERT INTO user_data.users (email_hash, email)
+            VALUES (%s, %s)
+            RETURNING user_id
+            """,
+            (email, email),
+        )
+        if not inserted:
+            raise HTTPException(status_code=500, detail=f"Failed to create user {email}")
+        user_id = inserted[0]['user_id']
+
+    status = 'no_course' if course_id is None else 'active'
+    await run_query(
+        """
+        INSERT INTO school.student_enrollments
+            (school_id, user_id, course_id, lang, cohort, status, last_active)
+        VALUES (%s, %s, %s, %s, %s, %s, now())
+        ON CONFLICT (school_id, user_id, (COALESCE(course_id, 0)))
+        DO UPDATE SET lang = EXCLUDED.lang,
+                      cohort = EXCLUDED.cohort,
+                      status = EXCLUDED.status,
+                      last_active = now()
+        """,
+        (school_id, user_id, course_id, lang, cohort, status),
+    )
+    return user_id
+
+
+@router.post("/{school_id}/students", response_model=StudentRow)
+async def enroll_student(school_id: int, payload: EnrollStudentRequest):
+    """Single-student enrollment from the dashboard's "Add student"
+    dialog. Either reuses an existing user_data.users row (matched by
+    email) or creates a fresh one, then upserts the enrollment.
+    Returns the row in the same shape get_students serves so the
+    dashboard can prepend it to the table without a refetch."""
+    user_id = await _upsert_enrollment(
+        school_id=school_id,
+        email=payload.email,
+        name=payload.name,
+        lang=payload.lang,
+        course_id=payload.course_id,
+        cohort=payload.cohort,
+    )
+    await log_activity(
+        school_id=school_id,
+        kind='students_added',
+        summary=(
+            f"Enrolled {payload.name or payload.email}"
+            f"{' in ' + payload.cohort if payload.cohort else ''}"
+        ),
+    )
+
+    meta = _lang_meta(payload.lang)
+    status = 'no_course' if payload.course_id is None else 'active'
+    return StudentRow(
+        user_id=user_id,
+        name=payload.name or payload.email.split('@')[0],
+        email=payload.email,
+        lang=payload.lang,
+        lang_flag=meta['flag'],
+        lang_name=meta['english'],
+        course='—' if payload.course_id is None else '',
+        course_id=payload.course_id,
+        progress=0.0,
+        last_seen=None,
+        last_seen_human='Just now',
+        status=status,
+    )
+
+
+@router.post("/{school_id}/students/csv")
+async def enroll_students_csv(
+    school_id: int,
+    lang: str,
+    cohort: str | None = None,
+    file: UploadFile = File(...),
+):
+    """Bulk enrollment from a CSV upload. Expected columns (header row
+    required): `email`, `name` (optional), `course_id` (optional).
+    Rows missing an email are skipped. Returns counts so the dashboard
+    can render an inline summary instead of re-fetching the whole
+    roster to figure out what changed."""
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file")
+    # tolerate BOM + Excel-style line endings
+    text = raw.decode('utf-8-sig', errors='replace')
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames or 'email' not in [f.strip().lower() for f in reader.fieldnames]:
+        raise HTTPException(
+            status_code=400,
+            detail="CSV must include an 'email' column",
+        )
+
+    # Normalise field names so callers can use any case.
+    def get(row: dict, key: str) -> str:
+        for k, v in row.items():
+            if k and k.strip().lower() == key:
+                return (v or '').strip()
+        return ''
+
+    added = 0
+    skipped = 0
+    errors: list[str] = []
+    for line_no, row in enumerate(reader, start=2):
+        email = get(row, 'email')
+        if not email or '@' not in email:
+            skipped += 1
+            continue
+        name = get(row, 'name')
+        course_raw = get(row, 'course_id')
+        course_id: int | None = None
+        if course_raw:
+            try:
+                course_id = int(course_raw)
+            except ValueError:
+                errors.append(f"Line {line_no}: invalid course_id '{course_raw}'")
+                continue
+        try:
+            await _upsert_enrollment(
+                school_id=school_id,
+                email=email,
+                name=name,
+                lang=lang,
+                course_id=course_id,
+                cohort=cohort,
+            )
+            added += 1
+        except HTTPException as e:
+            errors.append(f"Line {line_no}: {e.detail}")
+
+    if added > 0:
+        suffix = f" in {cohort}" if cohort else ''
+        await log_activity(
+            school_id=school_id,
+            kind='students_added',
+            summary=f"Added {added} students via CSV upload{suffix}",
+        )
+
+    return {
+        'added': added,
+        'skipped': skipped,
+        'errors': errors,
+    }

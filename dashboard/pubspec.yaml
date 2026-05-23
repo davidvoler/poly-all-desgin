@@ -41,6 +41,10 @@ dependencies:
   # Riverpod for the small auth-state holder. The phone app uses the
   # same package so patterns stay consistent across the two apps.
   flutter_riverpod: ^2.5.1
+  # File picking — used by the Courses upload dropzone (pick a .zip)
+  # and the Export action (pick a save location). Works on web,
+  # desktop, and mobile.
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:

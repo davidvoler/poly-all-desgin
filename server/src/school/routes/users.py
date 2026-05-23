@@ -7,6 +7,7 @@ from school.models.users import (
     SchoolUser,
     SchoolUserCreate,
 )
+from school.utils.activity import log_activity
 from utils.db import get_query_results, run_query
 
 router = APIRouter()
@@ -107,6 +108,22 @@ async def create_school_user(payload: SchoolUserCreate):
     )
     if not inserted:
         raise HTTPException(status_code=500, detail="Failed to create user")
+
+    # Log to the Overview activity feed. Distinguish editor-with-password
+    # ("added") from email-only invites so the feed reads naturally.
+    label = payload.name or payload.email
+    if payload.password:
+        kind = 'editor_added'
+        summary = f"Added {payload.role} {label}"
+    else:
+        kind = 'editor_invite'
+        summary = f"Invited {payload.email} as {payload.role}"
+    await log_activity(
+        school_id=payload.school_id,
+        kind=kind,
+        summary=summary,
+    )
+
     return await get_school_user(inserted[0]['school_user_id'])
 
 
@@ -114,6 +131,13 @@ async def create_school_user(payload: SchoolUserCreate):
 async def update_school_user(school_user_id: int, payload: SchoolUser):
     """Partial update — covers role changes, language reassignment, and
     suspending/reactivating from the Editors page."""
+    # Snapshot the row before mutating so the activity entry can call
+    # out what actually changed (role / status) instead of a generic
+    # "user updated".
+    prev = await get_query_results(
+        "SELECT role, status FROM school.school_users WHERE school_user_id = %s",
+        (school_user_id,),
+    )
     await run_query(
         """
         UPDATE school.school_users
@@ -125,15 +149,49 @@ async def update_school_user(school_user_id: int, payload: SchoolUser):
             payload.status, school_user_id,
         ),
     )
+    if prev:
+        prev_role = prev[0].get('role')
+        prev_status = prev[0].get('status')
+        label = payload.name or payload.email
+        if prev_role != payload.role:
+            await log_activity(
+                school_id=payload.school_id,
+                kind='editor_role_changed',
+                summary=f"{label}: {prev_role} → {payload.role}",
+            )
+        if prev_status != payload.status and payload.status == 'suspended':
+            await log_activity(
+                school_id=payload.school_id,
+                kind='editor_suspended',
+                summary=f"Suspended {label}",
+            )
+        if prev_status != payload.status and payload.status == 'active':
+            await log_activity(
+                school_id=payload.school_id,
+                kind='editor_added',
+                summary=f"Reactivated {label}",
+            )
     return await get_school_user(school_user_id)
 
 
 @router.delete("/{school_user_id}")
 async def delete_school_user(school_user_id: int):
+    # Capture the row so we can log who was removed before deleting it.
+    row = await get_query_results(
+        "SELECT school_id, name, email FROM school.school_users WHERE school_user_id = %s",
+        (school_user_id,),
+    )
     ok = await run_query(
         "DELETE FROM school.school_users WHERE school_user_id = %s",
         (school_user_id,),
     )
+    if ok and row:
+        r = row[0]
+        await log_activity(
+            school_id=r['school_id'],
+            kind='editor_removed',
+            summary=f"Removed {r.get('name') or r.get('email')}",
+        )
     return {"ok": ok}
 
 

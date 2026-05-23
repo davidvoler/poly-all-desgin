@@ -244,6 +244,197 @@ class DashboardApi {
     );
     return SchoolUser.fromJson(res.data ?? const {});
   }
+
+  Future<SchoolUser> updateSchoolUser(SchoolUser u) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      '/api/v1/school_users/${u.schoolUserId}',
+      data: {
+        'school_user_id': u.schoolUserId,
+        'school_id': u.schoolId,
+        'name': u.name,
+        'email': u.email,
+        'role': u.role.name,
+        'assigned_languages': u.assignedLanguages,
+        'courses_owned': u.coursesOwned,
+        'status': u.status,
+      },
+    );
+    return SchoolUser.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteSchoolUser(int schoolUserId) async {
+    await _dio.delete<dynamic>('/api/v1/school_users/$schoolUserId');
+  }
+
+  /// Upload a zipped course archive. `fileBytes` is preferred for web
+  /// (where file_picker returns bytes only); pass `filePath` from
+  /// desktop/mobile to stream from disk.
+  Future<int?> uploadCourse({
+    required int schoolId,
+    int? actorUserId,
+    required String filename,
+    List<int>? fileBytes,
+    String? filePath,
+    String? courseTitle,
+    String lang = 'ar',
+    String toLang = 'en',
+  }) async {
+    final MultipartFile multipart;
+    if (fileBytes != null) {
+      multipart = MultipartFile.fromBytes(fileBytes, filename: filename);
+    } else if (filePath != null) {
+      multipart = await MultipartFile.fromFile(filePath, filename: filename);
+    } else {
+      throw ArgumentError('Either fileBytes or filePath is required');
+    }
+    final form = FormData.fromMap({
+      'school_id': schoolId,
+      'actor_user_id': ?actorUserId,
+      if (courseTitle?.isNotEmpty ?? false) 'course_title': courseTitle,
+      'lang': lang,
+      'to_lang': toLang,
+      'file': multipart,
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/editor/upload/',
+      data: form,
+    );
+    return (res.data?['course_id'] as int?);
+  }
+
+  /// Download a course's zip export. Returns the raw bytes — caller
+  /// is responsible for writing them somewhere the user can find
+  /// (file_picker's saveFile on desktop, a Blob anchor on web).
+  Future<List<int>> exportCourse(int courseId) async {
+    final res = await _dio.get<List<int>>(
+      '/api/v1/editor/export/$courseId',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return res.data ?? const [];
+  }
+
+  Future<void> enrollStudent({
+    required int schoolId,
+    required String email,
+    required String name,
+    required String lang,
+    int? courseId,
+    String? cohort,
+  }) async {
+    await _dio.post<dynamic>(
+      '/api/v1/school/$schoolId/students',
+      data: {
+        'email': email,
+        'name': name,
+        'lang': lang,
+        'course_id': ?courseId,
+        'cohort': ?cohort,
+      },
+    );
+  }
+
+  /// Bulk-enroll from a CSV upload. Returns the {added, skipped,
+  /// errors} summary so the caller can render an inline toast.
+  Future<Map<String, dynamic>> enrollStudentsCsv({
+    required int schoolId,
+    required String lang,
+    String? cohort,
+    required String filename,
+    List<int>? fileBytes,
+    String? filePath,
+  }) async {
+    final MultipartFile multipart;
+    if (fileBytes != null) {
+      multipart = MultipartFile.fromBytes(fileBytes, filename: filename);
+    } else if (filePath != null) {
+      multipart = await MultipartFile.fromFile(filePath, filename: filename);
+    } else {
+      throw ArgumentError('Either fileBytes or filePath is required');
+    }
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/school/$schoolId/students/csv',
+      queryParameters: {
+        'lang': lang,
+        'cohort': ?cohort,
+      },
+      data: FormData.fromMap({'file': multipart}),
+    );
+    return res.data ?? const {};
+  }
+
+  // --- Plans + billing (Settings page) ------------------------------
+
+  Future<List<Map<String, dynamic>>> fetchPlans(int schoolId) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/school/$schoolId/plans',
+    );
+    return (res.data ?? const []).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> upsertPlan({
+    required int schoolId,
+    int? planId,
+    required String tier,
+    required int priceCents,
+    String cadence = 'monthly',
+    String? blurb,
+    bool featured = false,
+    required List<Map<String, dynamic>> features,
+  }) async {
+    final body = {
+      'tier': tier,
+      'price_cents': priceCents,
+      'cadence': cadence,
+      'blurb': ?blurb,
+      'featured': featured,
+      'features': features,
+    };
+    final res = planId == null
+        ? await _dio.post<Map<String, dynamic>>(
+            '/api/v1/school/$schoolId/plans',
+            data: body,
+          )
+        : await _dio.put<Map<String, dynamic>>(
+            '/api/v1/school/$schoolId/plans/$planId',
+            data: body,
+          );
+    return res.data ?? const {};
+  }
+
+  Future<void> deletePlan({required int schoolId, required int planId}) async {
+    await _dio.delete<dynamic>('/api/v1/school/$schoolId/plans/$planId');
+  }
+
+  Future<Map<String, dynamic>?> fetchBilling(int schoolId) async {
+    final res = await _dio.get<dynamic>(
+      '/api/v1/school/$schoolId/billing',
+    );
+    final data = res.data;
+    if (data is Map) return data.cast<String, dynamic>();
+    return null;
+  }
+
+  Future<void> upsertBilling({
+    required int schoolId,
+    required String brand,
+    required String last4,
+    required int expMonth,
+    required int expYear,
+  }) async {
+    await _dio.put<dynamic>(
+      '/api/v1/school/$schoolId/billing',
+      data: {
+        'brand': brand,
+        'last4': last4,
+        'exp_month': expMonth,
+        'exp_year': expYear,
+      },
+    );
+  }
+
+  Future<void> deleteSchool(int schoolId) async {
+    await _dio.delete<dynamic>('/api/v1/school/$schoolId');
+  }
 }
 
 final dashboardApiProvider = Provider<DashboardApi>((ref) {

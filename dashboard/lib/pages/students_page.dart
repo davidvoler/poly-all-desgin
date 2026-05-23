@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,11 +34,7 @@ class _StudentsPageState extends ConsumerState<StudentsPage> {
       title: 'Students',
       activeRoute: '/students',
       topbarTrailing: [
-        PrimaryButton(
-          label: 'Add students',
-          leading: Icons.add,
-          onTap: () {},
-        ),
+        _AddStudentsMenu(taughtLanguages: teaching),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -242,6 +239,428 @@ class _StudentsTable extends StatelessWidget {
               child: RowActionButton(),
             ),
           ],
+      ],
+    );
+  }
+}
+
+/// Split CTA in the Students topbar — primary tap opens the single-add
+/// dialog; the chevron opens a small menu with the bulk CSV option.
+/// Sharing one button keeps both flows discoverable without cluttering
+/// the topbar.
+class _AddStudentsMenu extends ConsumerWidget {
+  final List<LanguageSummary> taughtLanguages;
+  const _AddStudentsMenu({required this.taughtLanguages});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<String>(
+      tooltip: 'Add students',
+      color: DashColors.darkBg.withValues(alpha: 0.96),
+      onSelected: (key) {
+        if (key == 'single') {
+          _showAddStudentDialog(context, ref, taughtLanguages);
+        } else if (key == 'csv') {
+          _pickAndUploadCsv(context, ref, taughtLanguages);
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'single',
+          child: Row(
+            children: [
+              Icon(Icons.person_add_alt,
+                  size: 14, color: DashColors.w(0.70)),
+              const SizedBox(width: 10),
+              const Text(
+                'Add one student',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'csv',
+          child: Row(
+            children: [
+              Icon(Icons.upload_file,
+                  size: 14, color: DashColors.w(0.70)),
+              const SizedBox(width: 10),
+              const Text(
+                'Upload CSV',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: const IgnorePointer(
+        child: PrimaryButton(
+          label: 'Add students',
+          leading: Icons.add,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showAddStudentDialog(
+  BuildContext context,
+  WidgetRef ref,
+  List<LanguageSummary> taughtLanguages,
+) async {
+  final me = ref.read(currentUserProvider);
+  if (me == null) return;
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => _AddStudentDialog(
+      schoolId: me.schoolId,
+      taughtLanguages: taughtLanguages,
+    ),
+  );
+}
+
+/// CSV upload helper: picks a CSV, asks the user which language to
+/// enroll the file under, POSTs as multipart, and surfaces the
+/// {added, skipped, errors} summary in a snackbar. The language ask
+/// is a quick chip picker rather than a full dialog since the cohort
+/// can be embedded in the CSV later.
+Future<void> _pickAndUploadCsv(
+  BuildContext context,
+  WidgetRef ref,
+  List<LanguageSummary> taughtLanguages,
+) async {
+  final me = ref.read(currentUserProvider);
+  if (me == null || taughtLanguages.isEmpty) return;
+  final messenger = ScaffoldMessenger.of(context);
+
+  // Ask which language up front — keeps every `context` reference
+  // before any async gap, so we don't have to track `mounted`.
+  final lang = await showDialog<String>(
+    context: context,
+    builder: (ctx) => _CsvLangPicker(taughtLanguages: taughtLanguages),
+  );
+  if (lang == null) return;
+
+  final picked = await FilePicker.platform.pickFiles(
+    dialogTitle: 'Pick a CSV — columns: email, name, course_id',
+    type: FileType.custom,
+    allowedExtensions: ['csv'],
+    withData: true,
+  );
+  if (picked == null || picked.files.isEmpty) return;
+  final file = picked.files.first;
+
+  messenger.showSnackBar(SnackBar(
+    content: Text('Uploading ${file.name}…'),
+    duration: const Duration(seconds: 60),
+  ));
+  try {
+    final summary = await ref.read(dashboardApiProvider).enrollStudentsCsv(
+          schoolId: me.schoolId,
+          lang: lang,
+          filename: file.name,
+          fileBytes: file.bytes,
+          filePath: file.path,
+        );
+    ref.invalidate(studentsProvider);
+    ref.invalidate(schoolStatsProvider);
+    ref.invalidate(activityProvider);
+    final added = summary['added'] ?? 0;
+    final skipped = summary['skipped'] ?? 0;
+    final errors = (summary['errors'] as List?) ?? const [];
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(
+          'Enrolled $added · skipped $skipped'
+          '${errors.isEmpty ? '' : ' · ${errors.length} errors'}',
+        ),
+        duration: const Duration(seconds: 4),
+      ));
+  } catch (e) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+  }
+}
+
+class _CsvLangPicker extends StatelessWidget {
+  final List<LanguageSummary> taughtLanguages;
+  const _CsvLangPicker({required this.taughtLanguages});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: GlassCard(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Enroll under which language?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Applies to every row in the CSV. Per-row overrides land in the next pass.',
+                style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+              ),
+              const SizedBox(height: 14),
+              for (final l in taughtLanguages)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GhostButton(
+                    label: '${l.flag}  ${l.english}',
+                    onTap: () => Navigator.of(context).pop(l.lang),
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: DashColors.w(0.70),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddStudentDialog extends ConsumerStatefulWidget {
+  final int schoolId;
+  final List<LanguageSummary> taughtLanguages;
+  const _AddStudentDialog({
+    required this.schoolId,
+    required this.taughtLanguages,
+  });
+
+  @override
+  ConsumerState<_AddStudentDialog> createState() => _AddStudentDialogState();
+}
+
+class _AddStudentDialogState extends ConsumerState<_AddStudentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _cohort = TextEditingController();
+  String? _lang;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Default to the first taught language so the user can submit
+    // without an extra tap.
+    if (widget.taughtLanguages.isNotEmpty) {
+      _lang = widget.taughtLanguages.first.lang;
+    }
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    _cohort.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate() || _lang == null) {
+      if (_lang == null) {
+        setState(() => _error = 'Pick a language');
+      }
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(dashboardApiProvider).enrollStudent(
+            schoolId: widget.schoolId,
+            email: _email.text.trim(),
+            name: _name.text.trim(),
+            lang: _lang!,
+            cohort:
+                _cohort.text.trim().isEmpty ? null : _cohort.text.trim(),
+          );
+      // Refresh every roster filter combination — invalidate the
+      // family root so all keyed instances refetch.
+      ref.invalidate(studentsProvider);
+      ref.invalidate(schoolStatsProvider);
+      ref.invalidate(activityProvider);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      setState(() {
+        _error = 'Could not enroll: $e';
+        _busy = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: GlassCard(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: Form(
+            key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Add student',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _DialogField(
+                  controller: _name,
+                  label: 'Name',
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 10),
+                _DialogField(
+                  controller: _email,
+                  label: 'Email',
+                  validator: (v) =>
+                      (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                ),
+                const SizedBox(height: 10),
+                Text('LANGUAGE', style: DashText.sectionLabel(size: 10)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final l in widget.taughtLanguages)
+                      ChoiceChip(
+                        label: Text('${l.flag} ${l.english}',
+                            style: const TextStyle(fontSize: 11)),
+                        selected: _lang == l.lang,
+                        onSelected: (_) => setState(() => _lang = l.lang),
+                        selectedColor: DashColors.brand,
+                        backgroundColor: DashColors.w(0.06),
+                        labelStyle: TextStyle(
+                          color: _lang == l.lang
+                              ? Colors.white
+                              : DashColors.w(0.70),
+                        ),
+                        side: BorderSide(color: DashColors.w(0.14)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                _DialogField(
+                  controller: _cohort,
+                  label: 'Cohort (optional)',
+                  validator: (_) => null,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: TextStyle(fontSize: 12, color: DashColors.red400),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed:
+                          _busy ? null : () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: DashColors.w(0.70),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    PrimaryButton(
+                      label: _busy ? 'Saving…' : 'Add student',
+                      leading: Icons.person_add_alt,
+                      onTap: _busy ? null : _submit,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final FormFieldValidator<String>? validator;
+  const _DialogField({
+    required this.controller,
+    required this.label,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(), style: DashText.sectionLabel(size: 10)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          style: const TextStyle(fontSize: 13, color: Colors.white),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: DashColors.w(0.04),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide:
+                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+            ),
+          ),
+        ),
       ],
     );
   }

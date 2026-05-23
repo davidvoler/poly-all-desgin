@@ -1,9 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../util/download.dart';
 import '../widgets/common.dart';
 import '../widgets/data_table.dart';
 import '../widgets/shell.dart';
@@ -39,11 +41,11 @@ const Map<CourseStatusWire, String> kStatusLabel = {
   CourseStatusWire.archived: 'Archive',
 };
 
-class CoursesPage extends StatelessWidget {
+class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return DashboardShell(
       title: 'Courses',
       activeRoute: '/courses',
@@ -51,23 +53,74 @@ class CoursesPage extends StatelessWidget {
         PrimaryButton(
           label: 'Upload course',
           leading: Icons.file_upload_outlined,
-          onTap: () {},
+          onTap: () => _pickAndUpload(context, ref),
         ),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: const [
-          _Dropzone(),
-          SizedBox(height: 18),
-          _CoursesPanel(),
+        children: [
+          _Dropzone(onBrowse: () => _pickAndUpload(context, ref)),
+          const SizedBox(height: 18),
+          const _CoursesPanel(),
         ],
       ),
     );
   }
 }
 
+/// Picks a .zip, POSTs it to /api/v1/editor/upload/, then invalidates
+/// the courses + activity providers so the table and Overview feed
+/// pick up the new row. Shared by the topbar CTA and the dropzone.
+Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
+  final me = ref.read(currentUserProvider);
+  if (me == null) return;
+  final messenger = ScaffoldMessenger.of(context);
+
+  final result = await FilePicker.platform.pickFiles(
+    dialogTitle: 'Pick a course .zip',
+    type: FileType.custom,
+    allowedExtensions: ['zip'],
+    withData: true,
+  );
+  if (result == null || result.files.isEmpty) return;
+  final picked = result.files.first;
+
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text('Uploading ${picked.name}…'),
+      duration: const Duration(seconds: 60),
+    ),
+  );
+  try {
+    final courseId = await ref.read(dashboardApiProvider).uploadCourse(
+          schoolId: me.schoolId,
+          actorUserId: me.schoolUserId,
+          filename: picked.name,
+          fileBytes: picked.bytes,
+          filePath: picked.path,
+        );
+    ref.invalidate(editorCoursesProvider);
+    ref.invalidate(activityProvider);
+    ref.invalidate(schoolStatsProvider);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(courseId == null
+              ? 'Upload succeeded'
+              : 'Uploaded — created course #$courseId'),
+        ),
+      );
+  } catch (e) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+  }
+}
+
 class _Dropzone extends StatelessWidget {
-  const _Dropzone();
+  final VoidCallback onBrowse;
+  const _Dropzone({required this.onBrowse});
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +171,7 @@ class _Dropzone extends StatelessWidget {
           PrimaryButton(
             label: 'Browse files',
             leading: Icons.file_upload_outlined,
-            onTap: () {},
+            onTap: onBrowse,
           ),
         ],
       ),
@@ -338,9 +391,10 @@ class _CoursesTable extends ConsumerWidget {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: _StatusMenu(
+              child: _RowMenu(
                 current: c.status,
-                onPick: (next) => _setStatus(context, ref, c, next),
+                onStatus: (next) => _setStatus(context, ref, c, next),
+                onExport: () => _exportCourse(context, ref, c),
               ),
             ),
           ],
@@ -349,37 +403,100 @@ class _CoursesTable extends ConsumerWidget {
   }
 }
 
-/// Three-dot menu listing only server-legal transitions.
-class _StatusMenu extends StatelessWidget {
+/// Pulls the course's zip from the server and hands the bytes to
+/// download.dart's `saveBytes`, which forks to Blob on web / saveFile
+/// on desktop. Shows a snackbar with the filename on success.
+Future<void> _exportCourse(
+  BuildContext context,
+  WidgetRef ref,
+  EditorCourse course,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showSnackBar(SnackBar(
+    content: Text('Exporting ${course.title}…'),
+    duration: const Duration(seconds: 30),
+  ));
+  try {
+    final bytes = await ref.read(dashboardApiProvider).exportCourse(course.courseId);
+    final filename = 'course_${course.courseId}.zip';
+    final saved = await saveBytes(filename: filename, bytes: bytes);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(saved == null
+            ? 'Export cancelled'
+            : 'Saved $filename'),
+      ));
+  } catch (e) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('Export failed: $e')));
+  }
+}
+
+/// Three-dot row menu — server-legal status transitions plus the
+/// always-available "Export as .zip" action. Sentinel "export" key
+/// distinguishes the export entry from status enum values inside the
+/// single `PopupMenuButton<String>`.
+class _RowMenu extends StatelessWidget {
   final CourseStatusWire current;
-  final ValueChanged<CourseStatusWire> onPick;
-  const _StatusMenu({required this.current, required this.onPick});
+  final ValueChanged<CourseStatusWire> onStatus;
+  final VoidCallback onExport;
+  const _RowMenu({
+    required this.current,
+    required this.onStatus,
+    required this.onExport,
+  });
+
+  static const String _kExport = 'export';
 
   @override
   Widget build(BuildContext context) {
     final allowed = kAllowedTransitions[current] ?? const <CourseStatusWire>{};
-    return PopupMenuButton<CourseStatusWire>(
-      tooltip: 'Status',
-      onSelected: onPick,
+    return PopupMenuButton<String>(
+      tooltip: 'Actions',
+      onSelected: (key) {
+        if (key == _kExport) {
+          onExport();
+          return;
+        }
+        for (final s in CourseStatusWire.values) {
+          if (s.name == key) {
+            onStatus(s);
+            return;
+          }
+        }
+      },
       color: DashColors.darkBg.withValues(alpha: 0.96),
       itemBuilder: (context) => [
         for (final s in allowed)
-          PopupMenuItem<CourseStatusWire>(
-            value: s,
+          PopupMenuItem<String>(
+            value: s.name,
             child: Row(
               children: [
                 _statusDot(s),
                 const SizedBox(width: 10),
                 Text(
                   kStatusLabel[s]!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ],
             ),
           ),
+        if (allowed.isNotEmpty) const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: _kExport,
+          child: Row(
+            children: [
+              Icon(Icons.download, size: 14, color: DashColors.w(0.70)),
+              const SizedBox(width: 10),
+              const Text(
+                'Export as .zip',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
       ],
       child: Container(
         width: 28,

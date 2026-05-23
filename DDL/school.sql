@@ -135,6 +135,63 @@ CREATE INDEX IF NOT EXISTS activity_log_school_idx
     ON school.activity_log (school_id, created_at DESC);
 
 -- -------------------------------------------------------------
+-- school.plans + school.plan_features — Subscription plans section
+-- on Settings. plan_features is a per-row feature list ("Audio
+-- downloads", "1:1 sessions", etc.) with an `included` flag that
+-- drives the green check / grey dash in the UI.
+-- -------------------------------------------------------------
+DROP TABLE IF EXISTS school.plan_features CASCADE;
+DROP TABLE IF EXISTS school.plans CASCADE;
+
+CREATE TABLE school.plans (
+    plan_id      serial4 PRIMARY KEY,
+    school_id    int4         NOT NULL,
+    tier         varchar(40)  NOT NULL,
+    price_cents  int4         NOT NULL DEFAULT 0,
+    cadence      varchar(20)  NOT NULL DEFAULT 'monthly',  -- monthly | yearly
+    blurb        text         NULL,
+    featured     bool         NOT NULL DEFAULT false,
+    weight       int4         NOT NULL DEFAULT 0,
+    created_at   timestamp    NOT NULL DEFAULT now(),
+    CONSTRAINT plans_cadence_chk CHECK (cadence IN ('monthly','yearly'))
+);
+CREATE INDEX IF NOT EXISTS plans_school_idx ON school.plans (school_id, weight);
+
+CREATE TABLE school.plan_features (
+    plan_feature_id  serial4 PRIMARY KEY,
+    plan_id          int4         NOT NULL,
+    label            text         NOT NULL,
+    included         bool         NOT NULL DEFAULT true,
+    weight           int4         NOT NULL DEFAULT 0,
+    CONSTRAINT plan_features_plan_fk
+        FOREIGN KEY (plan_id) REFERENCES school.plans(plan_id) ON DELETE CASCADE,
+    CONSTRAINT plan_features_uq UNIQUE (plan_id, label)
+);
+CREATE INDEX IF NOT EXISTS plan_features_plan_idx
+    ON school.plan_features (plan_id, weight);
+
+-- -------------------------------------------------------------
+-- school.billing_methods — payment card shown on Settings → Billing.
+-- One "primary" row per school for now; the schema allows additional
+-- rows so adding a second card later is just a flag flip.
+-- -------------------------------------------------------------
+DROP TABLE IF EXISTS school.billing_methods CASCADE;
+CREATE TABLE school.billing_methods (
+    billing_method_id  serial4 PRIMARY KEY,
+    school_id          int4         NOT NULL,
+    brand              varchar(40)  NOT NULL DEFAULT 'Card',
+    last4              varchar(4)   NOT NULL,
+    exp_month          int2         NOT NULL,
+    exp_year           int4         NOT NULL,
+    is_primary         bool         NOT NULL DEFAULT true,
+    created_at         timestamp    NOT NULL DEFAULT now(),
+    updated_at         timestamp    NOT NULL DEFAULT now(),
+    CONSTRAINT billing_exp_month_chk CHECK (exp_month BETWEEN 1 AND 12)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS billing_primary_uq
+    ON school.billing_methods (school_id) WHERE is_primary;
+
+-- -------------------------------------------------------------
 -- course_simple.course — review workflow column.
 -- Courses move draft → review → published. The Editors dashboard lists
 -- everything; the public Polyglots app only serves status='published'.
