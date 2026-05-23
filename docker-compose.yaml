@@ -1,42 +1,44 @@
  services:
-  # postgres:
-  #   container_name: postgres
-  #   image: postgres:17.4
-  #   ports:
-  #     - 5432:5432
-  #   environment:
-  #     POSTGRES_USER: polyglots
-  #     POSTGRES_PASSWORD: polyglots
-  #     POSTGRES_DB: polyglots
-  #     shared_buffers: 4GB 
-  #   volumes:
-  #     - ./data/postgres:/var/lib/postgresql/data
-  #   shm_size: 4GB
+  postgres:
+    container_name: postgres
+    image: postgres:17.4
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 4GB 
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    shm_size: 4GB
   
-  # server:
-  #   container_name: server
-  #   image: server:polyglots
-  #   build:
-  #     context: server
-  #     dockerfile: Dockerfile.dev
-  #   ports:
-  #     - 8004:8004
-  #   volumes:
-  #     - ./server/src:/app
-  #   environment:
-  #     - POSTGRES_DB=polyglots
-  #     - POSTGRES_PORT=5432
-  #     - POSTGRES_HOST=postgres1
-  #     - POSTGRES_USER=polyglots
-  #     - POSTGRES_PASSWORD=polyglots
-  #   command: 
-  #     - uvicorn
-  #     - main:app
-  #     - --host
-  #     - 0.0.0.0
-  #     - --port
-  #     - "8004"
-  #     - --reload
+  server:
+    container_name: server
+    image: server:polyglots
+    build:
+      context: server
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8004:8004
+    volumes:
+      - ./server/src:/app
+    environment:
+      - POSTGRES_DB=polyglots
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=polyglots
+      - POSTGRES_PASSWORD=polyglots
+    command: 
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8004"
+      - --reload
+    depends_on:
+      - postgres
 
 
 
