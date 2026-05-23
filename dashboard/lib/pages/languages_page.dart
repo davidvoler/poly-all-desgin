@@ -80,8 +80,12 @@ class _LangTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       padding: const EdgeInsets.all(18),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 170),
+      // Fixed height (rather than just min-height) so the inner [Spacer]
+      // resolves. Wrap doesn't bound child height, so a min-only
+      // constraint would leave the column unbounded — Spacer would then
+      // hit a `hasBoundedHeight` assertion.
+      child: SizedBox(
+        height: 170,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
