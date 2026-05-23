@@ -1,7 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/dashboard_api.dart';
 import '../data/mock.dart';
 import '../theme.dart';
 import 'common.dart';
@@ -259,28 +261,41 @@ class _NavRow extends StatelessWidget {
   }
 }
 
-class _SidebarFooter extends StatelessWidget {
+class _SidebarFooter extends ConsumerWidget {
   const _SidebarFooter();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Prefer the signed-in user; fall back to mock data for designs/tests.
+    final me = ref.watch(currentUserProvider);
+    final initials = me?.initials ?? MockData.me.initials;
+    final name = me?.name.isNotEmpty == true ? me!.name : MockData.me.name;
     return Row(
       children: [
-        LetterAvatar(label: MockData.me.initials, gradientKey: 'lh', size: 28),
+        LetterAvatar(label: initials, gradientKey: 'lh', size: 28),
         const SizedBox(width: 10),
-        Text(
-          MockData.me.name,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+        Expanded(
+          child: Text(
+            name,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ),
-        const Spacer(),
         Tooltip(
           message: 'Sign out',
-          child: Icon(Icons.north_east,
-              size: 14, color: DashColors.w(0.55)),
+          child: InkWell(
+            onTap: () => ref.read(authProvider.notifier).signOut(),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.north_east,
+                  size: 14, color: DashColors.w(0.55)),
+            ),
+          ),
         ),
       ],
     );
