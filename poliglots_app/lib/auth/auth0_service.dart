@@ -47,7 +47,19 @@ class Auth0Service {
       // Kick off the one-shot client init lazily. Subsequent calls
       // hit the cached future so onLoad runs exactly once even if
       // restore + signIn race.
-      _webOnLoad ??= _web!.onLoad();
+      //
+      // If onLoad errors (bad audience / wrong redirect URI / network
+      // hiccup), drop the cached future so the next attempt retries
+      // a fresh init instead of replaying the same failure forever.
+      if (_webOnLoad == null) {
+        final f = _web!.onLoad();
+        _webOnLoad = f;
+        f.catchError((Object e, StackTrace st) {
+          debugPrint('Auth0Web.onLoad() failed: $e\n$st');
+          _webOnLoad = null;
+          throw e;
+        });
+      }
     } else {
       _native ??= Auth0(domain, clientId);
     }
@@ -64,6 +76,10 @@ class Auth0Service {
   ///   • `Username-Password-Authentication` — Auth0 DB connection
   /// Leave null to show Auth0's full universal-login UI.
   Future<String?> signIn({String? connection}) async {
+    debugPrint('Auth0Service.signIn(connection=$connection) — domain='
+        '${AppConfig.auth0Domain} client_id=${AppConfig.auth0ClientId} '
+        'redirect=${AppConfig.auth0RedirectUri} provider='
+        '${AppConfig.authProvider}');
     await _ensureInit();
     final audience = AppConfig.auth0Audience;
     final redirect = AppConfig.auth0RedirectUri;
@@ -75,18 +91,22 @@ class Auth0Service {
       // Make sure the underlying SPA client is fully initialized
       // before loginWithRedirect — otherwise the SDK throws
       // "AuthClient has not been initialized".
+      debugPrint('Auth0Service: awaiting onLoad…');
       final existing = await _webOnLoad;
+      debugPrint('Auth0Service: onLoad done; existing=${existing != null}');
       if (existing != null) {
         // User is already signed in (e.g. came back from a successful
         // redirect that the restore path didn't pick up). Return the
         // existing token rather than triggering another redirect.
         return existing.idToken;
       }
+      debugPrint('Auth0Service: calling loginWithRedirect…');
       await _web!.loginWithRedirect(
         redirectUrl: redirect.isEmpty ? null : redirect,
         audience: audience.isEmpty ? null : audience,
         parameters: parameters,
       );
+      debugPrint('Auth0Service: loginWithRedirect returned (should be navigating)');
       return null;
     }
     final creds = await _native!.webAuthentication().login(

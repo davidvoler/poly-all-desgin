@@ -45,10 +45,19 @@ class Auth0Service {
     }
     if (kIsWeb) {
       _web ??= Auth0Web(domain, clientId);
-      // Kick off the one-shot client init lazily. Subsequent calls
-      // hit the cached future so onLoad runs exactly once even if
-      // restore + signIn race.
-      _webOnLoad ??= _web!.onLoad();
+      // Kick off the one-shot client init lazily. If onLoad errors
+      // (bad audience, redirect-URI mismatch, network hiccup), drop
+      // the cached future so the next attempt retries fresh instead
+      // of replaying the same failure forever.
+      if (_webOnLoad == null) {
+        final f = _web!.onLoad();
+        _webOnLoad = f;
+        f.catchError((Object e, StackTrace st) {
+          debugPrint('Auth0Web.onLoad() failed: $e\n$st');
+          _webOnLoad = null;
+          throw e;
+        });
+      }
     } else {
       _native ??= Auth0(domain, clientId);
     }
