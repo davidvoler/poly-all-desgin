@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api/courses_api.dart';
 import 'api/models.dart';
+import 'config/app_config.dart';
 import 'i18n/translations.g.dart';
 import 'pages/annotated_page.dart';
 import 'pages/course_page.dart';
@@ -15,8 +16,9 @@ import 'pages/words_page.dart';
 import 'state/lang.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppConfig.load();
   // Pick the device locale, fall back to base (en) if unsupported.
   LocaleSettings.useDeviceLocale();
   runApp(

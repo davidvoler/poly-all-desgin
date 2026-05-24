@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../auth/auth0_service.dart';
+import '../config/app_config.dart';
 import 'models.dart';
 
 /// Key under which the signed-in [LoginInfo] is cached in
@@ -18,23 +20,14 @@ const String _kAuthCacheKey = 'poly_dashboard_auth_v1';
 /// plumbing.
 const String _kAuthHeader = 'X-School-User-Id';
 
-/// Base URL for the Polyglots backend. Override at compile-time with
-///
-///     flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8004
-///
-/// Defaults to localhost so a fresh `flutter run` against the dev
-/// `docker compose up` Just Works.
-const String _kBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8004',
-);
-
 /// Shared Dio instance. Pulled from a Provider so widget tests can
-/// `overrideWith` a mock client.
+/// `overrideWith` a mock client. Base URL is sourced from
+/// [AppConfig.apiBaseUrl] which reads `assets/.env` with a
+/// `--dart-define=API_BASE_URL=…` override for CI/CD.
 final dioProvider = Provider<Dio>((ref) {
   return Dio(
     BaseOptions(
-      baseUrl: _kBaseUrl,
+      baseUrl: AppConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 15),
       responseType: ResponseType.json,
@@ -112,6 +105,24 @@ class DashboardApi {
       data: {
         'email': email,
         'password': password,
+        if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
+      },
+    );
+    return LoginInfo.fromJson(res.data ?? const {});
+  }
+
+  /// Exchange an Auth0 ID token for a [LoginInfo]. The server verifies
+  /// the token against the configured Auth0 JWKS, matches the
+  /// `email` claim to an existing school_users row, and returns the
+  /// same shape as the password-login route.
+  Future<LoginInfo> loginWithAuth0({
+    required String idToken,
+    String? schoolSlug,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/school_users/login_auth0',
+      data: {
+        'id_token': idToken,
         if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
       },
     );
@@ -621,6 +632,28 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _restore() async {
     try {
+      // Web + Auth0: the redirect callback drops the user back here
+      // with the auth result in the URL. Finish that handshake first
+      // so a returning Auth0 user lands signed in, not on the login
+      // page with their cached session.
+      if (AppConfig.isAuth0Enabled) {
+        try {
+          final idToken = await Auth0Service.instance.restoreWebSession();
+          if (idToken != null && idToken.isNotEmpty) {
+            final info = await ref
+                .read(dashboardApiProvider)
+                .loginWithAuth0(idToken: idToken);
+            await _persist(info);
+            _setAuthHeader(info.schoolUserId);
+            state = AuthSignedIn(info);
+            return;
+          }
+        } catch (_) {
+          // Fall through to the cached-session path — the user can
+          // still sign in via the form (or retry Auth0).
+        }
+      }
+
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_kAuthCacheKey);
       if (raw == null || raw.isEmpty) {
@@ -690,11 +723,50 @@ class AuthNotifier extends Notifier<AuthState> {
     state = AuthSignedIn(info);
   }
 
+  /// Universal-login flow against Auth0. Opens the Auth0 hosted login
+  /// page, grabs the ID token, and exchanges it for a [LoginInfo] via
+  /// the server's `/login_auth0` route. The local password form stays
+  /// available when `AUTH_PROVIDER=both`, so an Auth0 hiccup never
+  /// locks an admin out of the dashboard.
+  Future<void> signInWithAuth0({String? schoolSlug}) async {
+    state = const AuthSigningIn();
+    try {
+      final idToken = await Auth0Service.instance.signIn();
+      if (idToken == null || idToken.isEmpty) {
+        state = const AuthSignedOut(error: 'Auth0 returned no ID token.');
+        return;
+      }
+      final info = await ref.read(dashboardApiProvider).loginWithAuth0(
+            idToken: idToken,
+            schoolSlug: schoolSlug,
+          );
+      await _persist(info);
+      _setAuthHeader(info.schoolUserId);
+      state = AuthSignedIn(info);
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map
+          ? (e.response!.data as Map)['detail']
+          : null;
+      state = AuthSignedOut(
+          error: (detail as String?) ?? 'Could not sign in with Auth0.');
+    } catch (e) {
+      state = AuthSignedOut(error: 'Auth0 sign-in failed: $e');
+    }
+  }
+
   Future<void> signOut() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_kAuthCacheKey);
     } catch (_) {/* keep going even if storage flakes */}
+    // Best-effort Auth0 logout so the Auth0 hosted session doesn't
+    // silently sign the user back in on the next visit. No-op when
+    // Auth0 isn't configured.
+    if (AppConfig.isAuth0Enabled) {
+      try {
+        await Auth0Service.instance.signOut();
+      } catch (_) {/* keep going even if Auth0 endpoint is offline */}
+    }
     _clearAuthHeader();
     state = const AuthSignedOut();
   }

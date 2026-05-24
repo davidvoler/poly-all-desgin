@@ -1,43 +1,27 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/app_config.dart';
 import '../state/lang.dart';
 import 'models.dart';
 
-/// Base URL for the Polyglots API. Override at compile-time via
-///
-///     flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8004
-///
-/// Common values:
-///   • iOS Simulator / macOS desktop : http://127.0.0.1:8004  (default)
-///   • Android Emulator              : http://10.0.2.2:8004
-///   • Real phone on same Wi-Fi      : `http://<your-mac-LAN-ip>:8004`
-const String _kBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8004',
-);
-
-/// Base URL for exercise audio (served by the nginx audio container).
-/// Override with `--dart-define=AUDIO_BASE_URL=…`. Exercise `audio`
-/// paths are absolute (e.g. `/ar/ara/x.mp3`) so they append directly.
-const String _kAudioBaseUrl = String.fromEnvironment(
-  'AUDIO_BASE_URL',
-  defaultValue: 'http://127.0.0.1:3002/audio',
-);
-
 /// Full URL for an exercise's `audio` path, or `null` when empty.
+/// Exercise `audio` values are absolute (e.g. `/ar/ara/x.mp3`) so they
+/// append directly to [AppConfig.audioBaseUrl].
 String? audioUrl(String audioPath) {
   if (audioPath.isEmpty) return null;
   final sep = audioPath.startsWith('/') ? '' : '/';
-  return '$_kAudioBaseUrl$sep$audioPath';
+  return '${AppConfig.audioBaseUrl}$sep$audioPath';
 }
 
 /// Single shared Dio instance for the app. Kept as a Provider so tests
-/// can `overrideWith` a mock client.
+/// can `overrideWith` a mock client. Base URL is sourced from
+/// [AppConfig.apiBaseUrl] which reads `assets/.env` with a
+/// `--dart-define=API_BASE_URL=…` override for CI/CD.
 final dioProvider = Provider<Dio>((ref) {
   return Dio(
     BaseOptions(
-      baseUrl: _kBaseUrl,
+      baseUrl: AppConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 10),
       responseType: ResponseType.json,

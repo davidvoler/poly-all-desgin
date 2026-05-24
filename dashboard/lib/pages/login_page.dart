@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
+import '../config/app_config.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
@@ -41,11 +42,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
   }
 
+  Future<void> _submitAuth0() async {
+    final slug = _schoolSlug.text.trim();
+    await ref
+        .read(authProvider.notifier)
+        .signInWithAuth0(schoolSlug: slug.isEmpty ? null : slug);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final isLoading = auth is AuthSigningIn;
     final error = auth is AuthSignedOut ? auth.error : null;
+    // Render the password form when local auth is on (the default, and
+    // anything other than pure `AUTH_PROVIDER=auth0`). Render the Auth0
+    // button when Auth0 is configured. When both are on we show a small
+    // divider between them.
+    final showLocal = AppConfig.isLocalAuthEnabled;
+    final showAuth0 = AppConfig.isAuth0Enabled;
 
     return Scaffold(
       body: Container(
@@ -88,45 +102,48 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            _LoginField(
-                              controller: _email,
-                              label: 'Email',
-                              hint: 'you@school.edu',
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return 'Required';
-                                }
-                                if (!v.contains('@')) return 'Invalid email';
-                                return null;
-                              },
-                              onSubmitted: (_) => _submit(),
-                            ),
-                            const SizedBox(height: 12),
-                            _LoginField(
-                              controller: _password,
-                              label: 'Password',
-                              hint: 'Your password',
-                              obscureText: !_showPassword,
-                              autofillHints: const [AutofillHints.password],
-                              suffix: IconButton(
-                                tooltip: _showPassword ? 'Hide' : 'Show',
-                                icon: Icon(
-                                  _showPassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  size: 16,
-                                  color: DashColors.w(0.55),
-                                ),
-                                onPressed: () => setState(
-                                    () => _showPassword = !_showPassword),
+                            if (showLocal) ...[
+                              _LoginField(
+                                controller: _email,
+                                label: 'Email',
+                                hint: 'you@school.edu',
+                                keyboardType: TextInputType.emailAddress,
+                                autofillHints: const [AutofillHints.email],
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) {
+                                    return 'Required';
+                                  }
+                                  if (!v.contains('@')) return 'Invalid email';
+                                  return null;
+                                },
+                                onSubmitted: (_) => _submit(),
                               ),
-                              validator: (v) =>
-                                  (v == null || v.isEmpty) ? 'Required' : null,
-                              onSubmitted: (_) => _submit(),
-                            ),
-                            const SizedBox(height: 12),
+                              const SizedBox(height: 12),
+                              _LoginField(
+                                controller: _password,
+                                label: 'Password',
+                                hint: 'Your password',
+                                obscureText: !_showPassword,
+                                autofillHints: const [AutofillHints.password],
+                                suffix: IconButton(
+                                  tooltip: _showPassword ? 'Hide' : 'Show',
+                                  icon: Icon(
+                                    _showPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    size: 16,
+                                    color: DashColors.w(0.55),
+                                  ),
+                                  onPressed: () => setState(
+                                      () => _showPassword = !_showPassword),
+                                ),
+                                validator: (v) => (v == null || v.isEmpty)
+                                    ? 'Required'
+                                    : null,
+                                onSubmitted: (_) => _submit(),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             _LoginField(
                               controller: _schoolSlug,
                               label: 'School slug (optional)',
@@ -139,29 +156,46 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               _ErrorBanner(message: error),
                             ],
                             const SizedBox(height: 18),
-                            _PrimaryCta(
-                              label: isLoading ? 'Signing in…' : 'Sign in',
-                              onTap: isLoading ? null : _submit,
-                            ),
-                            const SizedBox(height: 10),
-                            Center(
-                              child: TextButton(
-                                onPressed: () => showDialog<void>(
-                                  context: context,
-                                  builder: (_) => _ForgotPasswordDialog(
-                                    initialEmail: _email.text.trim(),
-                                    initialSlug: _schoolSlug.text.trim(),
+                            if (showLocal)
+                              _PrimaryCta(
+                                label: isLoading ? 'Signing in…' : 'Sign in',
+                                onTap: isLoading ? null : _submit,
+                              ),
+                            if (showLocal && showAuth0) ...[
+                              const SizedBox(height: 14),
+                              _OrDivider(),
+                              const SizedBox(height: 14),
+                            ],
+                            if (showAuth0) ...[
+                              if (!showLocal) const SizedBox(height: 0),
+                              _Auth0Cta(
+                                label: isLoading
+                                    ? 'Opening Auth0…'
+                                    : 'Sign in with Auth0',
+                                onTap: isLoading ? null : _submitAuth0,
+                              ),
+                            ],
+                            if (showLocal) ...[
+                              const SizedBox(height: 10),
+                              Center(
+                                child: TextButton(
+                                  onPressed: () => showDialog<void>(
+                                    context: context,
+                                    builder: (_) => _ForgotPasswordDialog(
+                                      initialEmail: _email.text.trim(),
+                                      initialSlug: _schoolSlug.text.trim(),
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: DashColors.w(0.70),
+                                  ),
+                                  child: const Text(
+                                    'Forgot password?',
+                                    style: TextStyle(fontSize: 12),
                                   ),
                                 ),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: DashColors.w(0.70),
-                                ),
-                                child: const Text(
-                                  'Forgot password?',
-                                  style: TextStyle(fontSize: 12),
-                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),
@@ -354,6 +388,77 @@ class _ErrorBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final line = Expanded(
+      child: Container(
+        height: 1,
+        color: DashColors.w(0.14),
+      ),
+    );
+    return Row(
+      children: [
+        line,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            'OR',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+              color: DashColors.w(0.55),
+            ),
+          ),
+        ),
+        line,
+      ],
+    );
+  }
+}
+
+class _Auth0Cta extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+  const _Auth0Cta({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+    return Material(
+      color: disabled ? DashColors.w(0.04) : DashColors.w(0.08),
+      shape: StadiumBorder(
+        side: BorderSide(color: DashColors.w(0.18)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Container(
+          height: 44,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.lock_outline, size: 16, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.22,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

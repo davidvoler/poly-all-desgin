@@ -29,6 +29,13 @@
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=polyglots
       - POSTGRES_PASSWORD=polyglots
+      # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
+      # /api/v1/school_users/login_auth0 route verifies ID tokens
+      # against the tenant JWKS; otherwise it returns 503 and the
+      # dashboard falls back to the local password flow.
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
     command: 
       - uvicorn
       - main:app

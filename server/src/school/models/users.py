@@ -39,6 +39,17 @@ class LoginRequest(BaseModel):
     school_slug: str | None = None
 
 
+class Auth0LoginRequest(BaseModel):
+    """Payload for POST /school_users/login_auth0. The dashboard sends
+    the Auth0-issued ID token; the server verifies it against the
+    tenant JWKS and uses the verified `email` claim to look up an
+    existing school_users row."""
+    id_token: str
+    # Optional — same role as in [LoginRequest]: narrows lookup to a
+    # specific school when an email belongs to multiple schools.
+    school_slug: str | None = None
+
+
 class ForgotPasswordRequest(BaseModel):
     email: str
     # Optional — when set, narrows lookup to a specific school so two

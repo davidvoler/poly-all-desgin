@@ -304,16 +304,16 @@ Evaluate carefully, may regret:
 - [v] add students - invite by email
 - [v] basic student board
 
-- [] database
-- [] UI implementation 
-- [] server implementation 
+- [v] database
+- [v] UI implementation 
+- [v] server implementation 
 
 *** public content dashboard *** 
 
 - [v] initial design
-- [] database
-- [] UI implementation 
-- [] server implementation 
+- [v] database
+- [v] UI implementation 
+- [v] server implementation 
 
 
 
@@ -327,10 +327,35 @@ Evaluate carefully, may regret:
 TIME FOR DETAILS - LET'S COMPLETE THE UI. 
 
 
+
+*** tasks combined - for dashboard and student ***
+
+- [] Understand ACL - users, permissions
+- [] Add request/authorization to create a new non-profit school 
+- [] Verify that we have a single open school for now 
+- [] Handle scenarios 
+     - [] A user wants to create a new course - how does he do it? 
+     - [] A user want to start learning 
+- [] Add OAuth consider using the old code 
+- [] Add .env solution for for client 
+- [] Understand what is a reviewer - and implement
+- [] kids and parent - allow viewing my progress - maybe it can be replaced with share - like yuo share an actifity on garmin app
+
+
 *** all small task as we go ***
-- [] end of lesson endpoint - lesson complete - achievements
-- [] achievements - decide what achievements we start with
+- [v] end of lesson endpoint - lesson complete - achievements
+- [v] achievements - decide what achievements we start with
      - number of lessons per day/week
      - number of new words per day/week
-- [] end of practice - similar to end of lesson - achievements
+- [v] end of practice - similar to end of lesson - achievements
 - [] 
+
+
+
+
+
+
+
+
+
+

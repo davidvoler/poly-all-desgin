@@ -11,3 +11,5 @@ jwt
 psycopg
 python-multipart
 PyYAML
+# Used by school.utils.auth0 to fetch the Auth0 JWKS over HTTPS.
+httpx

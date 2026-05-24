@@ -6,6 +6,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 
 from school.models.users import (
+    Auth0LoginRequest,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
     LoginRequest,
@@ -14,6 +15,7 @@ from school.models.users import (
     SchoolUser,
     SchoolUserCreate,
 )
+from school.utils import auth0 as auth0_verifier
 from school.utils.activity import log_activity
 from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
@@ -300,6 +302,91 @@ async def login(payload: LoginRequest):
         email=row['email'],
         role=row['role'],
         pending_terms=bool(row.get('pending_terms')),
+    )
+
+
+@router.post("/login_auth0", response_model=LoginResponse)
+async def login_auth0(payload: Auth0LoginRequest):
+    """Sign in with an Auth0-issued ID token.
+
+    Flow:
+      1. Verify the token against the configured Auth0 JWKS (issuer,
+         signature, expiry, audience when one is configured).
+      2. Read the `email` claim and look up an existing school_users
+         row — same matching rules as the password route, including
+         the optional `school_slug` narrowing.
+      3. Return the standard LoginResponse so the dashboard reuses
+         its existing session machinery.
+
+    We intentionally do NOT auto-create users from the Auth0 directory.
+    An admin still has to invite the email (POST /school_users/) so
+    school-level ACLs aren't bypassed by anyone with an Auth0 login.
+    The route returns 404 when the verified email isn't on the
+    roster — the dashboard surfaces a "ask an admin to invite you"
+    message in that case."""
+    if not auth0_verifier.is_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail="Auth0 login is not configured on this server",
+        )
+
+    try:
+        claims = await auth0_verifier.verify_id_token(payload.id_token)
+    except ValueError as e:
+        # Never leak which step failed (sig vs aud vs expiry) — the
+        # client only needs to know the token didn't pass.
+        logger.info("auth0 verify failed: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid Auth0 token")
+
+    email = (claims.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(
+            status_code=401, detail="Auth0 token has no email claim")
+    if claims.get("email_verified") is False:
+        # Auth0 includes `email_verified` for most identity providers.
+        # Reject unverified to stop someone signing up via a free
+        # provider with a colleague's email.
+        raise HTTPException(
+            status_code=401, detail="Email is not verified")
+
+    sql = """
+        SELECT u.school_user_id, u.school_id, u.name, u.email, u.role,
+               u.status,
+               s.slug as school_slug, s.name as school_name
+        FROM school.school_users u
+        JOIN school.schools s ON s.school_id = u.school_id
+        WHERE LOWER(u.email) = %s
+    """
+    params: tuple = (email,)
+    if payload.school_slug:
+        sql += " AND s.slug = %s"
+        params = (email, payload.school_slug)
+    sql += " ORDER BY u.created_at LIMIT 1"
+
+    rows = await get_query_results(sql, params)
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail="No school account is linked to this Auth0 email",
+        )
+    row = rows[0]
+
+    if row.get('status') != 'active':
+        raise HTTPException(status_code=403, detail="Account suspended")
+
+    await run_query(
+        "UPDATE school.school_users SET last_seen = now() WHERE school_user_id = %s",
+        (row['school_user_id'],),
+    )
+
+    return LoginResponse(
+        school_user_id=row['school_user_id'],
+        school_id=row['school_id'],
+        school_slug=row['school_slug'],
+        school_name=row['school_name'],
+        name=row.get('name') or claims.get('name') or '',
+        email=row['email'],
+        role=row['role'],
     )
 
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api/dashboard_api.dart';
+import 'config/app_config.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/create_school_page.dart';
@@ -14,7 +15,9 @@ import 'pages/settings_page.dart';
 import 'pages/students_page.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppConfig.load();
   runApp(const ProviderScope(child: DashboardApp()));
 }
 

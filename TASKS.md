@@ -170,6 +170,50 @@ We have 2 main way of creating content
 
 
 
+*** tasks for deployment ***
+
+- [v] Client env via `flutter_dotenv` — both apps load `assets/.env` at
+  startup. `lib/config/app_config.dart` centralises reads; precedence is
+  `--dart-define` > `.env` > hardcoded default. Variables:
+  `API_BASE_URL`, `AUDIO_BASE_URL` (both apps), plus `AUTH_PROVIDER`,
+  `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_AUDIENCE`,
+  `AUTH0_REDIRECT_URI` (dashboard only). `.env.example` committed,
+  `assets/.env` gitignored.
+- [v] Auth0 sign-in in the dashboard — `auth0_flutter` wrapped in
+  `lib/auth/auth0_service.dart` (web uses `Auth0Web`, native uses
+  `Auth0`). Login page shows a "Sign in with Auth0" button only when
+  `AUTH_PROVIDER` is `auth0` or `both`; the `AuthNotifier` exchanges
+  the ID token at `POST /api/v1/school_users/login_auth0`. On web,
+  `restoreWebSession()` runs during cold-boot so the post-redirect
+  ID token gets traded for a `LoginInfo` without an extra click.
+- [v] Server-side Auth0 verification — `server/src/school/utils/auth0.py`
+  fetches the tenant JWKS, caches it for 1h, and verifies issuer +
+  signature + expiry (+ audience when configured). Route
+  `/api/v1/school_users/login_auth0` requires an existing
+  `school.school_users` row matching the verified `email` claim — Auth0
+  identities are not auto-provisioned, so school ACLs still gate access.
+  Returns 503 when `AUTH0_DOMAIN` is unset (the dashboard falls back to
+  local login gracefully).
+- [v] Local dev keeps using passwords — `AUTH_PROVIDER` defaults to
+  `local` so a fresh `flutter run` + `docker compose up` needs no
+  Auth0 setup. The server's `login_auth0` route is dormant until
+  `AUTH0_DOMAIN` is exported (see docker-compose.yaml).
+
+  **Setup checklist (when going live):**
+  1. Create an Auth0 SPA application; add the dashboard origin (e.g.
+     `http://localhost:8000`) to Allowed Callback/Logout URLs.
+  2. `cp dashboard/.env.example dashboard/assets/.env` and fill
+     `AUTH_PROVIDER=auth0`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`,
+     `AUTH0_AUDIENCE`, `AUTH0_REDIRECT_URI`.
+  3. Export the same `AUTH0_DOMAIN` / `AUTH0_AUDIENCE` /
+     `AUTH0_CLIENT_ID` before `docker compose up` (compose passes them
+     through to the server container).
+  4. Pre-invite each Auth0 user via the Editors page so a matching
+     `school_users.email` row exists — that's the ACL hook.
+  5. `cd dashboard && flutter pub get` to install `flutter_dotenv` +
+     `auth0_flutter` (same for `poliglots_app` — only flutter_dotenv).
+  
+
 
 
 

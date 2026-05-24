@@ -50,6 +50,13 @@ dependencies:
   # cached row + bcrypt password verification on the server is enough
   # for the demo.
   shared_preferences: ^2.3.0
+  # Loads runtime config (API base URL, AUTH_PROVIDER, Auth0 keys) from
+  # `assets/.env`. See lib/config/app_config.dart — `--dart-define`
+  # still takes precedence so CI/CD overrides keep working.
+  flutter_dotenv: ^5.1.0
+  # Auth0 universal-login wrapper. Only used when AUTH_PROVIDER includes
+  # `auth0`; the local-only flow doesn't touch it.
+  auth0_flutter: ^1.7.0
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +79,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Bundle the runtime config file so flutter_dotenv can read it on
+  # startup. The actual file is gitignored — copy `.env.example` to
+  # `assets/.env` and edit.
+  assets:
+    - assets/.env
 
   # To add assets to your application, add an assets section, like this:
   # assets:
