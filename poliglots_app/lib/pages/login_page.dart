@@ -110,6 +110,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       _ErrorBanner(message: error),
                     ],
                     const SizedBox(height: 22),
+                    // Auth0 / Google buttons appear ONLY when the build
+                    // has Auth0 configured (production). Local-only
+                    // builds skip them entirely; their server has no
+                    // Auth0 tenant and the click would error.
                     if (auth0Enabled) ...[
                       _GoogleCta(
                         label: loading
@@ -123,40 +127,52 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         icon: Icons.lock_outline,
                         onTap: loading ? null : _signInAuth0,
                       ),
-                    ] else ...[
-                      _CredField(
-                        controller: _email,
-                        label: 'Email',
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        onSubmit: _signInPassword,
-                      ),
-                      const SizedBox(height: 10),
-                      _CredField(
-                        controller: _password,
-                        label: 'Password',
-                        obscureText: !_showPassword,
-                        autofillHints: const [AutofillHints.password],
-                        onSubmit: _signInPassword,
-                        suffix: IconButton(
-                          tooltip: _showPassword ? 'Hide' : 'Show',
-                          icon: Icon(
-                            _showPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                          onPressed: () =>
-                              setState(() => _showPassword = !_showPassword),
+                      const SizedBox(height: 16),
+                      _OrDivider(),
+                      const SizedBox(height: 16),
+                    ],
+                    // Email + password form — always rendered. On
+                    // production it's a fallback for users who don't
+                    // want to / can't use Google. On local it's the
+                    // primary path.
+                    _CredField(
+                      controller: _email,
+                      label: 'Email',
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      onSubmit: _signInPassword,
+                    ),
+                    const SizedBox(height: 10),
+                    _CredField(
+                      controller: _password,
+                      label: 'Password',
+                      obscureText: !_showPassword,
+                      autofillHints: const [AutofillHints.password],
+                      onSubmit: _signInPassword,
+                      suffix: IconButton(
+                        tooltip: _showPassword ? 'Hide' : 'Show',
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.55),
                         ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      const SizedBox(height: 14),
-                      _PrimaryCta(
-                        label: loading ? 'Signing in…' : 'Sign in',
-                        icon: Icons.arrow_forward,
-                        onTap: loading ? null : _signInPassword,
-                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _PrimaryCta(
+                      label: loading ? 'Signing in…' : 'Sign in',
+                      icon: Icons.arrow_forward,
+                      onTap: loading ? null : _signInPassword,
+                    ),
+                    // Guest button — only meaningful in local mode
+                    // (the server's unverified-email fallback is gated
+                    // behind AUTH0_DOMAIN being unset). On production
+                    // it would 400, so we hide it.
+                    if (!auth0Enabled) ...[
                       const SizedBox(height: 10),
                       Center(
                         child: TextButton(
@@ -221,6 +237,39 @@ class _BrandHero extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.72),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Thin horizontal divider with an "OR" label, separating the Auth0
+/// buttons from the password form on production. Matches the dashboard's
+/// equivalent so the two apps' login pages feel like siblings.
+class _OrDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final line = Expanded(
+      child: Container(
+        height: 1,
+        color: Colors.white.withValues(alpha: 0.14),
+      ),
+    );
+    return Row(
+      children: [
+        line,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            'OR',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+              color: Colors.white.withValues(alpha: 0.55),
+            ),
+          ),
+        ),
+        line,
       ],
     );
   }
