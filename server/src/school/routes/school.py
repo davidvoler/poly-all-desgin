@@ -76,21 +76,26 @@ def _humanize(dt: datetime | None) -> str:
 
 
 _SCHOOL_COLS = (
-    "school_id, slug, name, plan, is_public, streak_days, languages_taught, "
-    "native_languages, logo_url, primary_color, created_at, updated_at"
+    "school_id, slug, name, plan, is_public, school_type, streak_days, "
+    "languages_taught, native_languages, logo_url, primary_color, "
+    "created_at, updated_at"
 )
 
 
 def _row_to_school(row: dict) -> School:
     """Maps a `school.schools` row to the response model. Defensive on
     nulls so a freshly-seeded row (no logo, empty languages) still
-    serialises cleanly."""
+    serialises cleanly. is_public is derived from school_type so the
+    legacy flag stays in sync without the dashboard having to think
+    about it."""
+    school_type = (row.get('school_type') or 'private')
     return School(
         school_id=row.get('school_id'),
         slug=row.get('slug') or '',
         name=row.get('name') or '',
         plan=row.get('plan') or 'free',
-        is_public=bool(row.get('is_public')),
+        school_type=school_type,
+        is_public=(school_type == 'public') or bool(row.get('is_public')),
         streak_days=row.get('streak_days') or 0,
         languages_taught=list(row.get('languages_taught') or []),
         native_languages=list(row.get('native_languages') or []),
@@ -146,13 +151,20 @@ async def create_school(payload: SchoolCreate):
     if existing:
         raise HTTPException(status_code=409, detail="Slug already in use")
 
+    # Honour explicit school_type; fall back to is_public for older
+    # callers (the wizard still sends is_public).
+    effective_type = payload.school_type
+    if payload.is_public and effective_type == 'private':
+        effective_type = 'public'
+    effective_is_public = (effective_type == 'public')
     insert = await get_query_results(
         """
-        INSERT INTO school.schools (slug, name, plan, is_public)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO school.schools (slug, name, plan, is_public, school_type)
+        VALUES (%s, %s, %s, %s, %s)
         RETURNING school_id
         """,
-        (payload.slug, payload.name, payload.plan, payload.is_public),
+        (payload.slug, payload.name, payload.plan, effective_is_public,
+         effective_type),
     )
     if not insert:
         raise HTTPException(status_code=500, detail="Failed to create school")
@@ -174,18 +186,24 @@ async def create_school(payload: SchoolCreate):
 
 @router.put("/{school_id}", response_model=School)
 async def update_school(school_id: int, payload: School, _caller: int | None = Depends(require_school_member)):
-    """Partial update — only the fields the Settings page actually edits."""
+    """Partial update — only the fields the Settings page actually edits.
+    Keeps `is_public` mirrored to `school_type` so old clients reading
+    is_public still see consistent data."""
+    effective_type = payload.school_type or 'private'
+    effective_is_public = (effective_type == 'public')
     await run_query(
         """
         UPDATE school.schools
-        SET name = %s, plan = %s, is_public = %s, logo_url = %s, primary_color = %s,
+        SET name = %s, plan = %s, is_public = %s, school_type = %s,
+            logo_url = %s, primary_color = %s,
             languages_taught = %s, native_languages = %s,
             updated_at = now()
         WHERE school_id = %s
         """,
         (
-            payload.name, payload.plan, payload.is_public, payload.logo_url,
-            payload.primary_color, payload.languages_taught, payload.native_languages,
+            payload.name, payload.plan, effective_is_public, effective_type,
+            payload.logo_url, payload.primary_color,
+            payload.languages_taught, payload.native_languages,
             school_id,
         ),
     )

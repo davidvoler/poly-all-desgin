@@ -8,7 +8,8 @@ class School(BaseModel):
     slug: str
     name: str
     plan: str = 'free'                       # free | pro | enterprise
-    is_public: bool = False                  # public schools: all content free, no language whitelist
+    school_type: str = 'private'             # public | no_charge | private
+    is_public: bool = False                  # legacy alias for school_type='public'
     streak_days: int = 0
     languages_taught: list[str] = []
     native_languages: list[str] = []
@@ -24,6 +25,9 @@ class SchoolCreate(BaseModel):
     slug: str
     name: str
     plan: str = 'free'
+    school_type: str = 'private'             # public | no_charge | private
+    # Legacy flag — when set without an explicit school_type we map to
+    # 'public'. New callers should send school_type directly.
     is_public: bool = False
     owner_name: str
     owner_email: str

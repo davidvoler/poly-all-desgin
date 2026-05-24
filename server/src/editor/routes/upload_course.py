@@ -142,6 +142,21 @@ async def upload_course(
             # an outer exception (e.g. permission error) shouldn't 500
             # the whole upload.
             ingest = {'modules': 0, 'skipped': 0}
+        # Sync `course.lesson_count` from the rows we just inserted so
+        # the Courses table + detail page reflect the new totals
+        # without waiting for a manual refresh.
+        await run_query(
+            """
+            UPDATE course_simple.course
+               SET lesson_count = (
+                       SELECT COUNT(*) FROM course_simple.lesson
+                        WHERE course_id = %s
+                   ),
+                   updated_at = now()
+             WHERE course_id = %s
+            """,
+            (course_id, course_id),
+        )
 
         modules_blurb = (
             f", {ingest['modules']} modules loaded"

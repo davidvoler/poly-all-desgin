@@ -67,6 +67,38 @@ We can have the following school types - with priority 1-4
 3. Private school that charges the students per course, monthly or annually - priority 4
 
 
+- [] Create a Super Admin user
+- [] Add a page schools - this page will show all existing schools and edit them
+- [] Add school type - (one of the 3 above)
+- [] Add create new school
+
+   Decision points (resolving per workflow rule):
+   - Where super-admin lives (REVISED 2026-05-23 after user clarified: super-admin is NOT bound to any school):
+     - [ ] `school.school_users.is_super_admin bool` flag — rejected, still requires school_id.
+     - [selected] Separate `school.super_admins(super_admin_id, name, email, password_hash, created_at, last_seen)` table. Login flow checks super_admins FIRST; if found, returns a `LoginInfo` with `school_id=0` and `role='super_admin'`. Auth middleware treats super-admin as belonging-to-every-school. Existing school_users login path stays unchanged for regular roles.
+   - School type column:
+     - [selected] Add `type varchar(20)` enum ('public' | 'no_charge' | 'private') alongside the existing `is_public bool`. Backfill type from is_public; keep is_public derived so older clients still work. Drop is_public later.
+     - [ ] Replace is_public with type immediately — would invalidate the wizard + settings UI in this pass.
+   - "Schools" admin page placement:
+     - [selected] New top-level nav item visible only when `is_super_admin`. Route /super-admin/schools with a single page showing the list + inline edit dialog + "Create new school" CTA that reuses the existing wizard.
+     - [ ] Build a separate super-admin sub-app — heavier; defer.
+
+- [] Terms and conditions
+
+   Decision points (resolving per workflow rule):
+   - T&C storage:
+     - [selected] Static markdown at `content/legal/terms_v1.md` served by GET /api/v1/terms — easy to revise, version bumps via filename.
+     - [ ] DB-backed `school.terms_versions(version, content, created_at)` — flexible but heavier.
+   - Acceptance tracking:
+     - [selected] `school.terms_acceptances(school_user_id, version, accepted_at)` — one row per (user, version). Server returns "needs to accept" when there's no row for the current version.
+     - [ ] Just a `school_users.accepted_terms_version varchar` column — less query-friendly when bumping versions.
+   - When the dialog appears:
+     - [selected] Editor invite on public schools — newly-created editor row marked `pending_terms = true`; the editor sees a one-time T&C dialog on next sign-in. Admins on public schools also see it once. Private schools skip the gate.
+     - [ ] Every signed-in user must accept — annoying for students who won't author content.
+
+
+
+
 *** Public School ***
 Let's first define what is a public school 
 - In a public school all content is free - no charge for learning 
@@ -83,7 +115,7 @@ Let's first define what is a public school
  
   Roles are
     - Admin
-      Edit LAnguages 
+      Edit Languages 
       Edit settings 
       Add remove users 
 
@@ -127,7 +159,13 @@ We have 2 main way of creating content
 2. Import the content from a compresses folder
 - [v] We need an example course that users can export and extend - can be found in content/example_course
 
-- [] We need an explanation page describing the format - please create the format description from content/example_course
+- [v] We need an explanation page describing the format
+   - Markdown spec at `content/example_course/README.md` (folder layout + course.txt / module.txt / lesson.txt / exercises.txt keys + recognised language names + round-trip note).
+   - Dashboard `Format help` ghost-button on the Courses upload dropzone opens an inline cheat-sheet dialog (code-block snippets, scrollable).
+   - Parser extended: `editor.utils.folder_to_db.load_course_content` now detects `course.txt` and walks the `module<n>/lesson<n>/exercises.txt` shape — falls back to the old YAML/JSON loader when `course.txt` is absent.
+   - Language naming: `_to_lang_code()` maps common English names (`Italian`) and a few native scripts (`العربية`, `日本語`) to ISO codes; unknown strings pass through lowercased so custom codes still work.
+   - Bug fix during smoke-test: upload now syncs `course_simple.course.lesson_count` after ingestion so the Courses table + detail page show the right totals.
+   - **Smoke-test:** uploading `content/example_course.zip` to school_id=2 produced course #7 with `modules: 2 · lessons: 4`, exercises parsed correctly including `--- Explanation` blocks (stored on `word3` for now — separate explanation column is a future schema tweak).
 
 
 

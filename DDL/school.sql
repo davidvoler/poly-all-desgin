@@ -27,15 +27,17 @@ CREATE TABLE school.schools (
     slug               varchar(64)  NOT NULL,
     name               varchar(255) NOT NULL,
     plan               varchar(32)  NOT NULL DEFAULT 'free',  -- free | pro | enterprise
-    is_public          bool         NOT NULL DEFAULT false,   -- public school = free content, no language whitelist
+    is_public          bool         NOT NULL DEFAULT false,   -- legacy alias for school_type='public'; kept for backwards-compat
+    school_type        varchar(20)  NOT NULL DEFAULT 'private', -- public | no_charge | private
     streak_days        int4         NOT NULL DEFAULT 0,
-    languages_taught   _varchar     NOT NULL DEFAULT '{}',    -- e.g. {ara,heb,ita}; ignored when is_public
+    languages_taught   _varchar     NOT NULL DEFAULT '{}',    -- e.g. {ara,heb,ita}; ignored when public
     native_languages   _varchar     NOT NULL DEFAULT '{}',    -- student native langs
     logo_url           varchar(500) NULL,
     primary_color      varchar(8)   NOT NULL DEFAULT '#1E88E5',
     created_at         timestamp    NOT NULL DEFAULT now(),
     updated_at         timestamp    NOT NULL DEFAULT now(),
-    CONSTRAINT schools_slug_uq UNIQUE (slug)
+    CONSTRAINT schools_slug_uq UNIQUE (slug),
+    CONSTRAINT schools_type_chk CHECK (school_type IN ('public','no_charge','private'))
 );
 
 -- -------------------------------------------------------------
@@ -51,6 +53,7 @@ CREATE TABLE school.school_users (
     email               varchar(200) NOT NULL,
     password_hash       varchar(200) NULL,                       -- bcrypt; NULL until they accept an invite
     role                varchar(20)  NOT NULL DEFAULT 'editor',  -- admin | editor | super_editor | reviewer | student
+    pending_terms       bool         NOT NULL DEFAULT false,     -- set on invite; cleared after T&C acceptance dialog
     assigned_languages  _varchar     NOT NULL DEFAULT '{}',      -- empty array = all
     courses_owned       int4         NOT NULL DEFAULT 0,
     last_seen           timestamp    NULL,
@@ -60,6 +63,37 @@ CREATE TABLE school.school_users (
     CONSTRAINT school_users_email_uq UNIQUE (school_id, email),
     CONSTRAINT school_users_role_chk CHECK (role IN ('admin','editor','super_editor','reviewer','student'))
 );
+
+-- -------------------------------------------------------------
+-- school.super_admins — cross-school super-admin identity. Not tied
+-- to any single school. Login flow checks here FIRST; on a match the
+-- session gets `role='super_admin'` + `school_id=0` and can see every
+-- tenant via the /super-admin/schools dashboard page.
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS school.super_admins (
+    super_admin_id  serial4 PRIMARY KEY,
+    name            varchar(200) NOT NULL DEFAULT '',
+    email           varchar(200) NOT NULL UNIQUE,
+    password_hash   varchar(200) NULL,
+    last_seen       timestamp    NULL,
+    created_at      timestamp    NOT NULL DEFAULT now()
+);
+
+-- -------------------------------------------------------------
+-- school.terms_acceptances — audit of who accepted which T&C version
+-- (T&C content lives at content/legal/terms_v1.md). One row per
+-- (school_user_id, version); a missing row for the current version
+-- means the user must accept on next sign-in.
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS school.terms_acceptances (
+    acceptance_id  serial4 PRIMARY KEY,
+    school_user_id int4         NOT NULL,
+    version        varchar(20)  NOT NULL,
+    accepted_at    timestamp    NOT NULL DEFAULT now(),
+    CONSTRAINT terms_acceptances_uq UNIQUE (school_user_id, version)
+);
+CREATE INDEX IF NOT EXISTS terms_acceptances_user_idx
+    ON school.terms_acceptances (school_user_id, accepted_at DESC);
 CREATE INDEX IF NOT EXISTS school_users_school_idx ON school.school_users (school_id);
 CREATE INDEX IF NOT EXISTS school_users_user_idx   ON school.school_users (user_id);
 

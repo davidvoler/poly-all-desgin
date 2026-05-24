@@ -221,10 +221,47 @@ async def login(payload: LoginRequest):
     """Plain email+password auth (no token — see ADR in TASKS.md). The
     dashboard caches the response in memory and uses `school_id` + `role`
     to gate UI. We touch `last_seen` so the Editors page shows a fresh
-    timestamp."""
+    timestamp.
+
+    Lookup order: `school.super_admins` first (cross-school identities
+    are not tied to any school_id, so they'd never match a regular
+    school_users + schools JOIN), then the regular school_users path.
+    A super-admin session reports `school_id=0`, `role='super_admin'`,
+    `school_slug=''`, `school_name='All schools'` — the dashboard's
+    auth gate watches for role to decide what nav to render."""
+    # 1) Super-admin? Skip the schools join entirely.
+    super_rows = await get_query_results(
+        """
+        SELECT super_admin_id, name, email, password_hash
+        FROM school.super_admins
+        WHERE email = %s
+        """,
+        (payload.email,),
+    )
+    if super_rows:
+        sa = super_rows[0]
+        sa_hash = sa.get('password_hash')
+        if sa_hash and _verify_password(payload.password, sa_hash):
+            await run_query(
+                "UPDATE school.super_admins SET last_seen = now() WHERE super_admin_id = %s",
+                (sa['super_admin_id'],),
+            )
+            return LoginResponse(
+                school_user_id=sa['super_admin_id'],
+                school_id=0,
+                school_slug='',
+                school_name='All schools',
+                name=sa.get('name') or '',
+                email=sa['email'],
+                role='super_admin',
+            )
+        # Fall through to the regular path — same email might exist
+        # as both a super_admin and a school_users row.
+
     sql = """
         SELECT u.school_user_id, u.school_id, u.name, u.email, u.role,
-               u.password_hash, u.status, s.slug as school_slug, s.name as school_name
+               u.password_hash, u.status, u.pending_terms,
+               s.slug as school_slug, s.name as school_name
         FROM school.school_users u
         JOIN school.schools s ON s.school_id = u.school_id
         WHERE u.email = %s
@@ -262,6 +299,7 @@ async def login(payload: LoginRequest):
         name=row.get('name') or '',
         email=row['email'],
         role=row['role'],
+        pending_terms=bool(row.get('pending_terms')),
     )
 
 

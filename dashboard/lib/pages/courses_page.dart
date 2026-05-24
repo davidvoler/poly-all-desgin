@@ -160,19 +160,34 @@ class _Dropzone extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
+            constraints: const BoxConstraints(maxWidth: 540),
             child: Text(
-              'Folder layout: course/<module>/<lesson>/exercises.json · audio in matching paths. '
-              'Description files (course.md, module.md) optional.',
+              'Folder layout: course.txt at the top, then module<n>/lesson<n>/exercises.txt. '
+              'A working example lives at content/example_course.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
             ),
           ),
           const SizedBox(height: 12),
-          PrimaryButton(
-            label: 'Browse files',
-            leading: Icons.file_upload_outlined,
-            onTap: onBrowse,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PrimaryButton(
+                label: 'Browse files',
+                leading: Icons.file_upload_outlined,
+                onTap: onBrowse,
+              ),
+              const SizedBox(width: 8),
+              GhostButton(
+                label: 'Format help',
+                leading: Icons.help_outline,
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const _FormatHelpDialog(),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -546,6 +561,164 @@ class _RowMenu extends StatelessWidget {
       width: 8,
       height: 8,
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    );
+  }
+}
+
+/// Quick-reference dialog summarising the course import format. The
+/// full spec lives in `content/example_course/README.md`; this is the
+/// inline cheat-sheet so editors don't have to leave the dashboard.
+class _FormatHelpDialog extends StatelessWidget {
+  const _FormatHelpDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(32),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 640),
+        child: GlassCard(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Course import format',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.close,
+                        size: 18, color: DashColors.w(0.70)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Full spec: content/example_course/README.md.',
+                style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _section('Folder layout'),
+                      const _CodeBlock('''my-course/
+├── course.txt
+├── module1/
+│   ├── module.txt
+│   ├── lesson1/
+│   │   ├── lesson.txt
+│   │   └── exercises.txt
+│   └── lesson2/
+│       └── …
+└── module2/
+    └── …'''),
+                      const SizedBox(height: 14),
+                      _section('course.txt'),
+                      const _CodeBlock('''name: Italian for English Speakers
+description: Essential grammar + vocabulary.
+language: Italian
+student_languages: English'''),
+                      const SizedBox(height: 6),
+                      _hint(
+                        'language / student_languages accept ISO codes (it, en) '
+                        'or English names (Italian, English).',
+                      ),
+                      const SizedBox(height: 14),
+                      _section('module.txt / lesson.txt'),
+                      const _CodeBlock('''module: Introduction to Italian
+lesson: Greeting sentences'''),
+                      const SizedBox(height: 6),
+                      _hint(
+                        'Numeric suffix in the folder name (module01, '
+                        'lesson02) controls order.',
+                      ),
+                      const SizedBox(height: 14),
+                      _section('exercises.txt'),
+                      const _CodeBlock('''---
+Buona sera
+[+] Good evening
+[-] Good morning
+[-] How are you
+--- Explanation
+In Italian the vowels often blend together.
+---
+Buonanotte
+[-] Good evening
+[+] Good night'''),
+                      const SizedBox(height: 6),
+                      _hint(
+                        '--- separates exercises. First non-blank line = the '
+                        'prompt. [+] = correct option, [-] = distractor. '
+                        '"--- Explanation" opens a free-text note (ends at '
+                        'the next ---).',
+                      ),
+                      const SizedBox(height: 14),
+                      _section('Round-trip'),
+                      _hint(
+                        'Export any course from the Courses row menu to get a '
+                        'zip in this same shape, edit it locally, then '
+                        're-upload here.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _section(String title) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(title.toUpperCase(),
+            style: DashText.sectionLabel(size: 10)),
+      );
+
+  Widget _hint(String text) => Text(
+        text,
+        style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+      );
+}
+
+class _CodeBlock extends StatelessWidget {
+  final String code;
+  const _CodeBlock(this.code);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: DashColors.w(0.04),
+        borderRadius: DashRadii.cardSm,
+        border: Border.all(color: DashColors.w(0.08)),
+      ),
+      child: SelectableText(
+        code,
+        style: TextStyle(
+          fontSize: 12,
+          color: DashColors.w(0.85),
+          fontFamily: 'monospace',
+          height: 1.45,
+        ),
+      ),
     );
   }
 }
