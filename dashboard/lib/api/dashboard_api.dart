@@ -728,10 +728,17 @@ class AuthNotifier extends Notifier<AuthState> {
   /// the server's `/login_auth0` route. The local password form stays
   /// available when `AUTH_PROVIDER=both`, so an Auth0 hiccup never
   /// locks an admin out of the dashboard.
-  Future<void> signInWithAuth0({String? schoolSlug}) async {
+  ///
+  /// Pass [connection] to skip Auth0's hosted picker and go straight
+  /// to a specific identity provider (e.g. `google-oauth2`).
+  Future<void> signInWithAuth0({
+    String? schoolSlug,
+    String? connection,
+  }) async {
     state = const AuthSigningIn();
     try {
-      final idToken = await Auth0Service.instance.signIn();
+      final idToken =
+          await Auth0Service.instance.signIn(connection: connection);
       if (idToken == null || idToken.isEmpty) {
         state = const AuthSignedOut(error: 'Auth0 returned no ID token.');
         return;
@@ -753,6 +760,12 @@ class AuthNotifier extends Notifier<AuthState> {
       state = AuthSignedOut(error: 'Auth0 sign-in failed: $e');
     }
   }
+
+  /// Shortcut for [signInWithAuth0] that pins the connection to Google.
+  /// The Auth0 dashboard must have google-oauth2 enabled for the SPA
+  /// application.
+  Future<void> signInWithGoogle({String? schoolSlug}) =>
+      signInWithAuth0(schoolSlug: schoolSlug, connection: 'google-oauth2');
 
   Future<void> signOut() async {
     try {

@@ -38,21 +38,33 @@ class Auth0Service {
   /// Trigger Auth0 universal login. Returns the ID token (null when
   /// the user cancelled). On web the page navigates away — the token
   /// shows up on the next load via [restoreWebSession].
-  Future<String?> signIn() async {
+  ///
+  /// Pass [connection] to skip Auth0's hosted picker and go straight
+  /// to a specific identity provider. Examples:
+  ///   • `google-oauth2` — Google sign-in
+  ///   • `apple`         — Apple
+  ///   • `Username-Password-Authentication` — Auth0 DB connection
+  /// Leave null to show Auth0's full universal-login UI.
+  Future<String?> signIn({String? connection}) async {
     await _ensureInit();
     final audience = AppConfig.auth0Audience;
     final redirect = AppConfig.auth0RedirectUri;
+    final parameters = <String, String>{
+      if (connection != null && connection.isNotEmpty) 'connection': connection,
+    };
 
     if (kIsWeb) {
       await _web!.loginWithRedirect(
         redirectUrl: redirect.isEmpty ? null : redirect,
         audience: audience.isEmpty ? null : audience,
+        parameters: parameters,
       );
       return null;
     }
     final creds = await _native!.webAuthentication().login(
           audience: audience.isEmpty ? null : audience,
           redirectUrl: redirect.isEmpty ? null : redirect,
+          parameters: parameters,
         );
     return creds.idToken;
   }

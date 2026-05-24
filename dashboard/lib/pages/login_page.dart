@@ -49,6 +49,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         .signInWithAuth0(schoolSlug: slug.isEmpty ? null : slug);
   }
 
+  Future<void> _submitGoogle() async {
+    final slug = _schoolSlug.text.trim();
+    await ref
+        .read(authProvider.notifier)
+        .signInWithGoogle(schoolSlug: slug.isEmpty ? null : slug);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
@@ -168,6 +175,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ],
                             if (showAuth0) ...[
                               if (!showLocal) const SizedBox(height: 0),
+                              _GoogleCta(
+                                label: isLoading
+                                    ? 'Opening Google…'
+                                    : 'Sign in with Google',
+                                onTap: isLoading ? null : _submitGoogle,
+                              ),
+                              const SizedBox(height: 10),
                               _Auth0Cta(
                                 label: isLoading
                                     ? 'Opening Auth0…'
@@ -419,6 +433,85 @@ class _OrDivider extends StatelessWidget {
         ),
         line,
       ],
+    );
+  }
+}
+
+/// Google-branded sign-in pill (white surface, dark text, multi-colour
+/// "G" mark). We approximate the official mark with a sweep gradient
+/// since the brand SVG isn't bundled — easy to swap for the real asset
+/// when it lands.
+class _GoogleCta extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+  const _GoogleCta({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+    return Material(
+      color: disabled ? Colors.white.withValues(alpha: 0.55) : Colors.white,
+      shape: const StadiumBorder(),
+      elevation: disabled ? 0 : 6,
+      shadowColor: Colors.black.withValues(alpha: 0.30),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Container(
+          height: 44,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const _GoogleGlyph(),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.18,
+                  color: Color(0xFF1F1F1F),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleGlyph extends StatelessWidget {
+  const _GoogleGlyph();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 18,
+      height: 18,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: SweepGradient(
+          colors: [
+            Color(0xFF4285F4),
+            Color(0xFFEA4335),
+            Color(0xFFFBBC05),
+            Color(0xFF34A853),
+            Color(0xFF4285F4),
+          ],
+        ),
+      ),
+      child: const Text(
+        'G',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          height: 1.0,
+        ),
+      ),
     );
   }
 }

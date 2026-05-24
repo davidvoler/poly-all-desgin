@@ -43,10 +43,16 @@ class Auth0Service {
   /// token (null if the user cancelled). Audience is included when
   /// configured so the access token is API-ready, though the dashboard
   /// only needs the ID token to call `/login_auth0`.
-  Future<String?> signIn() async {
+  ///
+  /// Pass [connection] to skip Auth0's hosted picker and go straight
+  /// to a specific identity provider (e.g. `google-oauth2`).
+  Future<String?> signIn({String? connection}) async {
     await _ensureInit();
     final audience = AppConfig.auth0Audience;
     final redirect = AppConfig.auth0RedirectUri;
+    final parameters = <String, String>{
+      if (connection != null && connection.isNotEmpty) 'connection': connection,
+    };
 
     if (kIsWeb) {
       // On web, `loginWithRedirect` navigates away. The token shows up
@@ -54,6 +60,7 @@ class Auth0Service {
       await _web!.loginWithRedirect(
         redirectUrl: redirect.isEmpty ? null : redirect,
         audience: audience.isEmpty ? null : audience,
+        parameters: parameters,
       );
       return null; // Page is being redirected; never reached.
     }
@@ -61,6 +68,7 @@ class Auth0Service {
     final creds = await _native!.webAuthentication().login(
           audience: audience.isEmpty ? null : audience,
           redirectUrl: redirect.isEmpty ? null : redirect,
+          parameters: parameters,
         );
     return creds.idToken;
   }

@@ -124,11 +124,13 @@ class AuthNotifier extends Notifier<AuthState> {
         userId: res.userId, email: res.email, name: res.name);
   }
 
-  /// Auth0 universal-login flow.
-  Future<void> signInWithAuth0() async {
+  /// Auth0 universal-login flow. Optional [connection] skips Auth0's
+  /// hosted picker and goes straight to a specific identity provider
+  /// (e.g. `google-oauth2`).
+  Future<void> signInWithAuth0({String? connection}) async {
     state = const AuthSigningIn();
     try {
-      final idToken = await Auth0Service.instance.signIn();
+      final idToken = await Auth0Service.instance.signIn(connection: connection);
       if (idToken == null || idToken.isEmpty) {
         // Web path: page is redirecting; the next cold-boot picks up.
         return;
@@ -144,6 +146,12 @@ class AuthNotifier extends Notifier<AuthState> {
       state = AuthSignedOut(error: 'Auth0 sign-in failed: $e');
     }
   }
+
+  /// Shortcut for [signInWithAuth0] that pins the Auth0 `connection` to
+  /// Google. The Auth0 dashboard must have the google-oauth2 social
+  /// connection enabled for the SPA application.
+  Future<void> signInWithGoogle() =>
+      signInWithAuth0(connection: 'google-oauth2');
 
   /// Local-dev guest path — hits /get_or_create_user with a fake email.
   /// Server must have AUTH0_DOMAIN unset for this to be accepted.
