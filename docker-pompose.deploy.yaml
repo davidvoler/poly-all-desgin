@@ -1,21 +1,17 @@
 services:
-  app:
-    container_name: app
-    image: nginx:alpine
+  postgres:
+    container_name: postgres
+    image: postgres:17.4
     ports:
-      - "0.0.0.0:8802:8802"
+      - 5432:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 2GB 
     volumes:
-      - ./deploy/nginx/app.conf:/etc/nginx/conf.d/default.conf
-      - ./deploy/html/app:/usr/share/nginx/html
-
-  dashboard:
-    container_name: dashboard
-    image: nginx:alpine
-    ports:
-      - "0.0.0.0:8803:8803"
-    volumes:
-      - ./deploy/nginx/dashboard.conf:/etc/nginx/conf.d/default.conf
-      - ./deploy/html/dashboard:/usr/share/nginx/html
+      - /home/davidle/new_data/postgres:/var/lib/postgresql/data
+    shm_size: 2GB
 
   server:
     container_name: server
@@ -24,7 +20,7 @@ services:
       context: server
       dockerfile: Dockerfile.dev
     ports:
-      - 8004:8004
+      - 8801:8801
     volumes:
       - ./server/src:/app
     environment:
@@ -46,7 +42,7 @@ services:
       - --host
       - 0.0.0.0
       - --port
-      - "8004"
+      - "8804"
       - --reload
     depends_on:
       - postgres
