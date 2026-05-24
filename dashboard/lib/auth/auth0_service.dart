@@ -13,12 +13,23 @@ import '../config/app_config.dart';
 /// [Auth0Web] when running in a browser (Flutter web's `kIsWeb`) and
 /// the mobile-style [Auth0] elsewhere. Both ultimately return an ID
 /// token that the server validates via JWKS.
+///
+/// **Web init order matters.** The auth0_flutter_web package wraps the
+/// auth0-spa-js library, which requires `onLoad()` to run **once**
+/// before any other method. Calling them in the wrong order throws
+/// "AuthClient has not been initialized". We cache the `onLoad()`
+/// future on the service so the first caller kicks it off and every
+/// subsequent caller awaits the same result.
 class Auth0Service {
   Auth0Service._();
   static final Auth0Service instance = Auth0Service._();
 
   Auth0? _native;
   Auth0Web? _web;
+
+  /// The single in-flight `onLoad()` call. Null until [_ensureInit]
+  /// runs on web for the first time, then reused for every caller.
+  Future<Credentials?>? _webOnLoad;
 
   /// Idempotent — safe to call from the login button's onTap.
   Future<void> _ensureInit() async {
@@ -34,6 +45,10 @@ class Auth0Service {
     }
     if (kIsWeb) {
       _web ??= Auth0Web(domain, clientId);
+      // Kick off the one-shot client init lazily. Subsequent calls
+      // hit the cached future so onLoad runs exactly once even if
+      // restore + signIn race.
+      _webOnLoad ??= _web!.onLoad();
     } else {
       _native ??= Auth0(domain, clientId);
     }
@@ -55,6 +70,16 @@ class Auth0Service {
     };
 
     if (kIsWeb) {
+      // Make sure the underlying SPA client is fully initialized
+      // before loginWithRedirect — otherwise the SDK throws
+      // "AuthClient has not been initialized".
+      final existing = await _webOnLoad;
+      if (existing != null) {
+        // User is already signed in (e.g. came back from a successful
+        // redirect that the restore path didn't pick up). Return the
+        // existing token rather than triggering another redirect.
+        return existing.idToken;
+      }
       // On web, `loginWithRedirect` navigates away. The token shows up
       // on the next page load via `onLoad` — see [restoreWebSession].
       await _web!.loginWithRedirect(
@@ -83,9 +108,12 @@ class Auth0Service {
     if (!kIsWeb || !AppConfig.isAuth0Enabled) return null;
     try {
       await _ensureInit();
-      final creds = await _web!.onLoad();
+      final creds = await _webOnLoad;
       return creds?.idToken;
-    } catch (_) {
+    } catch (e, st) {
+      // Log instead of swallowing so a misconfiguration shows up in
+      // the JS console rather than masquerading as "no session".
+      debugPrint('Auth0 restoreWebSession failed: $e\n$st');
       return null;
     }
   }
@@ -93,6 +121,12 @@ class Auth0Service {
   Future<void> signOut() async {
     if (!AppConfig.isAuth0Enabled) return;
     if (kIsWeb) {
+      // Same init dance as signIn — logout also requires the client
+      // to be initialized first.
+      try {
+        await _ensureInit();
+        await _webOnLoad;
+      } catch (_) {/* fall through; the JS logout is best-effort */}
       await _web?.logout(returnToUrl: AppConfig.auth0RedirectUri);
     } else {
       await _native?.webAuthentication().logout();

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -23,9 +25,35 @@ from editor.routes import (
 )
 
 app = FastAPI()
+
+# CORS — credentialed requests (i.e. every /api/v1/auth/* call, which
+# carries the HttpOnly user_id cookie) require an explicit origin
+# list. Browsers reject `*` + `allow_credentials=True` per the CORS
+# spec, which is what produced the
+# "No 'Access-Control-Allow-Origin' header is present" failure from
+# app.polyglots.social hitting api.polyglots.social.
+#
+# Configure via the CORS_ORIGINS env (comma-separated) on the prod
+# box; the default list covers a local docker-compose stack so a
+# fresh checkout still works without env setup.
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000,"
+    "http://127.0.0.1:3000,"
+    "http://localhost:5000,"
+    "http://127.0.0.1:5000,"
+    "http://localhost:8000,"
+    "http://127.0.0.1:8000,"
+    "https://www.polyglots.social,"
+    "https://app.polyglots.social,"
+    "https://dashboard.polyglots.social"
+)
+_cors_origins = [
+    o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],

@@ -36,16 +36,30 @@ _COOKIE_NAME = "user_id"
 
 
 def _cookie_kwargs() -> dict:
-    """HttpOnly + SameSite=Lax always. `secure=True` when the server is
-    behind HTTPS in production (toggled by the `COOKIE_SECURE` env so
-    local-dev over HTTP still works — Safari drops Secure cookies on
-    http:// even via 127.0.0.1)."""
+    """HttpOnly always. SameSite + Secure + Domain depend on env:
+
+      * `COOKIE_SECURE=1` flips on the Secure flag. Required when the
+        cookie travels over HTTPS (prod) and harmless to omit on
+        local HTTP (Safari drops Secure cookies on http:// even via
+        127.0.0.1, so we keep it off in dev).
+      * `COOKIE_DOMAIN=.polyglots.social` makes the cookie visible
+        across every subdomain — needed when api.* sets a cookie that
+        app.* / dashboard.* will rely on. Leave unset locally so the
+        cookie defaults to the request host.
+      * `COOKIE_SAMESITE=none|lax|strict` — defaults to `lax`. For
+        cross-site contexts (e.g. embedded iframes) you'd flip this
+        to `none`, but a same-site parent-domain setup with `lax`
+        works fine for app.polyglots.social → api.polyglots.social.
+    """
     secure = os.getenv("COOKIE_SECURE", "").lower() in {"1", "true", "yes"}
+    samesite = os.getenv("COOKIE_SAMESITE", "lax").lower()
+    domain = os.getenv("COOKIE_DOMAIN", "").strip() or None
     return {
         "max_age": _COOKIE_MAX_AGE,
         "httponly": True,
-        "samesite": "lax",
+        "samesite": samesite,
         "secure": secure,
+        "domain": domain,
     }
 
 
