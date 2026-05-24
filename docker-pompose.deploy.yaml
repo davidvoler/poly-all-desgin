@@ -1,0 +1,53 @@
+services:
+  app:
+    container_name: app
+    image: nginx:alpine
+    ports:
+      - "0.0.0.0:8802:8802"
+    volumes:
+      - ./deploy/nginx/app.conf:/etc/nginx/conf.d/default.conf
+      - ./deploy/html/app:/usr/share/nginx/html
+
+  dashboard:
+    container_name: dashboard
+    image: nginx:alpine
+    ports:
+      - "0.0.0.0:8803:8803"
+    volumes:
+      - ./deploy/nginx/dashboard.conf:/etc/nginx/conf.d/default.conf
+      - ./deploy/html/dashboard:/usr/share/nginx/html
+
+  server:
+    container_name: server
+    image: server:polyglots
+    build:
+      context: server
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8004:8004
+    volumes:
+      - ./server/src:/app
+    environment:
+      - POSTGRES_DB=polyglots
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=polyglots
+      - POSTGRES_PASSWORD=polyglots
+      # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
+      # /api/v1/school_users/login_auth0 route verifies ID tokens
+      # against the tenant JWKS; otherwise it returns 503 and the
+      # dashboard falls back to the local password flow.
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+    command: 
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8004"
+      - --reload
+    depends_on:
+      - postgres
+

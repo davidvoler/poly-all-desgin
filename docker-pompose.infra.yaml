@@ -1,0 +1,22 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:17.4
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 2GB 
+    volumes:
+      - /home/davidle/new_data/postgres:/var/lib/postgresql/data
+    shm_size: 2GB
+  audio-server:
+    container_name: audio-server
+    image: nginx:alpine
+    ports:
+      - "0.0.0.0:8801:8801"
+    volumes:
+      - ./deploy/nginx/audio.conf:/etc/nginx/conf.d/default.conf
+      - /home/davidle/new_data/audio:/usr/share/nginx/audio/audio
