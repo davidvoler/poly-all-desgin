@@ -455,7 +455,10 @@ class PreferenceNotifier extends AsyncNotifier<Preference?> {
     String? lang,
     String? toLang,
   }) async {
-    final current = state.value ?? const Preference(userId: kCurrentUserId);
+    // kCurrentUserId is no longer a compile-time const — it's bound to
+    // the auth notifier's session — so the fallback Preference is built
+    // at runtime instead of being `const`.
+    final current = state.value ?? Preference(userId: kCurrentUserId);
     final next = current.copyWith(
       courseId: courseId,
       moduleId: moduleId,
