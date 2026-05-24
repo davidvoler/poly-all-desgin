@@ -51,9 +51,19 @@ _cors_origins = [
     o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
     if o.strip()
 ]
+# `flutter run -d chrome` picks a random ephemeral port (62889 today,
+# something else tomorrow). The regex below matches any localhost /
+# 127.0.0.1 port so dev keeps working without re-listing it every
+# time. Production scope is unchanged — the regex can't widen prod
+# since the allowed hosts are still just localhost.
+_cors_origin_regex = os.getenv(
+    "CORS_ORIGIN_REGEX",
+    r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=_cors_origin_regex,
     allow_credentials=True,
     allow_methods=["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],

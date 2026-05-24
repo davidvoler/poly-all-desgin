@@ -153,6 +153,37 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> signInWithGoogle() =>
       signInWithAuth0(connection: 'google-oauth2');
 
+  /// Email + password sign-up-or-sign-in via /login_with_password.
+  /// First call for a given email creates the user with that
+  /// password; subsequent calls verify it (401 on mismatch surfaces
+  /// as a clean error on the login page).
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    state = const AuthSigningIn();
+    try {
+      final res = await ref.read(authApiProvider).loginWithPassword(
+            email: email,
+            password: password,
+          );
+      await _persist(res.userId);
+      setCurrentUserId(res.userId);
+      state = AuthSignedIn(
+          userId: res.userId, email: res.email, name: res.name);
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map
+          ? (e.response!.data as Map)['detail']
+          : null;
+      // 401 → wrong password; 400 → missing fields. Both surface the
+      // server's detail string verbatim so the UI shows what happened.
+      state = AuthSignedOut(
+          error: (detail as String?) ?? 'Could not sign in.');
+    } catch (e) {
+      state = AuthSignedOut(error: 'Sign-in failed: $e');
+    }
+  }
+
   /// Local-dev guest path — hits /get_or_create_user with a fake email.
   /// Server must have AUTH0_DOMAIN unset for this to be accepted.
   Future<void> continueAsGuest({String email = 'guest@local.dev'}) async {
@@ -253,6 +284,21 @@ class AuthApi {
         // Make sure web sends/receives the HttpOnly cookie.
         extra: {'withCredentials': true},
       ),
+    );
+    return AuthApiResponse.fromJson(res.data ?? const {});
+  }
+
+  /// Email + password sign-up-or-sign-in. Returns the same shape as
+  /// the Auth0 path so the AuthNotifier doesn't need a separate
+  /// success branch.
+  Future<AuthApiResponse> loginWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/auth/login_with_password',
+      data: {'email': email, 'password': password},
+      options: Options(extra: {'withCredentials': true}),
     );
     return AuthApiResponse.fromJson(res.data ?? const {});
   }

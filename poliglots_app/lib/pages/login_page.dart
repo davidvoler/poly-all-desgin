@@ -24,13 +24,16 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  // Pre-fills the guest-email field when AUTH_PROVIDER=local so the
-  // user just taps the button.
-  final _email = TextEditingController(text: 'guest@local.dev');
+  // Pre-fills for local testing — one tap to sign up the demo user,
+  // subsequent taps verify the same password.
+  final _email = TextEditingController(text: 'demo@local.dev');
+  final _password = TextEditingController(text: 'changeme');
+  bool _showPassword = false;
 
   @override
   void dispose() {
     _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -42,11 +45,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref.read(authProvider.notifier).signInWithGoogle();
   }
 
-  Future<void> _continueAsGuest() async {
+  Future<void> _signInPassword() async {
     final email = _email.text.trim();
+    final password = _password.text;
+    if (email.isEmpty || password.isEmpty) return;
     await ref
         .read(authProvider.notifier)
-        .continueAsGuest(email: email.isEmpty ? 'guest@local.dev' : email);
+        .signInWithPassword(email: email, password: password);
+  }
+
+  Future<void> _continueAsGuest() async {
+    await ref
+        .read(authProvider.notifier)
+        .continueAsGuest(email: 'guest@local.dev');
   }
 
   @override
@@ -113,14 +124,52 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onTap: loading ? null : _signInAuth0,
                       ),
                     ] else ...[
-                      _GuestEmailField(controller: _email, onSubmit: _continueAsGuest),
+                      _CredField(
+                        controller: _email,
+                        label: 'Email',
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        onSubmit: _signInPassword,
+                      ),
+                      const SizedBox(height: 10),
+                      _CredField(
+                        controller: _password,
+                        label: 'Password',
+                        obscureText: !_showPassword,
+                        autofillHints: const [AutofillHints.password],
+                        onSubmit: _signInPassword,
+                        suffix: IconButton(
+                          tooltip: _showPassword ? 'Hide' : 'Show',
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                          onPressed: () =>
+                              setState(() => _showPassword = !_showPassword),
+                        ),
+                      ),
                       const SizedBox(height: 14),
                       _PrimaryCta(
-                        label: loading
-                            ? 'Signing in…'
-                            : 'Continue as guest',
+                        label: loading ? 'Signing in…' : 'Sign in',
                         icon: Icons.arrow_forward,
-                        onTap: loading ? null : _continueAsGuest,
+                        onTap: loading ? null : _signInPassword,
+                      ),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: TextButton(
+                          onPressed: loading ? null : _continueAsGuest,
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                Colors.white.withValues(alpha: 0.70),
+                          ),
+                          child: const Text(
+                            'Continue as guest',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
                       ),
                     ],
                   ],
@@ -177,22 +226,39 @@ class _BrandHero extends StatelessWidget {
   }
 }
 
-class _GuestEmailField extends StatelessWidget {
+/// Reusable text field used by the local-dev email + password form.
+/// Mirrors the visual style of the previous guest-email input so
+/// nothing else on the page shifts.
+class _CredField extends StatelessWidget {
   final TextEditingController controller;
+  final String label;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final List<String>? autofillHints;
   final VoidCallback onSubmit;
-  const _GuestEmailField({required this.controller, required this.onSubmit});
+  final Widget? suffix;
+  const _CredField({
+    required this.controller,
+    required this.label,
+    required this.onSubmit,
+    this.obscureText = false,
+    this.keyboardType,
+    this.autofillHints,
+    this.suffix,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      keyboardType: TextInputType.emailAddress,
-      autofillHints: const [AutofillHints.email],
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      autofillHints: autofillHints,
       onSubmitted: (_) => onSubmit(),
       style: const TextStyle(fontSize: 14, color: Colors.white),
       decoration: InputDecoration(
         isDense: true,
-        hintText: 'Email',
+        hintText: label,
         hintStyle: TextStyle(
             fontSize: 13, color: Colors.white.withValues(alpha: 0.45)),
         filled: true,
@@ -214,6 +280,7 @@ class _GuestEmailField extends StatelessWidget {
           borderSide: BorderSide(
               color: PolyColors.brandPrimary.withValues(alpha: 0.55)),
         ),
+        suffixIcon: suffix,
       ),
     );
   }

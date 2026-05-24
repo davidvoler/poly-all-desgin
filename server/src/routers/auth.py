@@ -22,9 +22,10 @@ import hashlib
 import logging
 import os
 
+import bcrypt
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from models.user_data import UserAuth0Request, UserPref
+from models.user_data import PasswordLoginRequest, UserAuth0Request, UserPref
 from school.utils import auth0 as auth0_verifier
 from utils.db import get_query_results, run_query
 
@@ -91,6 +92,22 @@ async def _fetch_user_pref(user_id: int) -> UserPref | None:
         name="",   # the users table doesn't store name today; harmless
         preference=prefs[0] if prefs else None,
     )
+
+
+def _hash_password(plain: str) -> str:
+    """Bcrypt with a 12-round cost, identical to the dashboard's
+    school_users hasher. Truncates to bcrypt's 72-byte input limit so
+    long pass-phrases don't crash the hash call."""
+    pw = plain.encode("utf-8")[:72]
+    return bcrypt.hashpw(pw, bcrypt.gensalt(rounds=12)).decode("ascii")
+
+
+def _verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8")[:72], hashed.encode("ascii"))
+    except ValueError:
+        # Malformed stored hash — treat as failed verify rather than 500.
+        return False
 
 
 async def _get_or_create_user(email: str) -> int:
@@ -181,6 +198,71 @@ async def get_or_create_user(
         if to_lang:
             response.set_cookie(
                 key="to_lang", value=to_lang, **_cookie_kwargs())
+    return pref
+
+
+@router.post("/login_with_password", response_model=UserPref)
+async def login_with_password(payload: PasswordLoginRequest, response: Response):
+    """Sign-up-or-sign-in via email + password.
+
+      * **Existing email** → verify the bcrypt hash. 401 on mismatch.
+        Touches last_login so the user row shows fresh activity.
+      * **New email** → create the user with the given password as
+        their bcrypt hash. The same row could later attach an Auth0
+        identity by email — they coexist on one user_id.
+
+    Sets the same HttpOnly `user_id` cookie as the Auth0 route, so
+    subsequent calls to /login_with_cookie work identically. Used by
+    the learner app for local-test logins where standing up Auth0
+    isn't worth it."""
+    email = (payload.email or "").strip().lower()
+    if not email or not payload.password:
+        raise HTTPException(
+            status_code=400, detail="email and password are required")
+
+    rows = await get_query_results(
+        "SELECT user_id, password_hash FROM user_data.users "
+        "WHERE LOWER(email) = %s LIMIT 1",
+        (email,),
+    )
+    if rows:
+        user_id = int(rows[0]["user_id"])
+        stored_hash = rows[0].get("password_hash")
+        if not stored_hash:
+            # Row exists but was created via Auth0 / guest path (no
+            # password set). Set it now so the next sign-in works.
+            await run_query(
+                "UPDATE user_data.users SET password_hash = %s "
+                "WHERE user_id = %s",
+                (_hash_password(payload.password), user_id),
+            )
+        elif not _verify_password(payload.password, stored_hash):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        await run_query(
+            "UPDATE user_data.users SET last_login = now() WHERE user_id = %s",
+            (user_id,),
+        )
+    else:
+        # Brand-new sign-up — insert with the supplied password hashed.
+        email_hash = hashlib.sha256(
+            email.encode("utf-8")).hexdigest()[:64]
+        inserted = await get_query_results(
+            """
+            INSERT INTO user_data.users (email, email_hash, password_hash)
+            VALUES (%s, %s, %s)
+            RETURNING user_id
+            """,
+            (email, email_hash, _hash_password(payload.password)),
+        )
+        if not inserted:
+            raise HTTPException(status_code=500, detail="Failed to create user")
+        user_id = int(inserted[0]["user_id"])
+
+    pref = await _fetch_user_pref(user_id)
+    if pref is None:
+        raise HTTPException(status_code=500, detail="User row missing")
+
+    response.set_cookie(key=_COOKIE_NAME, value=str(user_id), **_cookie_kwargs())
     return pref
 
 

@@ -35,6 +35,16 @@ class UserData(BaseModel):
     to_lang: str
 
 
+class PasswordLoginRequest(BaseModel):
+    """Payload for POST /api/v1/auth/login_with_password — sign-up-or-
+    sign-in flow used by the learner app for local testing. If the
+    email is new, the server creates the user with the given password;
+    if it already exists, the server verifies the password and returns
+    401 on mismatch."""
+    email: str
+    password: str
+
+
 class UserAuth0Request(BaseModel):
     """Payload for POST /api/v1/auth/get_or_create_user.
 
