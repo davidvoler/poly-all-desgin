@@ -5,16 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api/courses_api.dart';
 import 'api/models.dart';
+import 'auth/auth_state.dart';
 import 'config/app_config.dart';
 import 'i18n/translations.g.dart';
 import 'pages/annotated_page.dart';
 import 'pages/course_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/home_page.dart';
+import 'pages/login_page.dart';
 import 'pages/quiz_page.dart';
 import 'pages/words_page.dart';
 import 'state/lang.dart';
 import 'theme.dart';
+import 'widgets/common.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,13 +118,51 @@ class PolyglotsApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),
-        '/courses': (context) => const CoursesPage(),
-        '/course': (context) => const CoursePage(),
-        '/quiz': (context) => const QuizPage(),
-        '/words': (context) => const WordsPage(),
-        '/annotated': (context) => const AnnotatedPage(),
+        // Root paints either the LoginPage or HomePage based on
+        // [authProvider]; deep links to /courses etc. still require
+        // sign-in via the same gate (see _Guarded below).
+        '/': (context) => const _AuthGate(child: HomePage()),
+        '/courses': (context) => const _Guarded(child: CoursesPage()),
+        '/course': (context) => const _Guarded(child: CoursePage()),
+        '/quiz': (context) => const _Guarded(child: QuizPage()),
+        '/words': (context) => const _Guarded(child: WordsPage()),
+        '/annotated': (context) => const _Guarded(child: AnnotatedPage()),
       },
     );
+  }
+}
+
+/// Picks between the login page and the requested page based on
+/// [authProvider]. While restoring (cookie / cache lookup in flight)
+/// we paint the gradient background only so we don't flash the login
+/// form when the user is already signed in.
+class _AuthGate extends ConsumerWidget {
+  final Widget child;
+  const _AuthGate({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    if (auth is AuthRestoring) {
+      return const Scaffold(
+        body: PhoneBackground(showMosaic: false, child: SizedBox.expand()),
+      );
+    }
+    if (auth is AuthSignedIn) return child;
+    return const LoginPage();
+  }
+}
+
+/// Same gate, applied to deep-linked routes so /courses etc. can't
+/// bypass the login screen via a bookmarked URL.
+class _Guarded extends ConsumerWidget {
+  final Widget child;
+  const _Guarded({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    if (auth is! AuthSignedIn) return const LoginPage();
+    return child;
   }
 }

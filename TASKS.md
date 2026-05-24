@@ -199,6 +199,43 @@ We have 2 main way of creating content
   Auth0 setup. The server's `login_auth0` route is dormant until
   `AUTH0_DOMAIN` is exported (see docker-compose.yaml).
 
+
+*** login page for polyglots_app ***
+- [v] Auth0 sign-in for the learner app — `Auth0Service` wraps
+  `auth0_flutter` (web + native). `AuthNotifier` drives the four-state
+  lifecycle (restoring / signedOut / signingIn / signedIn). On
+  sign-in the client posts the Auth0 ID token to
+  `POST /api/v1/auth/get_or_create_user`; on cold-boot it tries
+  `POST /api/v1/auth/login_with_cookie` first, then the
+  `SharedPreferences` cache as an optimistic fallback.
+- [v] Server `/api/v1/auth/get_or_create_user` — verifies the Auth0
+  token via `school.utils.auth0`, then upserts `user_data.users` by
+  email (composite PK is (email, user_id), so the lookup-then-insert
+  path avoids surprising no-ops). Returns the user + their most-recent
+  Preference and sets an HttpOnly `user_id` cookie (+ `lang` / `to_lang`
+  mirrors, matching the legacy code). 1-year `max_age` matches the
+  previous version.
+- [v] Server `/api/v1/auth/login_with_cookie` — reads the `user_id`
+  cookie and returns the same `UserPref` shape. 401 when the cookie is
+  missing or points at a deleted row so the client falls back to the
+  login screen.
+- [v] Server `/api/v1/auth/logout` — clears the `user_id` / `lang` /
+  `to_lang` cookies; client also flushes its SharedPreferences cache
+  and best-effort hits Auth0's logout endpoint.
+- [v] Dev escape-hatch — when `AUTH0_DOMAIN` is unset on the server,
+  `/get_or_create_user` accepts an unverified email so the client's
+  "Continue as guest" CTA works without an Auth0 tenant. Setting
+  `AUTH0_DOMAIN` automatically disables this path so prod can't
+  accidentally accept unverified emails.
+- [v] `kCurrentUserId` migrated from a `const` to a mutable bound to
+  the auth state — every existing call site keeps working. The
+  `PreferenceNotifier` now watches `currentUserIdProvider` and
+  short-circuits to null when signed out, so the auth gate never
+  fetches a stale user's preferences.
+- [v] Cookie plumbing — added `dio_cookie_manager` + `cookie_jar` so
+  native targets remember the server-set cookie. Flutter web uses the
+  browser cookie jar via `Options.extra: {'withCredentials': true}`.
+  
   **Setup checklist (when going live):**
   1. Create an Auth0 SPA application; add the dashboard origin (e.g.
      `http://localhost:8000`) to Allowed Callback/Logout URLs.

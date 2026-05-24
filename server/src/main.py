@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import (
+    auth,
     lesson,
     course,
     module,
@@ -57,6 +58,9 @@ app.include_router(practice.router,
 app.include_router(achievement.router,
     prefix="/api/v1/achievement",
     tags=["achievement"])
+app.include_router(auth.router,
+    prefix="/api/v1/auth",
+    tags=["auth"])
 
 # --- School-admin dashboard ---------------------------------------------------
 app.include_router(school_routes.router,

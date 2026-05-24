@@ -44,4 +44,39 @@ class AppConfig {
         fromEnv: const String.fromEnvironment('AUDIO_BASE_URL'),
         defaultValue: 'http://127.0.0.1:3002/audio',
       );
+
+  /// `local` | `auth0`. `local` (default) keeps a guest-friendly dev
+  /// flow — the login page shows a "Continue as guest" CTA that
+  /// short-circuits to the legacy user_id=1 session.
+  static String get authProvider => _read(
+        'AUTH_PROVIDER',
+        fromEnv: const String.fromEnvironment('AUTH_PROVIDER'),
+        defaultValue: 'local',
+      ).toLowerCase();
+
+  static bool get isAuth0Enabled => authProvider == 'auth0';
+
+  static String get auth0Domain => _read(
+        'AUTH0_DOMAIN',
+        fromEnv: const String.fromEnvironment('AUTH0_DOMAIN'),
+        defaultValue: '',
+      );
+
+  static String get auth0ClientId => _read(
+        'AUTH0_CLIENT_ID',
+        fromEnv: const String.fromEnvironment('AUTH0_CLIENT_ID'),
+        defaultValue: '',
+      );
+
+  static String get auth0Audience => _read(
+        'AUTH0_AUDIENCE',
+        fromEnv: const String.fromEnvironment('AUTH0_AUDIENCE'),
+        defaultValue: '',
+      );
+
+  static String get auth0RedirectUri => _read(
+        'AUTH0_REDIRECT_URI',
+        fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
+        defaultValue: '',
+      );
 }

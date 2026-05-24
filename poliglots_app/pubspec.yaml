@@ -46,6 +46,17 @@ dependencies:
   # See lib/config/app_config.dart — `--dart-define` still takes
   # precedence so CI/CD overrides keep working.
   flutter_dotenv: ^5.1.0
+  # Auth0 universal-login wrapper. Only used when AUTH_PROVIDER=auth0;
+  # the local-guest flow doesn't touch it.
+  auth0_flutter: ^1.7.0
+  # Caches the signed-in user_id locally so cold-boots can skip the
+  # /login_with_cookie round-trip on slow networks.
+  shared_preferences: ^2.3.0
+  # Lets Dio remember the server's `user_id` cookie on native targets
+  # (mobile, desktop). Flutter web ignores these and relies on the
+  # browser's cookie jar instead.
+  dio_cookie_manager: ^3.1.1
+  cookie_jar: ^4.0.8
 
 dev_dependencies:
   flutter_test:

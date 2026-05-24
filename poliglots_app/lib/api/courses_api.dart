@@ -1,6 +1,10 @@
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../auth/auth_state.dart';
 import '../config/app_config.dart';
 import '../state/lang.dart';
 import 'models.dart';
@@ -18,8 +22,14 @@ String? audioUrl(String audioPath) {
 /// can `overrideWith` a mock client. Base URL is sourced from
 /// [AppConfig.apiBaseUrl] which reads `assets/.env` with a
 /// `--dart-define=API_BASE_URL=…` override for CI/CD.
+///
+/// On native targets we install a [CookieManager] so Dio carries the
+/// server's HttpOnly `user_id` cookie across requests — without it
+/// mobile/desktop builds would forget the session after every request.
+/// On web the browser owns the cookie jar; Dio just rides the
+/// `withCredentials: true` flag set on per-request `Options.extra`.
 final dioProvider = Provider<Dio>((ref) {
-  return Dio(
+  final dio = Dio(
     BaseOptions(
       baseUrl: AppConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 5),
@@ -27,6 +37,10 @@ final dioProvider = Provider<Dio>((ref) {
       responseType: ResponseType.json,
     ),
   );
+  if (!kIsWeb) {
+    dio.interceptors.add(CookieManager(CookieJar()));
+  }
+  return dio;
 });
 
 /// Thin repository wrapping the courses endpoints. Pure data access —
@@ -401,16 +415,33 @@ class SelectedModuleIdNotifier extends Notifier<int?> {
 final selectedModuleIdProvider =
     NotifierProvider<SelectedModuleIdNotifier, int?>(SelectedModuleIdNotifier.new);
 
-/// Current user id. Hard-coded to 1 in dev; refactor when auth lands.
-const int kCurrentUserId = 1;
+/// Current user id. Driven by [authProvider] (auth/auth_state.dart) —
+/// AuthNotifier calls [setCurrentUserId] whenever a sign-in/sign-out
+/// completes. Reads stay synchronous so every old call site keeps
+/// working; the underlying value just isn't constant anymore.
+///
+/// Default of `1` matches the legacy seeded dev user so unit tests
+/// that don't bring up the auth machinery still resolve to *something*
+/// rather than throwing.
+int _currentUserId = 1;
+int get kCurrentUserId => _currentUserId;
+void setCurrentUserId(int id) {
+  _currentUserId = id;
+}
 
 /// Owns server-side per-user state. `build()` fetches once on first
 /// watch; mutating methods POST and refresh local state synchronously.
+/// Watches [currentUserIdProvider] so a sign-in invalidates the cache
+/// and the next read pulls the new user's row. Returns null when
+/// signed out — the auth gate in main.dart paints the LoginPage so
+/// no widget that consumes this provider is mounted in that state.
 class PreferenceNotifier extends AsyncNotifier<Preference?> {
   @override
   Future<Preference?> build() async {
+    final userId = ref.watch(currentUserIdProvider);
+    if (userId == null) return null;
     final repo = ref.read(coursesRepositoryProvider);
-    return repo.fetchPreference(kCurrentUserId);
+    return repo.fetchPreference(userId);
   }
 
   /// Merge new fields into the current preference, push to server, and
