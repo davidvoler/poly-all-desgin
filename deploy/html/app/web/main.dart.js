@@ -26105,7 +26105,7 @@ akf:function akf(){},
 b44(a){var s
 if(a.length===0)return null
 s=B.c.bB(a,"/")?"":"/"
-return A.jU("AUDIO_BASE_URL","http://127.0.0.1:3002/audio","https://app.polyglots.social/newaudio")+s+a},
+return A.jU("AUDIO_BASE_URL","http://127.0.0.1:3002/audio","")+s+a},
 aZR(){return new A.nW()},
 aYR(){return new A.lT()},
 aDJ:function aDJ(){},
@@ -28594,7 +28594,7 @@ r=s.b.i(0,a)
 if(r==null)r=null
 if(r!=null&&r.length!==0)return r
 return b},
-aUj(){return A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()},
+aUj(){return A.jU("AUTH_PROVIDER","local","").toLowerCase()},
 b4i(a,b,c){var s
 if(b===1&&c===0)return a===1?1:0.9
 if(b===0)return-1
@@ -88486,7 +88486,7 @@ gpd(){return"\\"}}
 A.akf.prototype={
 DG(a){$.Jw().m(0,this,a)}}
 A.aDJ.prototype={
-$1(a){var s,r=A.aUs(A.jU("API_BASE_URL","http://127.0.0.1:8004","https://api.polyglots.social"),B.Mv,B.Mf,B.jH),q=new A.OM(A.b([B.JA],t.i6))
+$1(a){var s,r=A.aUs(A.jU("API_BASE_URL","http://127.0.0.1:8004",""),B.Mv,B.Mf,B.jH),q=new A.OM(A.b([B.JA],t.i6))
 q.P(q,B.V2)
 s=new A.Nm($,q,$,new A.adt(51200),!1)
 s.WR$=r
@@ -88835,9 +88835,9 @@ A.hm.prototype={}
 A.a79.prototype={
 xi(){var s=0,r=A.C(t.H),q=this,p,o
 var $async$xi=A.D(function(a,b){if(a===1)return A.z(b,r)
-for(;;)switch(s){case 0:if(A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()!=="auth0")throw A.h(A.au("Auth0 is disabled (AUTH_PROVIDER="+A.aUj()+")."))
-p=A.jU("AUTH0_DOMAIN","","polyglots.us.auth0.com")
-o=A.jU("AUTH0_CLIENT_ID","","USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk")
+for(;;)switch(s){case 0:if(A.jU("AUTH_PROVIDER","local","").toLowerCase()!=="auth0")throw A.h(A.au("Auth0 is disabled (AUTH_PROVIDER="+A.aUj()+")."))
+p=A.jU("AUTH0_DOMAIN","","")
+o=A.jU("AUTH0_CLIENT_ID","","")
 if(p.length===0||o.length===0)throw A.h(A.au("AUTH0_DOMAIN and AUTH0_CLIENT_ID must be set in assets/.env."))
 if(q.b==null)q.b=new A.a7a(new A.a6a(p,o),new A.arM("auth0-flutter","1.14.0"))
 return A.A(null,r)}})
@@ -88848,7 +88848,7 @@ var $async$rU=A.D(function(b,c){if(b===1)return A.z(c,r)
 for(;;)switch(s){case 0:s=3
 return A.u(p.xi(),$async$rU)
 case 3:o=A.jU("AUTH0_AUDIENCE","","")
-n=A.jU("AUTH0_REDIRECT_URI","","https://app.polyglots.social")
+n=A.jU("AUTH0_REDIRECT_URI","","")
 m=t.N
 l=A.p(m,m)
 if(a!=null&&a.length!==0)l.m(0,"connection",a)
@@ -88865,7 +88865,7 @@ case 1:return A.A(q,r)}})
 return A.B($async$rU,r)},
 vJ(){var s=0,r=A.C(t.T),q,p=2,o=[],n=this,m,l,k,j
 var $async$vJ=A.D(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:k=A.jU("AUTH_PROVIDER","local","auth0")
+s=p}for(;;)switch(s){case 0:k=A.jU("AUTH_PROVIDER","local","")
 if(k.toLowerCase()!=="auth0"){q=null
 s=1
 break}p=4
@@ -88909,7 +88909,7 @@ return B.J8},
 mu(){var s=0,r=A.C(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$mu=A.D(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
-s=A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()==="auth0"?7:8
+s=A.jU("AUTH_PROVIDER","local","").toLowerCase()==="auth0"?7:8
 break
 case 7:p=10
 s=13
@@ -89820,7 +89820,7 @@ s=2
 return A.u(o.uo(p.length===0?"guest@local.dev":p),$async$xa)
 case 2:return A.A(null,r)}})
 return A.B($async$xa,r)},
-K(a){var s,r,q,p=this,o=null,n=p.ghW().bh($.td(),t.FB),m=n instanceof A.yl,l=n instanceof A.l8?n.a:o,k=A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()==="auth0",j=A.av("Sign in",o,o,o,B.aar,B.aJ,o),i=k?"Use your Auth0 account to keep your progress in sync.":"Local dev mode \u2014 Auth0 is off. Continue as a guest and the server will mint a throwaway user for you.",h=t.p
+K(a){var s,r,q,p=this,o=null,n=p.ghW().bh($.td(),t.FB),m=n instanceof A.yl,l=n instanceof A.l8?n.a:o,k=A.jU("AUTH_PROVIDER","local","").toLowerCase()==="auth0",j=A.av("Sign in",o,o,o,B.aar,B.aJ,o),i=k?"Use your Auth0 account to keep your progress in sync.":"Local dev mode \u2014 Auth0 is off. Continue as a guest and the server will mint a throwaway user for you.",h=t.p
 i=A.b([B.aeo,B.a57,j,B.dJ,A.av(i,o,o,o,A.b8(o,o,B.d.W(0.78),o,o,o,o,o,o,o,o,13,o,o,o,o,1.4,!0,o,o,o,o,o,o,o,o),B.aJ,o)],h)
 if(l!=null)B.b.P(i,A.b([B.d5,new A.Zd(l,o)],h))
 i.push(B.H8)
