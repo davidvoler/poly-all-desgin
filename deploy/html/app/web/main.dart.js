@@ -26070,7 +26070,7 @@ akb:function akb(){},
 b3Z(a){var s
 if(a.length===0)return null
 s=B.c.bB(a,"/")?"":"/"
-return A.jU("AUDIO_BASE_URL","http://127.0.0.1:3002/audio","")+s+a},
+return A.jU("AUDIO_BASE_URL","http://127.0.0.1:3002/audio","https://app.polyglots.social/newaudio")+s+a},
 aZL(){return new A.nW()},
 aYL(){return new A.lS()},
 aDE:function aDE(){},
@@ -28555,7 +28555,7 @@ r=s.b.i(0,a)
 if(r==null)r=null
 if(r!=null&&r.length!==0)return r
 return b},
-aUd(){return A.jU("AUTH_PROVIDER","local","").toLowerCase()},
+aUd(){return A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()},
 b4c(a,b,c){var s
 if(b===1&&c===0)return a===1?1:0.9
 if(b===0)return-1
@@ -88408,7 +88408,7 @@ gpc(){return"\\"}}
 A.akb.prototype={
 Dz(a){$.Jt().m(0,this,a)}}
 A.aDE.prototype={
-$1(a){var s,r=A.aUm(A.jU("API_BASE_URL","http://127.0.0.1:8004",""),B.Mp,B.M9,B.jH),q=new A.OJ(A.b([B.Jy],t.i6))
+$1(a){var s,r=A.aUm(A.jU("API_BASE_URL","http://127.0.0.1:8004","https://api.polyglots.social"),B.Mp,B.M9,B.jH),q=new A.OJ(A.b([B.Jy],t.i6))
 q.P(q,B.UW)
 s=new A.Nj($,q,$,new A.adp(51200),!1)
 s.WQ$=r
@@ -88757,9 +88757,9 @@ A.hl.prototype={}
 A.a76.prototype={
 xh(){var s=0,r=A.C(t.H),q=this,p,o
 var $async$xh=A.D(function(a,b){if(a===1)return A.z(b,r)
-for(;;)switch(s){case 0:if(A.jU("AUTH_PROVIDER","local","").toLowerCase()!=="auth0")throw A.h(A.au("Auth0 is disabled (AUTH_PROVIDER="+A.aUd()+")."))
-p=A.jU("AUTH0_DOMAIN","","")
-o=A.jU("AUTH0_CLIENT_ID","","")
+for(;;)switch(s){case 0:if(A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()!=="auth0")throw A.h(A.au("Auth0 is disabled (AUTH_PROVIDER="+A.aUd()+")."))
+p=A.jU("AUTH0_DOMAIN","","polyglots.us.auth0.com")
+o=A.jU("AUTH0_CLIENT_ID","","USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk")
 if(p.length===0||o.length===0)throw A.h(A.au("AUTH0_DOMAIN and AUTH0_CLIENT_ID must be set in assets/.env."))
 if(q.b==null)q.b=new A.a77(new A.a67(p,o),new A.arH("auth0-flutter","1.14.0"))
 return A.A(null,r)}})
@@ -88769,7 +88769,7 @@ var $async$rS=A.D(function(a,b){if(a===1)return A.z(b,r)
 for(;;)switch(s){case 0:s=3
 return A.v(p.xh(),$async$rS)
 case 3:o=A.jU("AUTH0_AUDIENCE","","")
-n=A.jU("AUTH0_REDIRECT_URI","","")
+n=A.jU("AUTH0_REDIRECT_URI","","https://app.polyglots.social")
 p.b.toString
 m=n.length===0?null:n
 l=o.length===0?null:o
@@ -88783,7 +88783,7 @@ case 1:return A.A(q,r)}})
 return A.B($async$rS,r)},
 vI(){var s=0,r=A.C(t.T),q,p=2,o=[],n=this,m,l,k,j
 var $async$vI=A.D(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:k=A.jU("AUTH_PROVIDER","local","")
+s=p}for(;;)switch(s){case 0:k=A.jU("AUTH_PROVIDER","local","auth0")
 if(k.toLowerCase()!=="auth0"){q=null
 s=1
 break}p=4
@@ -88827,7 +88827,7 @@ return B.J6},
 mt(){var s=0,r=A.C(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$mt=A.D(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
-s=A.jU("AUTH_PROVIDER","local","").toLowerCase()==="auth0"?7:8
+s=A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()==="auth0"?7:8
 break
 case 7:p=10
 s=13
@@ -89730,7 +89730,7 @@ s=2
 return A.v(o.un(p.length===0?"guest@local.dev":p),$async$x9)
 case 2:return A.A(null,r)}})
 return A.B($async$x9,r)},
-K(a){var s,r,q=this,p=null,o=q.giL().bh($.xX(),t.FB),n=o instanceof A.yk,m=o instanceof A.l7?o.a:p,l=A.jU("AUTH_PROVIDER","local","").toLowerCase()==="auth0",k=A.av("Sign in",p,p,p,B.aah,B.aJ,p),j=l?"Use your Auth0 account to keep your progress in sync.":"Local dev mode \u2014 Auth0 is off. Continue as a guest and the server will mint a throwaway user for you.",i=t.p
+K(a){var s,r,q=this,p=null,o=q.giL().bh($.xX(),t.FB),n=o instanceof A.yk,m=o instanceof A.l7?o.a:p,l=A.jU("AUTH_PROVIDER","local","auth0").toLowerCase()==="auth0",k=A.av("Sign in",p,p,p,B.aah,B.aJ,p),j=l?"Use your Auth0 account to keep your progress in sync.":"Local dev mode \u2014 Auth0 is off. Continue as a guest and the server will mint a throwaway user for you.",i=t.p
 j=A.b([B.aed,B.a50,k,B.dJ,A.av(j,p,p,p,A.b7(p,p,B.d.X(0.78),p,p,p,p,p,p,p,p,13,p,p,p,p,1.4,!0,p,p,p,p,p,p,p,p),B.aJ,p)],i)
 if(m!=null)B.b.P(j,A.b([B.d3,new A.Za(m,p)],i))
 j.push(B.H7)

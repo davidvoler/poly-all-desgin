@@ -28610,7 +28610,7 @@ r=s.b.h(0,a)
 if(r==null)r=null
 if(r!=null&&r.length!==0)return r
 return b},
-aTM(){return A.eu("AUTH_PROVIDER","local","").toLowerCase()},
+aTM(){return A.eu("AUTH_PROVIDER","local","both").toLowerCase()},
 aUM(a){return B.d.C(a)},
 eh(a){var s=null,r=B.d.C(0.55)
 return A.as(s,s,r,s,s,s,s,s,s,s,s,a,s,s,B.U,s,s,!0,s,1.8,s,s,s,s,s,s)},
@@ -46072,7 +46072,7 @@ f5(a){return new A.q5(this.a.f5(0),A.m(this).i("q5<1>"))},
 $ia8:1,
 $ibk:1}
 A.aDb.prototype={
-$1(a){var s=A.aTT(A.eu("API_BASE_URL","http://127.0.0.1:8004",""),B.H1,B.GR,B.iX),r=new A.Ov(A.b([B.DL],t.i6))
+$1(a){var s=A.aTT(A.eu("API_BASE_URL","http://127.0.0.1:8004","https://api.polyglots.social"),B.H1,B.GR,B.iX),r=new A.Ov(A.b([B.DL],t.i6))
 r.J(r,B.Lm)
 r=new A.N4($,r,$,new A.aaE(51200),!1)
 r.Br$=s
@@ -46582,7 +46582,7 @@ A.lH.prototype={
 o4(){var s=0,r=A.E(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d
 var $async$o4=A.F(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
-s=A.eu("AUTH_PROVIDER","local","").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","").toLowerCase()==="both"?7:8
+s=A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="both"?7:8
 break
 case 7:p=10
 s=13
@@ -46762,7 +46762,7 @@ s=5
 break
 case 2:s=1
 break
-case 5:s=A.eu("AUTH_PROVIDER","local","").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","").toLowerCase()==="both"?8:9
+case 5:s=A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="both"?8:9
 break
 case 8:q=11
 s=14
@@ -47015,9 +47015,9 @@ return(B.c.S(B.b.gN(r),0,1)+B.c.S(B.b.ga8(r),0,1)).toUpperCase()}}
 A.a4s.prototype={
 y7(){var s=0,r=A.E(t.H),q=this,p,o
 var $async$y7=A.F(function(a,b){if(a===1)return A.B(b,r)
-for(;;)switch(s){case 0:if(!(A.eu("AUTH_PROVIDER","local","").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","").toLowerCase()==="both"))throw A.f(A.V("Auth0 is disabled (AUTH_PROVIDER="+A.aTM()+")."))
-p=A.eu("AUTH0_DOMAIN","","")
-o=A.eu("AUTH0_CLIENT_ID","","")
+for(;;)switch(s){case 0:if(!(A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="both"))throw A.f(A.V("Auth0 is disabled (AUTH_PROVIDER="+A.aTM()+")."))
+p=A.eu("AUTH0_DOMAIN","","polyglots.us.auth0.com")
+o=A.eu("AUTH0_CLIENT_ID","","USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk")
 if(p.length===0||o.length===0)throw A.f(A.V("AUTH0_DOMAIN and AUTH0_CLIENT_ID must be set in assets/.env."))
 if(q.b==null)q.b=new A.a4t(new A.a3O(p,o),new A.aoS("auth0-flutter","1.14.0"))
 return A.C(null,r)}})
@@ -47027,7 +47027,7 @@ var $async$tu=A.F(function(a,b){if(a===1)return A.B(b,r)
 for(;;)switch(s){case 0:s=3
 return A.H(p.y7(),$async$tu)
 case 3:o=A.eu("AUTH0_AUDIENCE","","")
-n=A.eu("AUTH0_REDIRECT_URI","","")
+n=A.eu("AUTH0_REDIRECT_URI","","https://dashboard.polyglots.social")
 p.b.toString
 m=n.length===0?null:n
 l=o.length===0?null:o
@@ -47041,7 +47041,7 @@ case 1:return A.C(q,r)}})
 return A.D($async$tu,r)},
 wz(){var s=0,r=A.E(t.T),q,p=2,o=[],n=this,m,l,k,j
 var $async$wz=A.F(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:k=!(A.eu("AUTH_PROVIDER","local","").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","").toLowerCase()==="both")
+s=p}for(;;)switch(s){case 0:k=!(A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="both")
 if(k){q=null
 s=1
 break}p=4
@@ -47072,9 +47072,9 @@ case 2:return A.B(o.at(-1),r)}})
 return A.D($async$wz,r)},
 iU(){var s=0,r=A.E(t.H),q,p=this,o
 var $async$iU=A.F(function(a,b){if(a===1)return A.B(b,r)
-for(;;)switch(s){case 0:if(!(A.eu("AUTH_PROVIDER","local","").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","").toLowerCase()==="both")){s=1
+for(;;)switch(s){case 0:if(!(A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="auth0"||A.eu("AUTH_PROVIDER","local","both").toLowerCase()==="both")){s=1
 break}if(p.b==null)o=null
-else{o=A.eu("AUTH0_REDIRECT_URI","","")
+else{o=A.eu("AUTH0_REDIRECT_URI","","https://dashboard.polyglots.social")
 o=$.KF().Ci(new A.adi(o,null))}s=3
 return A.H(t.uz.b(o)?o:A.hv(o,t.H),$async$iU)
 case 3:case 1:return A.C(q,r)}})
@@ -47907,25 +47907,25 @@ s=2
 return A.H(o.pP(p.length===0?null:p),$async$zo)
 case 2:return A.C(null,r)}})
 return A.D($async$zo,r)},
-G(a){var s,r,q,p,o=this,n=null,m="AUTH_PROVIDER",l="local",k=o.gf3().co($.nu(),t.FB),j=k instanceof A.zh,i=k instanceof A.kq?k.a:n,h=A.eu(m,l,"").toLowerCase()==="local"||A.eu(m,l,"").toLowerCase()==="both",g=A.eu(m,l,"").toLowerCase()==="auth0"||A.eu(m,l,"").toLowerCase()==="both",f=t.p,e=A.b([B.Ze,B.dd,A.T("School-admin dashboard",n,n,n,A.as(n,n,B.d.C(0.7),n,n,n,n,n,n,n,n,13,n,n,n,n,n,!0,n,n,n,n,n,n,n,n),n,n),B.e3],f)
-if(h){s=A.aGT(B.L3,o.x,"you@school.edu",B.mT,"Email",!1,new A.avJ(o),n,new A.avK())
+G(a){var s,r,q,p,o=this,n=null,m="AUTH_PROVIDER",l="both",k="local",j=o.gf3().co($.nu(),t.FB),i=j instanceof A.zh,h=j instanceof A.kq?j.a:n,g=A.eu(m,k,l).toLowerCase()==="local"||A.eu(m,k,l).toLowerCase()==="both",f=A.eu(m,k,l).toLowerCase()==="auth0"||A.eu(m,k,l).toLowerCase()==="both",e=t.p,d=A.b([B.Ze,B.dd,A.T("School-admin dashboard",n,n,n,A.as(n,n,B.d.C(0.7),n,n,n,n,n,n,n,n,13,n,n,n,n,n,!0,n,n,n,n,n,n,n,n),n,n),B.e3],e)
+if(g){s=A.aGT(B.L3,o.x,"you@school.edu",B.mT,"Email",!1,new A.avJ(o),n,new A.avK())
 r=o.Q
 q=r?"Hide":"Show"
 p=r?B.ID:B.IC
-B.b.J(e,A.b([s,B.dc,A.aGT(B.LD,o.y,"Your password",n,"Password",!r,new A.avL(o),A.m6(n,n,n,A.cw(p,B.d.C(0.55),n,16),n,n,new A.avM(o),n,n,n,q,n),new A.avN()),B.dc],f))}e.push(A.aGT(n,o.z,"riverside-academy",n,"School slug (optional)",!1,new A.avO(o),n,new A.avP()))
-if(i!=null)B.b.J(e,A.b([B.ac,new A.W1(i,n)],f))
-e.push(B.e3)
-if(h){s=j?"Signing in\u2026":"Sign in"
-e.push(new A.YX(s,j?n:o.galP(),n))}if(h&&g)B.b.J(e,A.b([B.ac,new A.Y8(n),B.ac],f))
-if(g){s=A.b([],f)
-if(!h)s.push(B.T1)
-r=j?"Opening Auth0\u2026":"Sign in with Auth0"
-s.push(new A.TX(r,j?n:o.galQ(),n))
-B.b.J(e,s)}if(h)B.b.J(e,A.b([B.ar,A.dQ(A.fi(B.Z8,new A.avQ(o,a),A.fX(n,n,n,n,n,n,n,n,n,B.d.C(0.7),n,n,n,n,n,n,n,n,n,n)),n,n)],f))
-e=A.ex(A.B2(B.dr,A.ba(e,B.L,B.m),o.w),B.HH)
+B.b.J(d,A.b([s,B.dc,A.aGT(B.LD,o.y,"Your password",n,"Password",!r,new A.avL(o),A.m6(n,n,n,A.cw(p,B.d.C(0.55),n,16),n,n,new A.avM(o),n,n,n,q,n),new A.avN()),B.dc],e))}d.push(A.aGT(n,o.z,"riverside-academy",n,"School slug (optional)",!1,new A.avO(o),n,new A.avP()))
+if(h!=null)B.b.J(d,A.b([B.ac,new A.W1(h,n)],e))
+d.push(B.e3)
+if(g){s=i?"Signing in\u2026":"Sign in"
+d.push(new A.YX(s,i?n:o.galP(),n))}if(g&&f)B.b.J(d,A.b([B.ac,new A.Y8(n),B.ac],e))
+if(f){s=A.b([],e)
+if(!g)s.push(B.T1)
+r=i?"Opening Auth0\u2026":"Sign in with Auth0"
+s.push(new A.TX(r,i?n:o.galQ(),n))
+B.b.J(d,s)}if(g)B.b.J(d,A.b([B.ar,A.dQ(A.fi(B.Z8,new A.avQ(o,a),A.fX(n,n,n,n,n,n,n,n,n,B.d.C(0.7),n,n,n,n,n,n,n,n,n,n)),n,n)],e))
+d=A.ex(A.B2(B.dr,A.ba(d,B.L,B.m),o.w),B.HH)
 s=A.ee(6)
 r=A.as(n,n,B.d.C(0.7),n,n,n,n,n,n,n,n,12,n,n,n,n,n,!0,n,n,n,n,n,n,n,n)
-return A.ak6(A.bq(n,A.dQ(A.RF(new A.aQ(B.HJ,new A.d2(B.D5,A.ba(A.b([new A.Ud(n),B.T3,e,B.bI,A.dQ(A.ez(!1,s,!0,new A.aQ(B.HR,A.aGr(A.d_(A.b([B.Up,A.d_(n,n,n,n,n,n,n,n,n,B.BI,"Create one \u2192")],t.VO),n,n,n,n,n,n,n,n,r,n),n,n,n,n),n),n,!0,n,n,n,n,n,n,n,n,new A.avR(a),n,n,n,n,n,n,n),n,n)],f),B.L,B.m),n),n),n),n,n),B.n,n,B.f7,n,n,n,n))}}
+return A.ak6(A.bq(n,A.dQ(A.RF(new A.aQ(B.HJ,new A.d2(B.D5,A.ba(A.b([new A.Ud(n),B.T3,d,B.bI,A.dQ(A.ez(!1,s,!0,new A.aQ(B.HR,A.aGr(A.d_(A.b([B.Up,A.d_(n,n,n,n,n,n,n,n,n,B.BI,"Create one \u2192")],t.VO),n,n,n,n,n,n,n,n,r,n),n,n,n,n),n),n,!0,n,n,n,n,n,n,n,n,new A.avR(a),n,n,n,n,n,n,n),n,n)],e),B.L,B.m),n),n),n),n,n),B.n,n,B.f7,n,n,n,n))}}
 A.avK.prototype={
 $1(a){var s=B.c.aX(a)
 if(s.length===0)return"Required"
