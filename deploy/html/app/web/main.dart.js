@@ -88849,7 +88849,7 @@ a10(a){var s=0,r=A.C(t.T),q,p=this,o,n,m,l,k,j,i,h
 var $async$pk=A.D(function(b,c){if(b===1)return A.z(c,r)
 for(;;)switch(s){case 0:s=3
 return A.u(p.xi(),$async$pk)
-case 3:o=A.jU("AUTH0_AUDIENCE","","")
+case 3:o=A.jU("AUTH0_AUDIENCE","","google")
 n=A.jU("AUTH0_REDIRECT_URI","","https://app.polyglots.social")
 m=t.N
 l=A.p(m,m)
