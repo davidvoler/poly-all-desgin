@@ -5,6 +5,3 @@ data/
 **/assets/.env
 .env
 
-
-deploy/html/app/web/assets/assets/.env
-deploy/html/dashboard/web/assets/assets/.env

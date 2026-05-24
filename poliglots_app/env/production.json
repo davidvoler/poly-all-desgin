@@ -1,0 +1,10 @@
+{
+  "_comment": "Auth0 prod tenant + the public polyglots.social subdomains. Auth0 SPA client_id is public so committing it is safe.",
+  "API_BASE_URL": "https://api.polyglots.social",
+  "AUDIO_BASE_URL": "https://app.polyglots.social/newaudio",
+  "AUTH_PROVIDER": "auth0",
+  "AUTH0_DOMAIN": "polyglots.us.auth0.com",
+  "AUTH0_CLIENT_ID": "USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk",
+  "AUTH0_AUDIENCE": "",
+  "AUTH0_REDIRECT_URI": "https://app.polyglots.social"
+}
