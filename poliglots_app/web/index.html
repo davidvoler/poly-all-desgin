@@ -31,6 +31,15 @@
 
   <title>poliglots_app</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Auth0 SPA JS SDK — required by the `auth0_flutter_web` plugin.
+    Without this script `window.Auth0Client` is undefined and every
+    call into Auth0Web crashes with "Cannot read properties of
+    undefined (reading 'Auth0Client')". Load it synchronously before
+    Flutter boots so the SDK is ready by the time AuthNotifier runs.
+  -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
 </head>
 <body>
   <!--
