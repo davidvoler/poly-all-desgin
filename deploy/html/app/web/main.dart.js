@@ -26115,7 +26115,7 @@ akp:function akp(){},
 b4d(a){var s
 if(a.length===0)return null
 s=B.c.bB(a,"/")?"":"/"
-return A.hc("AUDIO_BASE_URL","http://127.0.0.1:3002/audio","https://app.polyglots.social/newaudio")+s+a},
+return A.hc("AUDIO_BASE_URL","http://127.0.0.1:3002/audio","https://app.polyglots.social")+s+a},
 b__(){return new A.nX()},
 aZ_(){return new A.lT()},
 aDT:function aDT(){},
