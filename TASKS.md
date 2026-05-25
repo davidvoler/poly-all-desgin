@@ -251,7 +251,13 @@ We have 2 main way of creating content
      `auth0_flutter` (same for `poliglots_app` — only flutter_dotenv).
   
 
+*** getting ready for MVP ***
 
+- [] solve oauth - consider alternatives for auth0
+- [] upload some generated courses as an example 
+
+- [] learn how to generate courses with AI
+- [] 
 
 
 *** tasks saved for later stage ***
