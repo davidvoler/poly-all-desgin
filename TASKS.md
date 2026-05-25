@@ -254,10 +254,10 @@ We have 2 main way of creating content
 *** getting ready for MVP ***
 
 - [] solve oauth - consider alternatives for auth0
-- [] upload some generated courses as an example 
-
-- [] learn how to generate courses with AI
+- [] upload some generated courses as an example - verify that the process works well
 - [] 
+- [] learn how to generate courses with AI
+ 
 
 
 *** tasks saved for later stage ***
