@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polyglots — Choose Languages</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  .header {
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  .header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+  }
+
+  /* Each pair card */
+  .pair {
+    margin-bottom: 14px;
+  }
+  .pair-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 8px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pair-label .ic {
+    font-family: var(--font-icon);
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .lang-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 16px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.18);
+    cursor: pointer;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  .lang-card:hover { transform: translateY(-1px); }
+
+  .flag {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.14);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lang-body { flex: 1; min-width: 0; }
+  .lang-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+  .lang-native {
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .lang-native.jp { font-family: var(--font-jp); }
+  .lang-en {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .lang-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+  }
+  .change {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .change .ic {
+    font-family: var(--font-icon);
+    font-size: 16px;
+  }
+
+  /* Swap button — connecting the two cards */
+  .swap-row {
+    display: flex;
+    justify-content: center;
+    margin: 4px 0;
+    position: relative;
+    z-index: 2;
+  }
+  .swap-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(13, 71, 161, 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-family: var(--font-icon);
+    font-size: 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -16px;
+    margin-bottom: -16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+
+  .level-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 4px 0;
+    padding: 0 4px;
+  }
+  .level-row .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .level-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+  }
+  .chip.selected {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+
+  .cta-row {
+    margin-top: auto;
+    padding-top: 14px;
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="page">
+
+      <div class="top">
+        <button class="icon-btn" aria-label="Back">arrow_back</button>
+        <div class="brand" style="text-align:center;flex:1;">polyglots</div>
+        <div style="width:36px;"></div>
+      </div>
+
+      <div class="header">
+        <h1>Set your languages</h1>
+        <p>You can change these any time.</p>
+      </div>
+
+      <!-- I speak -->
+      <div class="pair">
+        <div class="pair-label">
+          <span class="ic">record_voice_over</span>
+          I speak
+        </div>
+        <div class="lang-card">
+          <div class="flag">🇺🇸</div>
+          <div class="lang-body">
+            <div class="lang-row">
+              <span class="lang-native">English</span>
+            </div>
+            <div class="lang-meta">Your native language</div>
+          </div>
+          <span class="change">
+            Change <span class="ic">expand_more</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Swap arrow -->
+      <div class="swap-row">
+        <button class="swap-btn" aria-label="Swap">swap_vert</button>
+      </div>
+
+      <!-- I want to learn -->
+      <div class="pair">
+        <div class="pair-label">
+          <span class="ic">school</span>
+          I want to learn
+        </div>
+        <div class="lang-card">
+          <div class="flag">🇯🇵</div>
+          <div class="lang-body">
+            <div class="lang-row">
+              <span class="lang-native jp">日本語</span>
+              <span class="lang-en">Japanese</span>
+            </div>
+            <div class="lang-meta">12 courses · 4 levels</div>
+          </div>
+          <span class="change">
+            Change <span class="ic">expand_more</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="level-row">
+        <span class="label">Your level</span>
+      </div>
+      <div class="level-chips">
+        <span class="chip selected">Beginner</span>
+        <span class="chip">Elementary</span>
+        <span class="chip">Intermediate</span>
+        <span class="chip">Advanced</span>
+      </div>
+
+      <div class="cta-row">
+        <button class="cta">
+          See courses
+          <span class="icon">arrow_forward</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

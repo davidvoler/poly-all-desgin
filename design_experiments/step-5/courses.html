@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polyglots — Courses</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* Mosaic on this page mixes scripts to hint at the multi-language theme */
+  .word.lang-zh { font-family: var(--font-cjk); }
+  .word.lang-ar { font-family: var(--font-arabic); }
+  .word.lang-he { font-family: var(--font-hebrew); }
+
+  .header {
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px 0;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  .header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+  }
+
+  .lang-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  /* Active card — currently learning, prominent */
+  .lang-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.12);
+    cursor: pointer;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  .lang-card:hover { transform: translateY(-1px); }
+
+  .lang-card.active {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.30);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    padding: 14px 14px;
+  }
+
+  .flag {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.14);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lang-card.active .flag { width: 48px; height: 48px; font-size: 30px; }
+
+  .lang-body { flex: 1; min-width: 0; }
+
+  .lang-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+  .lang-native {
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .lang-native.jp { font-family: var(--font-jp); }
+  .lang-native.zh { font-family: var(--font-cjk); }
+  .lang-native.ar { font-family: var(--font-arabic); }
+  .lang-native.he { font-family: var(--font-hebrew); }
+
+  .lang-en {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .lang-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .lang-card.active .lang-meta {
+    color: rgba(255,255,255,0.75);
+  }
+
+  .lang-card .progress-bar {
+    margin-top: 6px;
+    height: 4px;
+  }
+
+  .pill {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--color-orange-300);
+    color: #5a2a00;
+    flex-shrink: 0;
+  }
+
+  .chevron {
+    font-family: var(--font-icon);
+    font-size: 22px;
+    color: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+  }
+
+  .footer-note {
+    margin-top: auto;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    padding-top: 14px;
+  }
+  .footer-note a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    padding-bottom: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="mosaic">
+      <span class="word w1">こんにちは</span>
+      <span class="word w2 lang-zh">学习</span>
+      <span class="word w3 lang-ar">مرحبا</span>
+      <span class="word w4">学校</span>
+      <span class="word w5 lang-he">שלום</span>
+      <span class="word w6 lang-zh">朋友</span>
+      <span class="word w7">本</span>
+      <span class="word w8 lang-ar">كتاب</span>
+      <span class="word w9">はじめまして</span>
+      <span class="word w10 lang-he">תודה</span>
+      <span class="word w11 lang-zh">谢谢</span>
+      <span class="word w12">おはよう</span>
+      <span class="word w13">学</span>
+    </div>
+
+    <div class="page">
+
+      <div class="top">
+        <div class="brand">polyglots</div>
+        <div class="streak">
+          <span class="dot"></span>
+          5 day streak
+        </div>
+      </div>
+
+      <div class="header">
+        <h1>Choose your language</h1>
+        <p>Continue learning, or start something new.</p>
+      </div>
+
+      <div class="lang-list">
+
+        <!-- Active / currently learning -->
+        <div class="lang-card active">
+          <div class="flag">🇯🇵</div>
+          <div class="lang-body">
+            <div class="lang-row">
+              <span class="lang-native jp">日本語</span>
+              <span class="lang-en">Japanese</span>
+              <span class="pill" style="margin-left:auto;">In Progress</span>
+            </div>
+            <div class="lang-meta">Module 3 · 12 of 24 lessons</div>
+            <div class="progress-bar"><div class="fill" style="width:45%"></div></div>
+          </div>
+        </div>
+
+        <!-- Other languages -->
+        <div class="lang-card">
+          <div class="flag">🇨🇳</div>
+          <div class="lang-body">
+            <div class="lang-row">
+              <span class="lang-native zh">中文</span>
+              <span class="lang-en">Chinese</span>
+            </div>
+            <div class="lang-meta">3 courses · Beginner to Advanced</div>
+          </div>
+          <span class="chevron">chevron_right</span>
+        </div>
+
+        <div class="lang-card">
+          <div class="flag">🇸🇦</div>
+          <div class="lang-body">
+            <div class="lang-row">
+              <span class="lang-native ar">العربية</span>
+              <span class="lang-en">Arabic</span>
+            </div>
+            <div class="lang-meta">2 courses · Standard &amp; Levantine</div>
+          </div>
+          <span class="chevron">chevron_right</span>
+        </div>
+
+        <div class="lang-card">
+          <div class="flag">🇮🇱</div>
+          <div class="lang-body">
+            <div class="lang-row">
+              <span class="lang-native he">עברית</span>
+              <span class="lang-en">Hebrew</span>
+            </div>
+            <div class="lang-meta">2 courses · Modern &amp; Biblical</div>
+          </div>
+          <span class="chevron">chevron_right</span>
+        </div>
+
+      </div>
+
+      <div class="footer-note">
+        Browse <a href="#">all 12 languages</a>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

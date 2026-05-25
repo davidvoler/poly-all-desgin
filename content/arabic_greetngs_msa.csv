@@ -1,0 +1,56 @@
+arabic,translit,translation,category
+السلام عليكم,as-salamu alaykum,Peace be upon you,religious
+وعليكم السلام,wa-alaykum as-salam,And upon you peace (reply),religious
+السلام عليكم ورحمة الله وبركاته,as-salamu alaykum wa-rahmatu-llahi wa-barakatuh,Peace upon you and God's mercy and blessings,religious
+وعليكم السلام ورحمة الله وبركاته,wa-alaykum as-salam wa-rahmatu-llahi wa-barakatuh,And upon you peace and God's mercy and blessings (reply),religious
+مرحبا,marhaban,Hello,casual
+مرحبا بك,marhaban bika,Hello to you (m),casual
+مرحبا بكِ,marhaban biki,Hello to you (f),casual
+أهلا,ahlan,Hi / Welcome,casual
+أهلا وسهلا,ahlan wa-sahlan,Warm welcome,casual
+أهلا بك,ahlan bika,Welcome to you (m),casual
+أهلا بكِ,ahlan biki,Welcome to you (f),casual
+صباح الخير,sabah al-khayr,Good morning,time
+صباح النور,sabah an-nur,Morning of light (reply),time
+مساء الخير,masa al-khayr,Good evening,time
+مساء النور,masa an-nur,Evening of light (reply),time
+تصبح على خير,tusbih ala khayr,Good night (to m),time
+تصبحين على خير,tusbihina ala khayr,Good night (to f),time
+ليلة سعيدة,layla saida,Goodnight (lit. happy night),time
+كيف حالك,kayfa haluk,How are you? (m),how_are_you
+كيف حالكِ,kayfa haluki,How are you? (f),how_are_you
+كيف حالكم,kayfa halukum,How are you? (plural),how_are_you
+كيف الحال,kayfa al-hal,How is it going?,how_are_you
+كيف أحوالك,kayfa ahwaluk,How have you been? (m),how_are_you
+بخير,bi-khayr,Fine / well,response
+بخير والحمد لله,bi-khayrin wa-l-hamdu li-llah,Fine praise be to God,response
+الحمد لله,al-hamdu li-llah,Praise be to God,response
+كل شيء على ما يرام,kull shay ala ma yuram,Everything is going well,response
+ما اسمك,ma ismuk,What's your name? (m),question
+ما اسمكِ,ma ismuki,What's your name? (f),question
+اسمي,ismi,My name is...,question
+من أين أنت,min ayna anta,Where are you from? (m),question
+من أين أنتِ,min ayna anti,Where are you from? (f),question
+تشرفنا,tasharrafna,Pleased to meet you,polite
+فرصة سعيدة,fursa saida,Pleasure (to meet you),polite
+سررت بلقائك,surirtu bi-liqaik,I was pleased to meet you (m),polite
+شكرا,shukran,Thank you,polite
+شكرا جزيلا,shukran jazilan,Thank you very much,polite
+عفوا,afwan,You're welcome / excuse me,polite
+لا شكر على واجب,la shukra ala wajib,No thanks needed for duty,polite
+من فضلك,min fadlik,Please (m),polite
+من فضلكِ,min fadliki,Please (f),polite
+لو سمحت,law samaht,If you would (m),polite
+لو سمحتِ,law samahti,If you would (f),polite
+مع السلامة,maa as-salama,Goodbye (lit. with safety),farewell
+إلى اللقاء,ila al-liqa,Until we meet again,farewell
+إلى اللقاء قريبا,ila al-liqa qariban,See you soon,farewell
+وداعا,wadaan,Farewell,farewell
+في أمان الله,fi aman illah,In God's protection (goodbye),farewell
+أراك لاحقا,araka lahiqan,See you later (m),farewell
+أراكِ لاحقا,araki lahiqan,See you later (f),farewell
+إن شاء الله,in sha Allah,God willing,phrase
+ما شاء الله,ma sha Allah,What God has willed (expressing admiration),phrase
+بسم الله,bismillah,In the name of God,phrase
+بارك الله فيك,baraka-llahu fik,May God bless you (m),phrase
+بارك الله فيكِ,baraka-llahu fiki,May God bless you (f),phrase

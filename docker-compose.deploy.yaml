@@ -1,0 +1,49 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:17.4
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 2GB 
+    volumes:
+      - /home/davidle/new_data/postgres:/var/lib/postgresql/data
+    shm_size: 2GB
+
+  server:
+    container_name: server
+    image: server:polyglots
+    build:
+      context: server
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8801:8801
+    volumes:
+      - ./server/src:/app
+    environment:
+      - POSTGRES_DB=polyglots
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=polyglots
+      - POSTGRES_PASSWORD=polyglots
+      # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
+      # /api/v1/school_users/login_auth0 route verifies ID tokens
+      # against the tenant JWKS; otherwise it returns 503 and the
+      # dashboard falls back to the local password flow.
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+    command: 
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8801"
+      - --reload
+    depends_on:
+      - postgres
+

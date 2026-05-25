@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Concept 2B — Vocabulary Mosaic (compact, with tabs)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-default);
+    background: #0c0f1a;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 16px 12px;
+  }
+
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    border-radius: 28px;
+    overflow: hidden;
+    position: relative;
+    min-height: 640px;
+    background:
+      radial-gradient(140% 80% at 50% 100%, #1E88E5 0%, #1565C0 25%, #0D47A1 55%, #0c0f1a 100%);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Mosaic of learned vocabulary as the backdrop */
+  .mosaic {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+  }
+  .word {
+    position: absolute;
+    font-family: var(--font-jp);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .w1  { top: 4%;   left: -2%;  font-size: 45px; opacity: 0.10; }
+  .w2  { top: 8%;   right: 6%;  font-size: 20px; opacity: 0.30; transform: rotate(-2deg); }
+  .w3  { top: 17%;  left: 8%;   font-size: 25px; opacity: 0.18; }
+  .w4  { top: 24%;  right: -4%; font-size: 62px; opacity: 0.07; }
+  .w5  { top: 31%;  left: 4%;   font-size: 15px; opacity: 0.45; }
+  .w6  { top: 36%;  right: 12%; font-size: 21px; opacity: 0.22; }
+  .w7  { top: 44%;  left: -3%;  font-size: 78px; opacity: 0.06; }
+  .w8  { top: 56%;  right: 4%;  font-size: 27px; opacity: 0.20; }
+  .w9  { top: 65%;  left: 10%;  font-size: 18px; opacity: 0.42; }
+  .w10 { top: 72%;  right: 8%;  font-size: 49px; opacity: 0.10; }
+  .w11 { top: 80%;  left: 4%;   font-size: 24px; opacity: 0.28; }
+  .w12 { top: 86%;  right: 14%; font-size: 16px; opacity: 0.50; }
+  .w13 { top: 90%;  left: 16%;  font-size: 35px; opacity: 0.08; }
+
+  .mosaic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(60% 40% at 50% 48%, rgba(13, 71, 161, 0.55) 0%, rgba(13, 71, 161, 0) 70%);
+  }
+
+  .page {
+    position: relative;
+    padding: 22px 20px 80px 20px;
+    min-height: 640px;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+    z-index: 1;
+  }
+
+  /* Top bar */
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+  }
+  .streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 4px 9px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .streak .dot {
+    width: 6px; height: 6px;
+    background: var(--color-orange-300);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--color-orange-300);
+  }
+
+  /* Center medallion */
+  .medallion {
+    position: relative;
+    margin: 4px auto 16px auto;
+    width: 168px;
+    height: 168px;
+  }
+  .medallion svg { transform: rotate(-90deg); position: absolute; inset: 0; }
+  .medallion .glow {
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.18), transparent 70%);
+    filter: blur(6px);
+  }
+  .medallion .center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .medallion .flag-pair {
+    font-size: 13px;
+    letter-spacing: 0.30em;
+    margin-bottom: 5px;
+    opacity: 0.85;
+  }
+  .medallion .native {
+    font-family: var(--font-jp);
+    font-size: 44px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.4);
+  }
+  .medallion .pct {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    margin-top: 7px;
+  }
+
+  /* Course caption */
+  .course-cap {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .course-cap .lang-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+  .course-cap h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin: 5px 0 2px 0;
+    letter-spacing: -0.01em;
+  }
+  .course-cap .module {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Stats — segmented capsule */
+  .stats {
+    display: flex;
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .seg {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    border-right: 1px solid rgba(255,255,255,0.10);
+  }
+  .seg:last-child { border-right: none; }
+  .seg .v {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .seg .l {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    margin-top: 4px;
+  }
+  .stats-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    margin-bottom: 7px;
+  }
+
+  /* Practice button */
+  .cta-row {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .practice {
+    flex: 1;
+    background: #fff;
+    color: var(--brand-primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.30);
+    font-family: var(--font-default);
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  .practice:hover { transform: translateY(-2px); }
+  .practice .icon {
+    font-family: var(--font-icon);
+    font-size: 18px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #fff;
+    font-family: var(--font-icon);
+    font-size: 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Bottom navigation — glass on dark */
+  .nav {
+    position: absolute;
+    left: 12px; right: 12px;
+    bottom: 12px;
+    background: rgba(12, 16, 28, 0.55);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 5px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    z-index: 2;
+  }
+  .nav-item {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-default);
+    cursor: pointer;
+    border-radius: 13px;
+    padding: 7px 4px 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: background var(--duration-base) var(--ease-standard),
+                color var(--duration-base) var(--ease-standard);
+  }
+  .nav-item .icon {
+    font-family: var(--font-icon);
+    font-size: 18px;
+    line-height: 1;
+    font-variation-settings: "FILL" 0, "wght" 400;
+  }
+  .nav-item .label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .nav-item:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .nav-item.active {
+    background: #fff;
+    color: var(--brand-primary);
+  }
+  .nav-item.active .icon {
+    font-variation-settings: "FILL" 1, "wght" 500;
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="mosaic">
+      <span class="word w1">こんにちは</span>
+      <span class="word w2">ありがとう</span>
+      <span class="word w3">日本</span>
+      <span class="word w4">学校</span>
+      <span class="word w5">すみません</span>
+      <span class="word w6">食べる</span>
+      <span class="word w7">本</span>
+      <span class="word w8">先生</span>
+      <span class="word w9">はじめまして</span>
+      <span class="word w10">水</span>
+      <span class="word w11">友達</span>
+      <span class="word w12">おはよう</span>
+      <span class="word w13">学</span>
+    </div>
+
+    <div class="page">
+
+      <div class="top">
+        <div class="brand">polyglots</div>
+        <div class="streak">
+          <span class="dot"></span>
+          5 day streak
+        </div>
+      </div>
+
+      <div class="medallion">
+        <div class="glow"></div>
+        <svg width="168" height="168" viewBox="0 0 168 168">
+          <circle cx="84" cy="84" r="74" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="5"/>
+          <circle cx="84" cy="84" r="74" fill="none" stroke="#fff" stroke-width="5"
+            stroke-linecap="round"
+            stroke-dasharray="465"
+            stroke-dashoffset="256"/>
+        </svg>
+        <div class="center">
+          <div class="flag-pair">🇺🇸 → 🇯🇵</div>
+          <div class="native">日本語</div>
+          <div class="pct">45% Complete</div>
+        </div>
+      </div>
+
+      <div class="course-cap">
+        <div class="lang-label">Japanese · Nihongo</div>
+        <h2>Japanese for Beginners</h2>
+        <div class="module">Module 3 · Greetings &amp; Introductions</div>
+      </div>
+
+      <div class="stats-label">— Your Vocabulary —</div>
+      <div class="stats">
+        <div class="seg">
+          <div class="v">248</div>
+          <div class="l">Words</div>
+        </div>
+        <div class="seg">
+          <div class="v">12</div>
+          <div class="l">Lessons</div>
+        </div>
+        <div class="seg">
+          <div class="v">86</div>
+          <div class="l">Sentences</div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="practice">
+          <span class="icon">play_arrow</span>
+          Practice Now
+        </button>
+        <button class="icon-btn" aria-label="Settings">tune</button>
+      </div>
+
+    </div>
+
+    <nav class="nav" aria-label="Bottom navigation">
+      <button class="nav-item active" aria-current="page">
+        <span class="icon">home</span>
+        <span class="label">Home</span>
+      </button>
+      <button class="nav-item">
+        <span class="icon">menu_book</span>
+        <span class="label">Courses</span>
+      </button>
+      <button class="nav-item">
+        <span class="icon">trending_up</span>
+        <span class="label">Progress</span>
+      </button>
+    </nav>
+  </div>
+</body>
+</html>

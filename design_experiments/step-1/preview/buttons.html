@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body{margin:0;padding:24px;background:var(--gradient-quiz);font-family:var(--font-latin);display:flex;flex-direction:column;gap:14px}
+button{font:600 16px/1 var(--font-latin);padding:16px;border-radius:12px;border:0;cursor:pointer;width:100%}
+.primary{background:var(--brand-primary);color:#fff}
+.primary:hover{background:var(--brand-primary-hover)}
+.outline{background:#fff;color:var(--brand-primary);border:1px solid var(--brand-primary-border)}
+.text{background:transparent;color:var(--brand-primary);padding:8px 16px;width:auto;align-self:flex-start}
+.disabled{background:var(--brand-primary);color:#fff;opacity:.4;cursor:not-allowed}
+.lbl{font-size:11px;color:var(--fg-muted);font-family:ui-monospace,monospace;margin-top:-8px}
+</style></head><body>
+<button class="primary">Start Learning</button>
+<div class="lbl">primary · blue-600 / radius 12 / pad 16</div>
+<button class="outline">See question type demos</button>
+<div class="lbl">outlined</div>
+<button class="text">Previous</button>
+<div class="lbl">text · 8/16 padding</div>
+<button class="disabled">Submit</button>
+<div class="lbl">disabled · 40% opacity</div>
+</body></html>

@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Concept 3 — Gamified Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-default);
+    background: var(--color-grey-100);
+    color: var(--fg-strong);
+    min-height: 100vh;
+    padding: 28px 20px;
+  }
+
+  .frame {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--gradient-home);
+    border-radius: 24px;
+    padding: 28px 28px 36px 28px;
+    box-shadow: 0 20px 60px rgba(30, 50, 90, 0.10);
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand .mark {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--brand-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .brand .name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fg-strong);
+  }
+  .brand .name span { color: var(--fg-muted); font-weight: 500; }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-pill);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-strong);
+    box-shadow: var(--shadow-card-compact);
+  }
+  .chip.fire { color: var(--color-orange-700); }
+  .chip .icon { font-family: var(--font-icon); font-size: 16px; }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    color: var(--brand-primary);
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-card-compact);
+  }
+
+  /* Header text */
+  .greeting-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .greeting-row h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--fg-strong);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .greeting-row .sub {
+    font-size: 15px;
+    color: var(--fg-muted);
+    margin-top: 4px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--bg-surface);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Hero practice card */
+  .hero-card {
+    background: linear-gradient(135deg, var(--color-blue-600) 0%, var(--color-blue-800) 100%);
+    color: #fff;
+    border-radius: var(--radius-card);
+    padding: 28px;
+    box-shadow: 0 12px 30px rgba(30,136,229,0.30);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::after {
+    content: "日本語";
+    position: absolute;
+    right: -10px; bottom: -40px;
+    font-family: var(--font-jp);
+    font-size: 220px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.08);
+    line-height: 1;
+    pointer-events: none;
+  }
+  .hero-card .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 8px;
+  }
+  .hero-card h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+  }
+  .hero-card .module {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 22px;
+  }
+  .hero-card .flags {
+    font-size: 22px;
+    margin-bottom: 18px;
+    letter-spacing: 0.2em;
+  }
+  .hero-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+  }
+  .hero-progress strong { font-size: 18px; font-weight: 700; color: #fff; }
+  .hero-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.20);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .hero-bar > span {
+    display: block;
+    height: 100%;
+    background: #fff;
+    border-radius: var(--radius-pill);
+    width: 45%;
+  }
+  .practice-btn {
+    background: #fff;
+    color: var(--brand-primary);
+    border: none;
+    border-radius: var(--radius-button);
+    padding: 14px 22px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.20);
+    font-family: var(--font-default);
+    position: relative;
+    z-index: 2;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  .practice-btn:hover { transform: translateY(-1px); }
+  .practice-btn .icon { font-family: var(--font-icon); font-size: 22px; }
+
+  /* Stats row */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .stat {
+    background: var(--bg-surface);
+    border-radius: var(--radius-card);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-card-compact);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .stat .ico {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--color-blue-50);
+    color: var(--brand-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-icon);
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .stat:nth-child(2) .ico { background: var(--color-green-50); color: var(--state-correct-icon); }
+  .stat:nth-child(3) .ico { background: var(--color-purple-50); color: var(--accent-translit); }
+  .stat .v {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fg-strong);
+    letter-spacing: -0.02em;
+  }
+  .stat .l {
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .stat .delta {
+    font-size: 11px;
+    color: var(--state-correct-icon);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Streak / heatmap card */
+  .streak-card .head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .streak-card h3 {
+    font-size: 18px; font-weight: 600;
+    color: var(--fg-strong);
+    margin: 0;
+  }
+  .streak-card .meta {
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+
+  .streak-big {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 22px;
+  }
+  .flame {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--color-orange-300), var(--color-orange-700));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-icon);
+    font-size: 28px;
+    box-shadow: 0 6px 16px rgba(245,124,0,0.30);
+  }
+  .streak-big .num {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--fg-strong);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .streak-big .lbl {
+    font-size: 13px;
+    color: var(--fg-muted);
+    margin-top: 4px;
+  }
+
+  .week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .day {
+    aspect-ratio: 1 / 1.1;
+    border-radius: 8px;
+    background: var(--color-grey-100);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .day .d { font-weight: 600; }
+  .day.l1 { background: var(--color-blue-50); color: var(--brand-primary); }
+  .day.l2 { background: var(--color-blue-100); color: var(--color-blue-800); }
+  .day.l3 { background: var(--color-blue-300); color: #fff; }
+  .day.l4 { background: var(--brand-primary); color: #fff; }
+  .day.today { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+
+  /* Goal */
+  .goal-card .head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .goal-card h3 {
+    font-size: 18px; font-weight: 600; margin: 0; color: var(--fg-strong);
+  }
+  .goal-row {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .goal-ring {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: conic-gradient(var(--brand-primary) 60%, var(--color-grey-200) 0);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .goal-ring-inner {
+    width: 68px; height: 68px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .goal-ring-inner .v { font-size: 20px; font-weight: 700; color: var(--fg-strong); line-height: 1; }
+  .goal-ring-inner .l { font-size: 10px; color: var(--fg-muted); margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .goal-info .t1 { font-size: 14px; font-weight: 600; color: var(--fg-strong); }
+  .goal-info .t2 { font-size: 13px; color: var(--fg-muted); margin-top: 4px; line-height: 1.5; }
+
+  /* Recent words */
+  .recent-card h3 {
+    font-size: 18px; font-weight: 600; color: var(--fg-strong); margin: 0 0 14px 0;
+  }
+  .word-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .word-row:last-child { border-bottom: none; }
+  .word-row .jp {
+    font-family: var(--font-jp);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fg-strong);
+  }
+  .word-row .en {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin-top: 2px;
+  }
+  .word-row .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.04em;
+  }
+  .badge.new { background: var(--color-blue-50); color: var(--brand-primary-text); }
+  .badge.review { background: var(--color-orange-100); color: var(--color-orange-800); }
+  .badge.mastered { background: var(--color-green-50); color: var(--color-green-800); }
+
+  .col { display: flex; flex-direction: column; gap: 16px; }
+</style>
+</head>
+<body>
+  <div class="frame">
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark">P</div>
+        <div class="name">polyglots<span>.social</span></div>
+      </div>
+      <div class="top-actions">
+        <div class="chip fire"><span class="icon">local_fire_department</span>5 days</div>
+        <div class="chip"><span class="icon">notifications</span></div>
+        <div class="avatar">D</div>
+      </div>
+    </div>
+
+    <div class="greeting-row">
+      <div>
+        <h1>Welcome Back, David</h1>
+        <div class="sub">Ready for today's lesson? You're 8 questions away from your daily goal.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Left column -->
+      <div class="col">
+        <div class="hero-card">
+          <div class="label">Current Course</div>
+          <h2>Japanese for Beginners</h2>
+          <div class="module">Module 3 · Greetings &amp; Introductions · Lesson 2</div>
+          <div class="flags">🇺🇸 → 🇯🇵</div>
+          <div class="hero-progress">
+            <span>Course progress</span>
+            <strong>45%</strong>
+          </div>
+          <div class="hero-bar"><span></span></div>
+          <button class="practice-btn">
+            <span class="icon">play_arrow</span>
+            Practice
+          </button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="ico">translate</div>
+            <div>
+              <div class="v">248</div>
+              <div class="l">Words Learned</div>
+              <div class="delta">+12 this week</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="ico">school</div>
+            <div>
+              <div class="v">12</div>
+              <div class="l">Lessons Done</div>
+              <div class="delta">+2 this week</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="ico">format_quote</div>
+            <div>
+              <div class="v">86</div>
+              <div class="l">Sentences</div>
+              <div class="delta">+9 this week</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card recent-card">
+          <h3>Recent Words</h3>
+          <div class="word-row">
+            <div>
+              <div class="jp">こんにちは</div>
+              <div class="en">Hello / Good afternoon</div>
+            </div>
+            <div class="badge mastered">Mastered</div>
+          </div>
+          <div class="word-row">
+            <div>
+              <div class="jp">ありがとう</div>
+              <div class="en">Thank you</div>
+            </div>
+            <div class="badge mastered">Mastered</div>
+          </div>
+          <div class="word-row">
+            <div>
+              <div class="jp">すみません</div>
+              <div class="en">Excuse me / Sorry</div>
+            </div>
+            <div class="badge review">Review</div>
+          </div>
+          <div class="word-row">
+            <div>
+              <div class="jp">はじめまして</div>
+              <div class="en">Nice to meet you</div>
+            </div>
+            <div class="badge new">New</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="col">
+        <div class="card streak-card">
+          <div class="head">
+            <h3>This Week</h3>
+            <div class="meta">May 1 – 7</div>
+          </div>
+          <div class="streak-big">
+            <div class="flame">local_fire_department</div>
+            <div>
+              <div class="num">5</div>
+              <div class="lbl">Day streak</div>
+            </div>
+          </div>
+          <div class="week">
+            <div class="day l3"><div class="d">M</div><div>15</div></div>
+            <div class="day l2"><div class="d">T</div><div>10</div></div>
+            <div class="day l4"><div class="d">W</div><div>22</div></div>
+            <div class="day l1"><div class="d">T</div><div>5</div></div>
+            <div class="day l3"><div class="d">F</div><div>18</div></div>
+            <div class="day today l2"><div class="d">S</div><div>12</div></div>
+            <div class="day"><div class="d">S</div><div>—</div></div>
+          </div>
+        </div>
+
+        <div class="card goal-card">
+          <div class="head">
+            <h3>Daily Goal</h3>
+          </div>
+          <div class="goal-row">
+            <div class="goal-ring">
+              <div class="goal-ring-inner">
+                <div class="v">12</div>
+                <div class="l">of 20</div>
+              </div>
+            </div>
+            <div class="goal-info">
+              <div class="t1">60% to today's goal</div>
+              <div class="t2">Practice 8 more questions to keep your streak alive.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: var(--fg-strong);">Next Up</h3>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--color-blue-50); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-family: var(--font-icon); font-size: 22px;">menu_book</div>
+            <div style="flex: 1;">
+              <div style="font-size: 14px; font-weight: 600; color: var(--fg-strong);">Lesson 3 · Asking Questions</div>
+              <div style="font-size: 12px; color: var(--fg-muted); margin-top: 2px;">14 sentences · 22 new words</div>
+            </div>
+            <span style="font-family: var(--font-icon); font-size: 22px; color: var(--fg-subtle);">chevron_right</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

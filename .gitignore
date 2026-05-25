@@ -1,0 +1,7 @@
+data/
+
+# flutter_dotenv runtime config — copy from .env.example to assets/.env
+# and edit (contains Auth0 client id, API base URLs, etc.).
+# **/assets/.env
+# .env
+

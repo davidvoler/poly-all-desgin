@@ -1,0 +1,27 @@
+{
+  "@@locale": "en",
+
+  "brand": "POLYGLOTS",
+
+  "common": {
+    "streak_days": "{n} day streak",
+    "streak_short": "{n}",
+    "back": "Back",
+    "skip": "Skip",
+    "continue": "Continue"
+  },
+
+  "home": {
+    "complete": "{percent}% Complete",
+    "course_overline": "Japanese · Nihongo",
+    "course_title": "Japanese for Beginners",
+    "course_module": "Module 3 · Greetings & Introductions",
+    "tap_to_change": "TAP TO CHANGE",
+    "vocabulary_label": "— Your Vocabulary —",
+    "stat_words": "Words",
+    "stat_sentences": "Sentences",
+    "stat_exercises": "Exercises",
+    "practice_now": "Practice Now",
+    "settings_tooltip": "Settings"
+  }
+}

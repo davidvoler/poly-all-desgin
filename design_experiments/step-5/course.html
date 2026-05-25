@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polyglots — Japanese for Beginners</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* Tighter top bar — back arrow + title + streak */
+  .top.with-back { margin-bottom: 14px; }
+  .title-block {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    padding: 0 4px;
+  }
+  .title-block .lang {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+  .title-block h1 {
+    font-size: 13px;
+    font-weight: 700;
+    margin: 2px 0 0 0;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Hero progress card */
+  .hero {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hero-pct {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .hero-pct .unit {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    margin-left: 2px;
+  }
+  .hero-body { flex: 1; }
+  .hero-body .label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 4px;
+  }
+  .hero-body .stat {
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 6px;
+  }
+
+  /* Module list */
+  .modules {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0 -4px;
+    padding: 0 4px;
+  }
+  .modules::-webkit-scrollbar { width: 0; }
+
+  .module {
+    margin-bottom: 8px;
+  }
+  .module-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+  }
+  .module-head .num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .module-head .num.done {
+    background: var(--color-green-500);
+    border-color: var(--color-green-500);
+    color: #fff;
+    font-family: var(--font-icon);
+    font-size: 14px;
+  }
+  .module-head .num.current {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+  .module-head .title {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .module-head .progress {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+  }
+
+  .module.expanded .module-head {
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(255,255,255,0.20);
+  }
+
+  .lessons {
+    padding: 6px 0 2px 32px;
+  }
+  .lesson {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .lesson + .lesson { margin-top: 2px; }
+  .lesson .dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-icon);
+    font-size: 12px;
+    color: transparent;
+  }
+  .lesson.done .dot {
+    background: var(--color-green-500);
+    border-color: var(--color-green-500);
+    color: #fff;
+  }
+  .lesson .body {
+    flex: 1;
+    min-width: 0;
+  }
+  .lesson .jp {
+    font-family: var(--font-jp);
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .lesson .en {
+    font-size: 10px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 1px;
+  }
+  .lesson.selected {
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.30);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+  .lesson.selected .dot {
+    background: #fff;
+    border-color: #fff;
+    color: var(--brand-primary);
+  }
+  .lesson.selected .dot::before {
+    content: "play_arrow";
+  }
+  .lesson .play {
+    font-family: var(--font-icon);
+    font-size: 16px;
+    color: rgba(255,255,255,0.45);
+  }
+  .lesson.selected .play { color: #fff; }
+
+  /* Bottom CTA */
+  .cta-row {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="mosaic">
+      <span class="word w1">こんにちは</span>
+      <span class="word w2">ありがとう</span>
+      <span class="word w3">日本</span>
+      <span class="word w4">学校</span>
+      <span class="word w5">すみません</span>
+      <span class="word w6">食べる</span>
+      <span class="word w7">本</span>
+      <span class="word w8">先生</span>
+      <span class="word w9">はじめまして</span>
+      <span class="word w10">水</span>
+      <span class="word w11">友達</span>
+      <span class="word w12">おはよう</span>
+      <span class="word w13">学</span>
+    </div>
+
+    <div class="page">
+
+      <div class="top with-back">
+        <button class="icon-btn" aria-label="Back">arrow_back</button>
+        <div class="title-block">
+          <div class="lang">Japanese · Nihongo</div>
+          <h1>Japanese for Beginners</h1>
+        </div>
+        <div class="streak">
+          <span class="dot"></span>
+          5
+        </div>
+      </div>
+
+      <div class="hero glass">
+        <div class="hero-pct">45<span class="unit">%</span></div>
+        <div class="hero-body">
+          <div class="label">Course progress</div>
+          <div class="stat">12 of 24 lessons · 248 words</div>
+          <div class="progress-bar"><div class="fill" style="width:45%"></div></div>
+        </div>
+      </div>
+
+      <div class="modules">
+
+        <!-- Module 1 — complete, collapsed -->
+        <div class="module">
+          <div class="module-head">
+            <span class="num done">check</span>
+            <span class="title">First Words</span>
+            <span class="progress">4 / 4</span>
+          </div>
+        </div>
+
+        <!-- Module 2 — complete, collapsed -->
+        <div class="module">
+          <div class="module-head">
+            <span class="num done">check</span>
+            <span class="title">Numbers &amp; Colors</span>
+            <span class="progress">5 / 5</span>
+          </div>
+        </div>
+
+        <!-- Module 3 — current, expanded -->
+        <div class="module expanded">
+          <div class="module-head">
+            <span class="num current">3</span>
+            <span class="title">Greetings &amp; Introductions</span>
+            <span class="progress">3 / 4</span>
+          </div>
+          <div class="lessons">
+            <div class="lesson done">
+              <span class="dot">check</span>
+              <div class="body">
+                <div class="jp">はじめまして</div>
+                <div class="en">Nice to meet you</div>
+              </div>
+            </div>
+            <div class="lesson done">
+              <span class="dot">check</span>
+              <div class="body">
+                <div class="jp">わたしは</div>
+                <div class="en">I am…</div>
+              </div>
+            </div>
+            <div class="lesson done">
+              <span class="dot">check</span>
+              <div class="body">
+                <div class="jp">どうぞよろしく</div>
+                <div class="en">Pleased to meet you</div>
+              </div>
+            </div>
+            <div class="lesson selected">
+              <span class="dot"></span>
+              <div class="body">
+                <div class="jp">お名前は何ですか</div>
+                <div class="en">What is your name?</div>
+              </div>
+              <span class="play">play_circle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 4 — not started -->
+        <div class="module">
+          <div class="module-head">
+            <span class="num">4</span>
+            <span class="title">Family &amp; People</span>
+            <span class="progress">0 / 5</span>
+          </div>
+        </div>
+
+        <!-- Module 5 — not started -->
+        <div class="module">
+          <div class="module-head">
+            <span class="num">5</span>
+            <span class="title">Food &amp; Drink</span>
+            <span class="progress">0 / 6</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="cta-row">
+        <button class="cta">
+          <span class="icon">play_arrow</span>
+          Continue Lesson
+        </button>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

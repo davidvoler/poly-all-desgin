@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Riverside Academy · Settings — Polyglots Schools</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="assets/app.css" />
+<style>
+  /* Smooth-scroll for the anchor-tab links */
+  html { scroll-behavior: smooth; }
+  /* Offset section anchors so the topbar doesn't cover them */
+  section[id] { scroll-margin-top: 90px; }
+</style>
+</head>
+<body class="bg">
+<div class="shell">
+
+  <aside class="side">
+    <div class="brand">POLYGLOTS · SCHOOLS</div>
+    <div class="school">
+      <div class="school-mark">RA</div>
+      <div class="school-meta">
+        <div class="school-name">Riverside Academy</div>
+        <div class="school-plan">Pro Plan</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"/></svg></span> Overview</a>
+      <a href="languages.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span> Languages</a>
+      <a href="courses.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4V4zM20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8V4z"/></svg></span> Courses</a>
+      <a href="editors.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4l11-11-4-4L4 16v4z"/></svg></span> Editors</a>
+      <a href="students.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 11.5a3 3 0 1 0 0-6M22 20a5 5 0 0 0-4-4.9"/></svg></span> Students</a>
+      <a href="settings.html" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2 2M16.5 16.5l2 2M5.5 18.5l2-2M16.5 7.5l2-2"/></svg></span> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="avatar lh">LH</div>
+      <div class="who">Lena Hayes</div>
+      <a href="#" class="out" title="Sign out">↗</a>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="topbar">
+      <div class="titles">
+        <div class="overline">Riverside Academy</div>
+        <h1>Settings</h1>
+      </div>
+      <div class="right">
+        <button class="btn btn-ghost">Discard</button>
+        <button class="btn btn-primary">Save changes</button>
+      </div>
+    </header>
+
+    <section class="content">
+
+      <!-- ============ Anchor tabs ============ -->
+      <div class="settings-tabs">
+        <a href="#profile" class="on">School profile</a>
+        <a href="#plans">Subscription plans</a>
+        <a href="#promotions">Promotions</a>
+        <a href="#billing">Billing</a>
+        <a href="#danger">Danger zone</a>
+      </div>
+
+      <!-- ============ School profile ============ -->
+      <section id="profile" class="glass panel" style="margin-bottom:18px;">
+        <div class="section-head">
+          <h2>School profile</h2>
+          <div class="subtitle">·&nbsp; How your school appears to students and editors</div>
+        </div>
+
+        <div class="form">
+          <div class="field">
+            <label for="f-name">School name</label>
+            <input id="f-name" type="text" value="Riverside Academy" />
+          </div>
+
+          <div class="field">
+            <label for="f-slug">URL slug</label>
+            <div class="prefix-input">
+              <div class="pfx">polyglots.app/</div>
+              <input id="f-slug" type="text" value="riverside" />
+            </div>
+            <div class="hint">Students will join at <code style="background:var(--w-08);padding:1px 6px;border-radius:6px;">polyglots.app/riverside</code>.</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="f-email">Contact email</label>
+              <input id="f-email" type="email" value="hello@riverside.edu" />
+            </div>
+            <div class="field">
+              <label for="f-domain">Custom domain</label>
+              <input id="f-domain" type="text" value="learn.riverside.edu" placeholder="learn.example.edu" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="f-tz">Time zone</label>
+              <select id="f-tz">
+                <option>America/New_York (EDT, UTC−4)</option>
+                <option>Europe/London (BST, UTC+1)</option>
+                <option>Asia/Jerusalem (IDT, UTC+3)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-locale">Default invite language</label>
+              <select id="f-locale">
+                <option>🇺🇸 &nbsp;English</option>
+                <option>🇮🇱 &nbsp;Hebrew</option>
+                <option>🇸🇦 &nbsp;Arabic</option>
+                <option>🇮🇹 &nbsp;Italian</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>School logo</label>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div class="school-mark" style="width:56px; height:56px; border-radius:14px; font-size:18px;">RA</div>
+              <button class="btn btn-ghost" type="button">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></span>
+                Upload image
+              </button>
+              <span class="hint">PNG or SVG · 256×256+ recommended</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ Subscription plans ============ -->
+      <section id="plans" class="glass panel" style="margin-bottom:18px;">
+        <div class="section-head">
+          <h2>Subscription plans</h2>
+          <div class="subtitle">·&nbsp; What students pay to access your courses</div>
+          <div class="right">
+            <button class="btn btn-ghost">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></span>
+              Add plan
+            </button>
+          </div>
+        </div>
+
+        <div class="plans">
+
+          <!-- Starter / Free -->
+          <div class="glass plan">
+            <div class="tier">Starter</div>
+            <div class="price">
+              <span class="amt">$0</span>
+              <span class="per">/student/mo</span>
+            </div>
+            <div class="blurb">Free taster — Public courses only.</div>
+            <ul class="feat">
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Access to Public courses</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> 1 active language</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Words &amp; sentence practice</li>
+              <li class="off"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14"/></svg></span> Audio downloads</li>
+              <li class="off"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14"/></svg></span> Editor 1:1 sessions</li>
+            </ul>
+            <div class="plan-foot">
+              <div class="subs">183 subscribers</div>
+              <div class="right">
+                <button class="btn btn-ghost">Edit</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pro / Featured -->
+          <div class="glass plan featured">
+            <div class="ribbon">Most popular</div>
+            <div class="tier" style="color:#fff;">Pro</div>
+            <div class="price">
+              <span class="amt">$9</span>
+              <span class="per">/student/mo</span>
+            </div>
+            <div class="blurb">Full library — recommended for most students.</div>
+            <ul class="feat">
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> All Public + Members courses</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Up to 3 active languages</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Audio downloads (offline)</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Mastery tracking + streaks</li>
+              <li class="off"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14"/></svg></span> Editor 1:1 sessions</li>
+            </ul>
+            <div class="plan-foot">
+              <div class="subs">52 subscribers</div>
+              <div class="right">
+                <button class="btn btn-ghost">Edit</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Premium -->
+          <div class="glass plan">
+            <div class="tier">Premium</div>
+            <div class="price">
+              <span class="amt">$19</span>
+              <span class="per">/student/mo</span>
+            </div>
+            <div class="blurb">Exam prep, live sessions, certificates.</div>
+            <ul class="feat">
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Everything in Pro</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Unlimited languages</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> 2 editor 1:1 sessions / mo</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Downloadable certificates</li>
+              <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span> Priority support</li>
+            </ul>
+            <div class="plan-foot">
+              <div class="subs">13 subscribers</div>
+              <div class="right">
+                <button class="btn btn-ghost">Edit</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="panel-hint" style="margin-top:14px; margin-bottom:0;">
+          Annual billing offered at <b style="color:#fff;">20% off</b> for all paid plans.
+          <a href="#" style="color:#fff; text-decoration:underline; text-underline-offset:3px;">Configure annual discount →</a>
+        </div>
+      </section>
+
+      <!-- ============ Promotions ============ -->
+      <section id="promotions" class="glass panel" style="margin-bottom:18px; padding-bottom:8px;">
+        <div class="section-head">
+          <h2>Promotions</h2>
+          <div class="subtitle">·&nbsp; Discount codes for cohorts, launches, and partners</div>
+          <div class="right">
+            <button class="btn btn-primary">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></span>
+              Create promotion
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="padding:0;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Discount</th>
+                <th>Applies to</th>
+                <th>Redeemed</th>
+                <th>Window</th>
+                <th>Status</th>
+                <th style="width:60px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code style="background:var(--w-08); padding:3px 8px; border-radius:6px; font-size:12px; font-family:ui-monospace,Menlo,monospace;">WELCOME50</code></td>
+                <td><b>50%</b> off first month</td>
+                <td>All plans</td>
+                <td>38 / ∞</td>
+                <td class="tight">Jan 1 – Dec 31, 2026</td>
+                <td><span class="pill active"><span class="swatch"></span>Active</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><code style="background:var(--w-08); padding:3px 8px; border-radius:6px; font-size:12px; font-family:ui-monospace,Menlo,monospace;">SPRING-A</code></td>
+                <td><b>50%</b> off first month</td>
+                <td>Cohort <i>Spring-A</i></td>
+                <td>24 / ∞</td>
+                <td class="tight">Mar 1 – Jun 30, 2026</td>
+                <td><span class="pill active"><span class="swatch"></span>Active</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><code style="background:var(--w-08); padding:3px 8px; border-radius:6px; font-size:12px; font-family:ui-monospace,Menlo,monospace;">TEACHER</code></td>
+                <td><b>100%</b> off Pro</td>
+                <td>Verified educators</td>
+                <td>7 / 50</td>
+                <td class="tight">Mar 1 – Aug 31, 2026</td>
+                <td><span class="pill active"><span class="swatch"></span>Active</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><code style="background:var(--w-08); padding:3px 8px; border-radius:6px; font-size:12px; font-family:ui-monospace,Menlo,monospace;">SUMMER2026</code></td>
+                <td><b>25%</b> off Pro · 3 months</td>
+                <td>Pro plan only</td>
+                <td>12 / ∞</td>
+                <td class="tight">Jun 1 – Aug 31, 2026</td>
+                <td><span class="pill draft"><span class="swatch"></span>Scheduled</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><code style="background:var(--w-08); padding:3px 8px; border-radius:6px; font-size:12px; font-family:ui-monospace,Menlo,monospace;">LAUNCH</code></td>
+                <td><b>30%</b> off — first 10</td>
+                <td>All plans</td>
+                <td>10 / 10</td>
+                <td class="tight">Nov 1 – Nov 30, 2025</td>
+                <td><span class="pill muted"><span class="swatch"></span>Exhausted</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><code style="background:var(--w-08); padding:3px 8px; border-radius:6px; font-size:12px; font-family:ui-monospace,Menlo,monospace;">WINTER25</code></td>
+                <td><b>20%</b> off</td>
+                <td>All plans</td>
+                <td>0 / ∞</td>
+                <td class="tight">Dec 1 – Dec 31, 2025</td>
+                <td><span class="pill error"><span class="swatch"></span>Expired</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ Billing ============ -->
+      <section id="billing" class="glass panel" style="margin-bottom:18px;">
+        <div class="section-head">
+          <h2>Billing</h2>
+          <div class="subtitle">·&nbsp; What your school pays Polyglots</div>
+          <div class="right">
+            <button class="btn btn-ghost">Change plan</button>
+          </div>
+        </div>
+
+        <div class="billing-grid">
+          <div class="glass billing-tile">
+            <div class="l">Current school plan</div>
+            <div class="v">School Pro · $49 / mo</div>
+            <div class="s">Up to 500 students · 3 active languages · unlimited editors</div>
+            <div class="row">
+              <span class="pill active"><span class="swatch"></span>Active</span>
+              <span class="tight" style="color:var(--w-55); font-size:11px;">Next invoice <b style="color:#fff;">Jun 5, 2026</b> · $49.00</span>
+            </div>
+          </div>
+
+          <div class="glass billing-tile">
+            <div class="l">Payment method</div>
+            <div class="v"><span class="card-mark">VISA</span> •••• 4242</div>
+            <div class="s">Expires 06/27 · Lena Hayes</div>
+            <div class="row">
+              <button class="btn btn-ghost" style="padding:6px 12px;">Update card</button>
+              <button class="btn btn-ghost" style="padding:6px 12px;">Add backup</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin: 6px 0 8px;">Recent invoices</div>
+        <div class="table-wrap" style="padding:0;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>Period</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th style="width:120px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="tight">INV-2026-05</td>
+                <td>May 5 – Jun 4, 2026</td>
+                <td><b>$49.00</b></td>
+                <td><span class="pill active"><span class="swatch"></span>Paid</span></td>
+                <td><div class="row-actions"><button title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td class="tight">INV-2026-04</td>
+                <td>Apr 5 – May 4, 2026</td>
+                <td><b>$49.00</b></td>
+                <td><span class="pill active"><span class="swatch"></span>Paid</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td class="tight">INV-2026-03</td>
+                <td>Mar 5 – Apr 4, 2026</td>
+                <td><b>$49.00</b></td>
+                <td><span class="pill active"><span class="swatch"></span>Paid</span></td>
+                <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ Danger zone ============ -->
+      <section id="danger" class="glass panel danger" style="margin-bottom:64px;">
+        <div class="section-head">
+          <h2>Danger zone</h2>
+          <div class="subtitle">·&nbsp; Destructive actions — proceed carefully</div>
+        </div>
+
+        <div class="danger-row">
+          <div class="meta">
+            <div class="t">Transfer school ownership</div>
+            <div class="s">Move owner rights to another editor. You'll be downgraded to Editor.</div>
+          </div>
+          <button class="btn btn-ghost">Transfer</button>
+        </div>
+
+        <div class="danger-row">
+          <div class="meta">
+            <div class="t">Export all data</div>
+            <div class="s">Download a JSON archive of all courses, editors, students, and results.</div>
+          </div>
+          <button class="btn btn-ghost">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg></span>
+            Export
+          </button>
+        </div>
+
+        <div class="danger-row">
+          <div class="meta">
+            <div class="t">Delete school</div>
+            <div class="s">Permanently delete <b>Riverside Academy</b>, its 14 courses, and revoke access for all 248 students. This cannot be undone.</div>
+          </div>
+          <button class="btn btn-danger">Delete school</button>
+        </div>
+      </section>
+
+    </section>
+  </main>
+</div>
+</body>
+</html>

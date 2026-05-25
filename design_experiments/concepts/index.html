@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polyglots — Home Page Concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../step-1/colors_and_type.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-default);
+    background: var(--color-grey-100);
+    color: var(--fg-strong);
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+  header {
+    margin-bottom: 36px;
+  }
+  header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--fg-strong);
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    font-size: 16px;
+    color: var(--fg-muted);
+    margin: 0;
+    max-width: 640px;
+    line-height: 1.5;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .grid.variations {
+    margin-top: 20px;
+    padding-top: 28px;
+    border-top: 1px dashed var(--border-default);
+  }
+  .section-head {
+    margin-top: 36px;
+    margin-bottom: 4px;
+  }
+  .section-head h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--fg-strong);
+    margin: 0 0 4px 0;
+    letter-spacing: -0.005em;
+  }
+  .section-head p {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin: 0;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .concept {
+    background: var(--bg-surface);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--duration-base) var(--ease-standard),
+                box-shadow var(--duration-base) var(--ease-standard);
+  }
+  .concept:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.12);
+  }
+  .concept .preview {
+    height: 360px;
+    overflow: hidden;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview iframe {
+    border: none;
+    width: 1200px;
+    height: 1100px;
+    transform: scale(0.36);
+    transform-origin: top left;
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+  .preview.dashboard iframe {
+    transform: scale(0.30);
+    width: 1300px;
+  }
+  .concept .body {
+    padding: 20px 22px 22px 22px;
+  }
+  .num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+    margin-bottom: 6px;
+  }
+  .concept h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: var(--fg-strong);
+    letter-spacing: -0.01em;
+  }
+  .concept p {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.5;
+    margin: 0 0 12px 0;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--color-grey-100);
+    color: var(--fg-default);
+  }
+  .open-link {
+    margin-top: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Home Page · 3 Concepts</h1>
+      <p>Three completely different directions for the language-learning home screen. Same data (course, words/lessons/sentences, practice CTA) — three distinct moods. Click any tile to open it full-page.</p>
+    </header>
+
+    <div class="grid">
+
+      <a class="concept" href="concept-1-calm-stack.html">
+        <div class="preview">
+          <iframe src="concept-1-calm-stack.html" title="Concept 1 preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Concept 01</div>
+          <h2>Calm Card Stack</h2>
+          <p>Mobile-first, minimal, on-brand. Vertical card stack with a soft pastel gradient, course header, three stat tiles, and a daily-goal ring. Closest to the existing Student app.</p>
+          <div class="tags">
+            <span class="tag">Mobile-first</span>
+            <span class="tag">Minimal</span>
+            <span class="tag">On-brand</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-2-immersive.html">
+        <div class="preview">
+          <iframe src="concept-2-immersive.html" title="Concept 2 preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Concept 02</div>
+          <h2>Immersive Native Script</h2>
+          <p>Dark, dramatic, typographic. The target language's native script is the visual hero — 日本語 dominates the screen. Glass-effect stat pills and a giant arc progress ring.</p>
+          <div class="tags">
+            <span class="tag">Dark mode</span>
+            <span class="tag">Editorial</span>
+            <span class="tag">Expressive</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-3-dashboard.html">
+        <div class="preview dashboard">
+          <iframe src="concept-3-dashboard.html" title="Concept 3 preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Concept 03</div>
+          <h2>Gamified Dashboard</h2>
+          <p>Data-rich, web-and-mobile. Multi-panel grid with a gradient hero card, weekly heatmap, streak flame, daily-goal ring, and recent-words list. Strava-energy for language learning.</p>
+          <div class="tags">
+            <span class="tag">Web + mobile</span>
+            <span class="tag">Gamified</span>
+            <span class="tag">Data-rich</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+    </div>
+
+    <div class="section-head">
+      <h2>Concept 02 · Variations</h2>
+      <p>Two more directions exploring the immersive typographic-hero idea — same data, different mood.</p>
+    </div>
+
+    <div class="grid variations">
+
+      <a class="concept" href="concept-2a-paper.html">
+        <div class="preview">
+          <iframe src="concept-2a-paper.html" title="Concept 2A preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Variation 02A</div>
+          <h2>Paper Edition</h2>
+          <p>Light, editorial inverse of the original. Cream paper background, ink-black headlines, the native script as a soft watermark. Magazine-stationery aesthetic with table-style stats and a thin progress rule.</p>
+          <div class="tags">
+            <span class="tag">Light</span>
+            <span class="tag">Editorial</span>
+            <span class="tag">Refined</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-2b-mosaic.html">
+        <div class="preview">
+          <iframe src="concept-2b-mosaic.html" title="Concept 2B preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Variation 02B</div>
+          <h2>Vocabulary Mosaic</h2>
+          <p>Same dark drama — but the backdrop is a mosaic of the words you've actually learned, scattered at varying sizes and opacities. A circular medallion frames the language at the center, with stats in a single segmented capsule.</p>
+          <div class="tags">
+            <span class="tag">Dark mode</span>
+            <span class="tag">Personal</span>
+            <span class="tag">Living backdrop</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-2b-mosaic-tabs.html">
+        <div class="preview">
+          <iframe src="concept-2b-mosaic-tabs.html" title="Concept 2B with tabs preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Variation 02B · Tabs</div>
+          <h2>Vocabulary Mosaic + Bottom Nav</h2>
+          <p>The same mosaic home with a 3-tab bottom nav (Home / Courses / Progress). Floating glass nav bar with the active tab in white-on-blue, idle tabs translucent — fits the dark immersive aesthetic.</p>
+          <div class="tags">
+            <span class="tag">Dark mode</span>
+            <span class="tag">Bottom nav</span>
+            <span class="tag">App-ready</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-2b-mosaic-tabs-compact.html">
+        <div class="preview">
+          <iframe src="concept-2b-mosaic-tabs-compact.html" title="Concept 2B with tabs (compact) preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">Variation 02B · Compact</div>
+          <h2>Vocabulary Mosaic — Single-Screen Compact</h2>
+          <p>Same composition shrunk ~30% so the entire screen fits within a single mobile viewport with no scroll. All proportions, type ramp, and the medallion scale together.</p>
+          <div class="tags">
+            <span class="tag">Mobile-fit</span>
+            <span class="tag">No scroll</span>
+            <span class="tag">Compact</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+    </div>
+
+    <div class="section-head">
+      <h2>Concept 02B · Language Variants</h2>
+      <p>The same mosaic home dressed for different target languages — script, vocabulary, and flag pair swap; everything else stays consistent.</p>
+    </div>
+
+    <div class="grid variations">
+
+      <a class="concept" href="concept-2b-mosaic.html">
+        <div class="preview">
+          <iframe src="concept-2b-mosaic.html" title="Japanese variant preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">02B · 🇯🇵 Japanese</div>
+          <h2>日本語 — Original</h2>
+          <p>Original Japanese build with kanji/kana mosaic (こんにちは, ありがとう, 学校…) and 日本語 in the medallion.</p>
+          <div class="tags">
+            <span class="tag">Japanese</span>
+            <span class="tag">CJK</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-2b-mosaic-arabic.html">
+        <div class="preview">
+          <iframe src="concept-2b-mosaic-arabic.html" title="Arabic variant preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">02B · 🇸🇦 Arabic</div>
+          <h2>العربية</h2>
+          <p>Same composition with Arabic vocabulary (مرحبا, شكراً, مدرسة…) rendered in Noto Sans Arabic and RTL direction. العربية sits in the medallion.</p>
+          <div class="tags">
+            <span class="tag">Arabic</span>
+            <span class="tag">RTL</span>
+            <span class="tag">Noto Arabic</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+      <a class="concept" href="concept-2b-mosaic-french.html">
+        <div class="preview">
+          <iframe src="concept-2b-mosaic-french.html" title="French variant preview"></iframe>
+        </div>
+        <div class="body">
+          <div class="num">02B · 🇫🇷 French</div>
+          <h2>Français</h2>
+          <p>Latin-script variant with French vocabulary (Bonjour, Merci, École…) in Inter. Français sits in the medallion. Shows how the design holds up for non-script languages.</p>
+          <div class="tags">
+            <span class="tag">French</span>
+            <span class="tag">Latin</span>
+            <span class="tag">Inter</span>
+          </div>
+          <span class="open-link">Open full page →</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</body>
+</html>

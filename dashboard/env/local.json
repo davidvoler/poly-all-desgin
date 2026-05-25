@@ -1,0 +1,10 @@
+{
+  "_comment": "Local docker-compose stack. Same defaults as assets/.env.",
+  "API_BASE_URL": "http://127.0.0.1:8004",
+  "AUDIO_BASE_URL": "http://127.0.0.1:3002/audio",
+  "AUTH_PROVIDER": "local",
+  "AUTH0_DOMAIN": "",
+  "AUTH0_CLIENT_ID": "",
+  "AUTH0_AUDIENCE": "",
+  "AUTH0_REDIRECT_URI": ""
+}

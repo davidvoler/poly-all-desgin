@@ -1,0 +1,27 @@
+{
+  "@@locale": "he",
+
+  "brand": "POLYGLOTS",
+
+  "common": {
+    "streak_days": "רצף של {n} ימים",
+    "streak_short": "{n}",
+    "back": "חזרה",
+    "skip": "דלג",
+    "continue": "המשך"
+  },
+
+  "home": {
+    "complete": "{percent}% הושלמו",
+    "course_overline": "יפנית · ניהונגו",
+    "course_title": "יפנית למתחילים",
+    "course_module": "מודול 3 · ברכות והיכרות",
+    "tap_to_change": "הקש לשינוי",
+    "vocabulary_label": "— אוצר המילים שלך —",
+    "stat_words": "מילים",
+    "stat_sentences": "משפטים",
+    "stat_exercises": "תרגילים",
+    "practice_now": "תרגל עכשיו",
+    "settings_tooltip": "הגדרות"
+  }
+}

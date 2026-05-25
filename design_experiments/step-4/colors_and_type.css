@@ -1,0 +1,331 @@
+/* =============================================================
+   Polyglots Design System — colors_and_type.css
+   Single source of truth for design tokens. Sourced from the
+   Flutter Student app (student/ui/lib/core/theme/app_theme.dart)
+   plus inline values across pages.
+   ============================================================= */
+
+/* ---------- 1. Webfonts ------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Hebrew:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap");
+/* Material Icons Round webfont — used by .poly-icon. Note: html-to-image
+   screenshot tools may not load this; live browser is the source of truth. */
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons+Round");
+
+:root {
+  /* ---------- 2. Color palette — VIBRANT MODERN REDESIGN ---- */
+
+  /* Primary gradient — vibrant teal/cyan to purple */
+  --color-primary-50:  #E0F7FF;
+  --color-primary-100: #B3E5FF;
+  --color-primary-200: #81D4FF;
+  --color-primary-300: #4FD3E5;
+  --color-primary-400: #2DB5D4;
+  --color-primary-500: #0A96C7;  /* primary brand color */
+  --color-primary-600: #0078A8;
+  --color-primary-700: #005C8A;
+  --color-primary-800: #00446C;
+
+  /* Vibrant magenta accent */
+  --color-magenta-50:  #FFE5F8;
+  --color-magenta-100: #FFB3E6;
+  --color-magenta-200: #FF80D4;
+  --color-magenta-300: #FF4DC2;
+  --color-magenta-400: #FF1AA0;
+  --color-magenta-500: #E6008F;
+  --color-magenta-600: #CC007A;
+  --color-magenta-700: #B20065;
+
+  /* Vibrant lime accent */
+  --color-lime-50:  #F0FF80;
+  --color-lime-100: #D4FF00;
+  --color-lime-200: #BFFF00;
+  --color-lime-300: #A8EE00;
+  --color-lime-400: #8FD700;
+  --color-lime-500: #76C900;
+  --color-lime-600: #5CA400;
+  --color-lime-700: #428F00;
+
+  /* Coral/orange accent */
+  --color-coral-50:  #FFEBE5;
+  --color-coral-100: #FFD4C4;
+  --color-coral-200: #FFC0A3;
+  --color-coral-300: #FFA882;
+  --color-coral-400: #FF9061;
+  --color-coral-500: #FF7A42;
+  --color-coral-600: #FF6624;
+  --color-coral-700: #E6520B;
+
+  /* Warm violet accent */
+  --color-violet-50:  #F5E5FF;
+  --color-violet-100: #E5B3FF;
+  --color-violet-200: #D580FF;
+  --color-violet-300: #C64DFF;
+  --color-violet-400: #B71AFF;
+  --color-violet-500: #9D00E6;
+  --color-violet-600: #7E00CC;
+  --color-violet-700: #6300B2;
+
+  /* Greys (modernized neutrals) */
+  --color-grey-50:  #F8F9FA;
+  --color-grey-100: #F0F2F5;
+  --color-grey-200: #E0E3E8;
+  --color-grey-300: #CED4DB;
+  --color-grey-400: #B8BCC4;
+  --color-grey-500: #8A8F98;
+  --color-grey-600: #6B7280;
+  --color-grey-700: #4B5563;
+  --color-grey-800: #2D3748;
+  --color-grey-900: #1A202C;
+
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  /* New accent colors for states */
+  --color-success: #00D084;
+  --color-error: #FF3B3B;
+  --color-warning: #FFB81C;
+  --color-info: #0A96C7;
+
+  /* ---------- 3. Semantic color roles — MODERNIZED -------*/
+
+  /* Foreground */
+  --fg-strong:  var(--color-grey-900);   /* primary copy */
+  --fg-default: var(--color-grey-700);
+  --fg-muted:   var(--color-grey-600);   /* helper / secondary */
+  --fg-subtle:  var(--color-grey-500);   /* hints, captions */
+  --fg-disabled:var(--color-grey-400);
+  --fg-on-primary: var(--color-white);
+
+  /* Background */
+  --bg-canvas:  var(--color-grey-100);
+  --bg-surface: var(--color-white);
+  --bg-elevated:var(--color-white);
+  --bg-subtle:  var(--color-grey-50);
+
+  /* Page-identity gradients — VIBRANT */
+  --gradient-home:    linear-gradient(135deg, #E0F7FF 0%, #FFE5F8 100%);
+  --gradient-quiz:    linear-gradient(135deg, #F0FF80 0%, #00D084 100%);
+  --gradient-progress:linear-gradient(135deg, #FFD580 0%, #FFBA88 100%);
+  --gradient-courses: linear-gradient(135deg, #F8F9FA 0%, #E0F7FF 20%);
+
+  /* Borders */
+  --border-default: var(--color-grey-300);
+  --border-subtle:  var(--color-grey-200);
+
+  /* Brand — NEW VIBRANT TEAL */
+  --brand-primary:        var(--color-primary-500);
+  --brand-primary-hover:  var(--color-primary-600);
+  --brand-primary-soft:   var(--color-primary-100);
+  --brand-primary-border: var(--color-primary-300);
+  --brand-primary-text:   var(--color-primary-700);
+
+  /* States — VIBRANT */
+  --state-correct-bg:     #E5FFF0;
+  --state-correct-border: #00D084;
+  --state-correct-fg:     #005A3D;
+  --state-correct-icon:   #00D084;
+
+  --state-incorrect-bg:     #FFF0F0;
+  --state-incorrect-border: #FF3B3B;
+  --state-incorrect-fg:     #8F0000;
+  --state-incorrect-icon:   #FF3B3B;
+
+  --state-selected-bg:     var(--color-primary-100);
+  --state-selected-border: var(--color-primary-400);
+  --state-selected-fg:     var(--color-primary-700);
+
+  --state-warning-bg:     #FFF5E6;
+  --state-warning-border: #FFB81C;
+  --state-warning-fg:     #663D00;
+  --state-warning-icon:   #FF9061;
+
+  /* Settings-toggle accent palette — VIBRANT */
+  --accent-show-text:    var(--color-primary-500);
+  --accent-auto-play:    #00D084;
+  --accent-translit:     #FF1AA0;
+
+  /* ---------- 4. Typography ------------------------------------ */
+
+  --font-latin: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-jp:    "Noto Sans JP", "Inter", sans-serif;
+  --font-cjk:   "Noto Sans SC", "Noto Sans JP", "Inter", sans-serif;
+  --font-arabic:"Noto Sans Arabic", "Inter", sans-serif;
+  --font-hebrew:"Noto Sans Hebrew", "Inter", sans-serif;
+  --font-hindi: "Noto Sans Devanagari", "Inter", sans-serif;
+  --font-mono:  ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --font-icon:  "Material Icons Round";
+
+  --font-default: var(--font-latin);
+
+  /* Sizes (px values harvested from the Flutter source) */
+  --fs-display:  32px; /* "Listen & Learn" hero */
+  --fs-page:     24px; /* page title (Your Progress) */
+  --fs-stat-xl:  48px; /* huge progress number */
+  --fs-stat-lg:  32px; /* card stat number */
+  --fs-section:  18px; /* section title */
+  --fs-quiz:     36px; /* main quiz sentence */
+  --fs-body-lg:  18px; /* answer-tile copy */
+  --fs-body:     16px; /* default body */
+  --fs-caption:  14px; /* helper text */
+  --fs-chip:     13px; /* info chip */
+  --fs-micro:    12px; /* status pill */
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
+
+  --lh-tight:   1.2;
+  --lh-default: 1.45;
+  --lh-relaxed: 1.6;
+
+  /* ---------- 5. Spacing scale --------------------------------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;   /* page padding default */
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+
+  /* ---------- 6. Radius ---------------------------------------- */
+  --radius-pill:  999px;
+  --radius-card:  16px;  /* primary card */
+  --radius-button:12px;  /* button + answer tile */
+  --radius-chip:  8px;
+  --radius-micro: 4px;
+
+  /* ---------- 7. Shadows --------------------------------------- */
+  --shadow-card:        0 4px 10px rgba(0,0,0,0.10);   /* primary cards */
+  --shadow-card-compact:0 2px 8px  rgba(0,0,0,0.05);   /* small tiles, memory cards */
+  --shadow-inset-divider:inset 0 -1px 0 var(--color-grey-200);
+
+  /* ---------- 8. Motion ---------------------------------------- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decel:    cubic-bezier(0, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+}
+
+/* ---------- 9. Semantic element styles ----------------------- */
+
+.poly-h1 {
+  font-family: var(--font-default);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  color: var(--fg-strong);
+  letter-spacing: -0.01em;
+  line-height: var(--lh-tight);
+}
+
+.poly-h2 {
+  font-family: var(--font-default);
+  font-size: var(--fs-page);
+  font-weight: var(--fw-bold);
+  color: var(--fg-strong);
+  line-height: var(--lh-tight);
+}
+
+.poly-h3 {
+  font-family: var(--font-default);
+  font-size: var(--fs-section);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-strong);
+  line-height: var(--lh-default);
+}
+
+.poly-quiz-sentence {
+  font-family: var(--font-default);
+  font-size: var(--fs-quiz);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-strong);
+  text-align: center;
+  line-height: var(--lh-default);
+}
+
+.poly-stat-xl {
+  font-family: var(--font-default);
+  font-size: var(--fs-stat-xl);
+  font-weight: var(--fw-bold);
+  color: var(--brand-primary);
+  line-height: 1;
+}
+
+.poly-stat-lg {
+  font-family: var(--font-default);
+  font-size: var(--fs-stat-lg);
+  font-weight: var(--fw-bold);
+  color: var(--brand-primary);
+  line-height: 1;
+}
+
+.poly-body {
+  font-family: var(--font-default);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  color: var(--fg-default);
+  line-height: var(--lh-default);
+}
+
+.poly-body-lg {
+  font-family: var(--font-default);
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-regular);
+  color: var(--fg-strong);
+  line-height: var(--lh-default);
+}
+
+.poly-caption {
+  font-family: var(--font-default);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-regular);
+  color: var(--fg-muted);
+  line-height: var(--lh-default);
+}
+
+.poly-translit {
+  font-family: var(--font-default);
+  font-size: var(--fs-body-lg);
+  font-style: italic;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.poly-button {
+  font-family: var(--font-default);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0;
+}
+
+.poly-icon {
+  font-family: var(--font-icon);
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+.poly-icon--filled { font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24; }
+
+/* ---------- 10. Helpers --------------------------------------- */
+[dir="rtl"] {
+  font-family: var(--font-arabic);
+}
+.lang-jp { font-family: var(--font-jp); }
+.lang-zh { font-family: var(--font-cjk); }
+.lang-ar { font-family: var(--font-arabic); direction: rtl; }
+.lang-he { font-family: var(--font-hebrew); direction: rtl; }
+.lang-hi { font-family: var(--font-hindi); }

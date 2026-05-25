@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Create your school — Polyglots Schools</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body class="bg">
+
+<div class="onboard">
+
+  <!-- ===== Top bar (no sidebar — dashboard doesn't exist yet) ===== -->
+  <header class="onboard-top">
+    <div class="brand">POLYGLOTS · SCHOOLS</div>
+    <a href="index.html" class="onboard-out">Cancel</a>
+  </header>
+
+  <!-- ===== Centered card ===== -->
+  <main class="onboard-main">
+    <div class="onboard-card glass">
+
+      <!-- Hero -->
+      <div class="onboard-hero">
+        <div class="onboard-mark">P</div>
+        <h1>Set up your school</h1>
+        <p class="onboard-lead">A few quick questions to get you started — you can change everything later from <a href="settings.html">Settings</a>.</p>
+      </div>
+
+      <!-- ===== Step 1 — School basics ===== -->
+      <div class="onboard-section">
+        <div class="section-label">Step 1 · School basics</div>
+        <div class="form" style="max-width:none; margin-top:14px;">
+          <div class="field">
+            <label for="name">School name</label>
+            <input id="name" type="text" placeholder="e.g. Riverside Academy" autofocus />
+          </div>
+
+          <div class="field">
+            <label for="slug">URL</label>
+            <div class="prefix-input">
+              <div class="pfx">polyglots.app/</div>
+              <input id="slug" type="text" placeholder="riverside" />
+            </div>
+            <div class="hint">Students will join at <code style="background:var(--w-08); padding:1px 6px; border-radius:6px;">polyglots.app/your-slug</code>.</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="email">Contact email</label>
+              <input id="email" type="email" placeholder="hello@your-school.edu" />
+            </div>
+            <div class="field">
+              <label for="tz">Time zone</label>
+              <select id="tz">
+                <option>America/New_York (EDT, UTC−4)</option>
+                <option>Europe/London (BST, UTC+1)</option>
+                <option>Asia/Jerusalem (IDT, UTC+3)</option>
+                <option>Europe/Rome (CEST, UTC+2)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Step 2 — Languages you teach ===== -->
+      <div class="onboard-section">
+        <div class="section-label">Step 2 · What languages will you teach?</div>
+        <p class="onboard-lead small">Pick at least one. You can add or remove languages later.</p>
+
+        <div class="lang-pick-grid" style="margin-top:8px;">
+
+          <label class="lang-pick">
+            <input type="checkbox" />
+            <span class="flag">🇸🇦</span>
+            <div class="meta">
+              <div class="native" style="direction:rtl; text-align:right;">العربية</div>
+              <div class="english">Arabic</div>
+            </div>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span>
+          </label>
+
+          <label class="lang-pick">
+            <input type="checkbox" />
+            <span class="flag">🇮🇱</span>
+            <div class="meta">
+              <div class="native" style="direction:rtl; text-align:right;">עברית</div>
+              <div class="english">Hebrew</div>
+            </div>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span>
+          </label>
+
+          <label class="lang-pick">
+            <input type="checkbox" />
+            <span class="flag">🇮🇹</span>
+            <div class="meta">
+              <div class="native">Italiano</div>
+              <div class="english">Italian</div>
+            </div>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span>
+          </label>
+
+          <label class="lang-pick">
+            <input type="checkbox" />
+            <span class="flag">🇯🇵</span>
+            <div class="meta">
+              <div class="native">日本語</div>
+              <div class="english">Japanese</div>
+            </div>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span>
+          </label>
+
+          <label class="lang-pick">
+            <input type="checkbox" />
+            <span class="flag">🇬🇷</span>
+            <div class="meta">
+              <div class="native">Ελληνικά</div>
+              <div class="english">Greek</div>
+            </div>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span>
+          </label>
+
+          <label class="lang-pick">
+            <input type="checkbox" />
+            <span class="flag">🇺🇸</span>
+            <div class="meta">
+              <div class="native">English</div>
+              <div class="english">As a second lang.</div>
+            </div>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg></span>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- ===== Step 3 — Invite your team (optional) ===== -->
+      <div class="onboard-section">
+        <div class="section-label">
+          Step 3 · Invite your team
+          <span class="section-label-sub">(optional)</span>
+        </div>
+        <p class="onboard-lead small">Editors can upload courses and manage students. Add more later from <a href="editors.html">Editors</a>.</p>
+
+        <div class="invite-rows" style="margin-top:8px;">
+          <div class="invite-row">
+            <input type="email" placeholder="editor@your-school.edu" />
+            <select>
+              <option>Editor</option>
+              <option>Viewer</option>
+              <option>Owner</option>
+            </select>
+          </div>
+          <div class="invite-row">
+            <input type="email" placeholder="editor@your-school.edu" />
+            <select>
+              <option>Editor</option>
+              <option>Viewer</option>
+              <option>Owner</option>
+            </select>
+          </div>
+          <a href="#" class="add-more">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:12px; height:12px; stroke-width:2.4;"><path d="M12 5v14M5 12h14"/></svg>
+            Add another
+          </a>
+        </div>
+      </div>
+
+      <!-- ===== Footer ===== -->
+      <div class="onboard-actions">
+        <div class="legal">
+          By creating a school you agree to the Polyglots
+          <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+        </div>
+        <a href="index.html" class="btn btn-primary onboard-cta">
+          Create school
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px; height:14px; stroke-width:2;"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

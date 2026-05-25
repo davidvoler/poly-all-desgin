@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Riverside Academy · Courses — Polyglots Schools</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body class="bg">
+<div class="shell">
+
+  <aside class="side">
+    <div class="brand">POLYGLOTS · SCHOOLS</div>
+    <div class="school">
+      <div class="school-mark">RA</div>
+      <div class="school-meta">
+        <div class="school-name">Riverside Academy</div>
+        <div class="school-plan">Pro Plan</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"/></svg></span> Overview</a>
+      <a href="languages.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span> Languages</a>
+      <a href="courses.html" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4V4zM20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8V4z"/></svg></span> Courses</a>
+      <a href="editors.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4l11-11-4-4L4 16v4z"/></svg></span> Editors</a>
+      <a href="students.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 11.5a3 3 0 1 0 0-6M22 20a5 5 0 0 0-4-4.9"/></svg></span> Students</a>
+      <a href="settings.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2 2M16.5 16.5l2 2M5.5 18.5l2-2M16.5 7.5l2-2"/></svg></span> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="avatar lh">LH</div>
+      <div class="who">Lena Hayes</div>
+      <a href="#" class="out" title="Sign out">↗</a>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="topbar">
+      <div class="titles">
+        <div class="overline">Riverside Academy</div>
+        <h1>Courses</h1>
+      </div>
+      <div class="right">
+        <a class="btn btn-ghost" href="#" download>
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg></span>
+          Download template
+        </a>
+      </div>
+    </header>
+
+    <section class="content">
+
+      <!-- Upload dropzone (mock — no JS wiring on the prototype) -->
+      <label for="upload-input" class="dropzone glass" style="cursor:pointer;">
+        <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></div>
+        <div class="title">Drop a course folder or zipped archive</div>
+        <div class="hint">
+          Expected layout: <code>course/module/lesson.txt</code> &nbsp;·&nbsp;
+          lessons use the simple <code>---simple</code> blocks from your importer.
+          Description files (<code>course.md</code>, <code>module.md</code>) optional.
+        </div>
+        <input id="upload-input" type="file" multiple style="display:none;" />
+        <button class="btn btn-primary" type="button" style="margin-top:8px;">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></span>
+          Browse files
+        </button>
+      </label>
+
+      <div class="head-row">
+        <div class="section-label">All courses</div>
+        <div class="subtitle">·&nbsp; 14 total · 11 published, 3 draft</div>
+        <div class="right">
+          <button class="icon-btn" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+        </div>
+      </div>
+
+      <div class="glass table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Language</th>
+              <th>Modules · Lessons</th>
+              <th>Students</th>
+              <th>Access</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th style="width:60px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="who">
+                  <div class="avatar a">عر</div>
+                  <div>
+                    <div class="n">Arabic · A1 Foundations</div>
+                    <div class="e">Greetings, family, daily life</div>
+                  </div>
+                </div>
+              </td>
+              <td>🇸🇦 Arabic</td>
+              <td>8 · 64</td>
+              <td>82</td>
+              <td><span class="pill public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Public</span></td>
+              <td><span class="pill active"><span class="swatch"></span>Published</span></td>
+              <td class="tight">2 h ago</td>
+              <td><div class="row-actions"><button title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="who">
+                  <div class="avatar a">عر</div>
+                  <div>
+                    <div class="n">Arabic · A2 Conversations</div>
+                    <div class="e">Restaurants, travel, work</div>
+                  </div>
+                </div>
+              </td>
+              <td>🇸🇦 Arabic</td>
+              <td>6 · 48</td>
+              <td>30</td>
+              <td><span class="pill members"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Members</span></td>
+              <td><span class="pill active"><span class="swatch"></span>Published</span></td>
+              <td class="tight">Yesterday</td>
+              <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="who">
+                  <div class="avatar b">עב</div>
+                  <div>
+                    <div class="n">Hebrew · A1 Foundations</div>
+                    <div class="e">Alphabet, greetings, family</div>
+                  </div>
+                </div>
+              </td>
+              <td>🇮🇱 Hebrew</td>
+              <td>6 · 32</td>
+              <td>61</td>
+              <td><span class="pill public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Public</span></td>
+              <td><span class="pill active"><span class="swatch"></span>Published</span></td>
+              <td class="tight">2 h ago</td>
+              <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="who">
+                  <div class="avatar b">עב</div>
+                  <div>
+                    <div class="n">Hebrew · Biblical Reader</div>
+                    <div class="e">Old-Testament excerpts, annotated</div>
+                  </div>
+                </div>
+              </td>
+              <td>🇮🇱 Hebrew</td>
+              <td>5 · 40</td>
+              <td>18</td>
+              <td><span class="pill members"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Members</span></td>
+              <td><span class="pill draft"><span class="swatch"></span>Draft</span></td>
+              <td class="tight">3 days ago</td>
+              <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="who">
+                  <div class="avatar c">It</div>
+                  <div>
+                    <div class="n">Italian · A1 Foundations</div>
+                    <div class="e">Buongiorno, food, places</div>
+                  </div>
+                </div>
+              </td>
+              <td>🇮🇹 Italian</td>
+              <td>5 · 30</td>
+              <td>42</td>
+              <td><span class="pill public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Public</span></td>
+              <td><span class="pill active"><span class="swatch"></span>Published</span></td>
+              <td class="tight">Last week</td>
+              <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="who">
+                  <div class="avatar c">It</div>
+                  <div>
+                    <div class="n">Italian · Travel Phrases</div>
+                    <div class="e">Pocket-sized, audio-first</div>
+                  </div>
+                </div>
+              </td>
+              <td>🇮🇹 Italian</td>
+              <td>3 · 18</td>
+              <td>0</td>
+              <td><span class="pill members"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Members</span></td>
+              <td><span class="pill draft"><span class="swatch"></span>Draft</span></td>
+              <td class="tight">Last week</td>
+              <td><div class="row-actions"><button><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pager">
+        <span class="pg">‹</span>
+        <span class="pg on">1</span>
+        <span class="pg">2</span>
+        <span class="pg">3</span>
+        <span class="pg">›</span>
+      </div>
+
+    </section>
+  </main>
+</div>
+</body>
+</html>

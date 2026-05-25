@@ -1,0 +1,20 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body{margin:0;padding:24px;background:#fff;font-family:var(--font-latin);display:flex;flex-direction:column;gap:12px}
+.tile{padding:16px;border-radius:12px;border:1px solid;display:flex;align-items:center;gap:12px;font-size:18px}
+.dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.idle{background:#fff;border-color:var(--color-grey-300);color:var(--fg-strong)}
+.idle .dot{background:var(--color-grey-300);color:var(--color-grey-600)}
+.sel{background:var(--state-selected-bg);border-color:var(--state-selected-border);color:var(--state-selected-fg);font-weight:600}
+.sel .dot{background:var(--brand-primary)}
+.ok{background:var(--state-correct-bg);border-color:var(--state-correct-border);color:var(--state-correct-fg);font-weight:600}
+.ok .dot{background:var(--state-correct-icon)}
+.no{background:var(--state-incorrect-bg);border-color:var(--state-incorrect-border);color:var(--state-incorrect-fg);font-weight:600}
+.no .dot{background:var(--state-incorrect-icon)}
+</style></head><body>
+<div class="tile idle"><span class="dot">○</span>Hello</div>
+<div class="tile sel"><span class="dot">●</span>Bonjour</div>
+<div class="tile ok"><span class="dot">✓</span>Hola</div>
+<div class="tile no"><span class="dot">✕</span>Goodbye</div>
+</body></html>
