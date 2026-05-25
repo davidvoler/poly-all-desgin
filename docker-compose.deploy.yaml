@@ -33,9 +33,9 @@ services:
       # /api/v1/school_users/login_auth0 route verifies ID tokens
       # against the tenant JWKS; otherwise it returns 503 and the
       # dashboard falls back to the local password flow.
-      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-polyglots.us.auth0.com}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
-      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk}
     command: 
       - uvicorn
       - main:app

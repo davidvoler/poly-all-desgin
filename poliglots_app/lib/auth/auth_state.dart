@@ -115,13 +115,41 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> _exchangeIdToken(String idToken) async {
-    final res = await ref
-        .read(authApiProvider)
-        .getOrCreateUser(idToken: idToken);
+    // Also forward the claims the server expects on its dev-fallback
+    // path. Server-side, the verified path re-reads these from the
+    // JWT itself, so this is purely defensive — if AUTH0_DOMAIN isn't
+    // set on the server (or token verification is skipped for any
+    // reason), the request still carries an email and won't 400.
+    final claims = _decodeJwtClaims(idToken);
+    final res = await ref.read(authApiProvider).getOrCreateUser(
+          idToken: idToken,
+          email: claims['email'] as String?,
+          name: claims['name'] as String?,
+          sub: claims['sub'] as String?,
+        );
     await _persist(res.userId);
     setCurrentUserId(res.userId);
     state = AuthSignedIn(
         userId: res.userId, email: res.email, name: res.name);
+  }
+
+  /// Decode a JWT's payload (middle segment) without verifying the
+  /// signature — verification is the server's job. Returns an empty
+  /// map on any parsing error so callers don't need to null-check.
+  Map<String, dynamic> _decodeJwtClaims(String idToken) {
+    try {
+      final parts = idToken.split('.');
+      if (parts.length < 2) return const {};
+      var payload = parts[1];
+      // base64url padding: the encoder strips '=', so add it back.
+      final pad = payload.length % 4;
+      if (pad != 0) payload = payload + ('=' * (4 - pad));
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final obj = jsonDecode(decoded);
+      return obj is Map<String, dynamic> ? obj : const {};
+    } catch (_) {
+      return const {};
+    }
   }
 
   /// Auth0 universal-login flow. Optional [connection] skips Auth0's
