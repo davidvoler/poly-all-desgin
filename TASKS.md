@@ -253,9 +253,15 @@ We have 2 main way of creating content
 
 *** getting ready for MVP ***
 
-- [] solve oauth - consider alternatives for auth0
+- [v] solve oauth - consider alternatives for auth0
 - [] upload some generated courses as an example - verify that the process works well
-- [] Dashboard - have the dashboard working for - public and non profit schools 
+- [w] Dashboard - have the dashboard working for - public and non profit schools 
+- [] dashboard scenario 
+    - [] connection - shall we have only a single users management for schools 
+    - [] Create school - let's hide it for now - we will find a way to do it later 
+    - [] Start generating courses and try to upload 
+
+
 - [] learn how to generate courses with AI
 
 
