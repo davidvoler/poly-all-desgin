@@ -255,9 +255,9 @@ We have 2 main way of creating content
 
 - [] solve oauth - consider alternatives for auth0
 - [] upload some generated courses as an example - verify that the process works well
-- [] 
+- [] Dashboard - have the dashboard working for - public and non profit schools 
 - [] learn how to generate courses with AI
- 
+
 
 
 *** tasks saved for later stage ***

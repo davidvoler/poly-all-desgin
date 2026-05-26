@@ -9,13 +9,15 @@ import '../widgets/common.dart';
 /// Sign-in screen for the learner app. Shown by the auth gate in
 /// `main.dart` when [authProvider] is signed-out.
 ///
-/// Two CTAs depending on `AUTH_PROVIDER`:
-///   * `auth0`  → "Sign in with Auth0" hands off to Auth0 universal
-///     login, then exchanges the ID token for a session cookie via
-///     /api/v1/auth/get_or_create_user.
-///   * `local`  → "Continue as guest" mints a throwaway dev session
-///     against the server's unverified-email fallback. Lets a fresh
-///     `flutter run` Just Work without an Auth0 tenant.
+/// CTAs depend on `AUTH_PROVIDER` + `IS_DEV`:
+///   * `auth0`           → "Sign in with Google" hands off to Auth0's
+///     google-oauth2 connection, then exchanges the ID token for a
+///     session cookie via /api/v1/auth/get_or_create_user.
+///   * `IS_DEV=true`     → also renders an email + password form so
+///     the test loop doesn't have to round-trip through Google. Works
+///     against /login_with_password.
+///   * `AUTH_PROVIDER=local` → "Continue as guest" mints a throwaway
+///     dev session against the server's unverified-email fallback.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -24,8 +26,8 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  // Pre-fills for local testing — one tap to sign up the demo user,
-  // subsequent taps verify the same password.
+  // Pre-fills for the dev password form — one tap to sign up the demo
+  // user, subsequent taps verify the same password.
   final _email = TextEditingController(text: 'demo@local.dev');
   final _password = TextEditingController(text: 'changeme');
   bool _showPassword = false;
@@ -35,10 +37,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _email.dispose();
     _password.dispose();
     super.dispose();
-  }
-
-  Future<void> _signInAuth0() async {
-    await ref.read(authProvider.notifier).signInWithAuth0();
   }
 
   Future<void> _signInGoogle() async {
@@ -66,6 +64,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final loading = auth is AuthSigningIn;
     final error = auth is AuthSignedOut ? auth.error : null;
     final auth0Enabled = AppConfig.isAuth0Enabled;
+    final showPasswordForm = AppConfig.isDev;
 
     return Scaffold(
       body: PhoneBackground(
@@ -95,7 +94,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: 8),
                     Text(
                       auth0Enabled
-                          ? 'Use your Auth0 account to keep your progress in sync.'
+                          ? 'Use your Google account to keep your progress in sync.'
                           : 'Local dev mode — Auth0 is off. Continue as a guest '
                               'and the server will mint a throwaway user for you.',
                       textAlign: TextAlign.center,
@@ -110,64 +109,59 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       _ErrorBanner(message: error),
                     ],
                     const SizedBox(height: 22),
-                    // Auth0 / Google buttons appear ONLY when the build
-                    // has Auth0 configured (production). Local-only
-                    // builds skip them entirely; their server has no
-                    // Auth0 tenant and the click would error.
-                    if (auth0Enabled) ...[
-                      _GoogleCta(
+                    // Production: single Google CTA — clicking it goes
+                    // straight to Auth0's google-oauth2 connection,
+                    // skipping the universal-login picker entirely.
+                    if (auth0Enabled)
+                      _PrimaryCta(
                         label: loading
                             ? 'Opening Google…'
                             : 'Sign in with Google',
+                        icon: Icons.lock_outline,
                         onTap: loading ? null : _signInGoogle,
                       ),
-                      const SizedBox(height: 12),
-                      _PrimaryCta(
-                        label: loading ? 'Opening Auth0…' : 'Sign in with Auth0',
-                        icon: Icons.lock_outline,
-                        onTap: loading ? null : _signInAuth0,
+                    // Dev-only email + password form, gated on IS_DEV.
+                    // Lets us skip the Google round-trip in test loops.
+                    if (showPasswordForm) ...[
+                      if (auth0Enabled) ...[
+                        const SizedBox(height: 16),
+                        _OrDivider(),
+                        const SizedBox(height: 16),
+                      ],
+                      _CredField(
+                        controller: _email,
+                        label: 'Email',
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        onSubmit: _signInPassword,
                       ),
-                      const SizedBox(height: 16),
-                      _OrDivider(),
-                      const SizedBox(height: 16),
-                    ],
-                    // Email + password form — always rendered. On
-                    // production it's a fallback for users who don't
-                    // want to / can't use Google. On local it's the
-                    // primary path.
-                    _CredField(
-                      controller: _email,
-                      label: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      onSubmit: _signInPassword,
-                    ),
-                    const SizedBox(height: 10),
-                    _CredField(
-                      controller: _password,
-                      label: 'Password',
-                      obscureText: !_showPassword,
-                      autofillHints: const [AutofillHints.password],
-                      onSubmit: _signInPassword,
-                      suffix: IconButton(
-                        tooltip: _showPassword ? 'Hide' : 'Show',
-                        icon: Icon(
-                          _showPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          size: 16,
-                          color: Colors.white.withValues(alpha: 0.55),
+                      const SizedBox(height: 10),
+                      _CredField(
+                        controller: _password,
+                        label: 'Password',
+                        obscureText: !_showPassword,
+                        autofillHints: const [AutofillHints.password],
+                        onSubmit: _signInPassword,
+                        suffix: IconButton(
+                          tooltip: _showPassword ? 'Hide' : 'Show',
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                          onPressed: () =>
+                              setState(() => _showPassword = !_showPassword),
                         ),
-                        onPressed: () =>
-                            setState(() => _showPassword = !_showPassword),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    _PrimaryCta(
-                      label: loading ? 'Signing in…' : 'Sign in',
-                      icon: Icons.arrow_forward,
-                      onTap: loading ? null : _signInPassword,
-                    ),
+                      const SizedBox(height: 14),
+                      _PrimaryCta(
+                        label: loading ? 'Signing in…' : 'Sign in',
+                        icon: Icons.arrow_forward,
+                        onTap: loading ? null : _signInPassword,
+                      ),
+                    ],
                     // Guest button — only meaningful in local mode
                     // (the server's unverified-email fallback is gated
                     // behind AUTH0_DOMAIN being unset). On production
@@ -242,9 +236,8 @@ class _BrandHero extends StatelessWidget {
   }
 }
 
-/// Thin horizontal divider with an "OR" label, separating the Auth0
-/// buttons from the password form on production. Matches the dashboard's
-/// equivalent so the two apps' login pages feel like siblings.
+/// Thin horizontal divider with an "OR" label, separating the Google
+/// CTA from the dev-only password form when both are visible.
 class _OrDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -275,9 +268,6 @@ class _OrDivider extends StatelessWidget {
   }
 }
 
-/// Reusable text field used by the local-dev email + password form.
-/// Mirrors the visual style of the previous guest-email input so
-/// nothing else on the page shifts.
 class _CredField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -330,90 +320,6 @@ class _CredField extends StatelessWidget {
               color: PolyColors.brandPrimary.withValues(alpha: 0.55)),
         ),
         suffixIcon: suffix,
-      ),
-    );
-  }
-}
-
-/// White pill matching Google's "Sign in with Google" branding
-/// guidelines (white surface, dark text, the multi-colour "G" mark).
-/// We approximate the official G logo with a CustomPaint since we
-/// don't ship the asset — close enough for the demo build, easy to
-/// swap for the real SVG asset later by replacing [_GoogleGlyph].
-class _GoogleCta extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const _GoogleCta({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    return Material(
-      color: disabled
-          ? Colors.white.withValues(alpha: 0.55)
-          : Colors.white,
-      shape: const StadiumBorder(),
-      elevation: disabled ? 0 : 6,
-      shadowColor: Colors.black.withValues(alpha: 0.30),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const StadiumBorder(),
-        child: Container(
-          height: 48,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const _GoogleGlyph(),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.18,
-                  color: Color(0xFF1F1F1F),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Stand-in for the official Google "G" mark. Replace with an SVG
-/// asset (assets/google_g.svg) when the brand assets land.
-class _GoogleGlyph extends StatelessWidget {
-  const _GoogleGlyph();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 20,
-      height: 20,
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: SweepGradient(
-          colors: [
-            Color(0xFF4285F4), // blue
-            Color(0xFFEA4335), // red
-            Color(0xFFFBBC05), // yellow
-            Color(0xFF34A853), // green
-            Color(0xFF4285F4),
-          ],
-        ),
-      ),
-      child: const Text(
-        'G',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-          height: 1.0,
-        ),
       ),
     );
   }

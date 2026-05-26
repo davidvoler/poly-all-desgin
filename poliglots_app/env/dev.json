@@ -6,5 +6,6 @@
   "AUTH0_DOMAIN": "dev-o2wk5hudjhgsrc24.us.auth0.com",
   "AUTH0_CLIENT_ID": "MPZQoBUnkqS6a8b62iRr4zFEur1CW4yM",
   "AUTH0_AUDIENCE": "",
-  "AUTH0_REDIRECT_URI": "http://localhost:3000"
+  "AUTH0_REDIRECT_URI": "http://localhost:3000",
+  "IS_DEV": "true"
 }
