@@ -91,4 +91,16 @@ class AppConfig {
         fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
         defaultValue: '',
       );
+
+  /// True in non-production builds. Surfaces dev-only affordances —
+  /// e.g. the login page keeps the email/password form so testing
+  /// admin flows doesn't require a Google round-trip each time.
+  static bool get isDev {
+    final v = _read(
+      'IS_DEV',
+      fromEnv: const String.fromEnvironment('IS_DEV'),
+      defaultValue: 'false',
+    ).toLowerCase();
+    return v == 'true' || v == '1' || v == 'yes';
+  }
 }

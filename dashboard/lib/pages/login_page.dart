@@ -42,13 +42,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
   }
 
-  Future<void> _submitAuth0() async {
-    final slug = _schoolSlug.text.trim();
-    await ref
-        .read(authProvider.notifier)
-        .signInWithAuth0(schoolSlug: slug.isEmpty ? null : slug);
-  }
-
   Future<void> _submitGoogle() async {
     final slug = _schoolSlug.text.trim();
     await ref
@@ -61,11 +54,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final auth = ref.watch(authProvider);
     final isLoading = auth is AuthSigningIn;
     final error = auth is AuthSignedOut ? auth.error : null;
-    // Render the password form when local auth is on (the default, and
-    // anything other than pure `AUTH_PROVIDER=auth0`). Render the Auth0
-    // button when Auth0 is configured. When both are on we show a small
-    // divider between them.
-    final showLocal = AppConfig.isLocalAuthEnabled;
+    // Password form is gated on IS_DEV — production admins sign in
+    // via Google only. Google CTA is always rendered when Auth0 is
+    // configured. When both are visible a small divider sits between
+    // them.
+    final showPasswordForm = AppConfig.isDev && AppConfig.isLocalAuthEnabled;
     final showAuth0 = AppConfig.isAuth0Enabled;
 
     return Scaffold(
@@ -109,7 +102,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            if (showLocal) ...[
+                            if (showPasswordForm) ...[
                               _LoginField(
                                 controller: _email,
                                 label: 'Email',
@@ -163,33 +156,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               _ErrorBanner(message: error),
                             ],
                             const SizedBox(height: 18),
-                            if (showLocal)
+                            if (showPasswordForm)
                               _PrimaryCta(
                                 label: isLoading ? 'Signing in…' : 'Sign in',
                                 onTap: isLoading ? null : _submit,
                               ),
-                            if (showLocal && showAuth0) ...[
+                            if (showPasswordForm && showAuth0) ...[
                               const SizedBox(height: 14),
                               _OrDivider(),
                               const SizedBox(height: 14),
                             ],
-                            if (showAuth0) ...[
-                              if (!showLocal) const SizedBox(height: 0),
+                            if (showAuth0)
                               _GoogleCta(
                                 label: isLoading
                                     ? 'Opening Google…'
                                     : 'Sign in with Google',
                                 onTap: isLoading ? null : _submitGoogle,
                               ),
-                              const SizedBox(height: 10),
-                              _Auth0Cta(
-                                label: isLoading
-                                    ? 'Opening Auth0…'
-                                    : 'Sign in with Auth0',
-                                onTap: isLoading ? null : _submitAuth0,
-                              ),
-                            ],
-                            if (showLocal) ...[
+                            if (showPasswordForm) ...[
                               const SizedBox(height: 10),
                               Center(
                                 child: TextButton(
@@ -510,47 +494,6 @@ class _GoogleGlyph extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: Colors.white,
           height: 1.0,
-        ),
-      ),
-    );
-  }
-}
-
-class _Auth0Cta extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const _Auth0Cta({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    return Material(
-      color: disabled ? DashColors.w(0.04) : DashColors.w(0.08),
-      shape: StadiumBorder(
-        side: BorderSide(color: DashColors.w(0.18)),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const StadiumBorder(),
-        child: Container(
-          height: 44,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.lock_outline, size: 16, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.22,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -1,10 +1,11 @@
 {
-  "_comment": "Auth0 prod tenant + the public dashboard subdomain. AUTH_PROVIDER=both keeps the email/password form available as a fallback for admins who lost Auth0 access.",
+  "_comment": "Auth0 prod tenant + the public dashboard subdomain. AUTH_PROVIDER=auth0 — the email/password form is gated on IS_DEV, so prod admins sign in via Google only.",
   "API_BASE_URL": "https://api.polyglots.social",
   "AUDIO_BASE_URL": "https://app.polyglots.social/newaudio",
-  "AUTH_PROVIDER": "both",
+  "AUTH_PROVIDER": "auth0",
   "AUTH0_DOMAIN": "polyglots.us.auth0.com",
   "AUTH0_CLIENT_ID": "USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk",
   "AUTH0_AUDIENCE": "",
-  "AUTH0_REDIRECT_URI": "https://dashboard.polyglots.social"
+  "AUTH0_REDIRECT_URI": "https://dashboard.polyglots.social",
+  "IS_DEV": "false"
 }
