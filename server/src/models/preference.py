@@ -2,7 +2,9 @@ from pydantic import BaseModel
 from models.course import Course
 
 class Preference(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    # Always populated on response (the DB row has it).
+    user_id: int | None = None
     course_id: int|None = None
     module_id: int|None = None
     lesson_id: int|None = None

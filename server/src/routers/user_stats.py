@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from models.user_data import UserStats
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results
 router = APIRouter()
 
@@ -60,7 +61,7 @@ async def  get_exercises(user_id: int, lang):
 
 
 @router.get("/", response_model=UserStats)
-async def get_user_stats(user_id: int, lang: str):
+async def get_user_stats(lang: str, user_id: int = Depends(current_user_id)):
     sentences_count = await get_sentences(user_id, lang)
     words_count = await get_words(user_id, lang)
     lessons_count = await get_lessons(user_id, lang)

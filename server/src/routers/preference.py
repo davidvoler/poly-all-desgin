@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results, run_query
 from models.preference import Preference
 router = APIRouter()
 
 
 @router.get("/")
-async def get_user_preferences(user_id: int | None = None):
-    if user_id is None:
-        user_id = 1 # default user for development
+async def get_user_preferences(user_id: int = Depends(current_user_id)):
     query = "SELECT * FROM user_data.preference WHERE user_id = %s"
     results = await get_query_results(query, (user_id,))
     for r in results:
@@ -15,8 +14,11 @@ async def get_user_preferences(user_id: int | None = None):
     return None
 
 @router.post("/")
-async def update_user_preferences(preferences: Preference):
-    print(preferences)
+async def update_user_preferences(preferences: Preference,
+                                  user_id: int = Depends(current_user_id)):
+    # Trust the cookie, not the body — clients shouldn't be able to
+    # write another user's preference row by tampering with user_id.
+    preferences.user_id = user_id
     query = """
     UPDATE user_data.preference
     SET course_id = %s, module_id = %s, lesson_id = %s,

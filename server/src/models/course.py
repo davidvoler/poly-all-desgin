@@ -58,13 +58,15 @@ class Word(BaseModel):
 
 
 class SelectedWords(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str
     words: list[str] = []
 
 
 class LessonCompleted(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str| None = ''
     course_id: int = 0
     module_id: int = 0
@@ -77,7 +79,8 @@ class LessonCompleted(BaseModel):
 
 
 class PracticeCompleted(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str| None = ''
     course_id: int = 0
     score: float = 0.0

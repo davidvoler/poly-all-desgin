@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from models.course import Lesson, LessonCompleted
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results, run_query
 from routers.course import user_course_status
 router = APIRouter()
@@ -23,8 +24,10 @@ async def get_lessons(module_id: int):
 
 
 @router.post("/completed")
-async def lesson_completed(lesson_completed: LessonCompleted):
+async def lesson_completed(lesson_completed: LessonCompleted,
+                           user_id: int = Depends(current_user_id)):
     """Handle lesson completion."""
+    lesson_completed.user_id = user_id
     print(lesson_completed)
     sql = """
     INSERT INTO user_data.lesson_status (

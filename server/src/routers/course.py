@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from models.course import Course
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results
 router = APIRouter()
 
@@ -32,7 +33,8 @@ async def get_user_courses(user_id: int):
 
 
 @router.get("/", response_model=list[Course])
-async def get_courses(lang: str , to_lang: str, school: str| None = None, user_id: int = 1):
+async def get_courses(lang: str, to_lang: str, school: str | None = None,
+                      user_id: int = Depends(current_user_id)):
     school_where = "school = %s" if school else ""
     sql = f"""
     SELECT c.course_id, c.title, c.description, c.lang, c.to_lang, c.lesson_count,

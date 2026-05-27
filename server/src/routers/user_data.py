@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models.user_data import Results
+from utils.auth_deps import current_user_id
 from utils.db import run_query
 router = APIRouter()
 
@@ -19,7 +20,9 @@ def calculate_score(correct_ratio: float, incorrect_count: float, attempts: int)
 
 
 @router.post("/")
-async def save_results(results: Results):
+async def save_results(results: Results,
+                       user_id: int = Depends(current_user_id)):
+    results.user_id = user_id
     score = calculate_score(
         results.correct_ratio or 0.0,
         results.incorrect_count or 0.0,

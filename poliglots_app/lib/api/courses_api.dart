@@ -26,8 +26,10 @@ String? audioUrl(String audioPath) {
 /// On native targets we install a [CookieManager] so Dio carries the
 /// server's HttpOnly `user_id` cookie across requests — without it
 /// mobile/desktop builds would forget the session after every request.
-/// On web the browser owns the cookie jar; Dio just rides the
-/// `withCredentials: true` flag set on per-request `Options.extra`.
+/// On web the browser owns the cookie jar; we set `withCredentials`
+/// in BaseOptions so every Dio request opts the browser into sending
+/// the cookie — the server now reads user_id from that cookie instead
+/// of a query param.
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
@@ -35,6 +37,7 @@ final dioProvider = Provider<Dio>((ref) {
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 10),
       responseType: ResponseType.json,
+      extra: {'withCredentials': true},
     ),
   );
   if (!kIsWeb) {
@@ -109,12 +112,10 @@ class CoursesRepository {
         .toList();
   }
 
-  /// `GET /api/v1/preference/?user_id=…` — null when the user has no row.
-  Future<Preference?> fetchPreference(int userId) async {
-    final res = await _dio.get<dynamic>(
-      '/api/v1/preference/',
-      queryParameters: {'user_id': userId},
-    );
+  /// `GET /api/v1/preference/` — null when the user has no row. The
+  /// server reads the user_id from the auth cookie; no query param.
+  Future<Preference?> fetchPreference() async {
+    final res = await _dio.get<dynamic>('/api/v1/preference/');
     final data = res.data;
     if (data is! Map) return null;
     return Preference.fromJson(data.cast<String, dynamic>());
@@ -138,7 +139,8 @@ class CoursesRepository {
 
   /// `POST /api/v1/lesson/completed` — record that the user finished a
   /// lesson, with the summary the client computed at end-of-quiz. Called
-  /// once when the lesson-complete screen first appears.
+  /// once when the lesson-complete screen first appears. The server
+  /// reads the user_id from the auth cookie; the client doesn't send it.
   Future<void> saveLessonCompleted({
     required String lang,
     required int? courseId,
@@ -153,7 +155,6 @@ class CoursesRepository {
     await _dio.post<dynamic>(
       '/api/v1/lesson/completed',
       data: {
-        'user_id': kCurrentUserId,
         'lang': lang,
         'course_id': courseId,
         'module_id': moduleId,
@@ -167,22 +168,23 @@ class CoursesRepository {
     );
   }
 
-  /// `GET /api/v1/user_stats/?user_id=…&lang=…` — mastered counts.
-  Future<UserStats> fetchUserStats(int userId, String lang) async {
+  /// `GET /api/v1/user_stats/?lang=…` — mastered counts for the
+  /// signed-in user (server reads user_id from the auth cookie).
+  Future<UserStats> fetchUserStats(String lang) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/api/v1/user_stats/',
-      queryParameters: {'user_id': userId, 'lang': lang},
+      queryParameters: {'lang': lang},
     );
     return UserStats.fromJson(res.data ?? const {});
   }
 
-  /// `GET /api/v1/practice/words?user_id=…&lang=…` — every distinct
-  /// word the user has encountered, with the server-side mastery score
-  /// and the timestamp of the last practice attempt.
+  /// `GET /api/v1/practice/words?lang=…` — every distinct word the
+  /// user has encountered, with the server-side mastery score and the
+  /// timestamp of the last practice attempt.
   Future<List<LearnedWord>> fetchWords(String lang) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/practice/words',
-      queryParameters: {'user_id': kCurrentUserId, 'lang': lang},
+      queryParameters: {'lang': lang},
     );
     return (res.data ?? const [])
         .cast<Map<String, dynamic>>()
@@ -191,12 +193,12 @@ class CoursesRepository {
         .toList();
   }
 
-  /// `GET /api/v1/practice/<kind>?user_id=…&lang=…` — a fresh set of
-  /// exercises to drill, scoped to the language being learned.
+  /// `GET /api/v1/practice/<kind>?lang=…` — a fresh set of exercises
+  /// to drill, scoped to the language being learned.
   Future<List<Exercise>> fetchPractice(PracticeKind kind, String lang) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/practice/${kind.path}',
-      queryParameters: {'user_id': kCurrentUserId, 'lang': lang},
+      queryParameters: {'lang': lang},
     );
     final data = res.data ?? const [];
     return data
@@ -206,7 +208,7 @@ class CoursesRepository {
   }
 
   /// `GET /api/v1/achievement/get_achievements` — most recent badges
-  /// for the user on the given course/lang.
+  /// for the signed-in user on the given course/lang.
   Future<List<Achievement>> fetchAchievements({
     required int courseId,
     required String lang,
@@ -214,7 +216,6 @@ class CoursesRepository {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/achievement/get_achievements',
       queryParameters: {
-        'user_id': kCurrentUserId,
         'course_id': courseId,
         'lang': lang,
       },
@@ -235,7 +236,6 @@ class CoursesRepository {
     final res = await _dio.post<List<dynamic>>(
       '/api/v1/achievement/check_new_achievements',
       queryParameters: {
-        'user_id': kCurrentUserId,
         'course_id': courseId,
         'lang': lang,
       },
@@ -255,7 +255,6 @@ class CoursesRepository {
     final res = await _dio.post<List<dynamic>>(
       '/api/v1/practice/by_selected_words',
       data: {
-        'user_id': kCurrentUserId,
         'lang': lang,
         'words': words,
       },
@@ -441,7 +440,7 @@ class PreferenceNotifier extends AsyncNotifier<Preference?> {
     final userId = ref.watch(currentUserIdProvider);
     if (userId == null) return null;
     final repo = ref.read(coursesRepositoryProvider);
-    return repo.fetchPreference(userId);
+    return repo.fetchPreference();
   }
 
   /// Merge new fields into the current preference, push to server, and
