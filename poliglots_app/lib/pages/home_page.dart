@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/courses_api.dart';
 import '../api/models.dart';
+import '../auth/auth_state.dart';
 import '../i18n/translations.g.dart';
 import '../state/lang.dart';
 import '../theme.dart';
@@ -30,7 +31,7 @@ class HomePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top bar — brand + UI language selector + streak
+                // Top bar — brand + UI language selector + streak + logout
                 Row(
                   children: [
                     const BrandWordmark(),
@@ -38,6 +39,8 @@ class HomePage extends ConsumerWidget {
                     const _UiLangSelector(),
                     const SizedBox(width: 8),
                     StreakChip(text: t.common.streak_days(n: 5)),
+                    const SizedBox(width: 8),
+                    const _LogoutButton(),
                   ],
                 ),
                 const SizedBox(height: 28),
@@ -510,6 +513,74 @@ class _UiLangSelectorState extends ConsumerState<_UiLangSelector> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Logout pill in the top bar. Mirrors the [_UiLangSelector]'s
+/// frosted-pill look so the row reads as a single control strip.
+/// Confirms before signing out — sign-in is cheap on web but a
+/// stray tap on mobile would still cost the user a re-login.
+class _LogoutButton extends ConsumerWidget {
+  const _LogoutButton();
+
+  Future<void> _confirmAndSignOut(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: const Text('You will need to sign in again to continue.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(authProvider.notifier).signOut();
+    } catch (e) {
+      messenger?.showSnackBar(SnackBar(content: Text('Sign-out failed: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Tooltip(
+      message: 'Sign out',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.08),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => _confirmAndSignOut(context, ref),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                child: Icon(
+                  Icons.logout,
+                  size: 14,
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
