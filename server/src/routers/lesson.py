@@ -7,13 +7,32 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[Lesson])
-async def get_lessons(module_id: int):
+async def get_lessons(module_id: int,
+                      user_id: int = Depends(current_user_id)):
+    # Join each lesson row against the user's own lesson_status
+    # aggregate so the client gets max/sum/attempts alongside the
+    # static lesson copy. `completed` is derived from max_score —
+    # any positive best-attempt counts as done.
     sql = """
-    SELECT *  
-    FROM course_simple.lesson
-    WHERE module_id = %s
+    SELECT lesson.lesson_id, lesson.title, lesson.description, lesson.words,
+           COALESCE(ls.max_score, 0.0) AS max_score,
+           COALESCE(ls.sum_score, 0.0) AS sum_score,
+           COALESCE(ls.num_attempts, 0) AS num_attempts,
+           CASE WHEN COALESCE(ls.max_score, 0) > 0 THEN 1 ELSE 0 END AS completed
+    FROM course_simple.lesson AS lesson
+    LEFT JOIN (
+        SELECT lesson_id,
+               max(score) AS max_score,
+               sum(score) AS sum_score,
+               count(*) AS num_attempts
+        FROM user_data.lesson_status
+        WHERE user_id = %s
+        GROUP BY lesson_id
+    ) AS ls ON lesson.lesson_id = ls.lesson_id
+    WHERE lesson.module_id = %s
+    ORDER BY lesson.lesson_id
     """
-    params = (module_id,)
+    params = (user_id, module_id)
     res = await get_query_results(sql, params)
     results = []
     for r in res:

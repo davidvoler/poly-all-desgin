@@ -345,7 +345,13 @@ class _CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = course.inProgress;
+    // "Current" is the user's most recently studied course — exactly
+    // one card across the list. "Active" is any course with progress
+    // (current OR partially completed). The current card gets a
+    // brighter border + a CURRENT pill; the others fall back to the
+    // existing in-progress styling.
+    final current = course.isCurrent;
+    final active = current || course.inProgress;
     return Material(
       color: Colors.white.withValues(alpha: active ? 0.14 : 0.06),
       borderRadius: BorderRadius.circular(14),
@@ -357,7 +363,10 @@ class _CourseCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.white.withValues(alpha: active ? 0.30 : 0.14),
+              color: current
+                  ? PolyColors.brandPrimary
+                  : Colors.white.withValues(alpha: active ? 0.30 : 0.14),
+              width: current ? 1.5 : 1.0,
             ),
             boxShadow: active
                 ? [
@@ -422,38 +431,28 @@ class _CourseCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _LevelPill(text: course.levelPill, inProgress: course.inProgress),
+                  _LevelPill(
+                    text: current ? 'CURRENT' : course.levelPill,
+                    inProgress: active,
+                  ),
                 ],
               ),
-              if (course.footer != null) ...[
+              if (active && course.progress != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    if (course.progress != null) ...[
-                      Expanded(
-                        child: PolyProgressBar(
-                            value: course.progress!, height: 4),
+                    Expanded(
+                      child:
+                          PolyProgressBar(value: course.progress!, height: 4),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${course.lessonsDone}/${course.lessonCount} · ${(course.progress! * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
-                      const SizedBox(width: 10),
-                    ],
-                    if (course.progress == null)
-                      Expanded(
-                        child: Text(
-                          course.footer!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withValues(alpha: active ? 0.9 : 0.7),
-                          ),
-                        ),
-                      )
-                    else
-                      Text(
-                        course.footer!,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.white.withValues(alpha: active ? 0.9 : 0.7),
-                        ),
-                      ),
+                    ),
                   ],
                 ),
               ],

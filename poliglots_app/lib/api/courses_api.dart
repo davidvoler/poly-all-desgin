@@ -288,7 +288,7 @@ final userStatsProvider = FutureProvider<UserStats>((ref) {
   final repo = ref.watch(coursesRepositoryProvider);
   final prefLang = ref.watch(preferenceProvider.select((p) => p.value?.lang));
   final learning = ref.watch(learningLangProvider);
-  return repo.fetchUserStats(kCurrentUserId, prefLang ?? learning.code);
+  return repo.fetchUserStats(prefLang ?? learning.code);
 });
 
 /// Every word the user has seen so far, scoped to the language being

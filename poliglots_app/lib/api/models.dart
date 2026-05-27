@@ -10,9 +10,19 @@ class CourseSummary {
   final String levelPill;     // "A1·A2", "In Progress", …
   final Lang sourceLang;
   final Lang targetLang;
-  final bool inProgress;
-  final double? progress;     // 0..1, only when inProgress
-  final String? footer;       // free-form footer text
+  final int lessonCount;
+  final int lessonsDone;
+  final double avgScore;
+  // 0..1 fraction; null only when lessonCount is 0.
+  final double? progress;
+  // The user's last-touched module + lesson on THIS course. Both
+  // non-null only on the user's "current" course (the server fills
+  // them from the most-recent lesson_status row scoped to that user).
+  // The courses-list page uses this to mark exactly one card as the
+  // current course; the course-detail page uses it to default the
+  // selected module + lesson without waiting on /preference.
+  final int? currentModuleId;
+  final int? currentLessonId;
 
   const CourseSummary({
     required this.id,
@@ -22,15 +32,25 @@ class CourseSummary {
     required this.levelPill,
     required this.sourceLang,
     required this.targetLang,
-    this.inProgress = false,
+    this.lessonCount = 0,
+    this.lessonsDone = 0,
+    this.avgScore = 0.0,
     this.progress,
-    this.footer,
+    this.currentModuleId,
+    this.currentLessonId,
   });
 
+  /// True when the user has activity here but hasn't finished.
+  bool get inProgress => lessonsDone > 0 && lessonsDone < lessonCount;
+
+  /// True when this is the user's most recently studied course (the
+  /// server picks exactly one across the list).
+  bool get isCurrent => currentModuleId != null && currentLessonId != null;
+
   factory CourseSummary.fromJson(Map<String, dynamic> j) {
-    final progress = j['user_course_progress'] as Map<String, dynamic>?;
-    final progressValue = (progress?['progress'] as num?)?.toDouble();
     final tags = ((j['tags'] as List?) ?? const []).cast<String>();
+    final lessonCount = (j['lesson_count'] as num?)?.toInt() ?? 0;
+    final lessonsDone = (j['user_lessons_done'] as num?)?.toInt() ?? 0;
     return CourseSummary(
       id: (j['course_id']).toString(),
       title: (j['title'] as String?) ?? '',
@@ -41,11 +61,16 @@ class CourseSummary {
       // native language. `sourceLang` is the native/"I speak" side.
       sourceLang: Lang.byCode(j['to_lang'] as String),
       targetLang: Lang.byCode(j['lang'] as String),
-      inProgress: progressValue != null && progressValue > 0 && progressValue < 1,
-      progress: progressValue,
-      footer: progressValue != null
-          ? '${(progressValue * 100).round()}% complete'
-          : null,
+      lessonCount: lessonCount,
+      lessonsDone: lessonsDone,
+      avgScore: (j['avg_score'] as num?)?.toDouble() ?? 0.0,
+      // Server returns progress as a 0–100 int; normalise to 0..1 here
+      // so the UI's PolyProgressBar can consume it without a divide.
+      progress: lessonCount == 0
+          ? null
+          : ((j['progress'] as num?)?.toDouble() ?? 0.0) / 100.0,
+      currentModuleId: j['current_module'] as int?,
+      currentLessonId: j['current_lesson'] as int?,
     );
   }
 }
@@ -274,13 +299,22 @@ class UserStats {
 }
 
 /// Shape returned by `GET /api/v1/lesson/?module_id=…` — one lesson
-/// card. `completed` is the server's 0/1 flag.
+/// card. `completed` is the server's 0/1 flag (derived from
+/// `maxScore > 0`); the score + attempts fields come from the user's
+/// own lesson_status aggregate so the UI can surface progress.
 class Lesson {
   final int id;
   final String title;
   final String description;
   final List<String> words;
   final bool completed;
+  // Best single attempt the user has scored on this lesson, 0 when
+  // never attempted. The lesson-row badge surfaces this as "Best".
+  final double maxScore;
+  // Cumulative score across all attempts. Useful for the
+  // achievement threshold (sum >= 1 → "learned" in the server).
+  final double sumScore;
+  final int numAttempts;
 
   const Lesson({
     required this.id,
@@ -288,7 +322,12 @@ class Lesson {
     required this.description,
     required this.words,
     required this.completed,
+    this.maxScore = 0.0,
+    this.sumScore = 0.0,
+    this.numAttempts = 0,
   });
+
+  bool get hasAttempted => numAttempts > 0;
 
   factory Lesson.fromJson(Map<String, dynamic> j) => Lesson(
         id: j['lesson_id'] as int,
@@ -296,6 +335,9 @@ class Lesson {
         description: (j['description'] as String?) ?? '',
         words: ((j['words'] as List?) ?? const []).cast<String>(),
         completed: ((j['completed'] as int?) ?? 0) == 1,
+        maxScore: (j['max_score'] as num?)?.toDouble() ?? 0.0,
+        sumScore: (j['sum_score'] as num?)?.toDouble() ?? 0.0,
+        numAttempts: (j['num_attempts'] as num?)?.toInt() ?? 0,
       );
 }
 

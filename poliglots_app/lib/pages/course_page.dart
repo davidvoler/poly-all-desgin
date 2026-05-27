@@ -34,11 +34,16 @@ class CoursePage extends ConsumerWidget {
         : '${course.targetLang.englishName} · ${course.targetLang.native}';
 
     // Effective module id once modules load: explicit selection wins,
-    // otherwise default to the first module so lessons still render.
+    // otherwise the user's current_module from the courses summary,
+    // otherwise the first module so lessons still render.
     int? effectiveModuleId(List<api.Module> modules) {
       if (modules.isEmpty) return null;
       if (selectedId != null && modules.any((m) => m.id == selectedId)) {
         return selectedId;
+      }
+      final cur = course?.currentModuleId;
+      if (cur != null && modules.any((m) => m.id == cur)) {
+        return cur;
       }
       return modules.first.id;
     }
@@ -71,54 +76,9 @@ class CoursePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 18),
 
-                // Hero — compact progress strip
-                GlassCard(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                  borderRadius: PolyRadii.cardSm,
-                  blur: 20,
-                  child: Row(
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          const Text(
-                            '45',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              height: 1.0,
-                              letterSpacing: -0.36,
-                            ),
-                          ),
-                          Text(
-                            '%',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white.withValues(alpha: 0.65),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '12 of 24 lessons\n248 words learned',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.7),
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: PolyProgressBar(value: 0.45, height: 5),
-                      ),
-                    ],
-                  ),
-                ),
+                // Hero — compact progress strip, driven by the course
+                // summary so the figures match the courses list card.
+                _CourseProgressHero(course: course),
                 const SizedBox(height: 14),
 
                 // Section row — Modules
@@ -214,7 +174,10 @@ class CoursePage extends ConsumerWidget {
                     data: (modules) {
                       final id = effectiveModuleId(modules);
                       if (id == null) return const SizedBox.shrink();
-                      return _LessonsSection(moduleId: id);
+                      return _LessonsSection(
+                        moduleId: id,
+                        currentLessonId: course?.currentLessonId,
+                      );
                     },
                     orElse: () => const SizedBox.shrink(),
                   ),
@@ -231,6 +194,74 @@ class CoursePage extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Compact "X% · L of N lessons · avg Y" strip driven by the courses
+/// summary. Falls back to dashes while the courses list is still
+/// loading or the course id couldn't be matched.
+class _CourseProgressHero extends StatelessWidget {
+  final api.CourseSummary? course;
+  const _CourseProgressHero({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = course?.progress;
+    final lessonCount = course?.lessonCount ?? 0;
+    final lessonsDone = course?.lessonsDone ?? 0;
+    final avgScore = course?.avgScore ?? 0.0;
+    final pct = progress == null ? '–' : '${(progress * 100).round()}';
+    final lessonsLine = course == null
+        ? 'Loading…'
+        : '$lessonsDone of $lessonCount lessons'
+            '${avgScore > 0 ? '\navg score ${avgScore.toStringAsFixed(2)}' : ''}';
+    return GlassCard(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      borderRadius: PolyRadii.cardSm,
+      blur: 20,
+      child: Row(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                pct,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  height: 1.0,
+                  letterSpacing: -0.36,
+                ),
+              ),
+              Text(
+                '%',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white.withValues(alpha: 0.65),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              lessonsLine,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.7),
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: PolyProgressBar(value: progress ?? 0.0, height: 5),
+          ),
+        ],
       ),
     );
   }
@@ -395,6 +426,11 @@ class _LessonInfo {
   final bool done;
   final bool selected;
   final String? route;
+  // Stats from user_data.lesson_status — null when the user has
+  // never attempted this lesson, so the card can hide the stats row
+  // for fresh lessons instead of showing "Best 0.00 · 0 attempts".
+  final double? bestScore;
+  final int attempts;
   const _LessonInfo({
     required this.id,
     required this.num,
@@ -403,6 +439,8 @@ class _LessonInfo {
     required this.done,
     required this.selected,
     this.route,
+    this.bestScore,
+    this.attempts = 0,
   });
 }
 
@@ -410,7 +448,14 @@ class _LessonInfo {
 /// only fetches when the user actually scrolls the module into view.
 class _LessonsSection extends ConsumerWidget {
   final int moduleId;
-  const _LessonsSection({required this.moduleId});
+  // Server's `current_lesson` from the courses summary. When the
+  // module being shown contains this id, that lesson wins the
+  // "selected" highlight over the first-undone fallback.
+  final int? currentLessonId;
+  const _LessonsSection({
+    required this.moduleId,
+    this.currentLessonId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -428,26 +473,38 @@ class _LessonsSection extends ConsumerWidget {
           ),
         ),
       ),
-      data: (lessons) => ListView.separated(
-        padding: EdgeInsets.zero,
-        itemCount: lessons.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, i) {
-          final info = _lessonInfoFromServer(lessons, i);
-          return _LessonCard(
-            lesson: info,
-            onTap: info.route == null
-                ? null
-                : () {
-                    ref
-                        .read(preferenceProvider.notifier)
-                        .save(lessonId: info.id);
-                    Navigator.pushNamed(context, info.route!,
-                        arguments: info.id);
-                  },
-          );
-        },
-      ),
+      data: (lessons) {
+        // If the server's current_lesson lives in this module, use it;
+        // otherwise fall back to the first-undone heuristic.
+        final selectedIdx =
+            currentLessonId != null
+                ? lessons.indexWhere((x) => x.id == currentLessonId)
+                : -1;
+        final fallbackIdx = lessons.indexWhere((x) => !x.completed);
+        final effectiveSelectedIdx =
+            selectedIdx >= 0 ? selectedIdx : fallbackIdx;
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: lessons.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, i) {
+            final info =
+                _lessonInfoFromServer(lessons, i, effectiveSelectedIdx);
+            return _LessonCard(
+              lesson: info,
+              onTap: info.route == null
+                  ? null
+                  : () {
+                      ref
+                          .read(preferenceProvider.notifier)
+                          .save(lessonId: info.id);
+                      Navigator.pushNamed(context, info.route!,
+                          arguments: info.id);
+                    },
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -456,9 +513,9 @@ class _LessonsSection extends ConsumerWidget {
 /// just `lesson <id>` today, so we surface the first word as the main
 /// label and the rest as the secondary line; falls back to title if
 /// the words list is empty.
-_LessonInfo _lessonInfoFromServer(List<api.Lesson> lessons, int i) {
+_LessonInfo _lessonInfoFromServer(
+    List<api.Lesson> lessons, int i, int selectedIdx) {
   final l = lessons[i];
-  final firstUndoneIdx = lessons.indexWhere((x) => !x.completed);
   final native = l.words.isNotEmpty ? l.words.first : l.title;
   final translation =
       l.words.length > 1 ? l.words.skip(1).join(' · ') : l.description;
@@ -468,8 +525,10 @@ _LessonInfo _lessonInfoFromServer(List<api.Lesson> lessons, int i) {
     jp: native,
     en: translation,
     done: l.completed,
-    selected: !l.completed && i == firstUndoneIdx,
+    selected: !l.completed && i == selectedIdx,
     route: '/quiz',
+    bestScore: l.hasAttempted ? l.maxScore : null,
+    attempts: l.numAttempts,
   );
 }
 
@@ -548,6 +607,24 @@ class _LessonCard extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
+                    if (lesson.bestScore != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Best ${lesson.bestScore!.toStringAsFixed(2)}'
+                        ' · ${lesson.attempts}'
+                        ' ${lesson.attempts == 1 ? "attempt" : "attempts"}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                          color: selected
+                              ? Colors.grey.shade600
+                              : Colors.white.withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

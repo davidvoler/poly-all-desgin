@@ -301,11 +301,36 @@ Can they offer teacher student relationship?
 
 *** Tasks ***
 
-- [] API calls should include user_id so we can get course per specific user - we had the default user_id=1 it is time to remove it and get the real user_id from secured cookie 
+- [v] API calls should include user_id so we can get course per specific user - we had the default user_id=1 it is time to remove it and get the real user_id from secured cookie 
 
 - [] We can allow anonymous user - in that case user_id = 0 - we do not save results 
-- [] lessons done/started/current get it from server
+- [v] When getting lessons we now have this information - lets use this data in the student app
+class Lesson(BaseModel):
+    lesson_id: int 
+    title: str| None = ''
+    description: str | None = ''
+    words: list[str] | None = []
+    completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
 
+- [v] when getting courses we have now the info:
+class Course(BaseModel):
+    course_id: int 
+    title: str| None = ''
+    description: str | None = ''
+    lang: str
+    to_lang: str 
+    tags : list[str] | None = []
+    lesson_count: int | None = 0
+    user_lessons_done: int | None = 0
+    avg_score: float | None = 0.0
+    progress: int | None = 0
+    current_module: int | None = 1
+    current_lesson: int | None = 1
+please use it in the client side to mark the current course - current module and current lesson
+We also have the progress information 
 
 
 *** tasks saved for later stage ***
