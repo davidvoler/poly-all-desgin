@@ -251,24 +251,60 @@ We have 2 main way of creating content
      `auth0_flutter` (same for `poliglots_app` — only flutter_dotenv).
   
 
-*** getting ready for MVP ***
-
+*** getting ready for MVP Student ***
 - [v] solve oauth - consider alternatives for auth0
 - [] upload some generated courses as an example - verify that the process works well
+- [] current lessons - get it correctly in client
+- [] lessons done/started/current get it from server
+- [] view lessons by school - save current school? 
+*** getting ready for MVP School ***
 - [w] Dashboard - have the dashboard working for - public and non profit schools 
+- [] unify users student and school 
+- [] we do need a school role (and maybe subscription)
+- [] Different pages visible to different users 
 - [] dashboard scenario 
     - [] connection - shall we have only a single users management for schools 
     - [] Create school - let's hide it for now - we will find a way to do it later 
     - [] Start generating courses and try to upload 
-
-
+*** getting ready for MVP Content ***
 - [] learn how to generate courses with AI
+- [] Generate  arabic v3 again 
+    - [] but this time without diacritical signs 
+    - [] prefer sentences with sound 
+- [] Generate Japanese
+
+
+
+*** school types subscription content access etc - planning  ***
+The full school types and rules 
+
+1. public - content is open 
+
+school type | subscription  | roles        | content access   | payment plan
+----------------------------------------------------------------
+open content| NA.           |Ad,Au,Ed,Re   | open.            | NA
+non profit. | by invite,    |              | open to sub.     | NA
+Payment     |               |              | By Subscription  | Plan
+
+
+Questions
+1. do we have a single space where you can see all courses - some are free, some require schools subscription and some require paying money
+In that concept a school is yet another filter 
+The alternative - each school has its own space and yuo can see courses belonging to a certain school only when you are in a school context. 
+If we are taking this approach - all tables should have school in them, a user's data is also schools based (words, sentences and of course lessons and courses)
+
+How about freelance teachers - does the system cater for them - can they offer payed content 
+Can they offer teacher student relationship? 
+
 
 
 
 *** tasks saved for later stage ***
-- [ ] I prefer using Oauth - so we can skip password change password functionality - for now at least
-- [] Real SMTP for password reset — out of scope without infrastructure.
+- [v] I prefer using Oauth - so we can skip password change password functionality - for now at least
+- [ ] Real SMTP for password reset — out of scope without infrastructure.
 - [ ] Pagination on Students table (currently capped at 200).
 - [ ] Cohort filter chips on Students page.
 - [ ] Public-school sibling site (community-contributor variant from design_experiments/school_public/) — substantial new UI; deferred to dedicated pass.
+
+
+

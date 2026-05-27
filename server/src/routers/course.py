@@ -64,5 +64,5 @@ async def get_courses(lang: str , to_lang: str, school: str| None = None, user_i
     for r in res:
         course = Course(**r)
         results.append(course)
-    
+    print(results)
     return results
