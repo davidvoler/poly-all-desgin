@@ -20,8 +20,9 @@ def calculate_score(correct_ratio: float, incorrect_count: float, attempts: int)
 
 
 @router.post("/")
-async def save_results(results: Results,
-                       user_id: int = Depends(current_user_id)):
+async def save_results(results: Results, user_id: int = Depends(current_user_id)):
+    if user_id <=0:
+        return {"error": "Unauthorized"}
     results.user_id = user_id
     score = calculate_score(
         results.correct_ratio or 0.0,

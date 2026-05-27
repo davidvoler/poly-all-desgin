@@ -33,16 +33,20 @@ class AppConfig {
     return defaultValue;
   }
 
+  // Use `localhost` (not 127.0.0.1) so the API origin shares a
+  // registrable domain with `flutter run -d chrome` (also serves
+  // on localhost). Cross-host between the two breaks SameSite=Lax
+  // cookies; same-host keeps the auth cookie flowing.
   static String get apiBaseUrl => _read(
         'API_BASE_URL',
         fromEnv: const String.fromEnvironment('API_BASE_URL'),
-        defaultValue: 'http://127.0.0.1:8004',
+        defaultValue: 'http://localhost:8004',
       );
 
   static String get audioBaseUrl => _read(
         'AUDIO_BASE_URL',
         fromEnv: const String.fromEnvironment('AUDIO_BASE_URL'),
-        defaultValue: 'http://127.0.0.1:3002/audio',
+        defaultValue: 'http://localhost:3002/audio',
       );
 
   /// `local` | `auth0`. `local` (default) keeps a guest-friendly dev

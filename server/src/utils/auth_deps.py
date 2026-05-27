@@ -8,8 +8,14 @@ from fastapi import HTTPException, Request
 def current_user_id(request: Request) -> int:
     raw = request.cookies.get("user_id")
     if not raw:
-        raise HTTPException(status_code=401, detail="Not signed in")
+        return 0
     try:
         return int(raw)
     except (TypeError, ValueError):
-        raise HTTPException(status_code=401, detail="Malformed session cookie")
+        return 0
+    # if not raw:
+    #     raise HTTPException(status_code=401, detail="Not signed in")
+    # try:
+    #     return int(raw)
+    # except (TypeError, ValueError):
+    #     raise HTTPException(status_code=401, detail="Malformed session cookie")

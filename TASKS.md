@@ -303,7 +303,7 @@ Can they offer teacher student relationship?
 
 - [v] API calls should include user_id so we can get course per specific user - we had the default user_id=1 it is time to remove it and get the real user_id from secured cookie 
 
-- [] We can allow anonymous user - in that case user_id = 0 - we do not save results 
+- [v] We can allow anonymous user - in that case user_id = 0 - we do not save results 
 - [v] When getting lessons we now have this information - lets use this data in the student app
 class Lesson(BaseModel):
     lesson_id: int 
@@ -331,7 +331,11 @@ class Course(BaseModel):
     current_lesson: int | None = 1
 please use it in the client side to mark the current course - current module and current lesson
 We also have the progress information 
-
+- [] modules also return now the following fields 
+ completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
 
 *** tasks saved for later stage ***
 - [v] I prefer using Oauth - so we can skip password change password functionality - for now at least

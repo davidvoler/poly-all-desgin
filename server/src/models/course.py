@@ -24,6 +24,10 @@ class Module(BaseModel):
     description: str | None = ''
     words: list[str] | None = []
     completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
+
 
 class Course(BaseModel):
     course_id: int 
