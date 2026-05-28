@@ -13,3 +13,10 @@ ALTER TABLE course_simple.course ADD COLUMN lesson_count int2 default 0;
 -- bcrypt hashes are 60 chars; the column is intentionally NULLABLE so
 -- Auth0-issued accounts (which carry no local password) keep working.
 ALTER TABLE user_data.users ADD COLUMN password_hash VARCHAR(100);
+
+
+
+ALTER TABLE user_data.preference ADD COLUMN course_name VARCHAR(300);
+ALTER TABLE user_data.preference ADD COLUMN module_name VARCHAR(300);
+ALTER TABLE user_data.preference ADD COLUMN lesson_name VARCHAR(300);
+-- DONE

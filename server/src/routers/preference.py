@@ -18,11 +18,10 @@ async def update_user_preferences(preferences: Preference,
                                   user_id: int = Depends(current_user_id)):
     # Trust the cookie, not the body — clients shouldn't be able to
     # write another user's preference row by tampering with user_id.
-    preferences.user_id = user_id
     query = """
     UPDATE user_data.preference
     SET course_id = %s, module_id = %s, lesson_id = %s,
-        ui_lang = %s, lang = %s, to_lang = %s
+        ui_lang = %s, lang = %s, to_lang = %s, course_name = %s, module_name = %s, lesson_name = %s
     WHERE user_id = %s
     """
     params = (
@@ -32,7 +31,10 @@ async def update_user_preferences(preferences: Preference,
         preferences.ui_lang,
         preferences.lang,
         preferences.to_lang,
-        preferences.user_id
+        preferences.course_name,
+        preferences.module_name,
+        preferences.lesson_name,
+        user_id,
     )
     await run_query(query, params)
     return preferences

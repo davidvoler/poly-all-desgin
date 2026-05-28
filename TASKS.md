@@ -339,7 +339,33 @@ We also have the progress information
     current: int 
 
 
-    
+*** user state ***
+
+- [] when a user logs-in we should have the following information 
+  - [] lang - the language she is learning 
+  - [] to_lang - the languages she speaks 
+  - [] ui_lang - user interface lang  
+  - [] current course - name + id
+  - [] current module  
+  - [] current lesson
+
+When to update?
+- [] whenever a user starts a lesson
+- [] when ever a user selects a new course
+- [] When a user changes lang or to lang preference 
+- [] when a user changes ui_lang preferences 
+
+What to do with This preferences 
+- [] home page
+  - [] top round section should follow languages/ course progress 
+  - [] rectangular course section - now is static - should show course name, module and lesson
+  - [] practice now - should be replaces with the name of the curren lesson 
+- [] course page 
+  - [] language I speak and learning language should take the data from course name
+
+
+
+
 *** tasks saved for later stage ***
 - [v] I prefer using Oauth - so we can skip password change password functionality - for now at least
 - [ ] Real SMTP for password reset — out of scope without infrastructure.
