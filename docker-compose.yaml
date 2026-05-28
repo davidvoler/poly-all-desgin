@@ -12,7 +12,21 @@
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     shm_size: 4GB
-  
+  postgres_content:
+    container_name: postgres_content
+    image: postgres:17.4
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 4GB 
+    volumes:
+      - ./data/postgres_full:/var/lib/postgresql/data
+    shm_size: 4GB
+
+
   server:
     container_name: server
     image: server:polyglots
