@@ -156,6 +156,16 @@ class HomePage extends ConsumerWidget {
                         final fallbackLessonId =
                             ref.watch(coursesListProvider).maybeWhen(
                                   data: (cs) {
+                                    // Prefer the user's globally-most-recent
+                                    // course's cursor; fall back to any course
+                                    // with progress so the CTA still resumes
+                                    // something on legacy preference rows.
+                                    for (final c in cs) {
+                                      if (c.isCurrentCourse &&
+                                          c.currentLessonId != null) {
+                                        return c.currentLessonId;
+                                      }
+                                    }
                                     for (final c in cs) {
                                       if (c.currentLessonId != null) {
                                         return c.currentLessonId;

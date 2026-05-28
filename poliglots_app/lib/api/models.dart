@@ -15,14 +15,17 @@ class CourseSummary {
   final double avgScore;
   // 0..1 fraction; null only when lessonCount is 0.
   final double? progress;
-  // The user's last-touched module + lesson on THIS course. Both
-  // non-null only on the user's "current" course (the server fills
-  // them from the most-recent lesson_status row scoped to that user).
-  // The courses-list page uses this to mark exactly one card as the
-  // current course; the course-detail page uses it to default the
-  // selected module + lesson without waiting on /preference.
+  // The user's last-touched module + lesson on THIS course. Non-null
+  // on every course the user has any lesson_status row for — the
+  // course-detail page uses this to anchor the modules strip + the
+  // "current lesson" highlight without waiting on /preference.
   final int? currentModuleId;
   final int? currentLessonId;
+  // True for exactly the user's globally most-recent course; drives
+  // the "CURRENT" pill on the courses list. Independent of the
+  // per-course cursor above so the detail page can still resume any
+  // touched course.
+  final bool isCurrentCourse;
 
   const CourseSummary({
     required this.id,
@@ -38,6 +41,7 @@ class CourseSummary {
     this.progress,
     this.currentModuleId,
     this.currentLessonId,
+    this.isCurrentCourse = false,
   });
 
   /// True when the user has activity here but hasn't finished.
@@ -45,7 +49,7 @@ class CourseSummary {
 
   /// True when this is the user's most recently studied course (the
   /// server picks exactly one across the list).
-  bool get isCurrent => currentModuleId != null && currentLessonId != null;
+  bool get isCurrent => isCurrentCourse;
 
   factory CourseSummary.fromJson(Map<String, dynamic> j) {
     final tags = ((j['tags'] as List?) ?? const []).cast<String>();
@@ -71,6 +75,7 @@ class CourseSummary {
           : ((j['progress'] as num?)?.toDouble() ?? 0.0) / 100.0,
       currentModuleId: j['current_module'] as int?,
       currentLessonId: j['current_lesson'] as int?,
+      isCurrentCourse: (j['is_current_course'] as bool?) ?? false,
     );
   }
 }

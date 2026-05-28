@@ -77,17 +77,31 @@ class _CoursePageState extends ConsumerState<CoursePage> {
         ? ''
         : '${course.targetLang.englishName} · ${course.targetLang.native}';
 
+    // The user's "current" cursor for THIS course. Preference wins
+    // when its courseId matches — it tracks the lesson the user
+    // actually started (written on every lesson tap), including ones
+    // they haven't finished. The courses-summary cursor only reflects
+    // completed lessons (lesson_status), so it's the right fallback
+    // when preference points at a different course (e.g. just after
+    // switching from the courses list).
+    final pref = ref.watch(preferenceProvider).value;
+    final prefMatchesCourse = pref?.courseId == courseId;
+    final currentModuleId =
+        (prefMatchesCourse ? pref?.moduleId : null) ?? course?.currentModuleId;
+    final currentLessonId =
+        (prefMatchesCourse ? pref?.lessonId : null) ?? course?.currentLessonId;
+
     // Effective module id once modules load: explicit selection wins,
-    // otherwise the user's current_module from the courses summary,
-    // otherwise the first module so lessons still render.
+    // otherwise the user's current-module cursor, otherwise the first
+    // module so lessons still render.
     int? effectiveModuleId(List<api.Module> modules) {
       if (modules.isEmpty) return null;
       if (selectedId != null && modules.any((m) => m.id == selectedId)) {
         return selectedId;
       }
-      final cur = course?.currentModuleId;
-      if (cur != null && modules.any((m) => m.id == cur)) {
-        return cur;
+      if (currentModuleId != null &&
+          modules.any((m) => m.id == currentModuleId)) {
+        return currentModuleId;
       }
       return modules.first.id;
     }
@@ -229,7 +243,7 @@ class _CoursePageState extends ConsumerState<CoursePage> {
                       return _LessonsSection(
                         moduleId: id,
                         moduleName: module.title,
-                        currentLessonId: course?.currentLessonId,
+                        currentLessonId: currentLessonId,
                       );
                     },
                     orElse: () => const SizedBox.shrink(),
@@ -568,14 +582,24 @@ class _LessonsSectionState extends ConsumerState<_LessonsSection> {
         ),
       ),
       data: (lessons) {
-        // If the server's current_lesson lives in this module, use it;
-        // otherwise fall back to the first-undone heuristic.
-        final selectedIdx = widget.currentLessonId != null
-            ? lessons.indexWhere((x) => x.id == widget.currentLessonId)
-            : -1;
-        final fallbackIdx = lessons.indexWhere((x) => !x.completed);
-        final effectiveSelectedIdx =
-            selectedIdx >= 0 ? selectedIdx : fallbackIdx;
+        // Server's current_lesson is the user's most-recent *completed*
+        // lesson on this course (rows only land in lesson_status after
+        // /lesson/completed). The "current" lesson the user expects
+        // highlighted is the next undone one — so walk forward from
+        // the cursor and pick the first undone lesson. When the cursor
+        // isn't in this module (or there's no cursor), walk from the
+        // top. If everything's done we leave the highlight off.
+        final cursorIdx = widget.currentLessonId == null
+            ? -1
+            : lessons.indexWhere((x) => x.id == widget.currentLessonId);
+        final fromIdx = cursorIdx >= 0 ? cursorIdx : 0;
+        var effectiveSelectedIdx = -1;
+        for (var i = fromIdx; i < lessons.length; i++) {
+          if (!lessons[i].completed) {
+            effectiveSelectedIdx = i;
+            break;
+          }
+        }
         if (effectiveSelectedIdx >= 0) {
           _maybeScrollLessons(
             '${widget.moduleId}:${widget.currentLessonId ?? "auto"}',

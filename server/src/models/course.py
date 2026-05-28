@@ -32,18 +32,19 @@ class Module(BaseModel):
 
 
 class Course(BaseModel):
-    course_id: int 
+    course_id: int
     title: str| None = ''
     description: str | None = ''
     lang: str
-    to_lang: str 
+    to_lang: str
     tags : list[str] | None = []
     lesson_count: int | None = 0
     user_lessons_done: int | None = 0
     avg_score: float | None = 0.0
     progress: int | None = 0
-    current_module: int | None = 1
-    current_lesson: int | None = 1
+    current_module: int | None = None
+    current_lesson: int | None = None
+    is_current_course: bool = False
 
 
 

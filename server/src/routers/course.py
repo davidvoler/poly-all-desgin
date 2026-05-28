@@ -38,11 +38,15 @@ async def get_courses(lang: str, to_lang: str, school: str | None = None,
     school_where = "AND school = %s" if school else ""
     # `ul` rolls up the user's per-course lesson counts (drives both
     # the lessons-done badge and the computed progress fraction).
-    # `u_last` picks the user's most-recent lesson_status row so the
-    # client can mark exactly one course as "current" (the one the
-    # JOIN matches) along with its module/lesson cursor. The user_id
-    # filter on u_last is load-bearing — without it the subquery
-    # leaks the globally-most-recent row from any user.
+    # `u_last` picks the user's most-recent lesson_status row PER
+    # course (DISTINCT ON) so the course-detail page can highlight the
+    # cursor on any course the user has touched, not just the globally
+    # most-recent one. `most_recent` is a separate subquery returning
+    # the single globally-most-recent course id so we can stamp
+    # `is_current_course` on exactly one card in the courses list
+    # (drives the "CURRENT" pill). The user_id filter on each subquery
+    # is load-bearing — without it the subqueries would leak rows
+    # from other users.
     sql = f"""
     SELECT c.course_id, c.title, c.description, c.lang, c.to_lang, c.lesson_count,
     COALESCE(ul.user_lessons_done, 0) AS user_lessons_done,
@@ -51,7 +55,8 @@ async def get_courses(lang: str, to_lang: str, school: str | None = None,
          THEN (COALESCE(ul.user_lessons_done, 0) * 100 / c.lesson_count)
          ELSE 0 END AS progress,
     u_last.module_id AS current_module,
-    u_last.lesson_id AS current_lesson
+    u_last.lesson_id AS current_lesson,
+    COALESCE(c.course_id = most_recent.course_id, FALSE) AS is_current_course
     FROM course_simple.course c
     LEFT JOIN (
         SELECT course_id, count(*) AS user_lessons_done, avg(score) AS avg_score
@@ -60,18 +65,24 @@ async def get_courses(lang: str, to_lang: str, school: str | None = None,
         GROUP BY 1
     ) AS ul ON c.course_id = ul.course_id
     LEFT JOIN (
-        SELECT course_id, module_id, lesson_id
+        SELECT DISTINCT ON (course_id) course_id, module_id, lesson_id
+        FROM user_data.lesson_status
+        WHERE user_id = %s
+        ORDER BY course_id, created_at DESC
+    ) AS u_last ON c.course_id = u_last.course_id
+    LEFT JOIN (
+        SELECT course_id
         FROM user_data.lesson_status
         WHERE user_id = %s
         ORDER BY created_at DESC
         LIMIT 1
-    ) AS u_last ON c.course_id = u_last.course_id
+    ) AS most_recent ON TRUE
     WHERE c.lang = %s AND c.to_lang = %s
     {school_where}
     """
-    params = (user_id, user_id, lang, to_lang)
+    params = (user_id, user_id, user_id, lang, to_lang)
     if school:
-        params = (user_id, user_id, lang, to_lang, school)
+        params = (user_id, user_id, user_id, lang, to_lang, school)
     res = await get_query_results(sql, params)
     results = []
     for r in res:
