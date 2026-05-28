@@ -54,7 +54,7 @@ class HomePage extends ConsumerWidget {
                       child: InkWell(
                         customBorder: const CircleBorder(),
                         onTap: () => Navigator.pushNamed(context, '/courses'),
-                        child: const _Medallion(progress: 0.45),
+                        child: const _Medallion(),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -150,6 +150,9 @@ class HomePage extends ConsumerWidget {
                         final prefLessonId = ref.watch(
                           preferenceProvider.select((p) => p.value?.lessonId),
                         );
+                        final prefLessonName = ref.watch(
+                          preferenceProvider.select((p) => p.value?.lessonName),
+                        );
                         final fallbackLessonId =
                             ref.watch(coursesListProvider).maybeWhen(
                                   data: (cs) {
@@ -163,8 +166,15 @@ class HomePage extends ConsumerWidget {
                                   orElse: () => null,
                                 );
                         final lessonId = prefLessonId ?? fallbackLessonId;
+                        // Surface the current lesson by name when we
+                        // know it; otherwise fall back to the static
+                        // "Practice Now" translation.
+                        final label =
+                            (prefLessonName != null && prefLessonName.isNotEmpty)
+                                ? 'Continue · $prefLessonName'
+                                : t.home.practice_now;
                         return CtaButton(
-                          label: t.home.practice_now,
+                          label: label,
                           leadingIcon: Icons.play_arrow,
                           onTap: () => Navigator.pushNamed(
                             context,
@@ -202,13 +212,27 @@ class HomePage extends ConsumerWidget {
 }
 
 class _Medallion extends ConsumerWidget {
-  final double progress;
-  const _Medallion({required this.progress});
+  const _Medallion();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final speak = ref.watch(speakLangProvider);
     final learning = ref.watch(learningLangProvider);
+    // Progress reflects the user's current course (preference.courseId
+    // → coursesListProvider entry). Falls back to 0 while the courses
+    // list is loading or there is no current course yet.
+    final courseId =
+        ref.watch(preferenceProvider.select((p) => p.value?.courseId));
+    final progress = ref.watch(coursesListProvider).maybeWhen(
+          data: (courses) {
+            if (courseId == null) return 0.0;
+            for (final c in courses) {
+              if (c.id == courseId.toString()) return c.progress ?? 0.0;
+            }
+            return 0.0;
+          },
+          orElse: () => 0.0,
+        );
     return SizedBox(
       width: 168,
       height: 168,
@@ -310,13 +334,23 @@ class _CourseCaption extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Resolve the current course's title from the saved preference +
-    // the courses list. Fall back to the translated placeholder while
-    // either is still loading or the course isn't in the list.
+    // Prefer the names persisted on the server (preference.{course,
+    // module,lesson}Name) — they get written whenever the user picks a
+    // course / module / lesson, so the home page can render the
+    // current-state caption without resolving anything else.
+    final courseName =
+        ref.watch(preferenceProvider.select((p) => p.value?.courseName));
+    final moduleName =
+        ref.watch(preferenceProvider.select((p) => p.value?.moduleName));
+    final lessonName =
+        ref.watch(preferenceProvider.select((p) => p.value?.lessonName));
+
+    // Fall back to the courses-list title when the name hasn't been
+    // persisted yet (legacy preference rows, fresh seeds).
     final courseId = ref.watch(
       preferenceProvider.select((p) => p.value?.courseId),
     );
-    final title = ref.watch(coursesListProvider).maybeWhen(
+    final fallbackTitle = ref.watch(coursesListProvider).maybeWhen(
           data: (courses) {
             for (final c in courses) {
               if (c.id == courseId?.toString()) return c.title;
@@ -325,22 +359,33 @@ class _CourseCaption extends ConsumerWidget {
           },
           orElse: () => t.home.course_title,
         );
+    final title =
+        (courseName != null && courseName.isNotEmpty) ? courseName : fallbackTitle;
 
-    // Resolve the last lesson the user was on (preference `lessonId`)
-    // to its title, via the current module's lessons.
+    // Lesson label: prefer the saved lessonName; fall back to looking
+    // it up via the current module's lessons.
     final moduleId = ref.watch(
       preferenceProvider.select((p) => p.value?.moduleId),
     );
     final lessonId = ref.watch(
       preferenceProvider.select((p) => p.value?.lessonId),
     );
-    final lessons = moduleId == null
-        ? const <Lesson>[]
-        : (ref.watch(lessonsProvider(moduleId)).value ?? const <Lesson>[]);
-    final li = lessons.indexWhere((l) => l.id == lessonId);
-    final lessonLabel = (li != -1 && lessons[li].title.isNotEmpty)
-        ? 'Continue lesson · ${lessons[li].title}'
-        : 'Continue lesson';
+    String? lessonTitle = (lessonName != null && lessonName.isNotEmpty)
+        ? lessonName
+        : null;
+    if (lessonTitle == null && moduleId != null) {
+      final lessons =
+          ref.watch(lessonsProvider(moduleId)).value ?? const <Lesson>[];
+      final li = lessons.indexWhere((l) => l.id == lessonId);
+      if (li != -1 && lessons[li].title.isNotEmpty) {
+        lessonTitle = lessons[li].title;
+      }
+    }
+    final lessonLabel = lessonTitle == null
+        ? 'Continue lesson'
+        : (moduleName != null && moduleName.isNotEmpty
+            ? 'Continue · $moduleName · $lessonTitle'
+            : 'Continue lesson · $lessonTitle');
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(14)),
       child: BackdropFilter(

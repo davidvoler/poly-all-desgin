@@ -147,9 +147,23 @@ class CoursesPage extends ConsumerWidget {
                           course: c,
                           onTap: () {
                             final id = int.parse(c.id);
+                            // Sync in-memory speak/learning to the
+                            // course's pair so the home medallion + the
+                            // course-page header reflect it without a
+                            // server round-trip. The save() below
+                            // persists the same pair to the server.
                             ref
-                                .read(preferenceProvider.notifier)
-                                .save(courseId: id);
+                                .read(speakLangProvider.notifier)
+                                .setSilently(c.sourceLang);
+                            ref
+                                .read(learningLangProvider.notifier)
+                                .setSilently(c.targetLang);
+                            ref.read(preferenceProvider.notifier).save(
+                                  courseId: id,
+                                  courseName: c.title,
+                                  lang: c.targetLang.code,
+                                  toLang: c.sourceLang.code,
+                                );
                             Navigator.pushNamed(context, '/course',
                                 arguments: id);
                           },

@@ -111,6 +111,9 @@ class Preference {
   final String? uiLang;
   final String? lang;
   final String? toLang;
+  final String? courseName;
+  final String? moduleName;
+  final String? lessonName;
 
   const Preference({
     required this.userId,
@@ -120,6 +123,9 @@ class Preference {
     this.uiLang,
     this.lang,
     this.toLang,
+    this.courseName,
+    this.moduleName,
+    this.lessonName,
   });
 
   factory Preference.fromJson(Map<String, dynamic> j) => Preference(
@@ -130,6 +136,9 @@ class Preference {
         uiLang: j['ui_lang'] as String?,
         lang: j['lang'] as String?,
         toLang: j['to_lang'] as String?,
+        courseName: j['course_name'] as String?,
+        moduleName: j['module_name'] as String?,
+        lessonName: j['lesson_name'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -140,6 +149,9 @@ class Preference {
         'ui_lang': uiLang,
         'lang': lang,
         'to_lang': toLang,
+        'course_name': courseName,
+        'module_name': moduleName,
+        'lesson_name': lessonName,
       };
 
   Preference copyWith({
@@ -149,6 +161,9 @@ class Preference {
     String? uiLang,
     String? lang,
     String? toLang,
+    String? courseName,
+    String? moduleName,
+    String? lessonName,
   }) =>
       Preference(
         userId: userId,
@@ -158,6 +173,9 @@ class Preference {
         uiLang: uiLang ?? this.uiLang,
         lang: lang ?? this.lang,
         toLang: toLang ?? this.toLang,
+        courseName: courseName ?? this.courseName,
+        moduleName: moduleName ?? this.moduleName,
+        lessonName: lessonName ?? this.lessonName,
       );
 }
 

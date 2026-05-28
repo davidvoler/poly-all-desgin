@@ -19,4 +19,14 @@ ALTER TABLE user_data.users ADD COLUMN password_hash VARCHAR(100);
 ALTER TABLE user_data.preference ADD COLUMN course_name VARCHAR(300);
 ALTER TABLE user_data.preference ADD COLUMN module_name VARCHAR(300);
 ALTER TABLE user_data.preference ADD COLUMN lesson_name VARCHAR(300);
+
+
+CREATE TABLE user_data.user_roles (
+    user_id int4 NOT NULL,
+    school_id int4 NOT NULL,
+    role varchar(50) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+	CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, school_id, role)
+);
+
 -- DONE

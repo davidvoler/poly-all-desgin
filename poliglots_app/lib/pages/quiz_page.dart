@@ -455,7 +455,12 @@ class _QuizComplete extends ConsumerWidget {
           next != null ? 'Continue to ${name(next)}' : 'Back to course',
       onPrimary: () {
         if (next != null) {
-          ref.read(preferenceProvider.notifier).save(lessonId: next.id);
+          ref.read(preferenceProvider.notifier).save(
+                lessonId: next.id,
+                lessonName: next.title.isNotEmpty
+                    ? next.title
+                    : (next.words.isNotEmpty ? next.words.first : null),
+              );
           Navigator.pushReplacementNamed(context, '/quiz',
               arguments: next.id);
         } else {

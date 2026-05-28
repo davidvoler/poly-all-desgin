@@ -400,10 +400,12 @@ class SelectedModuleIdNotifier extends Notifier<int?> {
   @override
   int? build() => null;
 
-  void set(int? id) {
+  void set(int? id, {String? name}) {
     state = id;
     if (id != null) {
-      ref.read(preferenceProvider.notifier).save(moduleId: id);
+      ref
+          .read(preferenceProvider.notifier)
+          .save(moduleId: id, moduleName: name);
     }
   }
 
@@ -453,6 +455,9 @@ class PreferenceNotifier extends AsyncNotifier<Preference?> {
     String? uiLang,
     String? lang,
     String? toLang,
+    String? courseName,
+    String? moduleName,
+    String? lessonName,
   }) async {
     // kCurrentUserId is no longer a compile-time const — it's bound to
     // the auth notifier's session — so the fallback Preference is built
@@ -465,6 +470,9 @@ class PreferenceNotifier extends AsyncNotifier<Preference?> {
       uiLang: uiLang,
       lang: lang,
       toLang: toLang,
+      courseName: courseName,
+      moduleName: moduleName,
+      lessonName: lessonName,
     );
     state = AsyncValue.data(next);
     final repo = ref.read(coursesRepositoryProvider);

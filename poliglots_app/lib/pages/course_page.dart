@@ -7,11 +7,55 @@ import '../theme.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
 
-class CoursePage extends ConsumerWidget {
+class CoursePage extends ConsumerStatefulWidget {
   const CoursePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CoursePage> createState() => _CoursePageState();
+}
+
+class _CoursePageState extends ConsumerState<CoursePage> {
+  // Horizontal scroll controller for the modules strip. Used to align
+  // the user's current module into view when the page first paints.
+  final ScrollController _modulesCtrl = ScrollController();
+  // (courseId, effectiveModuleId) we've already auto-scrolled for, so
+  // the strip doesn't re-jump every time the user taps a different
+  // module afterwards.
+  String? _scrolledKey;
+
+  // Approx per-card extent — matches _ModuleCard's width (168) +
+  // separator (10). Kept in one place so the auto-scroll math doesn't
+  // drift if the card sizing changes later.
+  static const double _moduleCardExtent = 168 + 10;
+
+  @override
+  void dispose() {
+    _modulesCtrl.dispose();
+    super.dispose();
+  }
+
+  /// One-shot auto-scroll: bring [index] of the modules strip into
+  /// view, scoped to a unique [key] so the same call site only fires
+  /// once per (course, effective-module) tuple.
+  void _maybeScrollModules(String key, int index) {
+    if (_scrolledKey == key) return;
+    _scrolledKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_modulesCtrl.hasClients) return;
+      final target = (index * _moduleCardExtent).clamp(
+        0.0,
+        _modulesCtrl.position.maxScrollExtent,
+      );
+      _modulesCtrl.animateTo(
+        target,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final courseId = (ModalRoute.of(context)?.settings.arguments as int?) ?? 1;
     final modulesAsync = ref.watch(modulesProvider(courseId));
     final selectedId = ref.watch(selectedModuleIdProvider);
@@ -122,7 +166,14 @@ class CoursePage extends ConsumerWidget {
                     ),
                     data: (modules) {
                       final effId = effectiveModuleId(modules);
+                      final effIdx = effId == null
+                          ? -1
+                          : modules.indexWhere((m) => m.id == effId);
+                      if (effIdx >= 0) {
+                        _maybeScrollModules('$courseId:$effId', effIdx);
+                      }
                       return ListView.separated(
+                        controller: _modulesCtrl,
                         scrollDirection: Axis.horizontal,
                         padding: EdgeInsets.zero,
                         itemCount: modules.length,
@@ -131,7 +182,7 @@ class CoursePage extends ConsumerWidget {
                           module: _infoFromServer(modules, i, effId),
                           onTap: () => ref
                               .read(selectedModuleIdProvider.notifier)
-                              .set(modules[i].id),
+                              .set(modules[i].id, name: modules[i].title),
                         ),
                       );
                     },
@@ -174,8 +225,10 @@ class CoursePage extends ConsumerWidget {
                     data: (modules) {
                       final id = effectiveModuleId(modules);
                       if (id == null) return const SizedBox.shrink();
+                      final module = modules.firstWhere((m) => m.id == id);
                       return _LessonsSection(
                         moduleId: id,
+                        moduleName: module.title,
                         currentLessonId: course?.currentLessonId,
                       );
                     },
@@ -446,20 +499,61 @@ class _LessonInfo {
 
 /// Lessons strip for the currently-open module. Pulled lazily so it
 /// only fetches when the user actually scrolls the module into view.
-class _LessonsSection extends ConsumerWidget {
+class _LessonsSection extends ConsumerStatefulWidget {
   final int moduleId;
+  final String moduleName;
   // Server's `current_lesson` from the courses summary. When the
   // module being shown contains this id, that lesson wins the
   // "selected" highlight over the first-undone fallback.
   final int? currentLessonId;
   const _LessonsSection({
     required this.moduleId,
+    required this.moduleName,
     this.currentLessonId,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lessonsAsync = ref.watch(lessonsProvider(moduleId));
+  ConsumerState<_LessonsSection> createState() => _LessonsSectionState();
+}
+
+class _LessonsSectionState extends ConsumerState<_LessonsSection> {
+  final ScrollController _ctrl = ScrollController();
+  // (moduleId, effectiveLessonId) we've already auto-scrolled to so the
+  // list doesn't jump around as the user scrolls manually.
+  String? _scrolledKey;
+
+  // Approx lesson-card height including the 8px separator. Two text
+  // rows (≈80px); slightly taller (~96px) when the "Best / attempts"
+  // stats row appears. The middle of that range is good enough for a
+  // one-shot scroll-into-view.
+  static const double _rowExtent = 88;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _maybeScrollLessons(String key, int index) {
+    if (_scrolledKey == key) return;
+    _scrolledKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_ctrl.hasClients) return;
+      final target = (index * _rowExtent).clamp(
+        0.0,
+        _ctrl.position.maxScrollExtent,
+      );
+      _ctrl.animateTo(
+        target,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lessonsAsync = ref.watch(lessonsProvider(widget.moduleId));
     return lessonsAsync.when(
       loading: () => const Center(
         child: CircularProgressIndicator(color: Colors.white),
@@ -476,18 +570,25 @@ class _LessonsSection extends ConsumerWidget {
       data: (lessons) {
         // If the server's current_lesson lives in this module, use it;
         // otherwise fall back to the first-undone heuristic.
-        final selectedIdx =
-            currentLessonId != null
-                ? lessons.indexWhere((x) => x.id == currentLessonId)
-                : -1;
+        final selectedIdx = widget.currentLessonId != null
+            ? lessons.indexWhere((x) => x.id == widget.currentLessonId)
+            : -1;
         final fallbackIdx = lessons.indexWhere((x) => !x.completed);
         final effectiveSelectedIdx =
             selectedIdx >= 0 ? selectedIdx : fallbackIdx;
+        if (effectiveSelectedIdx >= 0) {
+          _maybeScrollLessons(
+            '${widget.moduleId}:${widget.currentLessonId ?? "auto"}',
+            effectiveSelectedIdx,
+          );
+        }
         return ListView.separated(
+          controller: _ctrl,
           padding: EdgeInsets.zero,
           itemCount: lessons.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (context, i) {
+            final lesson = lessons[i];
             final info =
                 _lessonInfoFromServer(lessons, i, effectiveSelectedIdx);
             return _LessonCard(
@@ -495,9 +596,17 @@ class _LessonsSection extends ConsumerWidget {
               onTap: info.route == null
                   ? null
                   : () {
-                      ref
-                          .read(preferenceProvider.notifier)
-                          .save(lessonId: info.id);
+                      // Persist the full lesson-start tuple so the home
+                      // page can render course/module/lesson labels
+                      // without re-resolving them from /lessons.
+                      ref.read(preferenceProvider.notifier).save(
+                            moduleId: widget.moduleId,
+                            moduleName: widget.moduleName,
+                            lessonId: info.id,
+                            lessonName: lesson.title.isNotEmpty
+                                ? lesson.title
+                                : info.jp,
+                          );
                       Navigator.pushNamed(context, info.route!,
                           arguments: info.id);
                     },

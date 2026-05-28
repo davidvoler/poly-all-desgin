@@ -341,28 +341,53 @@ We also have the progress information
 
 *** user state ***
 
-- [] when a user logs-in we should have the following information 
-  - [] lang - the language she is learning 
-  - [] to_lang - the languages she speaks 
-  - [] ui_lang - user interface lang  
-  - [] current course - name + id
-  - [] current module  
-  - [] current lesson
+- [v] when a user logs-in we should have the following information 
+  - [v] lang - the language she is learning 
+  - [v] to_lang - the languages she speaks 
+  - [v] ui_lang - user interface lang  
+  - [v] current course - name + id  (DDL + `Preference` model now carry
+        `course_name`; client `Preference` model / save() extended)
+  - [v] current module  (`module_name` added; persisted on module tap +
+        lesson tap)
+  - [v] current lesson (`lesson_name` persisted on lesson tap and on
+        auto-advance in quiz_page)
 
 When to update?
-- [] whenever a user starts a lesson
-- [] when ever a user selects a new course
-- [] When a user changes lang or to lang preference 
-- [] when a user changes ui_lang preferences 
+- [v] whenever a user starts a lesson — `_LessonsSection` tap saves
+      module_id/name + lesson_id/name in one POST; quiz_page next-lesson
+      handler saves lesson_id/name.
+- [v] when ever a user selects a new course — `_CourseCard` tap saves
+      course_id/name + lang/to_lang and silently syncs the speak/learning
+      providers so the home medallion follows immediately.
+- [v] When a user changes lang or to lang preference — `SpeakLangNotifier`
+      / `LearningLangNotifier` already POST `to_lang` / `lang` via
+      `preferenceProvider.save`.
+- [v] when a user changes ui_lang preferences — `UiLangNotifier.set`
+      already POSTs `ui_lang`.
 
 What to do with This preferences 
-- [] home page
-  - [] top round section should follow languages/ course progress 
-  - [] rectangular course section - now is static - should show course name, module and lesson
-  - [] practice now - should be replaces with the name of the curren lesson 
-- [] course page 
-  - [] language I speak and learning language should take the data from course name
-
+- [v] home page
+  - [v] top round section — `_Medallion` no longer takes a hardcoded
+        progress; reads the current course's progress from
+        `coursesListProvider` keyed on `preference.courseId`.
+  - [v] rectangular course section — `_CourseCaption` now prefers
+        `preference.{course,module,lesson}Name`, falling back to the
+        old courses-list / lessons-provider lookup when names aren't
+        persisted (legacy rows).
+  - [v] practice now button label — switches to "Continue · <lesson
+        name>" when `preference.lessonName` is set; falls back to the
+        translated "Practice Now" otherwise.
+- [v] course select page 
+  - [v] "I speak" / "Learning" pickers — the boot-time
+        `_PreferenceBootstrap` already silently seeds them; tapping a
+        course on the courses page now silently syncs both to the
+        course's lang pair too.
+- [v] Course page
+  - [v] We should scroll to the current module and lesson — added
+        `ScrollController`s on the modules strip + lessons list and a
+        one-shot post-frame animateTo keyed on (course, module) and
+        (module, currentLesson) so the strip jumps to the user's
+        active row when the page first paints.
 
 
 
