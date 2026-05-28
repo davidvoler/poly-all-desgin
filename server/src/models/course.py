@@ -17,6 +17,7 @@ class Lesson(BaseModel):
     max_score: float | None = 0.0
     sum_score: float | None = 0.0
     num_attempts: int | None = 0
+    current: int | None = 0
 
 class Module(BaseModel):
     module_id: int 
@@ -27,6 +28,7 @@ class Module(BaseModel):
     max_score: float | None = 0.0
     sum_score: float | None = 0.0
     num_attempts: int | None = 0
+    current: int | None = 0
 
 
 class Course(BaseModel):

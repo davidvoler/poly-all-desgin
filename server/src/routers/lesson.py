@@ -29,6 +29,13 @@ async def get_lessons(module_id: int,
         WHERE user_id = %s
         GROUP BY lesson_id
     ) AS ls ON lesson.lesson_id = ls.lesson_id
+    LEFT JOIN  ( 
+    SELECT module_id, lesson_id as current
+    FROM user_data.lesson_status
+    WHERE user_id = %s
+    ORDER by created_at DESC
+    LIMIT 1
+    ) AS current_lesson ON lesson.module_id = current_lesson.module_id
     WHERE lesson.module_id = %s
     ORDER BY lesson.lesson_id
     """

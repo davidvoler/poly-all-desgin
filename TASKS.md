@@ -336,7 +336,10 @@ We also have the progress information
     max_score: float | None = 0.0
     sum_score: float | None = 0.0
     num_attempts: int | None = 0
+    current: int 
 
+
+    
 *** tasks saved for later stage ***
 - [v] I prefer using Oauth - so we can skip password change password functionality - for now at least
 - [ ] Real SMTP for password reset — out of scope without infrastructure.
