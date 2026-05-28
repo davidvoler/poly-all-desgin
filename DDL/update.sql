@@ -29,12 +29,12 @@ CREATE TABLE user_data.user_roles (
 	CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, school_id, role)
 );
 
-
-
-
 ALTER TABLE course_simple.exercise ADD COLUMN sentence_alt1 VARCHAR(300);
 ALTER TABLE course_simple.exercise ADD COLUMN sentence_alt2 VARCHAR(300);
 ALTER TABLE course_simple.exercise ADD COLUMN sentence_alt3 VARCHAR(300);
 
 
 -- DONE
+
+
+create index idx_sentence_elements_lang_word1 on content_raw.sentence_elements (lang, len_c, word1, id);
