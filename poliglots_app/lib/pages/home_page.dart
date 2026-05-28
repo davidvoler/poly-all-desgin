@@ -138,11 +138,41 @@ class HomePage extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: CtaButton(
-                        label: t.home.practice_now,
-                        leadingIcon: Icons.play_arrow,
-                        onTap: () => Navigator.pushNamed(context, '/quiz'),
-                      ),
+                      child: Consumer(builder: (context, ref, _) {
+                        // Resume the user's current lesson. We prefer
+                        // preferenceProvider (always written when the
+                        // user opens a lesson), then fall back to the
+                        // courses list's `current_lesson` for first
+                        // sessions where preference hasn't been saved
+                        // yet. If both are missing we still navigate —
+                        // the quiz page handles a null lessonId by
+                        // dropping into general practice mode.
+                        final prefLessonId = ref.watch(
+                          preferenceProvider.select((p) => p.value?.lessonId),
+                        );
+                        final fallbackLessonId =
+                            ref.watch(coursesListProvider).maybeWhen(
+                                  data: (cs) {
+                                    for (final c in cs) {
+                                      if (c.currentLessonId != null) {
+                                        return c.currentLessonId;
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                  orElse: () => null,
+                                );
+                        final lessonId = prefLessonId ?? fallbackLessonId;
+                        return CtaButton(
+                          label: t.home.practice_now,
+                          leadingIcon: Icons.play_arrow,
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            '/quiz',
+                            arguments: lessonId,
+                          ),
+                        );
+                      }),
                     ),
                     const SizedBox(width: 8),
                     RoundIconButton(
