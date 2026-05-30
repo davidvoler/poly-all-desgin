@@ -1,4 +1,5 @@
 from utils.db import get_query_results, run_query
+from editor.utils.parse_course import parse_course
 import yaml
 import os
 import asyncio
@@ -63,12 +64,14 @@ async def load_exercise(course_id:int, module_id: int, lesson_id: int, exercise:
     word3 = exercise.get('word3', '')
     sentence_id = exercise.get('sentence_id', None)
     to_sentence_id = exercise.get('sentence_to_id', None)
-
+    sentence_alt1 = exercise.get('text_alt1', '')
+    sentence_alt2 = exercise.get('text_alt2', '')
+    sentence_alt3 = exercise.get('text_alt3', '')
     sql = """
-    INSERT INTO course_simple.exercise (course_id, module_id, lesson_id, exercise_type, sentence, options, audio, word1, word2, word3, sentence_id, to_sentence_id) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+    INSERT INTO course_simple.exercise (course_id, module_id, lesson_id, exercise_type, sentence, options, audio, word1, word2, word3, sentence_id, to_sentence_id, sentence_alt1, sentence_alt2, sentence_alt3) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
     """
-    params = (course_id, module_id, lesson_id, exercise_type, sentence, json.dumps(options), audio, word1, word2, word3, sentence_id, to_sentence_id)
+    params = (course_id, module_id, lesson_id, exercise_type, sentence, json.dumps(options), audio, word1, word2, word3, sentence_id, to_sentence_id, sentence_alt1, sentence_alt2, sentence_alt3)
     return await run_query(sql, params)
 
 async def load_course_from_folder(folder_path: str, course_name: str, lang: str, to_lang: str):
@@ -111,156 +114,71 @@ def _to_lang_code(s: str) -> str:
     return code or raw.lower()
 
 
-def _parse_kv_file(path: str) -> dict:
-    """Read a `key: value` text file (course.txt / module.txt /
-    lesson.txt). Skips comments + blank lines. Only the first colon
-    is treated as the key separator so values can themselves contain
-    colons."""
-    out: dict[str, str] = {}
-    try:
-        with open(path, 'r', encoding='utf-8') as fh:
-            for line in fh:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                if ':' not in line:
-                    continue
-                key, val = line.split(':', 1)
-                out[key.strip().lower()] = val.strip()
-    except Exception:
-        pass
-    return out
-
-
-def _parse_exercises_file(path: str) -> list[dict]:
-    """Parse the `---`-separated exercises file format used by
-    content/example_course. Returns one dict per exercise in
-    `course_simple.exercise` shape — same keys load_exercise() reads.
-
-    Block layout:
-      - first non-blank line  → sentence (prompt)
-      - lines starting [+]/[-] → options (correct/incorrect)
-      - a line starting `--- Explanation` or `---Explanation`
-        (case-insensitive) opens an explanation block that runs to
-        the next `---`. Joined with newlines.
-    """
-    if not os.path.isfile(path):
-        return []
-    try:
-        with open(path, 'r', encoding='utf-8') as fh:
-            text = fh.read()
-    except Exception:
-        return []
-
-    # Split on lines that are exactly "---" (with optional whitespace),
-    # NOT "--- Explanation" — that's handled below. Re-tag explanation
-    # markers first so the split doesn't eat them.
-    EXPL = re.compile(r'^---\s*explanation\s*$', re.IGNORECASE | re.MULTILINE)
-    SEP = re.compile(r'^---\s*$', re.MULTILINE)
-
-    out: list[dict] = []
-    # Each exercise: sentence on first non-blank line, options below.
-    # We walk blocks split by SEP (skipping pure-separator entries).
-    for raw_block in SEP.split(text):
-        block = raw_block.strip()
-        if not block:
-            continue
-
-        sentence = ''
-        options: list[dict] = []
-        explanation_lines: list[str] = []
-        in_explanation = False
-
-        for line in block.splitlines():
-            stripped = line.strip()
-            if not stripped:
-                continue
-            if EXPL.match(stripped):
-                in_explanation = True
-                continue
-            if in_explanation:
-                explanation_lines.append(line.rstrip())
-                continue
-            if stripped.startswith('[+]'):
-                options.append({
-                    'text': stripped[3:].strip(),
-                    'correct': True,
-                })
-            elif stripped.startswith('[-]'):
-                options.append({
-                    'text': stripped[3:].strip(),
-                    'correct': False,
-                })
-            elif not sentence:
-                sentence = stripped
-
-        if not sentence and not options:
-            continue
-        ex = {
-            'type': 'simple',
-            'text': sentence,
-            'options': options,
-            'voice': '',
-            'word1': '',
-            'word2': '',
-            'word3': '',
-        }
-        if explanation_lines:
-            # Stored as the third "word" slot for now — the existing
-            # exercise schema doesn't have a dedicated explanation
-            # column, but `word3` is unused for simple-translation
-            # exercises so we piggy-back without a migration.
-            ex['word3'] = '\n'.join(explanation_lines).strip()
-        out.append(ex)
-    return out
-
-
 async def _load_text_format(course_id: int, root: str) -> dict:
-    """Walk a `content/example_course`-shaped folder and load it into
-    `course_simple`. Returns counts in the same shape as
-    `load_course_content` so callers can mix-and-match outputs."""
+    print(f"Loading text-format course from {root}...")
+    course_data = parse_course(root)
+    print(course_data.get('title'))
+    print(course_data.get('lang'))
+    print(course_data.get('to_lang'))
+    for m in course_data.get('modules', []):
+        print(m.get('title'))
+        print(len(m.get('lessons', [])))
+        for l in m.get('lessons', []):
+            print(l.get('title'))
+            print(len(l.get('exercises', [])))
+
+
+
+
+async def _load_text_format_old(course_id: int, root: str) -> dict:
+    """Load a text-format course folder into `course_simple`.
+
+    Parsing is delegated to the standalone `parse_course` (in
+    editor.utils.parse_course), which walks the folder into a nested
+    course → modules → lessons → exercises dict in the new lesson
+    format (lesson front-matter + `key: value` exercise blocks). This
+    function only persists that dict; the parser is kept in its own
+    file so the format can evolve independently.
+
+    Returns counts in the same shape as `load_course_content`."""
+    course_data = parse_course(root)
+    if not course_data:
+        return {'modules': 0, 'skipped': 0}
+
+    # course.txt drives the COURSE row's title / lang / to_lang.
+    title = course_data.get('title', '')
+    desc = course_data.get('description', '')
+    lang = _to_lang_code(course_data.get('lang') or course_data.get('language', ''))
+    # student_languages may be comma-separated; persist only the first
+    # (course_simple.course has a single `to_lang`).
+    to_lang = _to_lang_code(
+        course_data.get('to_lang')
+        or course_data.get('student_languages', '').split(',')[0]
+    )
+    await run_query(
+        """
+        UPDATE course_simple.course
+           SET title       = COALESCE(NULLIF(%s, ''), title),
+               description = COALESCE(NULLIF(%s, ''), description),
+               lang        = COALESCE(NULLIF(%s, ''), lang),
+               to_lang     = COALESCE(NULLIF(%s, ''), to_lang),
+               updated_at  = now()
+         WHERE course_id = %s
+        """,
+        (title, desc, lang, to_lang, course_id),
+    )
+
     modules_loaded = 0
     skipped = 0
-
-    # course.txt at the root is metadata for the COURSE row itself;
-    # update title / description / lang / to_lang from it when present.
-    course_meta = _parse_kv_file(os.path.join(root, 'course.txt'))
-    if course_meta:
-        title = course_meta.get('name', '')
-        desc = course_meta.get('description', '')
-        lang = _to_lang_code(course_meta.get('language', ''))
-        # student_languages may be comma-separated; we only persist the
-        # first one for now (course_simple.course has a single `to_lang`).
-        student = course_meta.get('student_languages', '').split(',')[0]
-        to_lang = _to_lang_code(student)
-        await run_query(
-            """
-            UPDATE course_simple.course
-               SET title       = COALESCE(NULLIF(%s, ''), title),
-                   description = COALESCE(NULLIF(%s, ''), description),
-                   lang        = COALESCE(NULLIF(%s, ''), lang),
-                   to_lang     = COALESCE(NULLIF(%s, ''), to_lang),
-                   updated_at  = now()
-             WHERE course_id = %s
-            """,
-            (title, desc, lang, to_lang, course_id),
-        )
-
-    # Module dirs — alphabetical so module1 / module2 / module03 work.
-    for module_dir in sorted(os.listdir(root)):
-        full_mod = os.path.join(root, module_dir)
-        if not os.path.isdir(full_mod):
-            continue
-        module_meta = _parse_kv_file(os.path.join(full_mod, 'module.txt'))
-        if not module_meta:
-            # Not a text-format module dir — skip silently (might be a
-            # YAML-format module, which the legacy loop will handle).
-            continue
-
-        # Preserve numeric suffix in `module<n>` as weight when present.
-        m = re.search(r'(\d+)$', module_dir)
-        m_no = int(m.group(1)) if m else modules_loaded + 1
-        module_title = module_meta.get('module', module_dir)
+    for idx, module in enumerate(course_data.get('modules', []), start=1):
+        module_title = module.get('title') or f'Module {idx}'
+        # Weight from an explicit `weight:` field, else the trailing
+        # number of the module folder name (module_1 → 1), else order.
+        try:
+            weight = int(str(module.get('weight')).strip())
+        except (TypeError, ValueError):
+            m = re.search(r'(\d+)$', module_title)
+            weight = int(m.group(1)) if m else idx
 
         inserted = await get_query_results(
             """
@@ -268,7 +186,7 @@ async def _load_text_format(course_id: int, root: str) -> dict:
             VALUES (%s, %s, %s)
             RETURNING module_id
             """,
-            (course_id, m_no, module_title),
+            (course_id, weight, module_title),
         )
         if not inserted:
             skipped += 1
@@ -276,45 +194,23 @@ async def _load_text_format(course_id: int, root: str) -> dict:
         module_id = inserted[0]['module_id']
         modules_loaded += 1
 
-        # Lesson dirs inside this module.
-        for lesson_dir in sorted(os.listdir(full_mod)):
-            full_les = os.path.join(full_mod, lesson_dir)
-            if not os.path.isdir(full_les):
-                continue
-            lesson_meta = _parse_kv_file(os.path.join(full_les, 'lesson.txt'))
-            lesson_title = lesson_meta.get('lesson', lesson_dir)
-
+        for lesson in module.get('lessons', []):
+            lesson_title = lesson.get('title', '')
+            words = lesson.get('words', []) or []
             lesson_rows = await get_query_results(
                 """
                 INSERT INTO course_simple.lesson (course_id, module_id, title, words)
                 VALUES (%s, %s, %s, %s)
                 RETURNING lesson_id
                 """,
-                (course_id, module_id, lesson_title, []),
+                (course_id, module_id, lesson_title, words),
             )
             if not lesson_rows:
                 continue
             lesson_id = lesson_rows[0]['lesson_id']
 
-            for ex in _parse_exercises_file(os.path.join(full_les, 'exercises.txt')):
-                await run_query(
-                    """
-                    INSERT INTO course_simple.exercise
-                        (course_id, module_id, lesson_id, exercise_type,
-                         sentence, options, audio, word1, word2, word3)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (
-                        course_id, module_id, lesson_id,
-                        ex.get('type', 'simple'),
-                        ex.get('text', ''),
-                        json.dumps(ex.get('options', [])),
-                        ex.get('voice', ''),
-                        ex.get('word1', ''),
-                        ex.get('word2', ''),
-                        ex.get('word3', ''),
-                    ),
-                )
+            for ex in lesson.get('exercises', []):
+                await load_exercise(course_id, module_id, lesson_id, ex)
 
     return {'modules': modules_loaded, 'skipped': skipped}
 
