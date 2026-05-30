@@ -10,13 +10,7 @@ import unicodedata
 from multiprocessing import Pool
 import os
 
-_PUNCT = "".join(
-    chr(i) for i in range(sys.maxunicode)
-    if unicodedata.category(chr(i)).startswith("P")
-)
 
-def strip_punctuation(word):
-    return word.strip(_PUNCT)
 
 def add_words_for_recognize(word):
     if len(word) > 3:
@@ -61,36 +55,23 @@ async def get_alt(elements):
 
 
 async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
-    query = f"""
-    select 
-        lang.text as text,
-        lang.elements, 
-        lang.word1 as word1,
-        lang.word2 as word2,
-        lang.word3 as word3,
-        lang.words,
-        lang.options as options,
-        sentences.text as to_text, 
-        sentences.options as to_options,
-        trans.id as id, 
-        trans.to_id as to_id
-    from content_raw.sentence_elements lang
-    join  content_raw.translation_links  trans
-    on trans.id = lang.id and trans.lang = %s and trans.to_lang = %s
-    join content_raw.sentences sentences
-    on sentences.id = trans.to_id
-    where sentences.id = %s and lang.id = %s
+    
+    lang_sql = f"""
+    SELECT text, elements, word1, word2, word3, words, options
+    FROM content_raw.sentence_elements
+    WHERE lang = %s and id = %s
     """
-    res = await get_query_results(query, (lang, to_lang, to_id, id))
-    ex = []
-    if len(res) == 0:
-        return []
-    sent_trans = []
-    for r in res:
-        sent_trans.append(r)
-    # print(f"sentence count: {len(sent_trans)}")
-    random.shuffle(sent_trans)
-    r = sent_trans[0]
+    res_lang = await get_query_results(lang_sql, (lang, id))
+    to_lang_sql = f"""
+    SELECT text as to_text, options as to_options
+    FROM content_raw.sentences
+    WHERE lang = %s and id = %s
+    """
+    res_to_lang = await get_query_results(to_lang_sql, (to_lang, to_id))
+
+    if len(res_lang) == 0 or len(res_to_lang) == 0:
+        return None
+    r = {**res_lang[0], **res_to_lang[0]}
     audio = await get_sentences_voice(lang, id)
     text = r.get('text')
     hira, romaji, kana = await get_alt(r.get('elements', []))
@@ -106,7 +87,7 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
     words_for_recognize.add(word2)
     words_for_recognize.add(word3)
     random.shuffle(options)
-    number_of_options = random.randint(2,4)
+    number_of_options = random.randint(2,3)
     options = options[:number_of_options]
     random.shuffle(to_options)
     to_options = to_options[:number_of_options]
@@ -118,13 +99,13 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
         if audio:
             if len(words_for_recognize)> 800:
                 if len(words) >= 3:
-                    w_correct = (word1, word2, word3)
+                    w_correct = [word1, word2, word3]
                     w_wrong = random.sample(list(words_for_recognize), k=7)
                     all_words = list(set(w_correct + w_wrong))
                     opt = [{"text": w, "correct": w in w_correct} for w in all_words]
                     random.shuffle(opt)
                     opt = opt[:8]
-                    ex.append({
+                    ex = {
                         'type': 'recognize',
                         'text': text,
                         'text_alt1': hira,
@@ -138,12 +119,12 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
                         'word1': word1, 
                         'word2': word2, 
                         'word3': word3,
-                    })
+                    }
                     return ex
     if rnd > 9 and len(words_for_recognize_split) > 1000:
         op = [{"text":o} for o in options]
         op.append({"text": text, "correct": True})
-        ex.append({
+        ex = {
             'type': 'read',    
             'text': to_text,
             'text_alt1': hira,
@@ -156,10 +137,10 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
             'word1': word1, 
             'word2': word2, 
             'word3': word3,
-        })
+        }
         return ex
     else:
-        ex.append({
+        ex = {
         'type': 'simple',    
         'text': text,
         'text_alt1': hira,
@@ -172,9 +153,8 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
         'word1': word1, 
         'word2': word2, 
         'word3': word3,
-    })
+    }
     return ex
-
 
 async def gen_lesson(l:dict):
     sentences = l.get('sentences', [])
@@ -185,8 +165,8 @@ async def gen_lesson(l:dict):
     exercises = []
     for s in sentences:
         ex = await gen_exercise('ja', 'en', s.get('id'), s.get('to_id'), sentences_count)
-        # print(ex)
-        exercises.extend(ex)
+        if ex:
+            exercises.append(ex)
     return {
         'lesson': l.get('lesson'),
         'title': "learning " + ", ".join(l.get('words', [])),
@@ -195,8 +175,6 @@ async def gen_lesson(l:dict):
         'words_so_far': list(lesson_words),
     }
 
-
-
 async def gen_module(m:dict):
     lessons = m.get('lessons', [])
     gen_lessons = []
@@ -204,11 +182,15 @@ async def gen_module(m:dict):
     for l in lessons:
         gen_l = await gen_lesson(l)
         words = gen_l.get('words', [])
-        module_words.extend(words)
+        # module_words.extend(words)
         gen_lessons.append(gen_l)
+        # except Exception as e:
+        #     print(f"error generating lesson {l.get('lesson')}: {e}")
+        #     continue
     return {
         'module': m.get('module'),
-        'lessons': gen_lessons
+        'lessons': gen_lessons,
+        # 'words': module_words,
     }
 
 
@@ -217,18 +199,18 @@ async def gen_module(m:dict):
 async def gen_and_save_module(m:dict):
     print(f"generating module {m.get('module')}")
     module_no = int(m.get('module'))
+    os.makedirs(f"../data/content/ja/v1/module_{module_no}", exist_ok=True)
     if len(os.listdir(f"../data/content/ja/v1/module_{module_no}")) > 0:
         print(f"module {m.get('module')} already exists, skipping")
         return
     gen_m =  await gen_module(m)
-    os.makedirs(f"../data/content/ja/v1/module_{module_no}", exist_ok=True)
+    
     i = 1
     for lesson in gen_m.get('lessons', []):
         # for key, value in lesson.items():
         #     print(f"{key}: {len(value)} {type(value)}")
         lesson_no = i
         weight = lesson.get('weight',lesson_no )
-
         title = lesson.get('title', '')
         with open(f"../data/content/ja/v1/module_{module_no}/lesson_{lesson_no}.txt", 'w') as f:
             title = lesson.get('lesson', '')
@@ -236,8 +218,9 @@ async def gen_and_save_module(m:dict):
             f.write(f"weight: {weight}\n")
             for exercise in lesson.get('exercises', []):
                 # print(f"{exercise}")
-                f.write(f"---{exercise.get('type', '')}\n")
-                f.write(f"{exercise.get('text')}\n")
+                f.write("---\n")
+                f.write(f"type: {exercise.get('type', '')}\n")
+                f.write(f"text: {exercise.get('text')}\n")
                 if exercise.get('text_alt1'):
                     f.write(f"text_alt1: {exercise.get('text_alt1')}\n")
                 if exercise.get('text_alt2'):
@@ -263,12 +246,20 @@ async def gen_and_save_module(m:dict):
 def g_module(m:dict):
     asyncio.run(gen_and_save_module(m))
 
-def gen_course(lang, to_lang, load_path):
+async def gen_course(lang, to_lang, load_path):
     module = yaml.safe_load(open(load_path, 'r'))
     modules = module.get('modules', [])
-    with Pool(processes=len(modules)) as pool:
-        pool.map(g_module, modules)
+    for m in modules:
+        await gen_and_save_module(m)
+        # try:
+        #     await gen_and_save_module(m)
+        # except Exception as e:            
+        #     print(f"error generating module {m.get('module')}: {e}")
+        #     continue
+
+    # with Pool(processes=len(modules)) as pool:
+    #     pool.map(g_module, modules)
     # g_module(modules[0])
 if __name__ == '__main__':
     os.environ["POSTGRES_PORT"] = "5433"
-    gen_course('ja', 'en', '../data/content/ja/v1/ja_en_course.yaml')
+    asyncio.run(gen_course('ja', 'en', '../data/content/ja/v1/ja_en_course.yaml'))
