@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -370,7 +371,9 @@ Future<void> _pickAndUploadCsv(
           lang: lang,
           filename: file.name,
           fileBytes: file.bytes,
-          filePath: file.path,
+          // On web, PlatformFile.path throws when accessed (file_picker
+          // 8.x); bytes are present via withData:true.
+          filePath: kIsWeb ? null : file.path,
         );
     ref.invalidate(studentsProvider);
     ref.invalidate(schoolStatsProvider);

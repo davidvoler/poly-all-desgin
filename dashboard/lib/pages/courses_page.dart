@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -98,7 +99,10 @@ Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
           actorUserId: me.schoolUserId,
           filename: picked.name,
           fileBytes: picked.bytes,
-          filePath: picked.path,
+          // On web, PlatformFile.path throws when accessed (file_picker
+          // 8.x) — bytes are present thanks to withData:true, so only
+          // reach for a disk path on native platforms.
+          filePath: kIsWeb ? null : picked.path,
         );
     ref.invalidate(editorCoursesProvider);
     ref.invalidate(activityProvider);
@@ -112,10 +116,22 @@ Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
               : 'Uploaded — created course #$courseId'),
         ),
       );
-  } catch (e) {
+  } catch (e, st) {
+    // Log the full error + stack to the console (flutter run terminal /
+    // browser DevTools) so a transient SnackBar isn't the only record.
+    debugPrint('Upload failed: $e\n$st');
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Upload failed: $e'),
+          duration: const Duration(days: 1),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            onPressed: messenger.hideCurrentSnackBar,
+          ),
+        ),
+      );
   }
 }
 
