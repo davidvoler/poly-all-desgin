@@ -55,6 +55,9 @@ def parse_lesson(file_path):
         
 
 if __name__ == "__main__":
-    lesson_data, exercises = parse_lesson('../data/content/ja/v1/module_4/lesson_1.txt')
+    lesson_data, exercises = parse_lesson('../data/content/ja/ja_en_basic_course_v1/module_1/lesson_1.txt')
     # print(lesson_data)
     print(exercises)
+    for ex in exercises:
+        print(ex)
+        print("------------------")

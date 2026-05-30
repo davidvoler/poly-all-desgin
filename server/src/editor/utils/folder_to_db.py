@@ -18,10 +18,6 @@ async def create_course(course_name: str, lang: str, to_lang: str):
     return None
 
 
-
-
-    
-
 async def load_exercise(course_id: int, module_id: int, lesson_id: int, exercise: dict):
     text = exercise.get('text')
     options = exercise.get('options', [])
@@ -32,12 +28,18 @@ async def load_exercise(course_id: int, module_id: int, lesson_id: int, exercise
     text_alt2 = exercise.get('text_alt2')
     text_alt3 = exercise.get('text_alt3')
     exercise_type = exercise.get('type')
+    audio = exercise.get('voice')
+    sentence_id = exercise.get('sentence_id', 0)
+    to_sentence_id = exercise.get('to_sentence_id', 0)
+    weight = exercise.get('weight', 0)
+    explanation = exercise.get('explanation')
+
     sql = """
-    INSERT INTO course_simple.exercise (course_id, module_id, lesson_id, sentence, word1, word2, word3, sentence_alt1, sentence_alt2, sentence_alt3, exercise_type) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+    INSERT INTO course_simple.exercise (course_id, module_id, lesson_id, sentence, word1, word2, word3, sentence_alt1, sentence_alt2, sentence_alt3, exercise_type, audio, options, sentence_id, to_sentence_id, weight, explanation) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
     RETURNING exercise_id
     """
-    params = (course_id, module_id, lesson_id, text, word1, word2, word3, text_alt1, text_alt2, text_alt3, exercise_type)
+    params = (course_id, module_id, lesson_id, text, word1, word2, word3, text_alt1, text_alt2, text_alt3, exercise_type, audio, json.dumps(options), sentence_id, to_sentence_id, weight, explanation)
     res = await get_query_results(sql, params)
     if len(res) > 0:
         return res[0].get('exercise_id')

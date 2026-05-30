@@ -17,9 +17,9 @@ TEMP_FOLDER = "../content/temp"
 async def upload_course(file: UploadFile = File(...)):
     """Accept a .zip course archive, extract it, and run parse_course
     over the extracted folder. All other logic is stripped for now."""
+    
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Expected a .zip file")
-
     Path(TEMP_FOLDER).mkdir(parents=True, exist_ok=True)
     dest = Path(tempfile.mkdtemp(prefix="course_", dir=TEMP_FOLDER))
 
