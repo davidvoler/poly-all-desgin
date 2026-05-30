@@ -3,8 +3,10 @@ import tempfile
 import zipfile
 from pathlib import Path
 from fastapi import APIRouter, File, HTTPException, UploadFile
+import os
 
 from editor.utils.parse_course import parse_course
+from editor.utils.folder_to_db import load_course
 
 router = APIRouter()
 
@@ -34,6 +36,11 @@ async def upload_course(file: UploadFile = File(...)):
         tmp_zip.unlink(missing_ok=True)
 
     # 2. Parse the extracted folder.
-    parse_course(str(dest))
-
+    course_folders = os.listdir(dest)
+    course_folder = course_folders[0] if course_folders else None
+    if course_folder:
+        full_path = os.path.join(str(dest), course_folder)
+        course_data = parse_course(full_path)
+        # print(course_data)
+        upload_result = await load_course(course_data)
     return {}
