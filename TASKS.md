@@ -407,3 +407,17 @@ What to do with This preferences
 - [] dashboard - add delete course 
 
 
+*** summary - trying to load Japanese course ***
+- [v] create and load Japanese course 
+- [] Lesson Learned 
+  - [] We need a correct weight for module - we got it wrong 
+  - [] We need a correct weight for lesson
+  - [] We need a correct wight for exercise 
+-
+
+*** UI Tasks - Quiz Page ***
+
+- [] align the sentence 
+- [] ToolBox (play sound, correct) next or under the sentence 
+- [] 
+
