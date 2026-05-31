@@ -204,6 +204,14 @@ class HomePage extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     RoundIconButton(
+                      icon: Icons.auto_awesome,
+                      tooltip: 'Annotations demo',
+                      iconSize: 18,
+                      size: 40,
+                      onTap: () => Navigator.pushNamed(context, '/annotated'),
+                    ),
+                    const SizedBox(width: 8),
+                    RoundIconButton(
                       icon: Icons.tune,
                       tooltip: t.home.settings_tooltip,
                       iconSize: 18,

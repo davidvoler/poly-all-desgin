@@ -450,11 +450,32 @@ What to do with This preferences
       correct, 1.0/0.9 if all correct. Best logic computable from the server's
       (correct_ratio, incorrect_count) contract; rewards finding some words.
 
+   Decision points (resolved per workflow rule — "write options + pick best"):
+   - Data source for text variants / annotations (diacritics, transliteration,
+     furigana, per-word translation+audio). The Exercise/server model has NONE
+     of these fields today.
+     - [selected] Build phases 3 & 4 as a self-contained DEMO (the phase-4 demo
+       page, linked from home) driven by in-app sample data, with reusable,
+       data-driven widgets (RubyText, AnnotatedSentence, text-variant toggle) so
+       the live quiz can be wired later once the server supplies the fields.
+     - [ ] Add fields across server + DB + content pipeline now — out of scope
+       for a UI pass; would block the visible feature on a backend change.
+     - [ ] Generate variants client-side (transliteration/romaji libs) — no
+       reliable maintained Dart lib for Arabic diacritics or JA romaji; rejected.
+   - Ruby-text rendering:
+     - [selected] Custom RubyText widget (no dependency), Wrap of per-segment
+       [reading / base] columns → guaranteed multiline, no abandoned-package risk.
+     - [ ] flutter_ruby_text package — aging, multiline support uncertain.
+
 *** Quiz Page UI -  phase 3  ***
 
-- [] Add text alternative button - it should be different for each language
-  - [] for arabic show diacritical signs 
-  - [] for languages that it is applicable - transliteration
-  - [] for japanese - show hiragana,  katakana or romanji - we need 3 buttons in this case
+- [v] Add text alternative button - it should be different for each language
+      (text-variant toggle, demonstrated in the annotations demo page)
+  - [v] for arabic show diacritical signs 
+  - [v] for languages that it is applicable - transliteration
+*** Quiz Page UI -  phase 4 - annotations ***
+- [v] lets now implement The following in a demo page - with a link to this demo page from home page  
+- [v] for japanese - It is common to annotate kanji with the correct reading in Hiragana, Katakano or Romanji - HAve used in the past a flutter lib called Flutter Ruby Text  - https://pub.dev/documentation/flutter_ruby_text/latest/ - I am not use it is the best but any working library will do - we need it to support multiline ruby text
+      (implemented a custom multiline RubyText widget — see decision above)
+- [v] annotated sentence - for any language we may want to annotate some words in the sentence - the annotation should be small - the translation - and an icone to play the sound of the word
 
-*** Quiz Page UI -  phase 4  ***
