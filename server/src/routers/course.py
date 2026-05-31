@@ -76,7 +76,7 @@ async def get_courses(lang: str, to_lang: str, school: str | None = None,
         WHERE user_id = %s
         ORDER BY created_at DESC
         LIMIT 1
-    ) AS most_recent ON course_id = most_recent.course_id
+    ) AS most_recent ON c.course_id = most_recent.course_id
     WHERE c.lang = %s AND c.to_lang = %s
     {school_where}
     """
