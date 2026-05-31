@@ -54,7 +54,7 @@ async def get_alt(elements):
     return hira, romaji, kana
 
 
-async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
+async def gen_exercise(lang, to_lang, id, to_id, weight):
     
     lang_sql = f"""
     SELECT text, elements, word1, word2, word3, words, options
@@ -82,7 +82,6 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
     options = r.get('options', [])
     to_text = r.get('to_text')
     to_options = r.get('to_options', [])
-    # print(type(to_options), to_options)
     words_for_recognize.add(word1)
     words_for_recognize.add(word2)
     words_for_recognize.add(word3)
@@ -93,12 +92,12 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
     to_options = to_options[:number_of_options]
     op = [{"text":o} for o in to_options]
     op.append({"text": to_text, "correct": True})
+
     random.shuffle(op)
     rnd= random.randint(0,10)
-    if rnd < 1:
+    if rnd < 2:
         if audio:
-            if len(words_for_recognize)> 800:
-                if len(words) >= 3:
+            if len(words_for_recognize)> 150 and weight > 7 and len(words) >= 3:
                     w_correct = [word1, word2, word3]
                     w_wrong = random.sample(list(words_for_recognize), k=7)
                     all_words = list(set(w_correct + w_wrong))
@@ -119,9 +118,12 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
                         'word1': word1, 
                         'word2': word2, 
                         'word3': word3,
+                        "sentence_id": id,
+                        "sentence_to_id": to_id,
+                        "weight": weight
                     }
                     return ex
-    if rnd > 9 and len(words_for_recognize_split) > 1000:
+    if rnd > 8 and len(words_for_recognize_split) > 150 and weight > 7:
         op = [{"text":o} for o in options]
         op.append({"text": text, "correct": True})
         ex = {
@@ -137,6 +139,9 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
             'word1': word1, 
             'word2': word2, 
             'word3': word3,
+            'sentence_id': id,
+            'sentence_to_id': to_id,
+            'weight': weight
         }
         return ex
     else:
@@ -150,6 +155,7 @@ async def gen_exercise(lang, to_lang, id, to_id, sentences_count):
         'voice': audio,
         'sentence_id': id,
         'sentence_to_id': to_id,
+        'weight': weight,
         'word1': word1, 
         'word2': word2, 
         'word3': word3,
@@ -163,8 +169,10 @@ async def gen_lesson(l:dict):
         add_lesson_words(w)
     sentences_count = len(sentences)
     exercises = []
+    i = 0
     for s in sentences:
-        ex = await gen_exercise('ja', 'en', s.get('id'), s.get('to_id'), sentences_count)
+        i += 1
+        ex = await gen_exercise('ja', 'en', s.get('id'), s.get('to_id'), i)
         if ex:
             exercises.append(ex)
     return {
@@ -199,8 +207,8 @@ async def gen_module(m:dict):
 async def gen_and_save_module(m:dict):
     print(f"generating module {m.get('module')}")
     module_no = int(m.get('module'))
-    os.makedirs(f"../data/content/ja/v1/module_{module_no}", exist_ok=True)
-    if len(os.listdir(f"../data/content/ja/v1/module_{module_no}")) > 0:
+    os.makedirs(f"../data/content/ja/v2/module_{module_no}", exist_ok=True)
+    if len(os.listdir(f"../data/content/ja/v2/module_{module_no}")) > 0:
         print(f"module {m.get('module')} already exists, skipping")
         return
     gen_m =  await gen_module(m)
@@ -212,7 +220,7 @@ async def gen_and_save_module(m:dict):
         lesson_no = i
         weight = lesson.get('weight',lesson_no )
         title = lesson.get('title', '')
-        with open(f"../data/content/ja/v1/module_{module_no}/lesson_{lesson_no}.txt", 'w') as f:
+        with open(f"../data/content/ja/v2/module_{module_no}/lesson_{lesson_no}.txt", 'w') as f:
             title = lesson.get('lesson', '')
             f.write(f"title: {title}\n")
             f.write(f"weight: {weight}\n")
@@ -236,6 +244,11 @@ async def gen_and_save_module(m:dict):
                     f.write(f"word2: {exercise.get('word2')}\n")
                 if exercise.get('word3'):
                     f.write(f"word3: {exercise.get('word3')}\n")
+                if exercise.get('sentence_id'):
+                    f.write(f"sentence_id: {exercise.get('sentence_id')}\n")
+                if exercise.get('sentence_to_id'):
+                    f.write(f"to_sentence_id: {exercise.get('sentence_to_id')}\n")
+                f.write(f"weight: {exercise.get('weight', 0)}\n")
                 for o in options:
                     prefix = "[-]"
                     if o.get('correct'):
@@ -262,4 +275,4 @@ async def gen_course(lang, to_lang, load_path):
     # g_module(modules[0])
 if __name__ == '__main__':
     os.environ["POSTGRES_PORT"] = "5433"
-    asyncio.run(gen_course('ja', 'en', '../data/content/ja/v1/ja_en_course.yaml'))
+    asyncio.run(gen_course('ja', 'en', '../data/content/ja/v2/ja_en_course.yaml'))

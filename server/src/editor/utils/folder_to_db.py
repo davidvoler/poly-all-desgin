@@ -91,3 +91,4 @@ async def load_course(course_data: dict):
     for m in modules:
         await load_module(course_id, m, i)
         i += 1
+    return course_id

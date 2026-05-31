@@ -251,27 +251,6 @@ We have 2 main way of creating content
      `auth0_flutter` (same for `poliglots_app` — only flutter_dotenv).
   
 
-*** getting ready for MVP Student ***
-- [v] solve oauth - consider alternatives for auth0
-- [] upload some generated courses as an example - verify that the process works well
-- [] current lessons - get it correctly in client
-- [] lessons done/started/current get it from server
-- [] view lessons by school - save current school? 
-*** getting ready for MVP School ***
-- [w] Dashboard - have the dashboard working for - public and non profit schools 
-- [] unify users student and school 
-- [] we do need a school role (and maybe subscription)
-- [] Different pages visible to different users 
-- [] dashboard scenario 
-    - [] connection - shall we have only a single users management for schools 
-    - [] Create school - let's hide it for now - we will find a way to do it later 
-    - [] Start generating courses and try to upload 
-*** getting ready for MVP Content ***
-- [] learn how to generate courses with AI
-- [] Generate  arabic v3 again 
-    - [] but this time without diacritical signs 
-    - [] prefer sentences with sound 
-- [] Generate Japanese
 
 
 
@@ -331,7 +310,7 @@ class Course(BaseModel):
     current_lesson: int | None = 1
 please use it in the client side to mark the current course - current module and current lesson
 We also have the progress information 
-- [] modules also return now the following fields 
+- [v] modules also return now the following fields 
  completed: int | None = 0
     max_score: float | None = 0.0
     sum_score: float | None = 0.0
@@ -391,12 +370,40 @@ What to do with This preferences
 
 
 
-*** tasks saved for later stage ***
-- [v] I prefer using Oauth - so we can skip password change password functionality - for now at least
-- [ ] Real SMTP for password reset — out of scope without infrastructure.
-- [ ] Pagination on Students table (currently capped at 200).
-- [ ] Cohort filter chips on Students page.
-- [ ] Public-school sibling site (community-contributor variant from design_experiments/school_public/) — substantial new UI; deferred to dedicated pass.
 
+*** getting ready for MVP Student ***
+- [v] solve oauth - consider alternatives for auth0
+- [] upload some generated courses as an example - verify that the process works well
+- [] current lessons - get it correctly in client
+- [] lessons done/started/current get it from server
+- [] view lessons by school - save current school? 
+*** getting ready for MVP School ***
+- [w] Dashboard - have the dashboard working for - public and non profit schools 
+- [] unify users student and school 
+- [] we do need a school role (and maybe subscription)
+- [] Different pages visible to different users 
+- [] dashboard scenario 
+    - [] connection - shall we have only a single users management for schools 
+    - [] Create school - let's hide it for now - we will find a way to do it later 
+    - [] Start generating courses and try to upload 
+*** getting ready for MVP Content ***
+- [] learn how to generate courses with AI
+- [] Generate  arabic v3 again 
+    - [] but this time without diacritical signs 
+    - [] prefer sentences with sound 
+- [w] Generate Japanese
+
+
+
+*** Dashboard and content tasks ***
+
+- [v] full round - generate and upload
+- [] simplify user permission - you can see and edit your courses 
+- [v] export japanese with sentence id and to sentences id 
+- [v] export japanese with correct hiragana and katakana (text or kana)
+- [] on student show the ability to replace text alt1
+- [] add to exercise elements for future use of annotated text
+- [] dashboards - do not load full course - load module by module - create a lesson page
+- [] dashboard - add delete course 
 
 
