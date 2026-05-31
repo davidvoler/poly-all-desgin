@@ -411,13 +411,39 @@ What to do with This preferences
 - [v] create and load Japanese course 
 - [] Lesson Learned 
   - [] We need a correct weight for module - we got it wrong 
-  - [] We need a correct weight for lesson
-  - [] We need a correct wight for exercise 
--
+  - [w] We need a correct weight for lesson
+  - [w] We need a correct wight for exercise 
+- [] there are too many identical translations for the same text in japanese - maybe we should limit to 2 or three
 
 *** UI Tasks - Quiz Page ***
 
-- [] align the sentence 
-- [] ToolBox (play sound, correct) next or under the sentence 
-- [] 
+- [v] align the sentence to the right or left according to the language 
+- [v] The sentences box should contain only the sentences - remove question_type from this box 
+- [v] remove the text "- Translate this sentences -"
+- [v] ToolBox (play sound, correct) in a separate section under the sentence 
+- [v] Remove A, B, C and D from options 
+- [v] Option text should be bigger - by default 
+- [v] Add configuration button to the quiz page with the following options 
+  - [v] resize sentences  - 3 sizes 
+  - [v] resize options - 3 sizes 
+  - [v] Auto play audio - play audio automatically when moving to the next question 
+- [v] The sentence area should be sized to contain 2 lines
+- [v] Next to the play button add a button play slow - with a different icon - this should play in 0.75 of the speed
+- [v] The button order should be from left to right play - correct incorrect - play slow - even when correct/incorrect icon is not visible it should keep its place 
+- [v] The button toolbox should not have a background 
+- [v] The heart icon and a number (3) on the top for the page - Replace it with a star icon indicating the number of answers we got correct
+
+*** UI Tasks - phase 2  - Quiz Page ***
+- [] Add Instruction between the the lesson title section and and the sentences section 
+  - [] for exercise of type simple - select correct translation -
+  - [] for exercise of type recognize - select words in the sentence -
+  - [] for exercise of type read  = select the correct reading - 
+- [] in exercise of type recognize - hide the sentence text - add a button to show text - it should always be there 
+- [] in recognize - When we check answers keep the words in the same size - now they are growing 
+- [] We should have the following types of indication for words 
+    - words that are in sentences and user selected 
+    - words that are not in sentence and user selected 
+    - words that are in sentence and usr did not select 
+    - words that are not in sentence and user did not select - stay in original color
+- [] The score for identify words is incorrect/correct or -1 if correct =0 
 

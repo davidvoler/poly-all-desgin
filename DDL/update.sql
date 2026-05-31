@@ -34,7 +34,13 @@ ALTER TABLE course_simple.exercise ADD COLUMN sentence_alt2 VARCHAR(300);
 ALTER TABLE course_simple.exercise ADD COLUMN sentence_alt3 VARCHAR(300);
 
 
--- DONE
+
 
 
 create index idx_sentence_elements_lang_word1 on content_raw.sentence_elements (lang, len_c, word1, id);
+
+
+
+
+alter table course_simple.lesson ADD COLUMN weight int2 default 0;
+-- DONE

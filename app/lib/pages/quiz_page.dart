@@ -6,6 +6,7 @@ import '../api/courses_api.dart';
 import '../api/models.dart';
 import '../score.dart';
 import '../state/lang.dart';
+import '../state/quiz_settings.dart';
 import '../theme.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
@@ -55,11 +56,37 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     super.dispose();
   }
 
-  Future<void> _playAudio(String audioPath) async {
+  Future<void> _playAudio(String audioPath, {double rate = 1.0}) async {
     final url = audioUrl(audioPath);
     if (url == null) return;
     await _audio.stop();
     await _audio.play(UrlSource(url));
+    // Set the rate after play() — starting a new source can reset it to
+    // 1.0 on some platforms, so applying it afterwards is more reliable.
+    await _audio.setPlaybackRate(rate);
+  }
+
+  /// Move to [idx] and, when the "auto play audio" setting is on, play
+  /// the destination exercise's audio. Used for forward transitions
+  /// (Continue / Skip) so audio fires when moving to the next question.
+  void _goToExercise(int idx, List<Exercise> exercises) {
+    setState(() => _exerciseIndex = idx);
+    if (idx < 0 || idx >= exercises.length) return;
+    if (ref.read(quizSettingsProvider).autoPlayAudio) {
+      final audio = exercises[idx].audio;
+      if (audio.isNotEmpty) _playAudio(audio);
+    }
+  }
+
+  /// Bottom sheet with the per-device quiz display settings (text sizes,
+  /// auto-play audio). Reads/writes [quizSettingsProvider].
+  void _openSettings() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => const _QuizSettingsSheet(),
+    );
   }
 
   void _restartLesson() {
@@ -308,6 +335,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 if (!checked) {
                   _shownAtByIndex.putIfAbsent(idx, DateTime.now);
                 }
+                final settings = ref.watch(quizSettingsProvider);
+                final correctCount =
+                    _scoreByIndex.values.where((s) => s > 0).length;
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
@@ -316,6 +346,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   title: pageTitle,
                   selected: selected,
                   checked: checked,
+                  sentenceScale: settings.sentenceSize.scale,
+                  optionScale: settings.optionSize.scale,
+                  onOpenSettings: _openSettings,
                   onSelect: checked
                       ? null
                       : (i) => setState(() {
@@ -348,14 +381,14 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                         _scoreByIndex[idx] = score;
                       });
                     } else if (idx + 1 < exercises.length) {
-                      setState(() => _exerciseIndex = idx + 1);
+                      _goToExercise(idx + 1, exercises);
                     } else {
                       _completeLesson(exercises, lessonId);
                     }
                   },
                   onSkip: () {
                     if (idx + 1 < exercises.length) {
-                      setState(() => _exerciseIndex = idx + 1);
+                      _goToExercise(idx + 1, exercises);
                     } else {
                       _completeLesson(exercises, lessonId);
                     }
@@ -366,6 +399,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   onPlayAudio: ex.audio.isEmpty
                       ? null
                       : () => _playAudio(ex.audio),
+                  onPlaySlow: ex.audio.isEmpty
+                      ? null
+                      : () => _playAudio(ex.audio, rate: 0.75),
+                  correctCount: correctCount,
                 );
               },
             ),
@@ -913,6 +950,14 @@ class _QuizBody extends StatelessWidget {
   final VoidCallback? onSkip;
   final VoidCallback? onBack;
   final VoidCallback? onPlayAudio;
+  final VoidCallback? onPlaySlow;
+  // Number of exercises answered correctly so far — shown as the star
+  // tally in the top bar.
+  final int correctCount;
+  // Multipliers from the quiz settings sheet (1.0 = default size).
+  final double sentenceScale;
+  final double optionScale;
+  final VoidCallback onOpenSettings;
 
   const _QuizBody({
     required this.index,
@@ -927,6 +972,11 @@ class _QuizBody extends StatelessWidget {
     required this.onSkip,
     required this.onBack,
     required this.onPlayAudio,
+    required this.onPlaySlow,
+    required this.correctCount,
+    required this.sentenceScale,
+    required this.optionScale,
+    required this.onOpenSettings,
   });
 
   /// Per-option visual state once the answer is revealed: every correct
@@ -941,10 +991,17 @@ class _QuizBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = total == 0 ? 0.0 : (index + 1) / total;
+    // Reserve room for two lines at the current sentence size so the box
+    // height stays stable whether a sentence is one or two lines. Derived
+    // from the same fontSize/height the AutoText uses, so it tracks the
+    // size selector.
+    const sentenceLineHeight = 1.2;
+    final sentenceFontSize = 22 * sentenceScale;
+    final twoLineHeight = sentenceFontSize * sentenceLineHeight * 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Top — close + progress + lives
+        // Top — close + progress + correct-answer tally
         Row(
           children: [
             RoundIconButton(
@@ -965,20 +1022,27 @@ class _QuizBody extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
+            // Star + number of correct answers so far.
             Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.favorite, size: 14, color: PolyColors.red400),
-                SizedBox(width: 4),
+              children: [
+                const Icon(Icons.star, size: 15, color: PolyColors.orange300),
+                const SizedBox(width: 4),
                 Text(
-                  '3',
-                  style: TextStyle(
+                  '$correctCount',
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(width: 10),
+            RoundIconButton(
+              icon: Icons.tune,
+              tooltip: 'Quiz settings',
+              onTap: onOpenSettings,
             ),
           ],
         ),
@@ -991,27 +1055,30 @@ class _QuizBody extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        Center(
-          child: Text('— Translate this sentence —',
-              style: PolyText.sectionLabel()),
-        ),
-        const SizedBox(height: 12),
-
+        // Sentence box — just the sentence, aligned to the side that
+        // matches its own script (RTL languages right-align, LTR left-
+        // align) via the bidi heuristic in directionOf().
         GlassCard(
           borderRadius: const BorderRadius.all(Radius.circular(18)),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            children: [
-              AutoText(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: twoLineHeight),
+            child: Align(
+              alignment: directionOf(exercise.sentence) == TextDirection.rtl
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: AutoText(
                 exercise.sentence,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 22,
+                textAlign: directionOf(exercise.sentence) == TextDirection.rtl
+                    ? TextAlign.right
+                    : TextAlign.left,
+                style: TextStyle(
+                  fontSize: sentenceFontSize,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                   letterSpacing: -0.4,
-                  height: 1.2,
-                  shadows: [
+                  height: sentenceLineHeight,
+                  shadows: const [
                     Shadow(
                         blurRadius: 18,
                         color: Colors.black54,
@@ -1019,32 +1086,17 @@ class _QuizBody extends StatelessWidget {
                   ],
                 ),
               ),
-              if (exercise.exerciseType.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  exercise.exerciseType.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.6,
-                    color: Colors.white.withValues(alpha: 0.65),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _AudioButton(onTap: onPlayAudio),
-                  if (checked && score != null) ...[
-                    const SizedBox(width: 12),
-                    _ScoreIcon(score: score!),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ),
+        ),
+        const SizedBox(height: 12),
+
+        // Toolbox — play sound + answer score live in their own section
+        // under the sentence, not crowded inside the sentence box.
+        _QuizToolbox(
+          onPlayAudio: onPlayAudio,
+          onPlaySlow: onPlaySlow,
+          score: checked ? score : null,
         ),
         const SizedBox(height: 18),
 
@@ -1061,6 +1113,7 @@ class _QuizBody extends StatelessWidget {
                           label: exercise.options[i].text,
                           selected: selected.contains(i),
                           feedback: _feedbackFor(i),
+                          textScale: optionScale,
                           onTap: onSelect == null ? null : () => onSelect!(i),
                         ),
                     ],
@@ -1071,10 +1124,10 @@ class _QuizBody extends StatelessWidget {
                   itemCount: exercise.options.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, i) => _AnswerTile(
-                    letter: String.fromCharCode(65 + i),
                     label: exercise.options[i].text,
                     selected: selected.contains(i),
                     feedback: _feedbackFor(i),
+                    textScale: optionScale,
                     onTap: onSelect == null ? null : () => onSelect!(i),
                   ),
                 ),
@@ -1192,9 +1245,49 @@ class _QnavButton extends StatelessWidget {
   }
 }
 
+/// Toolbox section under the sentence. Left-to-right: play, the
+/// correct/incorrect score glyph, then play-slow. No background — the
+/// controls float directly under the sentence box. The score sits in a
+/// fixed-size slot so the play / play-slow buttons keep their positions
+/// whether or not the glyph is showing.
+class _QuizToolbox extends StatelessWidget {
+  final VoidCallback? onPlayAudio;
+  // Same audio at 0.75× speed; its own icon so it reads as "slow".
+  final VoidCallback? onPlaySlow;
+  // Null until the user checks; then the answer's score drives _ScoreIcon.
+  final double? score;
+  const _QuizToolbox({
+    required this.onPlayAudio,
+    required this.onPlaySlow,
+    required this.score,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _AudioButton(icon: Icons.volume_up, onTap: onPlayAudio),
+        const SizedBox(width: 12),
+        // Fixed 34×34 slot (the _ScoreIcon's own size) so the play and
+        // play-slow buttons don't shift when the glyph appears/hides.
+        SizedBox(
+          width: 34,
+          height: 34,
+          child: score != null ? _ScoreIcon(score: score!) : null,
+        ),
+        const SizedBox(width: 12),
+        _AudioButton(icon: Icons.slow_motion_video, onTap: onPlaySlow),
+      ],
+    );
+  }
+}
+
 class _AudioButton extends StatelessWidget {
+  final IconData icon;
   final VoidCallback? onTap;
-  const _AudioButton({required this.onTap});
+  const _AudioButton({required this.icon, required this.onTap});
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
@@ -1212,7 +1305,7 @@ class _AudioButton extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
-          child: Icon(Icons.volume_up,
+          child: Icon(icon,
               size: 17,
               color: Colors.white.withValues(alpha: enabled ? 1.0 : 0.35)),
         ),
@@ -1230,11 +1323,13 @@ class _AnswerChip extends StatelessWidget {
   final String label;
   final bool selected;
   final _TileFeedback feedback;
+  final double textScale;
   final VoidCallback? onTap;
   const _AnswerChip({
     required this.label,
     required this.selected,
     required this.feedback,
+    required this.textScale,
     required this.onTap,
   });
 
@@ -1275,8 +1370,8 @@ class _AnswerChip extends StatelessWidget {
               ],
               AutoText(
                 label,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: 16 * textScale,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
@@ -1290,16 +1385,16 @@ class _AnswerChip extends StatelessWidget {
 }
 
 class _AnswerTile extends StatelessWidget {
-  final String letter;
   final String label;
   final bool selected;
   final _TileFeedback feedback;
+  final double textScale;
   final VoidCallback? onTap;
   const _AnswerTile({
-    required this.letter,
     required this.label,
     required this.selected,
     required this.feedback,
+    required this.textScale,
     required this.onTap,
   });
 
@@ -1340,14 +1435,17 @@ class _AnswerTile extends StatelessWidget {
           ),
           child: Row(
             children: [
+              // Selection / feedback dot — no A/B/C/D letters. Shows a
+              // check when selected, and the correct/wrong glyph once the
+              // answer is revealed.
               Container(
                 width: 26,
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   color: accent ??
                       (selected ? Colors.white : Colors.white.withValues(alpha: 0.10)),
-                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: accent ??
                         (selected ? Colors.white : Colors.white.withValues(alpha: 0.20)),
@@ -1359,23 +1457,17 @@ class _AnswerTile extends StatelessWidget {
                         size: 16,
                         color: Colors.white,
                       )
-                    : Text(
-                        letter,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: selected
-                              ? PolyColors.brandPrimary
-                              : Colors.white.withValues(alpha: 0.75),
-                        ),
-                      ),
+                    : (selected
+                        ? const Icon(Icons.check,
+                            size: 16, color: PolyColors.brandPrimary)
+                        : null),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: AutoText(
                   label,
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: TextStyle(
+                    fontSize: 17 * textScale,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -1423,6 +1515,181 @@ class _ScoreIcon extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.55)),
       ),
       child: Icon(icon, color: color, size: 17),
+    );
+  }
+}
+
+/// Bottom sheet for the per-device quiz display settings: sentence text
+/// size, option text size (each a 3-step scale), and whether audio plays
+/// automatically when advancing to the next question. Writes straight
+/// through to [quizSettingsProvider], which persists to SharedPreferences.
+class _QuizSettingsSheet extends ConsumerWidget {
+  const _QuizSettingsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(quizSettingsProvider);
+    final notifier = ref.read(quizSettingsProvider.notifier);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        decoration: const BoxDecoration(
+          color: Color(0xFF101826),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: PolyColors.white(0.25),
+                  borderRadius: PolyRadii.pill,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('QUIZ SETTINGS', style: PolyText.sectionLabel()),
+            const SizedBox(height: 18),
+
+            Text('Sentence size', style: PolyText.sectionLabel()),
+            const SizedBox(height: 8),
+            _SizeSelector(
+              value: settings.sentenceSize,
+              onChanged: notifier.setSentenceSize,
+            ),
+            const SizedBox(height: 20),
+
+            Text('Option size', style: PolyText.sectionLabel()),
+            const SizedBox(height: 8),
+            _SizeSelector(
+              value: settings.optionSize,
+              onChanged: notifier.setOptionSize,
+            ),
+            const SizedBox(height: 22),
+
+            _AutoPlayRow(
+              value: settings.autoPlayAudio,
+              onChanged: notifier.setAutoPlayAudio,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Segmented Small / Medium / Large picker used for both text-size rows.
+class _SizeSelector extends StatelessWidget {
+  final QuizTextSize value;
+  final ValueChanged<QuizTextSize> onChanged;
+  const _SizeSelector({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final size in QuizTextSize.values) ...[
+          if (size != QuizTextSize.values.first) const SizedBox(width: 8),
+          Expanded(
+            child: _SegmentButton(
+              label: size.label,
+              selected: size == value,
+              onTap: () => onChanged(size),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SegmentButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _SegmentButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? PolyColors.brandPrimary.withValues(alpha: 0.30)
+          : PolyColors.white(0.06),
+      borderRadius: PolyRadii.pill,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: PolyRadii.pill,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: PolyRadii.pill,
+            border: Border.all(
+              color: selected
+                  ? PolyColors.brandPrimary
+                  : PolyColors.white(0.16),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: selected ? 1 : 0.75),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Auto-play audio" label + switch row for the settings sheet.
+class _AutoPlayRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _AutoPlayRow({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Auto-play audio',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Play audio when moving to the next question',
+                style: TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: PolyColors.brandPrimary,
+        ),
+      ],
     );
   }
 }
