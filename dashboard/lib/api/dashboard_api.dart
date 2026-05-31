@@ -383,6 +383,15 @@ class DashboardApi {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/editor/upload/',
       data: form,
+      // Course upload is long-running server-side (unzip + parse_course +
+      // load_course's many DB inserts), well past the Dio defaults
+      // (connect 5s / receive 15s). Override per-request so a big course
+      // doesn't abort mid-parse; the global defaults stay tight for
+      // ordinary calls. sendTimeout covers streaming the zip body up.
+      options: Options(
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 10),
+      ),
     );
     return (res.data?['course_id'] as int?);
   }

@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
@@ -120,15 +121,18 @@ Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
     // Log the full error + stack to the console (flutter run terminal /
     // browser DevTools) so a transient SnackBar isn't the only record.
     debugPrint('Upload failed: $e\n$st');
+    final message = 'Upload failed: $e';
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('Upload failed: $e'),
+          // SelectableText so the error can be highlighted; the Copy
+          // action puts the whole message on the clipboard in one tap.
+          content: SelectableText(message),
           duration: const Duration(days: 1),
           action: SnackBarAction(
-            label: 'Dismiss',
-            onPressed: messenger.hideCurrentSnackBar,
+            label: 'Copy',
+            onPressed: () => Clipboard.setData(ClipboardData(text: message)),
           ),
         ),
       );
