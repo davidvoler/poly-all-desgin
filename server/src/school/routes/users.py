@@ -307,6 +307,7 @@ async def login(payload: LoginRequest):
 
 @router.post("/login_auth0", response_model=LoginResponse)
 async def login_auth0(payload: Auth0LoginRequest):
+    print(payload)
     """Sign in with an Auth0-issued ID token.
 
     Flow:
