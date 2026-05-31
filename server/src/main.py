@@ -57,7 +57,7 @@ _cors_origins = [
 # time. Production scope is unchanged — the regex can't widen prod
 # since the allowed hosts are still just localhost.
 _cors_origin_regex = os.getenv(
-    "CORS_ORIGIN_REGEX",
+    "_DEFAULT_CORS_ORIGINS",
     r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
 )
 app.add_middleware(
