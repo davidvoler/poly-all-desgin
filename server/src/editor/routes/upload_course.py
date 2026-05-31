@@ -41,6 +41,11 @@ async def upload_course(file: UploadFile = File(...),user_id: int = Depends(curr
 
     # 2. Parse the extracted folder.
     course_folders = os.listdir(dest)
+    for f in course_folders:
+        if f.startswith('.'):
+            course_folders.remove(f)
+        if f.startswith('__'):
+            course_folders.remove(f)
     course_folder = course_folders[0] if course_folders else None
     if course_folder:
         full_path = os.path.join(str(dest), course_folder)

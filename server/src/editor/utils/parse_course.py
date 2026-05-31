@@ -93,7 +93,7 @@ def parse_course(file_path):
             course_data = parse_course_fields(course)
         else:
             print(f"course.txt not found in {file_path}")
-            return None, None
+            return None
     list_files = os.listdir(file_path)
     modules = []
     for f in list_files:
