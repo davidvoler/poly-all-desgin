@@ -434,16 +434,27 @@ What to do with This preferences
 - [v] The heart icon and a number (3) on the top for the page - Replace it with a star icon indicating the number of answers we got correct
 
 *** UI Tasks - phase 2  - Quiz Page ***
-- [] Add Instruction between the the lesson title section and and the sentences section 
-  - [] for exercise of type simple - select correct translation -
-  - [] for exercise of type recognize - select words in the sentence -
-  - [] for exercise of type read  = select the correct reading - 
-- [] in exercise of type recognize - hide the sentence text - add a button to show text - it should always be there 
-- [] in recognize - When we check answers keep the words in the same size - now they are growing 
-- [] We should have the following types of indication for words 
+- [v] Add Instruction between the the lesson title section and and the sentences section 
+  - [v] for exercise of type simple - select correct translation -
+  - [v] for exercise of type recognize - select words in the sentence -
+  - [v] for exercise of type read  = select the correct reading - 
+- [v] in exercise of type recognize - hide the sentence text - add a button to show text - it should always be there 
+- [v] in recognize - When we check answers keep the words in the same size - now they are growing 
+- [v] We should have the following types of indication for words 
     - words that are in sentences and user selected 
     - words that are not in sentence and user selected 
     - words that are in sentence and usr did not select 
     - words that are not in sentence and user did not select - stay in original color
-- [] The score for identify words is incorrect/correct or -1 if correct =0 
+- [v] The score for identify words is (correct_selected - incorrect_selected) 
+      Partial credit: score = correctRatio - 0.2*incorrectCount, -1 if zero
+      correct, 1.0/0.9 if all correct. Best logic computable from the server's
+      (correct_ratio, incorrect_count) contract; rewards finding some words.
 
+*** Quiz Page UI -  phase 3  ***
+
+- [] Add text alternative button - it should be different for each language
+  - [] for arabic show diacritical signs 
+  - [] for languages that it is applicable - transliteration
+  - [] for japanese - show hiragana,  katakana or romanji - we need 3 buttons in this case
+
+*** Quiz Page UI -  phase 4  ***

@@ -16,7 +16,11 @@ def calculate_score(correct_ratio: float, incorrect_count: float, attempts: int)
     else:
         if correct_ratio == 0:
             return -1.0
-        return max(-1.0, (correct_ratio + 0.2 * incorrect_count)*-1)
+        # Partial credit — only reachable for multi-select ("recognize"),
+        # where some-but-not-all sentence words were found. Positive for
+        # the words identified, penalised by wrong picks. Keep in lockstep
+        # with app/lib/score.dart::calculateScore.
+        return max(-1.0, min(1.0, correct_ratio - 0.2 * incorrect_count))
 
 
 @router.post("/")

@@ -16,6 +16,10 @@ double calculateScore({
   if (correctRatio == 0) {
     return -1.0;
   }
-  final raw = -(correctRatio + 0.2 * incorrectCount);
-  return raw < -1.0 ? -1.0 : raw;
+  // Partial credit — only reachable for multi-select (`recognize`), where
+  // some-but-not-all sentence words were found. Positive for the words
+  // identified, penalised by wrong picks. -1 when none were correct is
+  // handled above.
+  final raw = correctRatio - 0.2 * incorrectCount;
+  return raw.clamp(-1.0, 1.0);
 }

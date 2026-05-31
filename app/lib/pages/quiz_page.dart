@@ -988,6 +988,33 @@ class _QuizBody extends StatelessWidget {
     return _TileFeedback.none;
   }
 
+  /// Four-state word feedback for `recognize` once revealed: a word in
+  /// the sentence the user picked (correct), a word not in the sentence
+  /// they picked (wrong), a word in the sentence they missed, and the
+  /// rest (not in sentence, not picked) which stay neutral.
+  _WordFeedback _wordFeedbackFor(int i) {
+    if (!checked) return _WordFeedback.neutral;
+    final inSentence = exercise.options[i].correct;
+    final picked = selected.contains(i);
+    if (inSentence && picked) return _WordFeedback.correctSelected;
+    if (!inSentence && picked) return _WordFeedback.wrongSelected;
+    if (inSentence && !picked) return _WordFeedback.missed;
+    return _WordFeedback.neutral;
+  }
+
+  /// Instruction shown under the title, by exercise type.
+  static String _instructionFor(String type) {
+    switch (type) {
+      case 'recognize':
+        return 'Select words in the sentence';
+      case 'read':
+        return 'Select the correct reading';
+      case 'simple':
+      default:
+        return 'Select the correct translation';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = total == 0 ? 0.0 : (index + 1) / total;
@@ -1055,39 +1082,27 @@ class _QuizBody extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        // Sentence box — just the sentence, aligned to the side that
-        // matches its own script (RTL languages right-align, LTR left-
-        // align) via the bidi heuristic in directionOf().
-        GlassCard(
-          borderRadius: const BorderRadius.all(Radius.circular(18)),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: twoLineHeight),
-            child: Align(
-              alignment: directionOf(exercise.sentence) == TextDirection.rtl
-                  ? Alignment.centerRight
-                  : Alignment.centerLeft,
-              child: AutoText(
-                exercise.sentence,
-                textAlign: directionOf(exercise.sentence) == TextDirection.rtl
-                    ? TextAlign.right
-                    : TextAlign.left,
-                style: TextStyle(
-                  fontSize: sentenceFontSize,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -0.4,
-                  height: sentenceLineHeight,
-                  shadows: const [
-                    Shadow(
-                        blurRadius: 18,
-                        color: Colors.black54,
-                        offset: Offset(0, 4)),
-                  ],
-                ),
-              ),
-            ),
+        // Per-type instruction, sitting between the title nav and the
+        // sentence section.
+        Center(
+          child: Text(
+            _instructionFor(exercise.exerciseType),
+            style: PolyText.sectionLabel(),
           ),
+        ),
+        const SizedBox(height: 12),
+
+        // Sentence box. For `recognize` the sentence is hidden behind an
+        // always-present "show text" toggle (the point of the exercise is
+        // to identify the words), so it's a small stateful box keyed by
+        // exercise id so the toggle resets per question.
+        _SentenceBox(
+          key: ValueKey('sentence-${exercise.id}'),
+          sentence: exercise.sentence,
+          fontSize: sentenceFontSize,
+          lineHeight: sentenceLineHeight,
+          minHeight: twoLineHeight,
+          hideByDefault: exercise.exerciseType == 'recognize',
         ),
         const SizedBox(height: 12),
 
@@ -1112,7 +1127,7 @@ class _QuizBody extends StatelessWidget {
                         _AnswerChip(
                           label: exercise.options[i].text,
                           selected: selected.contains(i),
-                          feedback: _feedbackFor(i),
+                          feedback: _wordFeedbackFor(i),
                           textScale: optionScale,
                           onTap: onSelect == null ? null : () => onSelect!(i),
                         ),
@@ -1245,6 +1260,136 @@ class _QnavButton extends StatelessWidget {
   }
 }
 
+/// Sentence card. For most exercise types it simply shows the sentence,
+/// aligned to its own script direction and reserving two lines so the
+/// height is stable. For `recognize` ([hideByDefault] = true) the text
+/// starts hidden — the task is to identify the words — with an
+/// always-present toggle to show/hide it.
+class _SentenceBox extends StatefulWidget {
+  final String sentence;
+  final double fontSize;
+  final double lineHeight;
+  final double minHeight;
+  final bool hideByDefault;
+  const _SentenceBox({
+    super.key,
+    required this.sentence,
+    required this.fontSize,
+    required this.lineHeight,
+    required this.minHeight,
+    required this.hideByDefault,
+  });
+
+  @override
+  State<_SentenceBox> createState() => _SentenceBoxState();
+}
+
+class _SentenceBoxState extends State<_SentenceBox> {
+  late bool _revealed = !widget.hideByDefault;
+
+  @override
+  Widget build(BuildContext context) {
+    final rtl = directionOf(widget.sentence) == TextDirection.rtl;
+    final textArea = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: widget.minHeight),
+      child: _revealed
+          ? Align(
+              alignment: rtl ? Alignment.centerRight : Alignment.centerLeft,
+              child: AutoText(
+                widget.sentence,
+                textAlign: rtl ? TextAlign.right : TextAlign.left,
+                style: TextStyle(
+                  fontSize: widget.fontSize,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.4,
+                  height: widget.lineHeight,
+                  shadows: const [
+                    Shadow(
+                        blurRadius: 18,
+                        color: Colors.black54,
+                        offset: Offset(0, 4)),
+                  ],
+                ),
+              ),
+            )
+          : Center(
+              child: Text(
+                'Text hidden',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: PolyColors.white(0.5),
+                ),
+              ),
+            ),
+    );
+
+    return GlassCard(
+      borderRadius: const BorderRadius.all(Radius.circular(18)),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      child: widget.hideByDefault
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                textArea,
+                const SizedBox(height: 8),
+                Center(
+                  child: _ShowTextButton(
+                    revealed: _revealed,
+                    onTap: () => setState(() => _revealed = !_revealed),
+                  ),
+                ),
+              ],
+            )
+          : textArea,
+    );
+  }
+}
+
+/// Always-present show/hide toggle for the recognize sentence.
+class _ShowTextButton extends StatelessWidget {
+  final bool revealed;
+  final VoidCallback onTap;
+  const _ShowTextButton({required this.revealed, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: PolyColors.white(0.08),
+      borderRadius: PolyRadii.pill,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: PolyRadii.pill,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: PolyRadii.pill,
+            border: Border.all(color: PolyColors.white(0.18)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(revealed ? Icons.visibility_off : Icons.visibility,
+                  size: 16, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(
+                revealed ? 'Hide text' : 'Show text',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Toolbox section under the sentence. Left-to-right: play, the
 /// correct/incorrect score glyph, then play-slow. No background — the
 /// controls float directly under the sentence box. The score sits in a
@@ -1316,13 +1461,28 @@ class _AudioButton extends StatelessWidget {
 
 enum _TileFeedback { none, correct, wrong }
 
+/// Post-check state of a `recognize` word. See [_QuizBody._wordFeedbackFor].
+enum _WordFeedback {
+  // Not in the sentence and not picked → original colour.
+  neutral,
+  // In the sentence and picked → correct selection.
+  correctSelected,
+  // Not in the sentence but picked → wrong selection.
+  wrongSelected,
+  // In the sentence but not picked → missed.
+  missed,
+}
+
 /// Tag/pill option used for `recognize` exercises — wraps to the next
-/// line, no A/B/C badge. Shares the selection/feedback colour language
-/// with [_AnswerTile].
+/// line, no A/B/C badge. State is conveyed purely by fill/border colour
+/// (no leading icon) so the pill keeps the SAME size before and after the
+/// answer is checked. Four post-check states: a sentence word the user
+/// picked (green), a non-sentence word they picked (red), a sentence word
+/// they missed (amber outline), and everything else (neutral).
 class _AnswerChip extends StatelessWidget {
   final String label;
   final bool selected;
-  final _TileFeedback feedback;
+  final _WordFeedback feedback;
   final double textScale;
   final VoidCallback? onTap;
   const _AnswerChip({
@@ -1335,21 +1495,26 @@ class _AnswerChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCorrect = feedback == _TileFeedback.correct;
-    final isWrong = feedback == _TileFeedback.wrong;
-    final accent = isCorrect
-        ? PolyColors.green500
-        : isWrong
-            ? PolyColors.red400
-            : null;
-    final fillAlpha = accent != null ? 0.22 : (selected ? 0.18 : 0.06);
-    final borderColor =
-        accent ?? Colors.white.withValues(alpha: selected ? 0.45 : 0.16);
+    final Color fill;
+    final Color border;
+    switch (feedback) {
+      case _WordFeedback.correctSelected:
+        fill = PolyColors.green500.withValues(alpha: 0.22);
+        border = PolyColors.green500;
+      case _WordFeedback.wrongSelected:
+        fill = PolyColors.red400.withValues(alpha: 0.22);
+        border = PolyColors.red400;
+      case _WordFeedback.missed:
+        fill = PolyColors.orange300.withValues(alpha: 0.18);
+        border = PolyColors.orange300;
+      case _WordFeedback.neutral:
+        // Pre-check this also renders the selection highlight.
+        fill = Colors.white.withValues(alpha: selected ? 0.18 : 0.06);
+        border = Colors.white.withValues(alpha: selected ? 0.45 : 0.16);
+    }
 
     return Material(
-      color: accent != null
-          ? accent.withValues(alpha: fillAlpha)
-          : Colors.white.withValues(alpha: fillAlpha),
+      color: fill,
       borderRadius: PolyRadii.pill,
       child: InkWell(
         onTap: onTap,
@@ -1358,25 +1523,15 @@ class _AnswerChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             borderRadius: PolyRadii.pill,
-            border: Border.all(color: borderColor),
+            border: Border.all(color: border),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (accent != null) ...[
-                Icon(isCorrect ? Icons.check : Icons.close,
-                    size: 14, color: Colors.white),
-                const SizedBox(width: 6),
-              ],
-              AutoText(
-                label,
-                style: TextStyle(
-                  fontSize: 16 * textScale,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+          child: AutoText(
+            label,
+            style: TextStyle(
+              fontSize: 16 * textScale,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
