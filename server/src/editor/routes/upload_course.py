@@ -46,6 +46,8 @@ async def upload_course(file: UploadFile = File(...),user_id: int = Depends(curr
         full_path = os.path.join(str(dest), course_folder)
         course_data = parse_course(full_path)
         # print(course_data)
+        for key, value in course_data.items():
+            print(f"{key}: {len(value) if isinstance(value, list) else value} {type(value)}")
         course_id = await load_course(course_data)
     #Todo get current school id
     school_id = 1
