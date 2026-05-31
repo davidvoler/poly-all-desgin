@@ -479,3 +479,8 @@ What to do with This preferences
       (implemented a custom multiline RubyText widget — see decision above)
 - [v] annotated sentence - for any language we may want to annotate some words in the sentence - the annotation should be small - the translation - and an icone to play the sound of the word
 
+
+
+*** Demo Page - More options ***
+
+- [v] in the demo page add a version of annotated sentence - where the annotation are simpler and are show in a tooltip above the word with only the word translation and a icon to play.  

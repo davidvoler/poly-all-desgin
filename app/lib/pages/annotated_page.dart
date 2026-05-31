@@ -107,6 +107,14 @@ class _AnnotatedPageState extends State<AnnotatedPage> {
                           )
                         else
                           _Hint(),
+                        const SizedBox(height: 24),
+
+                        _SectionLabel('Annotated sentence · simple tooltip'),
+                        const SizedBox(height: 10),
+                        _TooltipSentenceCard(
+                          words: _annotatedSentence,
+                          onPlay: (w) => _playWord(context, w),
+                        ),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -545,6 +553,207 @@ class _AnnoCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _PillButton(label: 'Play', icon: Icons.volume_up, onTap: onPlay),
+        ],
+      ),
+    );
+  }
+}
+
+/// Simpler annotated sentence: tapping a word pops a compact tooltip
+/// directly above it with just the translation + a play icon (no separate
+/// card below). Each word owns its own overlay bubble.
+class _TooltipSentenceCard extends StatelessWidget {
+  final List<_AnnWord> words;
+  final ValueChanged<_AnnWord> onPlay;
+  const _TooltipSentenceCard({required this.words, required this.onPlay});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      borderRadius: const BorderRadius.all(Radius.circular(18)),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          for (final w in words)
+            w.annotated
+                ? _TooltipWord(word: w, onPlay: () => onPlay(w))
+                : Text(
+                    w.text,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.5,
+                      shadows: [
+                        Shadow(
+                            blurRadius: 18,
+                            color: Colors.black54,
+                            offset: Offset(0, 4)),
+                      ],
+                    ),
+                  ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TooltipWord extends StatefulWidget {
+  final _AnnWord word;
+  final VoidCallback onPlay;
+  const _TooltipWord({required this.word, required this.onPlay});
+
+  @override
+  State<_TooltipWord> createState() => _TooltipWordState();
+}
+
+class _TooltipWordState extends State<_TooltipWord> {
+  final _controller = OverlayPortalController();
+  final _link = LayerLink();
+
+  void _toggle() {
+    _controller.isShowing ? _controller.hide() : _controller.show();
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showing = _controller.isShowing;
+    return OverlayPortal(
+      controller: _controller,
+      overlayChildBuilder: (context) {
+        return Stack(
+          children: [
+            // Tap-anywhere-else barrier to dismiss.
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _toggle,
+                child: const ColoredBox(color: Colors.transparent),
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _link,
+              showWhenUnlinked: false,
+              targetAnchor: Alignment.topCenter,
+              followerAnchor: Alignment.bottomCenter,
+              offset: const Offset(0, -6),
+              child: _TooltipBubble(
+                word: widget.word,
+                onPlay: widget.onPlay,
+              ),
+            ),
+          ],
+        );
+      },
+      child: CompositedTransformTarget(
+        link: _link,
+        child: GestureDetector(
+          onTap: _toggle,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: showing
+                  ? PolyColors.orange300
+                  : PolyColors.orange300.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(7),
+              border: showing
+                  ? null
+                  : Border(
+                      bottom:
+                          BorderSide(color: PolyColors.orange300, width: 2),
+                    ),
+            ),
+            child: Text(
+              widget.word.text,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: showing ? PolyColors.annoActiveText : Colors.white,
+                height: 1.0,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The small bubble shown above a tapped word: translation text + a play
+/// icon, with a little downward-pointing tail.
+class _TooltipBubble extends StatelessWidget {
+  final _AnnWord word;
+  final VoidCallback onPlay;
+  const _TooltipBubble({required this.word, required this.onPlay});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 240),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.97),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.28),
+                    offset: const Offset(0, 8),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      word.translation ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: onPlay,
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.volume_up,
+                          size: 18, color: PolyColors.brandPrimary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Downward tail.
+          Transform.translate(
+            offset: const Offset(0, -3),
+            child: Transform.rotate(
+              angle: 0.7853981633974483, // π/4
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.97),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
