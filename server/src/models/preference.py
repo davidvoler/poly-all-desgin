@@ -1,3 +1,4 @@
+from typing import Any
 from pydantic import BaseModel
 from models.course import Course
 
@@ -15,5 +16,8 @@ class Preference(BaseModel):
     course_name: str|None = None
     module_name: str|None = None
     lesson_name: str|None = None
+    # Free-form bag of quiz display preferences (text size, text-alternative,
+    # ruby mode, annotations…). Stored as jsonb so the client owns the shape.
+    quiz_settings: dict[str, Any] | None = None
 
 

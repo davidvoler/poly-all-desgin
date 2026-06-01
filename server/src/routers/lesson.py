@@ -21,6 +21,10 @@ async def get_lessons(module_id: int,
            CASE WHEN COALESCE(ls.max_score, 0) > 0 THEN 1 ELSE 0 END AS completed
     FROM course_simple.lesson AS lesson
     LEFT JOIN (
+        -- Each lesson_status row already holds one attempt's score, which
+        -- is sum(score) of that attempt's exercises (see the quiz client's
+        -- _buildSummary). Keep the lesson rollup as sum(score) / max(score)
+        -- across attempts — do NOT switch to avg/normalised.
         SELECT lesson_id,
                max(score) AS max_score,
                sum(score) AS sum_score,

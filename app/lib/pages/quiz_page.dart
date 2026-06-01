@@ -10,6 +10,88 @@ import '../state/quiz_settings.dart';
 import '../theme.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
+import '../widgets/ruby_text.dart';
+
+/// Per-language label for an alt-sentence slot (1/2/3). Falls back to a
+/// generic label for languages without a known convention.
+String altLabel(String lang, int slot) {
+  switch (lang) {
+    case 'ja':
+      return const {1: 'Hiragana', 2: 'Romaji', 3: 'Katakana'}[slot] ??
+          'Alt $slot';
+    case 'ar':
+      return const {1: 'Diacritics', 2: 'Transliteration', 3: 'Alt 3'}[slot] ??
+          'Alt $slot';
+    default:
+      return 'Alt $slot';
+  }
+}
+
+/// What text-alternative / ruby options the current exercise can offer,
+/// derived from which `sentence_alt*` fields it carries. Drives the gating
+/// of the settings sheet + toolbox controls (TASKS phase-5: options are
+/// only shown when the exercise has the data).
+class _QuizDisplayContext {
+  final String lang;
+  final Exercise exercise;
+  // Alt slots (1/2/3) that have non-empty text on this exercise.
+  final List<int> availableAltSlots;
+  // Ruby modes selectable for this exercise (always includes RubyMode.none;
+  // the rest only for Japanese with the matching alt present).
+  final List<RubyMode> availableRubyModes;
+
+  const _QuizDisplayContext({
+    required this.lang,
+    required this.exercise,
+    required this.availableAltSlots,
+    required this.availableRubyModes,
+  });
+
+  factory _QuizDisplayContext.forExercise(Exercise ex, String lang) {
+    final slots = <int>[
+      if (ex.sentenceAlt1.isNotEmpty) 1,
+      if (ex.sentenceAlt2.isNotEmpty) 2,
+      if (ex.sentenceAlt3.isNotEmpty) 3,
+    ];
+    final isJa = lang == 'ja';
+    final rubyModes = <RubyMode>[
+      RubyMode.none,
+      if (isJa)
+        for (final m in const [
+          RubyMode.hiragana,
+          RubyMode.romaji,
+          RubyMode.katakana,
+        ])
+          if (slots.contains(m.altSlot)) m,
+    ];
+    return _QuizDisplayContext(
+      lang: lang,
+      exercise: ex,
+      availableAltSlots: slots,
+      availableRubyModes: rubyModes,
+    );
+  }
+
+  bool get hasTextAlternatives => availableAltSlots.isNotEmpty;
+  bool get hasRuby => availableRubyModes.length > 1;
+  bool get isJapanese => lang == 'ja';
+
+  String altForSlot(int slot) {
+    switch (slot) {
+      case 1:
+        return exercise.sentenceAlt1;
+      case 2:
+        return exercise.sentenceAlt2;
+      case 3:
+        return exercise.sentenceAlt3;
+      default:
+        return exercise.sentence;
+    }
+  }
+
+  /// Label for the text-alternative segmented control, slot 0 = original.
+  String labelForSlot(int slot) => slot == 0 ? 'Original' : altLabel(lang, slot);
+}
 
 class QuizPage extends ConsumerStatefulWidget {
   const QuizPage({super.key});
@@ -79,14 +161,25 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
 
   /// Bottom sheet with the per-device quiz display settings (text sizes,
-  /// auto-play audio). Reads/writes [quizSettingsProvider].
-  void _openSettings() {
+  /// auto-play audio, and — when the current exercise supports them — text
+  /// alternative, ruby and annotations). Reads/writes [quizSettingsProvider].
+  void _openSettings(_QuizDisplayContext ctx) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => const _QuizSettingsSheet(),
+      builder: (_) => _QuizSettingsSheet(ctx: ctx),
     );
+  }
+
+  /// Toolbox quick-toggle: advance the text-alternative through the slots
+  /// this exercise actually has (Original → alt → … → Original).
+  void _cycleTextAlternative(_QuizDisplayContext ctx) {
+    final order = [0, ...ctx.availableAltSlots];
+    final cur = ref.read(quizSettingsProvider).textAlternativeSlot;
+    final i = order.indexOf(cur);
+    final next = order[(i < 0 ? 0 : i + 1) % order.length];
+    ref.read(quizSettingsProvider.notifier).setTextAlternativeSlot(next);
   }
 
   void _restartLesson() {
@@ -162,6 +255,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       }
     }
     final skipped = exercises.length - _checkedIndices.length;
+    // Lesson score = sum(score) of all answered exercises. Keep it a plain
+    // sum (not avg / not normalised) — this is the value posted as the
+    // lesson's attempt score and rolled up server-side. Do not change.
     final totalScore =
         _scoreByIndex.values.fold<double>(0, (a, b) => a + b);
     // Unique words across all exercises, first-encountered order.
@@ -338,6 +434,26 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 final settings = ref.watch(quizSettingsProvider);
                 final correctCount =
                     _scoreByIndex.values.where((s) => s > 0).length;
+                // Resolve the per-exercise text-alternative / ruby context
+                // and the sentence actually shown (gated by what data this
+                // exercise carries).
+                final learnLang = ref.watch(
+                        preferenceProvider.select((p) => p.value?.lang)) ??
+                    ref.watch(learningLangProvider).code;
+                final ctx = _QuizDisplayContext.forExercise(ex, learnLang);
+                final altSlot =
+                    ctx.availableAltSlots.contains(settings.textAlternativeSlot)
+                        ? settings.textAlternativeSlot
+                        : 0;
+                final displaySentence =
+                    altSlot == 0 ? ex.sentence : ctx.altForSlot(altSlot);
+                final rubyMode =
+                    ctx.availableRubyModes.contains(settings.rubyMode)
+                        ? settings.rubyMode
+                        : RubyMode.none;
+                final rubyReading = rubyMode == RubyMode.none
+                    ? null
+                    : ctx.altForSlot(rubyMode.altSlot);
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
@@ -348,7 +464,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   checked: checked,
                   sentenceScale: settings.sentenceSize.scale,
                   optionScale: settings.optionSize.scale,
-                  onOpenSettings: _openSettings,
+                  displaySentence: displaySentence,
+                  rubyReading: rubyReading,
+                  altContext: ctx,
+                  onOpenSettings: () => _openSettings(ctx),
+                  onCycleTextAlternative: ctx.hasTextAlternatives
+                      ? () => _cycleTextAlternative(ctx)
+                      : null,
                   onSelect: checked
                       ? null
                       : (i) => setState(() {
@@ -958,6 +1080,15 @@ class _QuizBody extends StatelessWidget {
   final double sentenceScale;
   final double optionScale;
   final VoidCallback onOpenSettings;
+  // The sentence to display — already resolved for the selected text
+  // alternative (original or a sentence_alt variant).
+  final String displaySentence;
+  // Reading to render above the sentence as ruby, or null for no ruby.
+  final String? rubyReading;
+  // What this exercise can offer (used to gate the toolbox quick toggles).
+  final _QuizDisplayContext altContext;
+  // Toolbox quick-cycle for the text alternative; null when unavailable.
+  final VoidCallback? onCycleTextAlternative;
 
   const _QuizBody({
     required this.index,
@@ -977,6 +1108,10 @@ class _QuizBody extends StatelessWidget {
     required this.sentenceScale,
     required this.optionScale,
     required this.onOpenSettings,
+    required this.displaySentence,
+    required this.rubyReading,
+    required this.altContext,
+    required this.onCycleTextAlternative,
   });
 
   /// Per-option visual state once the answer is revealed: every correct
@@ -1098,7 +1233,8 @@ class _QuizBody extends StatelessWidget {
         // exercise id so the toggle resets per question.
         _SentenceBox(
           key: ValueKey('sentence-${exercise.id}'),
-          sentence: exercise.sentence,
+          sentence: displaySentence,
+          rubyReading: rubyReading,
           fontSize: sentenceFontSize,
           lineHeight: sentenceLineHeight,
           minHeight: twoLineHeight,
@@ -1107,11 +1243,14 @@ class _QuizBody extends StatelessWidget {
         const SizedBox(height: 12),
 
         // Toolbox — play sound + answer score live in their own section
-        // under the sentence, not crowded inside the sentence box.
+        // under the sentence, not crowded inside the sentence box. The
+        // text-alternative quick-cycle appears only when this exercise has
+        // alternatives.
         _QuizToolbox(
           onPlayAudio: onPlayAudio,
           onPlaySlow: onPlaySlow,
           score: checked ? score : null,
+          onCycleTextAlternative: onCycleTextAlternative,
         ),
         const SizedBox(height: 18),
 
@@ -1267,6 +1406,8 @@ class _QnavButton extends StatelessWidget {
 /// always-present toggle to show/hide it.
 class _SentenceBox extends StatefulWidget {
   final String sentence;
+  // When non-null, rendered above the sentence as ruby (furigana-style).
+  final String? rubyReading;
   final double fontSize;
   final double lineHeight;
   final double minHeight;
@@ -1274,6 +1415,7 @@ class _SentenceBox extends StatefulWidget {
   const _SentenceBox({
     super.key,
     required this.sentence,
+    this.rubyReading,
     required this.fontSize,
     required this.lineHeight,
     required this.minHeight,
@@ -1290,28 +1432,43 @@ class _SentenceBoxState extends State<_SentenceBox> {
   @override
   Widget build(BuildContext context) {
     final rtl = directionOf(widget.sentence) == TextDirection.rtl;
+    final baseStyle = TextStyle(
+      fontSize: widget.fontSize,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+      letterSpacing: -0.4,
+      height: widget.lineHeight,
+      shadows: const [
+        Shadow(blurRadius: 18, color: Colors.black54, offset: Offset(0, 4)),
+      ],
+    );
+    final hasRuby =
+        widget.rubyReading != null && widget.rubyReading!.isNotEmpty;
     final textArea = ConstrainedBox(
       constraints: BoxConstraints(minHeight: widget.minHeight),
       child: _revealed
           ? Align(
               alignment: rtl ? Alignment.centerRight : Alignment.centerLeft,
-              child: AutoText(
-                widget.sentence,
-                textAlign: rtl ? TextAlign.right : TextAlign.left,
-                style: TextStyle(
-                  fontSize: widget.fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -0.4,
-                  height: widget.lineHeight,
-                  shadows: const [
-                    Shadow(
-                        blurRadius: 18,
-                        color: Colors.black54,
-                        offset: Offset(0, 4)),
-                  ],
-                ),
-              ),
+              child: hasRuby
+                  // Whole-sentence ruby: the reading sits above the sentence.
+                  // (Per-token furigana lives in the /annotated demo, which
+                  // needs token-level data the live exercise doesn't carry.)
+                  ? RubyText(
+                      [RubySegment(widget.sentence, widget.rubyReading)],
+                      textAlign: rtl ? TextAlign.right : TextAlign.left,
+                      baseStyle: baseStyle,
+                      rubyStyle: TextStyle(
+                        fontSize: widget.fontSize * 0.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                        color: PolyColors.orange300,
+                      ),
+                    )
+                  : AutoText(
+                      widget.sentence,
+                      textAlign: rtl ? TextAlign.right : TextAlign.left,
+                      style: baseStyle,
+                    ),
             )
           : Center(
               child: Text(
@@ -1401,10 +1558,13 @@ class _QuizToolbox extends StatelessWidget {
   final VoidCallback? onPlaySlow;
   // Null until the user checks; then the answer's score drives _ScoreIcon.
   final double? score;
+  // Quick-cycle the text alternative; null when this exercise has none.
+  final VoidCallback? onCycleTextAlternative;
   const _QuizToolbox({
     required this.onPlayAudio,
     required this.onPlaySlow,
     required this.score,
+    required this.onCycleTextAlternative,
   });
 
   @override
@@ -1424,6 +1584,14 @@ class _QuizToolbox extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         _AudioButton(icon: Icons.slow_motion_video, onTap: onPlaySlow),
+        // Text-alternative quick toggle — only when the exercise has alts.
+        if (onCycleTextAlternative != null) ...[
+          const SizedBox(width: 12),
+          _AudioButton(
+            icon: Icons.translate,
+            onTap: onCycleTextAlternative,
+          ),
+        ],
       ],
     );
   }
@@ -1679,12 +1847,21 @@ class _ScoreIcon extends StatelessWidget {
 /// automatically when advancing to the next question. Writes straight
 /// through to [quizSettingsProvider], which persists to SharedPreferences.
 class _QuizSettingsSheet extends ConsumerWidget {
-  const _QuizSettingsSheet();
+  final _QuizDisplayContext ctx;
+  const _QuizSettingsSheet({required this.ctx});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(quizSettingsProvider);
     final notifier = ref.read(quizSettingsProvider.notifier);
+
+    // Text-alternative options: Original + whatever alt slots exist.
+    final altSlots = [0, ...ctx.availableAltSlots];
+    final altSlot =
+        altSlots.contains(settings.textAlternativeSlot) ? settings.textAlternativeSlot : 0;
+    final rubyMode = ctx.availableRubyModes.contains(settings.rubyMode)
+        ? settings.rubyMode
+        : RubyMode.none;
 
     return SafeArea(
       top: false,
@@ -1694,45 +1871,72 @@ class _QuizSettingsSheet extends ConsumerWidget {
           color: Color(0xFF101826),
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: PolyColors.white(0.25),
-                  borderRadius: PolyRadii.pill,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: PolyColors.white(0.25),
+                    borderRadius: PolyRadii.pill,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text('QUIZ SETTINGS', style: PolyText.sectionLabel()),
-            const SizedBox(height: 18),
+              const SizedBox(height: 16),
+              Text('QUIZ SETTINGS', style: PolyText.sectionLabel()),
+              const SizedBox(height: 18),
 
-            Text('Sentence size', style: PolyText.sectionLabel()),
-            const SizedBox(height: 8),
-            _SizeSelector(
-              value: settings.sentenceSize,
-              onChanged: notifier.setSentenceSize,
-            ),
-            const SizedBox(height: 20),
+              Text('Sentence size', style: PolyText.sectionLabel()),
+              const SizedBox(height: 8),
+              _SizeSelector(
+                value: settings.sentenceSize,
+                onChanged: notifier.setSentenceSize,
+              ),
+              const SizedBox(height: 20),
 
-            Text('Option size', style: PolyText.sectionLabel()),
-            const SizedBox(height: 8),
-            _SizeSelector(
-              value: settings.optionSize,
-              onChanged: notifier.setOptionSize,
-            ),
-            const SizedBox(height: 22),
+              Text('Option size', style: PolyText.sectionLabel()),
+              const SizedBox(height: 8),
+              _SizeSelector(
+                value: settings.optionSize,
+                onChanged: notifier.setOptionSize,
+              ),
+              const SizedBox(height: 22),
 
-            _AutoPlayRow(
-              value: settings.autoPlayAudio,
-              onChanged: notifier.setAutoPlayAudio,
-            ),
-          ],
+              // Text alternative — only when this exercise carries alts.
+              if (ctx.hasTextAlternatives) ...[
+                Text('Text alternative', style: PolyText.sectionLabel()),
+                const SizedBox(height: 8),
+                _SegmentedRow(
+                  labels: [for (final s in altSlots) ctx.labelForSlot(s)],
+                  selectedIndex: altSlots.indexOf(altSlot),
+                  onSelect: (i) => notifier.setTextAlternativeSlot(altSlots[i]),
+                ),
+                const SizedBox(height: 22),
+              ],
+
+              // Ruby (Japanese) — pick which reading sits on top.
+              if (ctx.hasRuby) ...[
+                Text('Ruby (reading on top)', style: PolyText.sectionLabel()),
+                const SizedBox(height: 8),
+                _SegmentedRow(
+                  labels: [for (final m in ctx.availableRubyModes) m.label],
+                  selectedIndex: ctx.availableRubyModes.indexOf(rubyMode),
+                  onSelect: (i) =>
+                      notifier.setRubyMode(ctx.availableRubyModes[i]),
+                ),
+                const SizedBox(height: 22),
+              ],
+
+              _AutoPlayRow(
+                value: settings.autoPlayAudio,
+                onChanged: notifier.setAutoPlayAudio,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1756,6 +1960,37 @@ class _SizeSelector extends StatelessWidget {
               label: size.label,
               selected: size == value,
               onTap: () => onChanged(size),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Generic segmented control over a list of string labels — used for the
+/// text-alternative and ruby pickers (variable option counts).
+class _SegmentedRow extends StatelessWidget {
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+  const _SegmentedRow({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          if (i != 0) const SizedBox(width: 8),
+          Expanded(
+            child: _SegmentButton(
+              label: labels[i],
+              selected: i == selectedIndex,
+              onTap: () => onSelect(i),
             ),
           ),
         ],
@@ -1797,6 +2032,9 @@ class _SegmentButton extends StatelessWidget {
           ),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,

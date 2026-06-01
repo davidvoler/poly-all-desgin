@@ -458,6 +458,7 @@ class PreferenceNotifier extends AsyncNotifier<Preference?> {
     String? courseName,
     String? moduleName,
     String? lessonName,
+    Map<String, dynamic>? quizSettings,
   }) async {
     // kCurrentUserId is no longer a compile-time const — it's bound to
     // the auth notifier's session — so the fallback Preference is built
@@ -473,6 +474,7 @@ class PreferenceNotifier extends AsyncNotifier<Preference?> {
       courseName: courseName,
       moduleName: moduleName,
       lessonName: lessonName,
+      quizSettings: quizSettings,
     );
     state = AsyncValue.data(next);
     final repo = ref.read(coursesRepositoryProvider);

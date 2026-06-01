@@ -6,8 +6,11 @@ router = APIRouter()
 
 
 async def user_course_status(user_id: int, course_id: int, course_lessons_count: int):
+    # Lesson score = sum(score) of its exercises (per attempt); here we roll
+    # attempts up per lesson. Table is user_data.lesson_status (was wrongly
+    # `lesson_completed`, which doesn't exist).
     sql = """
-    select lesson_id, max(score) as max_score, sum(score) as total_score,count(*) as num_attempts from user_data.lesson_completed
+    select lesson_id, max(score) as max_score, sum(score) as total_score,count(*) as num_attempts from user_data.lesson_status
     where user_id = %s and course_id = %s
     group by 1
     """

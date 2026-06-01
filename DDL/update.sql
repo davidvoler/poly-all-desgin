@@ -43,4 +43,8 @@ create index idx_sentence_elements_lang_word1 on content_raw.sentence_elements (
 
 
 alter table course_simple.lesson ADD COLUMN weight int2 default 0;
+
+-- Quiz display preferences (text size, text-alternative, ruby mode,
+-- annotations). Free-form jsonb owned by the client.
+ALTER TABLE user_data.preference ADD COLUMN quiz_settings jsonb;
 -- DONE

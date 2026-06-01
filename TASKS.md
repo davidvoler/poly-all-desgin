@@ -479,8 +479,129 @@ What to do with This preferences
       (implemented a custom multiline RubyText widget — see decision above)
 - [v] annotated sentence - for any language we may want to annotate some words in the sentence - the annotation should be small - the translation - and an icone to play the sound of the word
 
+*** Quiz Page - phase 5 - implement demo ***
+
+   Decision points (resolved per workflow rule — "write options + pick best"):
+   - Where the new options live:
+     - [selected] BOTH — full controls in the quiz Settings sheet, plus
+       quick-toggle icons in the toolbox for the two most-used (text-alternative
+       cycle + annotations on/off). Lets us compare which feels better.
+     - [ ] Settings only — fewer surfaces but more taps to reach.
+   - Availability gating granularity (some exercises lack transliteration /
+     annotated format):
+     - [selected] Per-exercise data flags — a control shows/enables only when
+       the current exercise carries that data (hasTransliteration / hasDiacritics
+       / hasRuby / hasAnnotations). Naturally covers per-course too (if no
+       exercise has it, it never appears).
+     - [ ] Per-course flag only — coarser, can't vary within a course.
+   - Source of the alt/ruby/annotation DATA (server sends none today):
+     - [selected] New OPTIONAL fields on the Exercise JSON, populated by the
+       content pipeline / translation-API later; controls hidden until present.
+       The /annotated demo already shows the rendering.
+     - [ ] Block phase 5 on the content/API work — would stall the UI.
+   - quiz_settings persistence (task 6):
+     - [selected] jsonb column on user_data.preference + mirrored in client
+       Preference; QuizSettings still cached in SharedPreferences as the local
+       fallback, synced up to the server prefs when signed in.
+     - [ ] Local SharedPreferences only — already exists, but not cross-device.
+
+- [v] We have some new options for quiz - we can ad them to the quiz settings, and to the toolbox - or only to the settings We can see what looks better and more user friendly
+      (both: settings sheet has the full controls; toolbox has the text-alternative
+      quick-toggle. Compare and tell me which placement you prefer.)
+- [v] Some options are available per corse - only if the course - or even exercise level - some exercise will not have the annotated text format - some will not have transliteration. 
+      (gated on per-exercise data: text-alt/ruby controls appear only when the
+      exercise carries the matching sentence_alt* fields)
+- [v] Add text alternative icon to the toolbox/settings - transliteration, diacritical signs 
+      (uses existing sentence_alt1/2/3; JA content already has hiragana/romaji/katakana)
+- [v] if Japanese we should have RubyText options - with a selection of what transliteration to put on tom - hiragana, katakana or romanji 
+      (settings "Ruby" picker; renders the chosen reading above the sentence.
+      NOTE: whole-sentence ruby for now — per-kanji furigana needs token-level
+      data the live exercise lacks; the /annotated demo shows per-token ruby.)
+- [~] Add Annotated text to the toolbox 
+      PARTIAL: showAnnotations setting + plumbing exist and the /annotated demo
+      renders annotations, but the live-quiz toggle is gated OFF because real
+      exercises carry no per-word annotation data (only word1/2/3, no per-word
+      translation/audio). Lights up once that data exists — see the "Word
+      translation + audio API integration" decision block above.
+- [v] Add a json field to the user preferences for quiz_settings
+      (preference.quiz_settings jsonb; client QuizSettings mirrors to it + reads
+      it back, SharedPreferences as offline fallback)
+
+
+- [v] Fixing logic for lesson score calculation = the lessons score calculation should stay as it was - sum(score) - for all lessons 
+      Verified: lesson score is already sum(score) of exercises — client
+      _buildSummary.totalScore (sum) → posted per attempt → server lesson.py
+      rolls up sum(score)/max(score) across attempts from user_data.lesson_status.
+      Locked the intent with comments (client + server) so future scoring
+      changes don't drift it to avg/normalised. Also fixed a latent bug:
+      course.py user_course_status queried a non-existent `lesson_completed`
+      table → now `lesson_status` (it was unused/dead, so no behaviour change).
+      NOTE: course-level avg_score (courses list) is intentionally avg, not sum.
+
+- [] In exercise type recognize - the icon for show text should be in the toolbar under the sentence - and should be an icon only with tooltip show text. Add tooltip to all other icons - play, play slow
+- [] 
+
+*** Annotated sentence data ***
+
 
 
 *** Demo Page - More options ***
 
 - [v] in the demo page add a version of annotated sentence - where the annotation are simpler and are show in a tooltip above the word with only the word translation and a icon to play.  
+
+*** Word translation + audio API integration (annotations) ***
+
+Goal: replace the demo's hardcoded _AnnWord translations + the 🔊 snackbar
+stub with REAL per-word translation + audio, so annotations can be generated
+for any word/language. (We will pick options below and implement later.)
+
+Reference (tested live, working):
+  - Lingva (Google Translate proxy, path-style — matches the old URL pattern):
+      translation: GET https://lingva.ml/api/v1/{from}/{to}/{word}  -> {"translation": "..."}
+      audio (TTS): GET https://lingva.ml/api/v1/audio/{lang}/{word} -> {"audio":[mp3 byte ints]}
+    Gotchas: audio is a JSON int array (decode to bytes for audioplayers);
+    gives translation only (NO reading/romaji); public instances flaky/self-host.
+
+   Decision points (write options now, pick later):
+
+   - [ ] A. Translation provider
+     - [ ] A1. Lingva (lingva.ml) — free, path-style {from}/{to}/{word}, matches
+           the URL you remembered; unofficial Google proxy, self-hostable.
+     - [ ] A2. Wiktionary / Wiktextract (kaikki.org) — free bulk JSON; gives
+           translations + reading/IPA + audio links + POS (richest for
+           annotations) but heavier to host (dump per language).
+     - [ ] A3. Google Cloud Translate — official, paid, reliable; needs API key.
+     - [ ] A4. DeepL — official, paid, high quality; fewer languages than Google.
+
+   - [ ] B. Audio (word pronunciation) provider
+     - [ ] B1. Lingva TTS audio endpoint (synthesized, same service as A1).
+     - [ ] B2. Google Cloud Text-to-Speech — official, paid, many voices.
+     - [ ] B3. Forvo — real native-speaker recordings, paid API (best quality).
+     - [ ] B4. Wiktionary/Commons audio files (free, real speakers, coverage gaps).
+
+   - [ ] C. Reading / romaji / furigana source (needed for JA readings; Lingva
+         does NOT provide this)
+     - [ ] C1. Wiktextract/kaikki (has readings) — pairs well if A2 chosen.
+     - [ ] C2. A kana/romaji converter lib server-side (e.g. kuroshiro-style).
+     - [ ] C3. Skip readings for now — translation + audio only.
+
+   - [ ] D. Where the call happens
+     - [ ] D1. Server proxy endpoint (e.g. GET /api/v1/translate/{from}/{to}/{word}
+           + /api/v1/translate/audio/{lang}/{word}) — avoids CORS, decodes the
+           audio array, caches results, swaps providers/instances in one place.
+           (Recommended.)
+     - [ ] D2. Client calls the provider directly — simpler, but CORS issues on
+           web + provider URL/keys leak to the client.
+
+   - [ ] E. Caching / persistence (translations + audio are stable per word)
+     - [ ] E1. DB table (e.g. content.word_annotation(lang, to_lang, word,
+           translation, reading, audio bytes/url)) populated on first lookup —
+           cheap, offline-friendly, removes runtime dep on flaky instances.
+     - [ ] E2. In-memory/process cache only — simplest, lost on restart.
+     - [ ] E3. No cache — call provider every time (dev only).
+
+   - [ ] F. Audio storage (if caching audio)
+     - [ ] F1. Store bytes in DB / object storage and serve from our audio host.
+     - [ ] F2. Store just the provider URL and proxy on demand.
+
+

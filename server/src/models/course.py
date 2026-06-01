@@ -59,6 +59,13 @@ class Exercise(BaseModel):
     word3: str | None = ''
     sentence_id: int |  None = None
     to_sentence_id: int | None = None
+    # Alternative renderings of `sentence`. Meaning is a per-language content
+    # convention — Japanese: alt1=hiragana, alt2=romaji, alt3=katakana;
+    # Arabic: alt1=diacritized, alt2=transliteration. Powers the quiz's
+    # "text alternative" toggle; already populated by the upload pipeline.
+    sentence_alt1: str | None = None
+    sentence_alt2: str | None = None
+    sentence_alt3: str | None = None
 
 
 class Word(BaseModel):

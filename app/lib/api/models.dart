@@ -119,6 +119,9 @@ class Preference {
   final String? courseName;
   final String? moduleName;
   final String? lessonName;
+  // Free-form quiz display preferences (text size, text-alternative, ruby
+  // mode, annotations…). Shape owned by QuizSettings; null when unset.
+  final Map<String, dynamic>? quizSettings;
 
   const Preference({
     required this.userId,
@@ -131,6 +134,7 @@ class Preference {
     this.courseName,
     this.moduleName,
     this.lessonName,
+    this.quizSettings,
   });
 
   factory Preference.fromJson(Map<String, dynamic> j) => Preference(
@@ -144,6 +148,7 @@ class Preference {
         courseName: j['course_name'] as String?,
         moduleName: j['module_name'] as String?,
         lessonName: j['lesson_name'] as String?,
+        quizSettings: (j['quiz_settings'] as Map?)?.cast<String, dynamic>(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -157,6 +162,7 @@ class Preference {
         'course_name': courseName,
         'module_name': moduleName,
         'lesson_name': lessonName,
+        'quiz_settings': quizSettings,
       };
 
   Preference copyWith({
@@ -169,6 +175,7 @@ class Preference {
     String? courseName,
     String? moduleName,
     String? lessonName,
+    Map<String, dynamic>? quizSettings,
   }) =>
       Preference(
         userId: userId,
@@ -181,6 +188,7 @@ class Preference {
         courseName: courseName ?? this.courseName,
         moduleName: moduleName ?? this.moduleName,
         lessonName: lessonName ?? this.lessonName,
+        quizSettings: quizSettings ?? this.quizSettings,
       );
 }
 
@@ -210,6 +218,13 @@ class Exercise {
   final String word2;
   final String word3;
   final int? sentenceId;
+  // Alternative renderings of [sentence]. Meaning is a per-language content
+  // convention — Japanese: alt1=hiragana, alt2=romaji, alt3=katakana;
+  // Arabic: alt1=diacritized, alt2=transliteration. Empty when the content
+  // didn't supply that variant. Powers the quiz "text alternative" toggle.
+  final String sentenceAlt1;
+  final String sentenceAlt2;
+  final String sentenceAlt3;
 
   const Exercise({
     required this.id,
@@ -221,7 +236,17 @@ class Exercise {
     required this.word2,
     required this.word3,
     required this.sentenceId,
+    this.sentenceAlt1 = '',
+    this.sentenceAlt2 = '',
+    this.sentenceAlt3 = '',
   });
+
+  /// The non-empty alternatives in slot order (alt1, alt2, alt3) — used to
+  /// gate the text-alternative control: only shown when this is non-empty.
+  List<String> get alternatives =>
+      [sentenceAlt1, sentenceAlt2, sentenceAlt3].where((a) => a.isNotEmpty).toList();
+
+  bool get hasAlternatives => alternatives.isNotEmpty;
 
   factory Exercise.fromJson(Map<String, dynamic> j) => Exercise(
         id: j['exercise_id'] as int,
@@ -236,6 +261,9 @@ class Exercise {
         word2: (j['word2'] as String?) ?? '',
         word3: (j['word3'] as String?) ?? '',
         sentenceId: j['sentence_id'] as int?,
+        sentenceAlt1: (j['sentence_alt1'] as String?) ?? '',
+        sentenceAlt2: (j['sentence_alt2'] as String?) ?? '',
+        sentenceAlt3: (j['sentence_alt3'] as String?) ?? '',
       );
 }
 
