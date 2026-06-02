@@ -541,6 +541,11 @@ What to do with This preferences
 - [] In exercise type recognize - the icon for show text should be in the toolbar under the sentence - and should be an icon only with tooltip show text. Add tooltip to all other icons - play, play slow
 - [] 
 
+*** Demo continue *** 
+- [] Ruby Text + annotated sentence + play and translation from google api - or from data 
+- [] prepare the Japanese - Hebrew with the new data 
+
+
 *** Annotated sentence data ***
 
 
