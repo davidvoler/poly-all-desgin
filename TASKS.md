@@ -580,3 +580,26 @@ sentences: I was looking for my dog
 - [] decide the format in exercise - we do not want to do any formatting on server side we can have the data in multiple formats. 
 - [] describe the text file format 
 
+- the format 
+ ruby_hiragana: [{text:t, ruby:r}, {text:t, ruby:r}]
+ ruby_katakana: [{text:t, ruby:r}, {text:t, ruby:r}]
+ ruby_romanji: [{text:t, ruby:r}, {text:t, ruby:r}]
+automated 
+ - annotation
+sentence: time is money
+{time}{translation}
+{money}{translation}
+transliteration:
+alternative:
+
+
+The text format:
+words for translation
+word1 and word2 are not the key we know 
+word1: translation
+word2: translation
+
+{} words : translation 
+{} words : translation 
+
+
