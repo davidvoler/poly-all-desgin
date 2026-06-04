@@ -20,7 +20,7 @@ async def get_modules(course_id: int, user_id: int = Depends(current_user_id)):
         GROUP BY module_id
     ) AS ls ON module.module_id = ls.module_id
     WHERE module.course_id = %s
-    order by weight
+    order by module.weight asc
 
     """
     params = (user_id, course_id)

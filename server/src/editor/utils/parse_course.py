@@ -61,10 +61,23 @@ def parse_module_fields(s:str):
     elements = s.split('\n')
     module_data = {}
     for e in elements:
-        elm=  e.split(':')
-        if len(elm) < 2:
-            continue
-        module_data[elm[0].strip()] = ':'.join(elm[1:]).strip()
+        if e.startswith("module:"):
+            try:
+                module_number = int(e[len("module:"):].strip())
+            except ValueError:
+                module_number = 0
+
+        elif e.startswith("weight:"):
+            try:
+                module_weight = int(e[len("weight:"):].strip())
+            except ValueError:
+                module_weight = 0
+        elif e.startswith("title:"):
+            module_data['title'] = e[len("title:"):].strip()
+    if not module_data.get('title'):
+        module_data['title'] = f"Module {module_number or module_weight}"
+    module_data['weight'] = module_weight if module_weight is not None else module_number
+    module_data['module'] = module_number if module_number is not None else module_weight
     return module_data
 
 def parse_module(file_path,default_title=""):
@@ -72,7 +85,7 @@ def parse_module(file_path,default_title=""):
     module_data = {}
     lessons = []
     for f in list_files:
-        if f == 'module.txt':
+        if f in ['module.txt', 'module.yaml', 'module.yml']:
            with open(os.path.join(file_path, f), 'r') as file:
                module = file.read().strip()
            module_data = parse_module_fields(module)

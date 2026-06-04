@@ -62,7 +62,7 @@ async def load_lesson(course_id: int, module_id: int, lesson: dict):
     """
     params = (course_id, module_id, lesson_title, lesson_weight)
     res = await get_query_results(sql, params)
-    print(f"Loaded lesson: {lesson_title} ")
+    # print(f"Loaded lesson: {lesson_title} {lesson_weight} ")
     if len(res) > 0:
         lesson_id = res[0].get('lesson_id')
         exercises = lesson.get('exercises', [])
@@ -78,7 +78,14 @@ async def load_module(course_id: int, module: dict, module_no: int):
     VALUES (%s, %s, %s) 
     RETURNING module_id
     """
-    params = (course_id,  module_no, title)
+    for k,v in module.items():
+        print(f"{k}: type: {type(v)}")  
+    module_no = module.get('module', module_no)
+    weight = module.get('weight', module_no)
+    title = module.get('title', f"Module {module_no}")
+    
+    print(f"Loading module: {title} with weight {weight}")
+    params = (course_id,  weight, title)
     res = await get_query_results(sql, params)
     if len(res) > 0:
         module_id = res[0].get('module_id')

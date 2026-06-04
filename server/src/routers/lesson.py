@@ -34,6 +34,7 @@ async def get_lessons(module_id: int,
         GROUP BY lesson_id
     ) AS ls ON lesson.lesson_id = ls.lesson_id
     WHERE lesson.module_id = %s
+    ORDER BY lesson.weight ASC
     """
     params = (user_id, module_id)
     res = await get_query_results(sql, params)
