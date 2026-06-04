@@ -51,15 +51,18 @@ async def load_exercise(course_id: int, module_id: int, lesson_id: int, exercise
 
 async def load_lesson(course_id: int, module_id: int, lesson: dict):
     lesson_title  = lesson.get('title')
-    lesson_weight = lesson.get('weight', 0)
-    words = lesson.get('words', [])
+    try:
+        lesson_weight = int(lesson.get('weight', 0))
+    except ValueError:
+        lesson_weight = 0
     sql = """
-    INSERT INTO course_simple.lesson (course_id, module_id, title,  words) 
+    INSERT INTO course_simple.lesson (course_id, module_id, title, weight) 
     VALUES (%s, %s, %s, %s) 
     RETURNING lesson_id
     """
-    params = (course_id, module_id, lesson_title, words)
+    params = (course_id, module_id, lesson_title, lesson_weight)
     res = await get_query_results(sql, params)
+    print(f"Loaded lesson: {lesson_title} ")
     if len(res) > 0:
         lesson_id = res[0].get('lesson_id')
         exercises = lesson.get('exercises', [])

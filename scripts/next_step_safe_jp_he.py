@@ -247,7 +247,7 @@ async def gen_lesson(l:dict):
     i = 0
     for s in sentences:
         i += 1
-        ex = await gen_exercise('ja', 'en', s.get('id'), s.get('to_id'), i)
+        ex = await gen_exercise('ja', 'he', s.get('id'), s.get('to_id'), i)
         if ex:
             exercises.append(ex)
     return {
@@ -282,12 +282,12 @@ async def gen_module(m:dict):
 async def gen_and_save_module(m:dict):
     print(f"generating module {m.get('module')}")
     module_no = int(m.get('module'))
-    os.makedirs(f"../data/content/ja_he/v3/module_{module_no}", exist_ok=True)
-    if len(os.listdir(f"../data/content/ja_he/v3/module_{module_no}")) > 1:
+    os.makedirs(f"../data/content/ja_he/v4/module_{module_no}", exist_ok=True)
+    if len(os.listdir(f"../data/content/ja_he/v4/module_{module_no}")) > 1:
         print(f"module {m.get('module')} already exists, skipping")
         return
     gen_m =  await gen_module(m)
-    with open(f"../data/content/ja_he/v3/module_{module_no}/module.yaml", 'w') as f:
+    with open(f"../data/content/ja_he/v4/module_{module_no}/module.yaml", 'w') as f:
         f.write(f"module: {module_no}\n")
         f.write(f"weight: {module_no}\n")
     i = 1
@@ -297,7 +297,7 @@ async def gen_and_save_module(m:dict):
         lesson_no = i
         weight = lesson.get('weight',lesson_no )
         title = lesson.get('title', '')
-        with open(f"../data/content/ja_he/v3/module_{module_no}/lesson_{lesson_no}.txt", 'w') as f:
+        with open(f"../data/content/ja_he/v4/module_{module_no}/lesson_{lesson_no}.txt", 'w') as f:
             title = lesson.get('lesson', '')
             f.write(f"title: {title}\n")
             f.write(f"weight: {weight}\n")

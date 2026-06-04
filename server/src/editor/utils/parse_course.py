@@ -9,10 +9,15 @@ def parse_lesson_fields(s:str):
     elements = s.split('\n')
     lesson_data = {}
     for e in elements:
-        elm=  e.split(':')
-        if len(elm) < 2:
-            continue
-        lesson_data[elm[0].strip()] = ':'.join(elm[1:]).strip()
+        if e.startswith("title:"):
+            lesson_data['title'] = e[len("title:"):].strip()
+        elif e.startswith("weight:"):
+            try:
+                lesson_data['weight'] = int(e[len("weight:"):].strip())
+            except ValueError:
+                lesson_data['weight'] = 0
+    if not lesson_data.get('title'):
+        lesson_data['title'] = "Lesson"
     return lesson_data
 
 

@@ -69,7 +69,7 @@ async def get_all_words_by_rank(lang:str):
 
 async def get_sentences_for_words(lang,to_lang,word,min_words, max_words = 0, word_num = 1):
     sql = f"""
-    select lang.text as text, sentences.text as to_text, trans.id as id, trans.to_id as to_id, lang.len_c as len_c
+    select lang.text as text, sentences.text as to_text, lang.id as id, sentences.id as to_id, lang.len_c as len_c
     from content_raw.sentence_elements lang
     join  content_raw.translation_links  trans
     on trans.id = lang.id and trans.lang = %s and trans.to_lang = 'en'
@@ -186,7 +186,7 @@ async def generate_course_by_rank(lang: str, to_lang:str, rank = False):
         i+=1
     modules.append(module)
     print("unused words:", len(unused_words))
-    yaml.safe_dump({'modules': modules}, open(f"../data/content/ja_he/v1/{lang}_{to_lang}_course{r}.yaml", "w"), allow_unicode=True)
+    yaml.safe_dump({'modules': modules}, open(f"../data/content/ja_he/v4/{lang}_{to_lang}_course{r}.yaml", "w"), allow_unicode=True)
 
     
 if __name__ == "__main__":
