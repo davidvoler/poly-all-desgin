@@ -47,11 +47,8 @@ alter table course_simple.lesson ADD COLUMN weight int2 default 0;
 -- Quiz display preferences (text size, text-alternative, ruby mode,
 -- annotations). Free-form jsonb owned by the client.
 ALTER TABLE user_data.preference ADD COLUMN quiz_settings jsonb;
-ALTER TABLE course_simple.lesson ADD COLUMN ruby_text1 jsonb;
-ALTER TABLE course_simple.lesson ADD COLUMN ruby_text2 jsonb;
-ALTER TABLE course_simple.lesson ADD COLUMN ruby_text3 jsonb;
-ALTER TABLE course_simple.lesson ADD COLUMN annotations jsonb;
-
+ALTER TABLE course_simple.exercise ADD COLUMN ruby_text jsonb;
+ALTER TABLE course_simple.exercise ADD COLUMN annotations jsonb;
 -- DONE
 
 

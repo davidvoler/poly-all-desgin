@@ -602,4 +602,7 @@ word2: translation
 {} words : translation 
 {} words : translation 
 
+The alternative would be to have a single annotation field - in it we can have different types of annotations
+
+
 
