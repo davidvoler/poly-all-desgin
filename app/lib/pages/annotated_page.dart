@@ -23,7 +23,10 @@ class _AnnotatedPageState extends State<AnnotatedPage> {
   // Currently-tapped annotated word in the annotated-sentence section.
   _AnnWord? _selectedWord;
 
-  void _playWord(BuildContext context, _AnnWord w) {
+  void _playWord(BuildContext context, _AnnWord w) =>
+      _playLabel(context, w.text);
+
+  void _playLabel(BuildContext context, String label) {
     // No per-word audio data in the demo — surface what *would* play. Once
     // words carry an audio URL this becomes an AudioPlayer.play(...) call.
     ScaffoldMessenger.of(context)
@@ -31,7 +34,7 @@ class _AnnotatedPageState extends State<AnnotatedPage> {
       ..showSnackBar(
         SnackBar(
           duration: const Duration(milliseconds: 1200),
-          content: Text('🔊  ${w.text}'),
+          content: Text('🔊  $label'),
         ),
       );
   }
@@ -114,6 +117,14 @@ class _AnnotatedPageState extends State<AnnotatedPage> {
                         _TooltipSentenceCard(
                           words: _annotatedSentence,
                           onPlay: (w) => _playWord(context, w),
+                        ),
+                        const SizedBox(height: 24),
+
+                        _SectionLabel('Furigana + annotation · tap a word'),
+                        const SizedBox(height: 10),
+                        _RubyTooltipCard(
+                          words: _rubyAnnotatedSentence,
+                          onPlay: (w) => _playLabel(context, w.base),
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -212,6 +223,47 @@ final List<_AnnWord> _annotatedSentence = [
       reading: 'べんきょう',
       pos: 'NOUN / SURU-VERB'),
   const _AnnWord('しています。'),
+];
+
+/// A word in a ruby-annotated sentence: a base run with an optional reading
+/// (furigana) rendered above it, plus an optional tooltip annotation.
+/// [annotated] words are highlighted, tappable, and pop a tooltip with the
+/// translation + a play icon; the rest render as plain ruby text.
+class _RubyAnnWord {
+  final String base;
+  final String? reading;
+  final bool annotated;
+  final String? translation;
+  const _RubyAnnWord(
+    this.base, {
+    this.reading,
+    this.annotated = false,
+    this.translation,
+  });
+
+  bool get hasReading => reading != null && reading!.isNotEmpty;
+}
+
+/// The same Japanese sentence as the ruby demo, but with the meaningful
+/// words carrying a translation so they can be tapped for a tooltip.
+final List<_RubyAnnWord> _rubyAnnotatedSentence = [
+  const _RubyAnnWord('私',
+      reading: 'わたし', annotated: true, translation: 'I; me'),
+  const _RubyAnnWord('は'),
+  const _RubyAnnWord('毎日',
+      reading: 'まいにち', annotated: true, translation: 'every day'),
+  const _RubyAnnWord('日本語',
+      reading: 'にほんご', annotated: true, translation: 'the Japanese language'),
+  const _RubyAnnWord('を'),
+  const _RubyAnnWord('勉強',
+      reading: 'べんきょう', annotated: true, translation: 'study'),
+  const _RubyAnnWord('して'),
+  const _RubyAnnWord('図書館',
+      reading: 'としょかん', annotated: true, translation: 'library'),
+  const _RubyAnnWord('に'),
+  const _RubyAnnWord('行', reading: 'い', annotated: true, translation: 'to go'),
+  const _RubyAnnWord('きます'),
+  const _RubyAnnWord('。'),
 ];
 
 // ── Section widgets ─────────────────────────────────────────────────────
@@ -641,7 +693,7 @@ class _TooltipWordState extends State<_TooltipWord> {
               followerAnchor: Alignment.bottomCenter,
               offset: const Offset(0, -6),
               child: _TooltipBubble(
-                word: widget.word,
+                translation: widget.word.translation ?? '',
                 onPlay: widget.onPlay,
               ),
             ),
@@ -686,9 +738,9 @@ class _TooltipWordState extends State<_TooltipWord> {
 /// The small bubble shown above a tapped word: translation text + a play
 /// icon, with a little downward-pointing tail.
 class _TooltipBubble extends StatelessWidget {
-  final _AnnWord word;
+  final String translation;
   final VoidCallback onPlay;
-  const _TooltipBubble({required this.word, required this.onPlay});
+  const _TooltipBubble({required this.translation, required this.onPlay});
 
   @override
   Widget build(BuildContext context) {
@@ -717,7 +769,7 @@ class _TooltipBubble extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      word.translation ?? '',
+                      translation,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -822,6 +874,192 @@ class _PillButton extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Ruby text + tooltip annotation ──────────────────────────────────────
+
+/// Shared ruby-text styling for the combined section, so the plain words
+/// and the tappable chips line up on the same baseline.
+const TextStyle _rubyBaseStyle = TextStyle(
+  fontSize: 26,
+  fontWeight: FontWeight.w700,
+  color: Colors.white,
+  height: 1.1,
+  shadows: [
+    Shadow(blurRadius: 18, color: Colors.black54, offset: Offset(0, 4)),
+  ],
+);
+const TextStyle _rubyReadingStyle = TextStyle(
+  fontSize: 11,
+  fontWeight: FontWeight.w600,
+  height: 1.2,
+  color: PolyColors.orange300,
+);
+// The fixed height every word reserves for its reading line so the base
+// glyphs share a baseline whether or not they carry furigana.
+const double _rubyLineHeight = 11 * 1.2;
+
+/// Ruby text where the meaningful words show furigana *and* are tappable —
+/// tapping pops the same tooltip (translation + play) directly above the
+/// word. Combines the furigana demo with the simple-tooltip demo.
+class _RubyTooltipCard extends StatelessWidget {
+  final List<_RubyAnnWord> words;
+  final ValueChanged<_RubyAnnWord> onPlay;
+  const _RubyTooltipCard({required this.words, required this.onPlay});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      borderRadius: const BorderRadius.all(Radius.circular(18)),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      child: Column(
+        children: [
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 1,
+            runSpacing: 10,
+            children: [
+              for (final w in words)
+                w.annotated
+                    ? _RubyTooltipWord(word: w, onPlay: () => onPlay(w))
+                    : _RubyColumn(
+                        base: w.base,
+                        reading: w.hasReading ? w.reading : null,
+                      ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Tap a highlighted word for its meaning & sound.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: PolyColors.white(0.6),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single ruby column: the reading line (reserved even when empty) sits
+/// above the base glyphs. [baseChild] overrides the plain base text so a
+/// tappable chip can take its place while keeping the same layout.
+class _RubyColumn extends StatelessWidget {
+  final String base;
+  final String? reading;
+  final Widget? baseChild;
+  const _RubyColumn({required this.base, this.reading, this.baseChild});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: _rubyLineHeight,
+          child: reading != null
+              ? Text(reading!,
+                  style: _rubyReadingStyle, textAlign: TextAlign.center)
+              : null,
+        ),
+        baseChild ?? Text(base, style: _rubyBaseStyle),
+      ],
+    );
+  }
+}
+
+/// A ruby word that is also annotated: furigana above a highlighted chip,
+/// and an overlay tooltip (translation + play) anchored above it on tap.
+class _RubyTooltipWord extends StatefulWidget {
+  final _RubyAnnWord word;
+  final VoidCallback onPlay;
+  const _RubyTooltipWord({required this.word, required this.onPlay});
+
+  @override
+  State<_RubyTooltipWord> createState() => _RubyTooltipWordState();
+}
+
+class _RubyTooltipWordState extends State<_RubyTooltipWord> {
+  final _controller = OverlayPortalController();
+  final _link = LayerLink();
+
+  void _toggle() {
+    _controller.isShowing ? _controller.hide() : _controller.show();
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showing = _controller.isShowing;
+    final w = widget.word;
+    return OverlayPortal(
+      controller: _controller,
+      overlayChildBuilder: (context) {
+        return Stack(
+          children: [
+            // Tap-anywhere-else barrier to dismiss.
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _toggle,
+                child: const ColoredBox(color: Colors.transparent),
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _link,
+              showWhenUnlinked: false,
+              targetAnchor: Alignment.topCenter,
+              followerAnchor: Alignment.bottomCenter,
+              offset: const Offset(0, -6),
+              child: _TooltipBubble(
+                translation: w.translation ?? '',
+                onPlay: widget.onPlay,
+              ),
+            ),
+          ],
+        );
+      },
+      child: CompositedTransformTarget(
+        link: _link,
+        child: GestureDetector(
+          onTap: _toggle,
+          child: _RubyColumn(
+            base: w.base,
+            reading: w.hasReading ? w.reading : null,
+            baseChild: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: showing
+                    ? PolyColors.orange300
+                    : PolyColors.orange300.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(7),
+                border: showing
+                    ? null
+                    : Border(
+                        bottom:
+                            BorderSide(color: PolyColors.orange300, width: 2),
+                      ),
+              ),
+              child: Text(
+                w.base,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: showing ? PolyColors.annoActiveText : Colors.white,
+                  height: 1.0,
+                ),
+              ),
+            ),
           ),
         ),
       ),

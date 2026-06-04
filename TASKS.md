@@ -541,12 +541,6 @@ What to do with This preferences
 - [] In exercise type recognize - the icon for show text should be in the toolbar under the sentence - and should be an icon only with tooltip show text. Add tooltip to all other icons - play, play slow
 - [] 
 
-*** Demo continue *** 
-- [] Ruby Text + annotated sentence + play and translation from google api - or from data 
-- [] prepare the Japanese - Hebrew with the new data 
-
-
-*** Annotated sentence data ***
 
 
 
@@ -554,59 +548,35 @@ What to do with This preferences
 
 - [v] in the demo page add a version of annotated sentence - where the annotation are simpler and are show in a tooltip above the word with only the word translation and a icon to play.  
 
-*** Word translation + audio API integration (annotations) ***
 
-Goal: replace the demo's hardcoded _AnnWord translations + the 🔊 snackbar
-stub with REAL per-word translation + audio, so annotations can be generated
-for any word/language. (We will pick options below and implement later.)
 
-Reference (tested live, working):
-  - Lingva (Google Translate proxy, path-style — matches the old URL pattern):
-      translation: GET https://lingva.ml/api/v1/{from}/{to}/{word}  -> {"translation": "..."}
-      audio (TTS): GET https://lingva.ml/api/v1/audio/{lang}/{word} -> {"audio":[mp3 byte ints]}
-    Gotchas: audio is a JSON int array (decode to bytes for audioplayers);
-    gives translation only (NO reading/romaji); public instances flaky/self-host.
+*** Demo continue *** 
+- [v] Ruby Text + annotated sentence + play and translation - tooltip annotation over furigana words (demo, in-app data). Google-api/live-data wiring still pending. 
+- [] prepare the Japanese - Hebrew with the new data 
 
-   Decision points (write options now, pick later):
 
-   - [ ] A. Translation provider
-     - [ ] A1. Lingva (lingva.ml) — free, path-style {from}/{to}/{word}, matches
-           the URL you remembered; unofficial Google proxy, self-hostable.
-     - [ ] A2. Wiktionary / Wiktextract (kaikki.org) — free bulk JSON; gives
-           translations + reading/IPA + audio links + POS (richest for
-           annotations) but heavier to host (dump per language).
-     - [ ] A3. Google Cloud Translate — official, paid, reliable; needs API key.
-     - [ ] A4. DeepL — official, paid, high quality; fewer languages than Google.
+*** Annotated sentence data - Discussion ***
 
-   - [ ] B. Audio (word pronunciation) provider
-     - [ ] B1. Lingva TTS audio endpoint (synthesized, same service as A1).
-     - [ ] B2. Google Cloud Text-to-Speech — official, paid, many voices.
-     - [ ] B3. Forvo — real native-speaker recordings, paid API (best quality).
-     - [ ] B4. Wiktionary/Commons audio files (free, real speakers, coverage gaps).
+-  the annotation should come from imported data - we can do some automation to get the data - but google translate is not so good with context 
+-  find a way to describe simple text annotations in text
+-  maybe we can use the audio from lingva.ml
 
-   - [ ] C. Reading / romaji / furigana source (needed for JA readings; Lingva
-         does NOT provide this)
-     - [ ] C1. Wiktextract/kaikki (has readings) — pairs well if A2 chosen.
-     - [ ] C2. A kana/romaji converter lib server-side (e.g. kuroshiro-style).
-     - [ ] C3. Skip readings for now — translation + audio only.
+data format in text file:
+translation annotation
 
-   - [ ] D. Where the call happens
-     - [ ] D1. Server proxy endpoint (e.g. GET /api/v1/translate/{from}/{to}/{word}
-           + /api/v1/translate/audio/{lang}/{word}) — avoids CORS, decodes the
-           audio array, caches results, swaps providers/instances in one place.
-           (Recommended.)
-     - [ ] D2. Client calls the provider directly — simpler, but CORS issues on
-           web + provider URL/keys leak to the client.
+sentences: I was looking for my dog
+-*- looking : cercare
+-*- dog: cane
 
-   - [ ] E. Caching / persistence (translations + audio are stable per word)
-     - [ ] E1. DB table (e.g. content.word_annotation(lang, to_lang, word,
-           translation, reading, audio bytes/url)) populated on first lookup —
-           cheap, offline-friendly, removes runtime dep on flaky instances.
-     - [ ] E2. In-memory/process cache only — simplest, lost on restart.
-     - [ ] E3. No cache — call provider every time (dev only).
 
-   - [ ] F. Audio storage (if caching audio)
-     - [ ] F1. Store bytes in DB / object storage and serve from our audio host.
-     - [ ] F2. Store just the provider URL and proxy on demand.
+- ruby text format - we have to verify if ruby text format can be automated - and if the automation is correct 
+- we need to as claude about the data format 
 
+*** Annotated sentence data - implementation ***
+
+- [v] let's start from creating a ui format for combined ruby text with annotations 
+- [v] Let's create the new exercise format - annotated text + ruby text
+- [] japanese we have 3 ruby text and word annotation will be shared in all versions 
+- [] decide the format in exercise - we do not want to do any formatting on server side we can have the data in multiple formats. 
+- [] describe the text file format 
 
