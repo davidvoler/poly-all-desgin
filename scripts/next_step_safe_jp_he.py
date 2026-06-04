@@ -87,9 +87,11 @@ async def get_alt(elements):
     kana = ''
     romaji = ''
     for e in elements:
+        r = e.get('roma', '')
+        if r:
+            romaji += r + ' '
         hira += e.get('hira', '') or e.get('text', '')
         kana += e.get('kana', '') or e.get('text', '')
-        romaji += e.get('roma', '')
     return hira, romaji, kana
 
 

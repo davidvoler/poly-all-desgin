@@ -1,6 +1,9 @@
 
 import os
 
+EXERCISE_FIELDS = ['type', 'text', 'text_alt1', 'text_alt2', 'text_alt3', 
+                   'voice', 'word1', 'word2', 'word3', 'sentence_id', 
+                   'to_sentence_id', 'weight', 'ruby_text', 'annotations', 'explanation']
 
 def parse_lesson_fields(s:str):
     elements = s.split('\n')
@@ -13,9 +16,14 @@ def parse_lesson_fields(s:str):
     return lesson_data
 
 
+def get_field_value(s:str):
+    for field in EXERCISE_FIELDS:
+        if s.startswith(f"{field}:"):
+            return  {field: s[len(field)+1:].strip()}
+    return {}
 def parse_exercise_fields(s:str):
-    elements = s.split('\n')
     exercise_data = {}
+    elements = s.split('\n')
     options = []
     for e in elements:
         if e.startswith("[-]"):
@@ -24,10 +32,10 @@ def parse_exercise_fields(s:str):
         if e.startswith("[+]"):
             options.append({"text": e[3:].strip(), "correct": True})
             continue
-        elm=  e.split(':')
-        if len(elm) < 2:
-            continue
-        exercise_data[elm[0].strip()] = elm[1].strip()
+        else:
+            field_value = get_field_value(e)
+            if field_value:
+                exercise_data.update(field_value)
     if options:
         exercise_data['options'] = options
     return exercise_data
@@ -106,7 +114,7 @@ def parse_course(file_path):
 
 
 if __name__ == "__main__":
-    course_data = parse_course('../data/content/ja/ja_en_basic_course_v1')
+    course_data = parse_course('/Users/davidle/dev/tutorial/poly-all-desgin/data/content/ja_he/v3')
     # print(course_data)
     print(course_data.get('title'))
     print(course_data.get('lang'))

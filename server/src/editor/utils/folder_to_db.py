@@ -33,13 +33,16 @@ async def load_exercise(course_id: int, module_id: int, lesson_id: int, exercise
     to_sentence_id = exercise.get('to_sentence_id', 0)
     weight = exercise.get('weight', 0)
     explanation = exercise.get('explanation')
+    anotations = exercise.get('annotations', '')
+    ruby_text = exercise.get('ruby_text', '')
+
 
     sql = """
-    INSERT INTO course_simple.exercise (course_id, module_id, lesson_id, sentence, word1, word2, word3, sentence_alt1, sentence_alt2, sentence_alt3, exercise_type, audio, options, sentence_id, to_sentence_id, weight, explanation) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+    INSERT INTO course_simple.exercise (course_id, module_id, lesson_id, sentence, word1, word2, word3, sentence_alt1, sentence_alt2, sentence_alt3, exercise_type, audio, options, sentence_id, to_sentence_id, weight, explanation, annotations, ruby_text) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
     RETURNING exercise_id
     """
-    params = (course_id, module_id, lesson_id, text, word1, word2, word3, text_alt1, text_alt2, text_alt3, exercise_type, audio, json.dumps(options), sentence_id, to_sentence_id, weight, explanation)
+    params = (course_id, module_id, lesson_id, text, word1, word2, word3, text_alt1, text_alt2, text_alt3, exercise_type, audio, json.dumps(options), sentence_id, to_sentence_id, weight, explanation, json.dumps(anotations), ruby_text)
     res = await get_query_results(sql, params)
     if len(res) > 0:
         return res[0].get('exercise_id')
