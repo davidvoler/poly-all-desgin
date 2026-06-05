@@ -66,6 +66,8 @@ class Exercise(BaseModel):
     sentence_alt1: str | None = None
     sentence_alt2: str | None = None
     sentence_alt3: str | None = None
+    ruby_text: dict | None = {}
+    annotations: dict | None = {}
 
 
 class Word(BaseModel):

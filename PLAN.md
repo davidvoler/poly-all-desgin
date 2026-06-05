@@ -348,8 +348,16 @@ TIME FOR DETAILS - LET'S COMPLETE THE UI.
      - number of lessons per day/week
      - number of new words per day/week
 - [v] end of practice - similar to end of lesson - achievements
-- [] 
 
+
+*** Implement Demo page - in quiz ***
+
+- [v] extent exercise model annotations + ruby_text - server
+- [] extent exercise model annotations + ruby_text - app the structure of ruby text:
+{"romanji": [{"ruby": "hitori", "text": "一人"}], "hiragana": [{"ruby": "ひとり", "text": "一人"}], "katakana": [{"ruby": "ヒトリ", "text": "一人"}]}
+- [] implement the ruby text in quiz when available - the course  course_id 38 should have both annotation and ruby_text 
+- [] implement annotated text in quiz when we have annotation - the structure of annotation is:
+[{"word": "とても", "translation": "דַי"}]
 
 
 
