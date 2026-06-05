@@ -2,6 +2,96 @@ import 'dart:convert';
 
 import '../state/lang.dart';
 
+/// One reading / sentence-alternative variant a course declares in its
+/// `metadata`: a display [name], an optional material-icon name, an optional
+/// [tooltip], and (for sentence-alt variants) the alt [slot] it labels.
+class VariantDescriptor {
+  final String name;
+  final String? icon;
+  final String? tooltip;
+  final int? slot;
+  const VariantDescriptor({
+    required this.name,
+    this.icon,
+    this.tooltip,
+    this.slot,
+  });
+
+  factory VariantDescriptor.fromJson(Map<String, dynamic> j) =>
+      VariantDescriptor(
+        name: (j['name'] as String?) ?? '',
+        icon: j['icon'] as String?,
+        tooltip: j['tooltip_text'] as String?,
+        slot: (j['slot'] as num?)?.toInt(),
+      );
+}
+
+/// Course-level display metadata: which reading (`ruby_text`) and full-
+/// sentence (`sentence_alt`) variants the course offers and how to label
+/// them in the quiz. Empty when the course declares none — the UI then falls
+/// back to its built-in per-language labels.
+class CourseMeta {
+  final List<VariantDescriptor> rubyText;
+  final List<VariantDescriptor> sentenceAlt;
+  const CourseMeta({this.rubyText = const [], this.sentenceAlt = const []});
+
+  static const empty = CourseMeta();
+
+  bool get isEmpty => rubyText.isEmpty && sentenceAlt.isEmpty;
+
+  /// The sentence-alt descriptor that labels [slot] (1/2/3), or null.
+  VariantDescriptor? altForSlot(int slot) {
+    for (final d in sentenceAlt) {
+      if (d.slot == slot) return d;
+    }
+    return null;
+  }
+
+  /// The ruby descriptor matching [key] (e.g. 'hiragana') or display [label]
+  /// (e.g. 'Romaji'), case-insensitive. Lets a [RubyMode] resolve its label /
+  /// tooltip from the course metadata regardless of naming convention.
+  VariantDescriptor? rubyFor({required String key, required String label}) {
+    final k = key.toLowerCase();
+    final l = label.toLowerCase();
+    for (final d in rubyText) {
+      final n = d.name.toLowerCase();
+      if (n == k || n == l) return d;
+    }
+    // 'romanji' (content spelling) vs 'romaji' (label) — accept either.
+    if (k == 'romanji' || l == 'romaji') {
+      for (final d in rubyText) {
+        final n = d.name.toLowerCase();
+        if (n == 'romaji' || n == 'romanji') return d;
+      }
+    }
+    return null;
+  }
+
+  factory CourseMeta.fromJson(Object? raw) {
+    Map? map;
+    if (raw is Map) {
+      map = raw;
+    } else if (raw is String && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) map = decoded;
+      } catch (_) {}
+    }
+    if (map == null) return CourseMeta.empty;
+    List<VariantDescriptor> parse(Object? v) => v is List
+        ? v
+            .whereType<Map>()
+            .map((m) => VariantDescriptor.fromJson(m.cast<String, dynamic>()))
+            .where((d) => d.name.isNotEmpty)
+            .toList()
+        : const [];
+    return CourseMeta(
+      rubyText: parse(map['ruby_text']),
+      sentenceAlt: parse(map['sentence_alt']),
+    );
+  }
+}
+
 /// Lightweight shape returned by `GET /courses` — just enough to render
 /// the courses list cards.
 class CourseSummary {
@@ -28,6 +118,9 @@ class CourseSummary {
   // per-course cursor above so the detail page can still resume any
   // touched course.
   final bool isCurrentCourse;
+  // Course-level display metadata (reading / sentence-alt variant
+  // descriptors). Empty when the course declares none.
+  final CourseMeta meta;
 
   const CourseSummary({
     required this.id,
@@ -44,6 +137,7 @@ class CourseSummary {
     this.currentModuleId,
     this.currentLessonId,
     this.isCurrentCourse = false,
+    this.meta = CourseMeta.empty,
   });
 
   /// True when the user has activity here but hasn't finished.
@@ -78,6 +172,7 @@ class CourseSummary {
       currentModuleId: j['current_module'] as int?,
       currentLessonId: j['current_lesson'] as int?,
       isCurrentCourse: (j['is_current_course'] as bool?) ?? false,
+      meta: CourseMeta.fromJson(j['metadata']),
     );
   }
 }

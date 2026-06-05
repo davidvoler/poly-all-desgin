@@ -40,7 +40,23 @@ class Course(BaseModel):
     lang: str
     to_lang: str
     tags : list[str] | None = []
+    # Course-level display metadata describing the reading / sentence-alt
+    # variants the course offers (name + icon + tooltip per variant). See the
+    # `metadata` column comment in DDL/update.sql. Empty when unset.
+    metadata: dict | None = {}
     lesson_count: int | None = 0
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def _coerce_metadata(cls, v):
+        if v is None:
+            return {}
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except (ValueError, TypeError):
+                return {}
+        return v if isinstance(v, dict) else {}
     user_lessons_done: int | None = 0
     avg_score: float | None = 0.0
     progress: int | None = 0

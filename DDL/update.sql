@@ -51,4 +51,17 @@ ALTER TABLE course_simple.exercise ADD COLUMN ruby_text jsonb;
 ALTER TABLE course_simple.exercise ADD COLUMN annotations jsonb;
 -- DONE
 
+-- Course-level display metadata: which reading/alternative variants the
+-- course offers and how to label them in the quiz. Shape:
+--   {
+--     "ruby_text":    [{"name": "hiragana", "icon": "translate",
+--                       "tooltip_text": "Hiragana reading"}, ...],
+--     "sentence_alt": [{"slot": 1, "name": "Diacritics", "icon": "format_size",
+--                       "tooltip_text": "With diacritical marks"}, ...]
+--   }
+-- Lets the app render variant pickers from data instead of hardcoded
+-- per-language labels. Free-form jsonb; null/empty falls back to defaults.
+ALTER TABLE course_simple.course ADD COLUMN metadata jsonb;
+-- DONE
+
 

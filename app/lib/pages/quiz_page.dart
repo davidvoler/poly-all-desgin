@@ -108,15 +108,23 @@ class _QuizDisplayContext {
   // Ruby modes selectable for this exercise (always includes RubyMode.none;
   // the rest only for Japanese with the matching alt present).
   final List<RubyMode> availableRubyModes;
+  // Course-level variant descriptors (labels / tooltips). Empty → built-in
+  // per-language labels are used instead.
+  final CourseMeta meta;
 
   const _QuizDisplayContext({
     required this.lang,
     required this.exercise,
     required this.availableAltSlots,
     required this.availableRubyModes,
+    this.meta = CourseMeta.empty,
   });
 
-  factory _QuizDisplayContext.forExercise(Exercise ex, String lang) {
+  factory _QuizDisplayContext.forExercise(
+    Exercise ex,
+    String lang, [
+    CourseMeta meta = CourseMeta.empty,
+  ]) {
     final slots = <int>[
       if (ex.sentenceAlt1.isNotEmpty) 1,
       if (ex.sentenceAlt2.isNotEmpty) 2,
@@ -138,6 +146,7 @@ class _QuizDisplayContext {
       exercise: ex,
       availableAltSlots: slots,
       availableRubyModes: rubyModes,
+      meta: meta,
     );
   }
 
@@ -160,7 +169,24 @@ class _QuizDisplayContext {
   }
 
   /// Label for the text-alternative segmented control, slot 0 = original.
-  String labelForSlot(int slot) => slot == 0 ? 'Original' : altLabel(lang, slot);
+  /// Prefers the course-metadata descriptor name, then the built-in label.
+  String labelForSlot(int slot) {
+    if (slot == 0) return 'Original';
+    return meta.altForSlot(slot)?.name ?? altLabel(lang, slot);
+  }
+
+  /// Tooltip for a text-alternative slot, or null when none is declared.
+  String? tooltipForSlot(int slot) =>
+      slot == 0 ? null : meta.altForSlot(slot)?.tooltip;
+
+  /// Label for a ruby mode — course-metadata descriptor name, else the
+  /// mode's built-in label.
+  String rubyLabel(RubyMode m) =>
+      meta.rubyFor(key: m.rubyKey, label: m.label)?.name ?? m.label;
+
+  /// Tooltip for a ruby mode, or null when none is declared.
+  String? rubyTooltip(RubyMode m) =>
+      meta.rubyFor(key: m.rubyKey, label: m.label)?.tooltip;
 }
 
 class QuizPage extends ConsumerStatefulWidget {
@@ -510,7 +536,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 final learnLang = ref.watch(
                         preferenceProvider.select((p) => p.value?.lang)) ??
                     ref.watch(learningLangProvider).code;
-                final ctx = _QuizDisplayContext.forExercise(ex, learnLang);
+                final courseMeta = ref.watch(currentCourseMetaProvider);
+                final ctx =
+                    _QuizDisplayContext.forExercise(ex, learnLang, courseMeta);
                 final altSlot =
                     ctx.availableAltSlots.contains(settings.textAlternativeSlot)
                         ? settings.textAlternativeSlot
@@ -1657,11 +1685,16 @@ class _QuizToolbox extends StatelessWidget {
   final double? score;
   // Quick-cycle the text alternative; null when this exercise has none.
   final VoidCallback? onCycleTextAlternative;
+  // Quick-toggle per-word annotations; null when the exercise carries none.
+  final VoidCallback? onToggleAnnotations;
+  final bool annotationsOn;
   const _QuizToolbox({
     required this.onPlayAudio,
     required this.onPlaySlow,
     required this.score,
     required this.onCycleTextAlternative,
+    required this.onToggleAnnotations,
+    required this.annotationsOn,
   });
 
   @override
@@ -1689,6 +1722,16 @@ class _QuizToolbox extends StatelessWidget {
             onTap: onCycleTextAlternative,
           ),
         ],
+        // Annotation quick toggle — only when the exercise has annotations.
+        // Highlights when on so the state is visible at a glance.
+        if (onToggleAnnotations != null) ...[
+          const SizedBox(width: 12),
+          _AudioButton(
+            icon: Icons.subtitles,
+            onTap: onToggleAnnotations,
+            active: annotationsOn,
+          ),
+        ],
       ],
     );
   }
@@ -1697,12 +1740,17 @@ class _QuizToolbox extends StatelessWidget {
 class _AudioButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
-  const _AudioButton({required this.icon, required this.onTap});
+  // When true the button reads as "engaged" (brand-tinted) — used by the
+  // annotation toggle so its on/off state is visible.
+  final bool active;
+  const _AudioButton({required this.icon, required this.onTap, this.active = false});
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
     return Material(
-      color: Colors.white.withValues(alpha: enabled ? 0.10 : 0.04),
+      color: active
+          ? PolyColors.brandPrimary.withValues(alpha: 0.30)
+          : Colors.white.withValues(alpha: enabled ? 0.10 : 0.04),
       shape: const CircleBorder(),
       child: InkWell(
         onTap: onTap,
@@ -1713,7 +1761,10 @@ class _AudioButton extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(
+                color: active
+                    ? PolyColors.brandPrimary
+                    : Colors.white.withValues(alpha: 0.18)),
           ),
           child: Icon(icon,
               size: 17,
@@ -2009,6 +2060,7 @@ class _QuizSettingsSheet extends ConsumerWidget {
                 const SizedBox(height: 8),
                 _SegmentedRow(
                   labels: [for (final s in altSlots) ctx.labelForSlot(s)],
+                  tooltips: [for (final s in altSlots) ctx.tooltipForSlot(s)],
                   selectedIndex: altSlots.indexOf(altSlot),
                   onSelect: (i) => notifier.setTextAlternativeSlot(altSlots[i]),
                 ),
@@ -2020,12 +2072,24 @@ class _QuizSettingsSheet extends ConsumerWidget {
                 Text('Ruby (reading on top)', style: PolyText.sectionLabel()),
                 const SizedBox(height: 8),
                 _SegmentedRow(
-                  labels: [for (final m in ctx.availableRubyModes) m.label],
+                  labels: [for (final m in ctx.availableRubyModes) ctx.rubyLabel(m)],
+                  tooltips: [
+                    for (final m in ctx.availableRubyModes) ctx.rubyTooltip(m)
+                  ],
                   selectedIndex: ctx.availableRubyModes.indexOf(rubyMode),
                   onSelect: (i) =>
                       notifier.setRubyMode(ctx.availableRubyModes[i]),
                 ),
                 const SizedBox(height: 22),
+              ],
+
+              // Per-word annotations — only when the exercise carries them.
+              if (ctx.hasAnnotations) ...[
+                _AnnotationsRow(
+                  value: settings.showAnnotations,
+                  onChanged: notifier.setShowAnnotations,
+                ),
+                const SizedBox(height: 8),
               ],
 
               _AutoPlayRow(
@@ -2069,10 +2133,14 @@ class _SizeSelector extends StatelessWidget {
 /// text-alternative and ruby pickers (variable option counts).
 class _SegmentedRow extends StatelessWidget {
   final List<String> labels;
+  // Optional per-segment tooltip (course-metadata `tooltip_text`); a null
+  // entry (or a null list) means no tooltip for that segment.
+  final List<String?>? tooltips;
   final int selectedIndex;
   final ValueChanged<int> onSelect;
   const _SegmentedRow({
     required this.labels,
+    this.tooltips,
     required this.selectedIndex,
     required this.onSelect,
   });
@@ -2086,6 +2154,9 @@ class _SegmentedRow extends StatelessWidget {
           Expanded(
             child: _SegmentButton(
               label: labels[i],
+              tooltip: (tooltips != null && i < tooltips!.length)
+                  ? tooltips![i]
+                  : null,
               selected: i == selectedIndex,
               onTap: () => onSelect(i),
             ),
@@ -2098,17 +2169,19 @@ class _SegmentedRow extends StatelessWidget {
 
 class _SegmentButton extends StatelessWidget {
   final String label;
+  final String? tooltip;
   final bool selected;
   final VoidCallback onTap;
   const _SegmentButton({
     required this.label,
+    this.tooltip,
     required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final button = Material(
       color: selected
           ? PolyColors.brandPrimary.withValues(alpha: 0.30)
           : PolyColors.white(0.06),
@@ -2140,6 +2213,50 @@ class _SegmentButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+    final tip = tooltip;
+    if (tip == null || tip.isEmpty) return button;
+    return Tooltip(message: tip, child: button);
+  }
+}
+
+/// "Show annotations" label + switch row for the settings sheet. Only shown
+/// when the current exercise carries per-word annotations.
+class _AnnotationsRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _AnnotationsRow({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Word annotations',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Tap a highlighted word to see its meaning',
+                style: TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: PolyColors.brandPrimary,
+        ),
+      ],
     );
   }
 }

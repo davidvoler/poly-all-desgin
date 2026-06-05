@@ -8,10 +8,11 @@ import '../widgets/common.dart';
 import '../widgets/lesson_editor_dialog.dart';
 import '../widgets/shell.dart';
 
-/// Drill-in view for a single course — modules collapse/expand to
-/// reveal their lessons, each lesson shows its exercise count. Currently
-/// read-only; an editor pass will let the user rename modules/lessons
-/// and reorder them inline.
+/// Drill-in view for a single course. Loads in pages so a large course
+/// renders fast: the course head + a lightweight module list come first
+/// (no lessons), and each module fetches its own lessons on demand when
+/// expanded. This replaces the old single `/detail` round-trip that pulled
+/// every lesson up front.
 class CourseDetailPage extends ConsumerWidget {
   const CourseDetailPage({super.key});
 
@@ -19,10 +20,11 @@ class CourseDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final arg = ModalRoute.of(context)?.settings.arguments;
     final courseId = arg is int ? arg : 0;
-    final async = ref.watch(courseDetailProvider(courseId));
+    final headAsync = ref.watch(courseHeadProvider(courseId));
+    final modulesAsync = ref.watch(courseModulesProvider(courseId));
     return DashboardShell(
-      title: async.value?.title.isNotEmpty == true
-          ? async.value!.title
+      title: headAsync.value?.title.isNotEmpty == true
+          ? headAsync.value!.title
           : 'Course',
       activeRoute: '/courses',
       topbarTrailing: [
@@ -32,7 +34,7 @@ class CourseDetailPage extends ConsumerWidget {
           onTap: () => Navigator.pushReplacementNamed(context, '/courses'),
         ),
       ],
-      child: async.when(
+      child: headAsync.when(
         loading: () => const Padding(
           padding: EdgeInsets.symmetric(vertical: 48),
           child: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -47,8 +49,8 @@ class CourseDetailPage extends ConsumerWidget {
             ),
           ),
         ),
-        data: (detail) {
-          if (detail == null) {
+        data: (course) {
+          if (course == null) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 48),
               child: Center(
@@ -62,21 +64,44 @@ class CourseDetailPage extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _CourseHeader(detail: detail),
+              _CourseHeader(course: course),
               const SizedBox(height: 22),
               const HeadRow(label: 'Modules'),
-              if (detail.modules.isEmpty)
-                _empty()
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final m in detail.modules) ...[
-                      _ModuleCard(module: m),
-                      const SizedBox(height: 10),
-                    ],
-                  ],
+              modulesAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    ),
+                  ),
                 ),
+                error: (e, _) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  child: Center(
+                    child: Text(
+                      'Could not load modules\n$e',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+                    ),
+                  ),
+                ),
+                data: (modules) {
+                  if (modules.isEmpty) return _empty();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final m in modules) ...[
+                        _ModuleCard(courseId: courseId, module: m),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  );
+                },
+              ),
             ],
           );
         },
@@ -97,11 +122,11 @@ class CourseDetailPage extends ConsumerWidget {
 }
 
 class _CourseHeader extends StatelessWidget {
-  final EditorCourseDetail detail;
-  const _CourseHeader({required this.detail});
+  final EditorCourse course;
+  const _CourseHeader({required this.course});
 
   StatusPill _statusPill() {
-    switch (detail.status) {
+    switch (course.status) {
       case CourseStatusWire.draft:
         return const StatusPill(
             label: 'Draft', kind: PillKind.muted, swatch: true);
@@ -121,7 +146,7 @@ class _CourseHeader extends StatelessWidget {
   }
 
   StatusPill _accessPill() {
-    switch (detail.access) {
+    switch (course.access) {
       case CourseAccessWire.public:
         return const StatusPill(
             label: 'Public', kind: PillKind.public, leading: Icons.public);
@@ -148,14 +173,14 @@ class _CourseHeader extends StatelessWidget {
             children: [
               _statusPill(),
               _accessPill(),
-              _Counter(label: 'Modules', value: '${detail.moduleCount}'),
-              _Counter(label: 'Lessons', value: '${detail.lessonCount}'),
-              _Counter(label: 'Students', value: '${detail.studentCount}'),
+              _Counter(label: 'Modules', value: '${course.moduleCount}'),
+              _Counter(label: 'Lessons', value: '${course.lessonCount}'),
+              _Counter(label: 'Students', value: '${course.studentCount}'),
             ],
           ),
           const SizedBox(height: 14),
           Text(
-            detail.title,
+            course.title,
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -163,21 +188,118 @@ class _CourseHeader extends StatelessWidget {
               letterSpacing: -0.22,
             ),
           ),
-          if (detail.description.isNotEmpty) ...[
+          if (course.description.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              detail.description,
+              course.description,
               style: TextStyle(fontSize: 13, color: DashColors.w(0.70)),
             ),
           ],
           const SizedBox(height: 6),
           Text(
-            '${detail.lang.toUpperCase()} → ${detail.toLang.toUpperCase()} · updated ${detail.updatedHuman}',
+            '${course.lang.toUpperCase()} → ${course.toLang.toUpperCase()} · updated ${course.updatedHuman}',
             style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
+          ),
+          if (!course.meta.isEmpty) ...[
+            const SizedBox(height: 14),
+            _VariantMeta(meta: course.meta),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Read-only display of the course's display metadata — the reading
+/// (`ruby_text`) and full-sentence (`sentence_alt`) variants it declares,
+/// each as a small chip with its icon + name. Surfaces what the quiz will
+/// offer learners for this course.
+class _VariantMeta extends StatelessWidget {
+  final CourseMeta meta;
+  const _VariantMeta({required this.meta});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (meta.rubyText.isNotEmpty) ...[
+          _label('READING VARIANTS'),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final d in meta.rubyText) _VariantChip(d: d)],
+          ),
+        ],
+        if (meta.sentenceAlt.isNotEmpty) ...[
+          if (meta.rubyText.isNotEmpty) const SizedBox(height: 12),
+          _label('SENTENCE ALTERNATIVES'),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final d in meta.sentenceAlt) _VariantChip(d: d)],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.1,
+          color: DashColors.w(0.45),
+        ),
+      );
+}
+
+class _VariantChip extends StatelessWidget {
+  final VariantDescriptor d;
+  const _VariantChip({required this.d});
+
+  // Minimal name→icon resolver for the icons the metadata uses; unknown
+  // names fall back to a neutral glyph.
+  static const _icons = <String, IconData>{
+    'translate': Icons.translate,
+    'abc': Icons.abc,
+    'format_size': Icons.format_size,
+    'spellcheck': Icons.spellcheck,
+    'subtitles': Icons.subtitles,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: DashColors.w(0.06),
+        borderRadius: DashRadii.pill,
+        border: Border.all(color: DashColors.w(0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icons[d.icon] ?? Icons.label_outline,
+              size: 13, color: DashColors.w(0.70)),
+          const SizedBox(width: 6),
+          Text(
+            d.name,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
     );
+    final tip = d.tooltip;
+    if (tip == null || tip.isEmpty) return chip;
+    return Tooltip(message: tip, child: chip);
   }
 }
 
@@ -222,19 +344,20 @@ class _Counter extends StatelessWidget {
   }
 }
 
-/// Collapsible module — header always visible, lessons revealed on tap.
-/// `ExpansionTile` would do the job, but a custom widget keeps the
-/// glass styling consistent with the rest of the dashboard.
-class _ModuleCard extends StatefulWidget {
-  final EditorModuleRemote module;
-  const _ModuleCard({required this.module});
+/// Collapsible module — header always visible, lessons fetched and revealed
+/// on first expand (lazy). Starts collapsed so opening a large course never
+/// loads every module's lessons at once.
+class _ModuleCard extends ConsumerStatefulWidget {
+  final int courseId;
+  final EditorModuleSummary module;
+  const _ModuleCard({required this.courseId, required this.module});
 
   @override
-  State<_ModuleCard> createState() => _ModuleCardState();
+  ConsumerState<_ModuleCard> createState() => _ModuleCardState();
 }
 
-class _ModuleCardState extends State<_ModuleCard> {
-  bool _open = true;
+class _ModuleCardState extends ConsumerState<_ModuleCard> {
+  bool _open = false;
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +406,7 @@ class _ModuleCardState extends State<_ModuleCard> {
                     ),
                   ),
                   Text(
-                    '${m.lessons.length} lessons',
+                    '${m.lessonCount} lessons',
                     style: TextStyle(
                       fontSize: 11,
                       color: DashColors.w(0.55),
@@ -295,10 +418,59 @@ class _ModuleCardState extends State<_ModuleCard> {
           ),
           if (_open) ...[
             Divider(color: DashColors.w(0.08), height: 1),
-            for (final l in m.lessons) _LessonRow(lesson: l),
+            _LazyLessons(courseId: widget.courseId, moduleId: m.moduleId),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Loads + renders a module's lessons on demand. Only built once its parent
+/// module card is expanded, so the fetch is deferred until needed.
+class _LazyLessons extends ConsumerWidget {
+  final int courseId;
+  final int moduleId;
+  const _LazyLessons({required this.courseId, required this.moduleId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(
+        moduleLessonsProvider((courseId: courseId, moduleId: moduleId)));
+    return async.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 18),
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          ),
+        ),
+      ),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.fromLTRB(40, 12, 16, 12),
+        child: Text(
+          'Could not load lessons — $e',
+          style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
+        ),
+      ),
+      data: (lessons) {
+        if (lessons.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(40, 12, 16, 12),
+            child: Text(
+              'No lessons in this module.',
+              style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
+            ),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [for (final l in lessons) _LessonRow(lesson: l)],
+        );
+      },
     );
   }
 }

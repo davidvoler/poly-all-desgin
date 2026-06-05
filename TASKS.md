@@ -608,12 +608,13 @@ The alternative would be to have a single annotation field - in it we can have d
 
 *** Implement Demo page - in quiz ***
 
-- [v] extent exercise model annotations + ruby_text - server
-- [] extent exercise model annotations + ruby_text - app the structure of ruby text:
+- [v] extent exercise model annotations + ruby_text - server (annotations now list; validators coerce the inconsistent jsonb: array / double-encoded-string / null)
+- [v] extent exercise model annotations + ruby_text - app the structure of ruby text:
 {"romanji": [{"ruby": "hitori", "text": "一人"}], "hiragana": [{"ruby": "ひとり", "text": "一人"}], "katakana": [{"ruby": "ヒトリ", "text": "一人"}]}
-- [] implement the ruby text in quiz when available - the course  course_id 38 should have both annotation and ruby_text 
-- [] implement annotated text in quiz when we have annotation - the structure of annotation is:
+- [v] implement the ruby text in quiz when available - the course  course_id 38 should have both annotation and ruby_text  (per-token furigana re-aligned onto the sentence; ruby picker gated on ruby_text keys)
+- [v] implement annotated text in quiz when we have annotation - the structure of annotation is:
 [{"word": "とても", "translation": "דַי"}]
+  (tappable highlighted words pop a translation tooltip; settings + toolbox toggle, reusable SentenceView widget)
 
 
 full record with ruby_test and annotation:
@@ -622,8 +623,24 @@ full record with ruby_test and annotation:
 
 
 *** course metadeta ***
-- [] ruby_text - list of object[{name: {icon, tooltip_text} ] for example hiragana, katakana, romanji for japanese, translit for other lanaguges
-- [] sentence_alt1 list of object[{name: {icon, tooltip_text} ] diacritical signs - transliteration etc
+- [v] ruby_text - list of object[{name: {icon, tooltip_text} ] for example hiragana, katakana, romanji for japanese, translit for other lanaguges
+- [v] sentence_alt1 list of object[{name: {icon, tooltip_text} ] diacritical signs - transliteration etc
+
+  Implemented as a single `course_simple.course.metadata` jsonb column (DDL/update.sql):
+    {"ruby_text":   [{"name":"Hiragana","icon":"translate","tooltip_text":"..."}, ...],
+     "sentence_alt":[{"slot":1,"name":"Diacritics","icon":"format_size","tooltip_text":"..."}, ...]}
+  - server: Course.metadata + EditorCourse(Detail).metadata, returned by /course, /editor/courses*.
+  - app: CourseMeta model + currentCourseMetaProvider; quiz settings sheet labels the ruby +
+    text-alternative pickers from the course descriptors (name + Tooltip), falling back to the
+    built-in per-language labels when a course declares none.
+  - dashboard: course header shows read-only variant chips (icon + name + tooltip).
+  - course_id 38 seeded with ja ruby/alt metadata for the demo. Editing the metadata in the
+    dashboard UI is a follow-up (currently read-only / seeded via SQL).
 
 *** dashboard - course editing ***
-- [] multiple pages course/module/lesson so when you load a large course you do not need to load all of it - only a list of module 
+- [v] multiple pages course/module/lesson so when you load a large course you do not need to load all of it - only a list of module 
+  - server: GET /editor/courses/{id}/modules (module summaries + lesson_count, no lessons) and
+    GET /editor/courses/{id}/modules/{module_id}/lessons (lessons + exercise_count, on demand).
+  - dashboard: course detail loads head + module summaries first; each module card lazy-loads its
+    lessons on expand (starts collapsed). The old /detail endpoint is kept for back-compat.
+  - verified on course 38 (57 modules): initial load is module summaries only, lessons fetched per module.

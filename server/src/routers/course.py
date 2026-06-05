@@ -52,6 +52,7 @@ async def get_courses(lang: str, to_lang: str, school: str | None = None,
     # from other users.
     sql = f"""
     SELECT c.course_id, c.title, c.description, c.lang, c.to_lang, c.lesson_count,
+    c.metadata,
     COALESCE(ul.user_lessons_done, 0) AS user_lessons_done,
     COALESCE(ul.avg_score, 0.0) AS avg_score,
     CASE WHEN c.lesson_count > 0

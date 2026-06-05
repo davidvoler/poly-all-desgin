@@ -280,6 +280,21 @@ final coursesListProvider = FutureProvider<List<CourseSummary>>((ref) {
   return repo.fetchCourses(learning: learning, native: native);
 });
 
+/// Display metadata for the user's current course (reading / sentence-alt
+/// variant descriptors). Resolved by matching the preference's courseId
+/// against the already-loaded courses list; returns [CourseMeta.empty] while
+/// the list is loading or when the course declares none — so the quiz always
+/// has a safe fallback to its built-in labels.
+final currentCourseMetaProvider = Provider<CourseMeta>((ref) {
+  final courseId =
+      ref.watch(preferenceProvider.select((p) => p.value?.courseId));
+  final courses = ref.watch(coursesListProvider).value ?? const [];
+  for (final c in courses) {
+    if (c.id == courseId?.toString()) return c.meta;
+  }
+  return CourseMeta.empty;
+});
+
 /// Mastery counts for the current user, scoped to the language being
 /// learned. Sources the language from the saved preference (the
 /// authoritative `lang`), falling back to the in-memory learning lang
