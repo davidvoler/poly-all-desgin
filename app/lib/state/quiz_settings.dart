@@ -18,18 +18,24 @@ enum QuizTextSize {
 }
 
 /// Which reading a Japanese learner wants rendered above the sentence as
-/// ruby text. `none` = no ruby. Each non-none mode maps to an alt-sentence
-/// slot (hiragana=alt1, romaji=alt2, katakana=alt3) per the content
-/// convention — see [Exercise] alt fields.
+/// ruby text. `none` = no ruby. Each non-none mode maps to a key in the
+/// exercise's `ruby_text` map (note the content's `romanji` spelling), and —
+/// as a legacy fallback — to a sentence-alt slot (hiragana=alt1, romaji=alt2,
+/// katakana=alt3). See [Exercise.rubyText] and the alt fields.
 enum RubyMode {
-  none(label: 'Off', altSlot: 0),
-  hiragana(label: 'Hiragana', altSlot: 1),
-  romaji(label: 'Romaji', altSlot: 2),
-  katakana(label: 'Katakana', altSlot: 3);
+  none(label: 'Off', altSlot: 0, rubyKey: ''),
+  hiragana(label: 'Hiragana', altSlot: 1, rubyKey: 'hiragana'),
+  romaji(label: 'Romaji', altSlot: 2, rubyKey: 'romanji'),
+  katakana(label: 'Katakana', altSlot: 3, rubyKey: 'katakana');
 
   final String label;
   final int altSlot;
-  const RubyMode({required this.label, required this.altSlot});
+  final String rubyKey;
+  const RubyMode({
+    required this.label,
+    required this.altSlot,
+    required this.rubyKey,
+  });
 }
 
 /// Quiz display preferences for the current device/user. Persisted locally

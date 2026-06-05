@@ -10,7 +10,7 @@ import '../state/quiz_settings.dart';
 import '../theme.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/common.dart';
-import '../widgets/ruby_text.dart';
+import '../widgets/sentence_view.dart';
 
 /// Per-language label for an alt-sentence slot (1/2/3). Falls back to a
 /// generic label for languages without a known convention.
@@ -25,6 +25,75 @@ String altLabel(String lang, int slot) {
     default:
       return 'Alt $slot';
   }
+}
+
+/// Build the [SentenceToken] list that drives the quiz sentence box from the
+/// raw [sentence] plus the per-token furigana ([ruby], sparse) and per-word
+/// [annotations] the exercise carries. Returns null when there's nothing to
+/// overlay (no ruby, no annotations) so the caller can fall back to plain
+/// text and keep native bidi shaping.
+///
+/// Two phases:
+///   1. Re-align the sparse ruby tokens back onto the full sentence — the
+///      runs they don't cover become plain (reading-less) segments — so the
+///      whole sentence renders with furigana over the kanji.
+///   2. Split/annotate those segments by the annotation words, attaching each
+///      translation. A reading-bearing segment is annotated whole (never
+///      split mid-furigana); a plain segment is split around the word.
+List<SentenceToken>? buildSentenceTokens({
+  required String sentence,
+  List<RubyToken>? ruby,
+  List<WordAnnotation> annotations = const [],
+}) {
+  final hasRuby = ruby != null && ruby.isNotEmpty;
+  if (!hasRuby && annotations.isEmpty) return null;
+
+  // Phase 1 — base segments (text + optional reading) covering the sentence.
+  final segs = <SentenceToken>[];
+  if (hasRuby) {
+    var cursor = 0;
+    for (final t in ruby) {
+      if (t.text.isEmpty) continue;
+      final idx = sentence.indexOf(t.text, cursor);
+      if (idx < 0) continue; // token not found from here — skip defensively.
+      if (idx > cursor) {
+        segs.add(SentenceToken(sentence.substring(cursor, idx)));
+      }
+      segs.add(SentenceToken(t.text, reading: t.hasRuby ? t.ruby : null));
+      cursor = idx + t.text.length;
+    }
+    if (cursor < sentence.length) {
+      segs.add(SentenceToken(sentence.substring(cursor)));
+    }
+  }
+  if (segs.isEmpty) segs.add(SentenceToken(sentence));
+
+  // Phase 2 — apply each annotation word to the segment list.
+  for (final a in annotations) {
+    if (a.word.isEmpty) continue;
+    for (var i = 0; i < segs.length; i++) {
+      final seg = segs[i];
+      if (seg.annotated) continue; // already claimed by an earlier annotation.
+      final at = seg.text.indexOf(a.word);
+      if (at < 0) continue;
+      if (seg.reading != null) {
+        // Don't split a furigana segment — annotate it whole.
+        segs[i] = SentenceToken(seg.text,
+            reading: seg.reading, translation: a.translation);
+      } else {
+        final replacement = <SentenceToken>[
+          if (at > 0) SentenceToken(seg.text.substring(0, at)),
+          SentenceToken(a.word, translation: a.translation),
+          if (at + a.word.length < seg.text.length)
+            SentenceToken(seg.text.substring(at + a.word.length)),
+        ];
+        segs.replaceRange(i, i + 1, replacement);
+      }
+      break; // first occurrence only.
+    }
+  }
+
+  return segs;
 }
 
 /// What text-alternative / ruby options the current exercise can offer,
@@ -53,16 +122,16 @@ class _QuizDisplayContext {
       if (ex.sentenceAlt2.isNotEmpty) 2,
       if (ex.sentenceAlt3.isNotEmpty) 3,
     ];
-    final isJa = lang == 'ja';
+    // Ruby modes come from the per-token `ruby_text` the exercise carries —
+    // offer a mode only when its reading system has tokens.
     final rubyModes = <RubyMode>[
       RubyMode.none,
-      if (isJa)
-        for (final m in const [
-          RubyMode.hiragana,
-          RubyMode.romaji,
-          RubyMode.katakana,
-        ])
-          if (slots.contains(m.altSlot)) m,
+      for (final m in const [
+        RubyMode.hiragana,
+        RubyMode.romaji,
+        RubyMode.katakana,
+      ])
+        if (ex.rubyTokens(m.rubyKey).isNotEmpty) m,
     ];
     return _QuizDisplayContext(
       lang: lang,
@@ -74,6 +143,7 @@ class _QuizDisplayContext {
 
   bool get hasTextAlternatives => availableAltSlots.isNotEmpty;
   bool get hasRuby => availableRubyModes.length > 1;
+  bool get hasAnnotations => exercise.hasAnnotations;
   bool get isJapanese => lang == 'ja';
 
   String altForSlot(int slot) {
@@ -451,9 +521,19 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     ctx.availableRubyModes.contains(settings.rubyMode)
                         ? settings.rubyMode
                         : RubyMode.none;
-                final rubyReading = rubyMode == RubyMode.none
-                    ? null
-                    : ctx.altForSlot(rubyMode.altSlot);
+                final showAnnotations =
+                    ctx.hasAnnotations && settings.showAnnotations;
+                // When ruby or annotations are active we render the original
+                // sentence as segmented tokens (both data sources reference
+                // the original sentence, not the alt rendering).
+                final sentenceTokens = buildSentenceTokens(
+                  sentence: ex.sentence,
+                  ruby: rubyMode == RubyMode.none
+                      ? null
+                      : ex.rubyTokens(rubyMode.rubyKey),
+                  annotations:
+                      showAnnotations ? ex.annotations : const [],
+                );
                 return _QuizBody(
                   index: idx,
                   total: exercises.length,
@@ -465,12 +545,18 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   sentenceScale: settings.sentenceSize.scale,
                   optionScale: settings.optionSize.scale,
                   displaySentence: displaySentence,
-                  rubyReading: rubyReading,
+                  sentenceTokens: sentenceTokens,
                   altContext: ctx,
                   onOpenSettings: () => _openSettings(ctx),
                   onCycleTextAlternative: ctx.hasTextAlternatives
                       ? () => _cycleTextAlternative(ctx)
                       : null,
+                  onToggleAnnotations: ctx.hasAnnotations
+                      ? () => ref
+                          .read(quizSettingsProvider.notifier)
+                          .setShowAnnotations(!settings.showAnnotations)
+                      : null,
+                  annotationsOn: showAnnotations,
                   onSelect: checked
                       ? null
                       : (i) => setState(() {
@@ -1081,14 +1167,20 @@ class _QuizBody extends StatelessWidget {
   final double optionScale;
   final VoidCallback onOpenSettings;
   // The sentence to display — already resolved for the selected text
-  // alternative (original or a sentence_alt variant).
+  // alternative (original or a sentence_alt variant). Used when no ruby /
+  // annotation overlay is active.
   final String displaySentence;
-  // Reading to render above the sentence as ruby, or null for no ruby.
-  final String? rubyReading;
+  // Pre-built segmented sentence (per-token furigana + tappable annotations),
+  // or null to render [displaySentence] as plain text.
+  final List<SentenceToken>? sentenceTokens;
   // What this exercise can offer (used to gate the toolbox quick toggles).
   final _QuizDisplayContext altContext;
   // Toolbox quick-cycle for the text alternative; null when unavailable.
   final VoidCallback? onCycleTextAlternative;
+  // Toolbox quick-toggle for per-word annotations; null when the exercise
+  // carries none. [annotationsOn] reflects the current state.
+  final VoidCallback? onToggleAnnotations;
+  final bool annotationsOn;
 
   const _QuizBody({
     required this.index,
@@ -1109,9 +1201,11 @@ class _QuizBody extends StatelessWidget {
     required this.optionScale,
     required this.onOpenSettings,
     required this.displaySentence,
-    required this.rubyReading,
+    required this.sentenceTokens,
     required this.altContext,
     required this.onCycleTextAlternative,
+    required this.onToggleAnnotations,
+    required this.annotationsOn,
   });
 
   /// Per-option visual state once the answer is revealed: every correct
@@ -1234,7 +1328,7 @@ class _QuizBody extends StatelessWidget {
         _SentenceBox(
           key: ValueKey('sentence-${exercise.id}'),
           sentence: displaySentence,
-          rubyReading: rubyReading,
+          tokens: sentenceTokens,
           fontSize: sentenceFontSize,
           lineHeight: sentenceLineHeight,
           minHeight: twoLineHeight,
@@ -1244,13 +1338,15 @@ class _QuizBody extends StatelessWidget {
 
         // Toolbox — play sound + answer score live in their own section
         // under the sentence, not crowded inside the sentence box. The
-        // text-alternative quick-cycle appears only when this exercise has
-        // alternatives.
+        // text-alternative quick-cycle + annotation toggle appear only when
+        // this exercise carries that data.
         _QuizToolbox(
           onPlayAudio: onPlayAudio,
           onPlaySlow: onPlaySlow,
           score: checked ? score : null,
           onCycleTextAlternative: onCycleTextAlternative,
+          onToggleAnnotations: onToggleAnnotations,
+          annotationsOn: annotationsOn,
         ),
         const SizedBox(height: 18),
 
@@ -1406,8 +1502,9 @@ class _QnavButton extends StatelessWidget {
 /// always-present toggle to show/hide it.
 class _SentenceBox extends StatefulWidget {
   final String sentence;
-  // When non-null, rendered above the sentence as ruby (furigana-style).
-  final String? rubyReading;
+  // When non-null, the sentence is rendered as segmented tokens with
+  // per-token furigana and/or tappable annotations instead of plain text.
+  final List<SentenceToken>? tokens;
   final double fontSize;
   final double lineHeight;
   final double minHeight;
@@ -1415,7 +1512,7 @@ class _SentenceBox extends StatefulWidget {
   const _SentenceBox({
     super.key,
     required this.sentence,
-    this.rubyReading,
+    this.tokens,
     required this.fontSize,
     required this.lineHeight,
     required this.minHeight,
@@ -1442,22 +1539,22 @@ class _SentenceBoxState extends State<_SentenceBox> {
         Shadow(blurRadius: 18, color: Colors.black54, offset: Offset(0, 4)),
       ],
     );
-    final hasRuby =
-        widget.rubyReading != null && widget.rubyReading!.isNotEmpty;
+    final tokens = widget.tokens;
+    final useTokens = tokens != null && tokens.isNotEmpty;
     final textArea = ConstrainedBox(
       constraints: BoxConstraints(minHeight: widget.minHeight),
       child: _revealed
           ? Align(
               alignment: rtl ? Alignment.centerRight : Alignment.centerLeft,
-              child: hasRuby
-                  // Whole-sentence ruby: the reading sits above the sentence.
-                  // (Per-token furigana lives in the /annotated demo, which
-                  // needs token-level data the live exercise doesn't carry.)
-                  ? RubyText(
-                      [RubySegment(widget.sentence, widget.rubyReading)],
+              child: useTokens
+                  // Per-token furigana and/or tappable per-word annotations,
+                  // rebuilt from the exercise's `ruby_text` + `annotations`.
+                  ? SentenceView(
+                      tokens,
                       textAlign: rtl ? TextAlign.right : TextAlign.left,
-                      baseStyle: baseStyle,
-                      rubyStyle: TextStyle(
+                      rtl: rtl,
+                      baseStyle: baseStyle.copyWith(height: 1.1),
+                      readingStyle: TextStyle(
                         fontSize: widget.fontSize * 0.5,
                         fontWeight: FontWeight.w600,
                         height: 1.2,

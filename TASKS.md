@@ -606,3 +606,24 @@ The alternative would be to have a single annotation field - in it we can have d
 
 
 
+*** Implement Demo page - in quiz ***
+
+- [v] extent exercise model annotations + ruby_text - server
+- [] extent exercise model annotations + ruby_text - app the structure of ruby text:
+{"romanji": [{"ruby": "hitori", "text": "一人"}], "hiragana": [{"ruby": "ひとり", "text": "一人"}], "katakana": [{"ruby": "ヒトリ", "text": "一人"}]}
+- [] implement the ruby text in quiz when available - the course  course_id 38 should have both annotation and ruby_text 
+- [] implement annotated text in quiz when we have annotation - the structure of annotation is:
+[{"word": "とても", "translation": "דַי"}]
+
+
+full record with ruby_test and annotation:
+38	1518	109524	1150430	simple	通り	[{"text": "מתישהו"}, {"text": "רְחוֹב", "correct": true}, {"text": "פודקאסט"}]	/ja/ja/ja_male_ja-JP-KeitaNeural_1f441354cdde04159cb1b398ab.mp3	通り			3182717881	2969032030		1	2026-06-04 15:38:05.947	2026-06-04 15:38:05.947	トウリ	とうり	touri	{"romanji": [{"ruby": "touri", "text": "通り"}], "hiragana": [{"ruby": "とうり", "text": "通り"}], "katakana": [{"ruby": "トウリ", "text": "通り"}]}	[{"word": "通り", "translation": "רְחוֹב"}]
+
+
+
+*** course metadeta ***
+- [] ruby_text - list of object[{name: {icon, tooltip_text} ] for example hiragana, katakana, romanji for japanese, translit for other lanaguges
+- [] sentence_alt1 list of object[{name: {icon, tooltip_text} ] diacritical signs - transliteration etc
+
+*** dashboard - course editing ***
+- [] multiple pages course/module/lesson so when you load a large course you do not need to load all of it - only a list of module 

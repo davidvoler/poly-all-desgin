@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+import json
+
+from pydantic import BaseModel, field_validator
 from datetime import datetime as DateTime
 
 class UserCourseProgress(BaseModel):
@@ -66,8 +68,41 @@ class Exercise(BaseModel):
     sentence_alt1: str | None = None
     sentence_alt2: str | None = None
     sentence_alt3: str | None = None
+    # Per-token furigana keyed by reading system ('hiragana' | 'katakana' |
+    # 'romanji'): {"hiragana": [{"text": "通り", "ruby": "とおり"}, ...], ...}.
     ruby_text: dict | None = {}
-    annotations: dict | None = {}
+    # Per-word translations for the sentence's key words:
+    # [{"word": "通り", "translation": "רְחוֹב"}, ...].
+    annotations: list | None = []
+
+    # The jsonb columns are inconsistent across the historical upload runs:
+    # `annotations` is sometimes a proper array, sometimes a double-encoded
+    # JSON string ("[]" / "[{...}]"), sometimes null; `ruby_text` is an object
+    # or null. Coerce both to their canonical shape so the client always sees
+    # a list / dict and a malformed cell can never 500 the whole lesson.
+    @field_validator("annotations", mode="before")
+    @classmethod
+    def _coerce_annotations(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except (ValueError, TypeError):
+                return []
+        return v if isinstance(v, list) else []
+
+    @field_validator("ruby_text", mode="before")
+    @classmethod
+    def _coerce_ruby_text(cls, v):
+        if v is None:
+            return {}
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except (ValueError, TypeError):
+                return {}
+        return v if isinstance(v, dict) else {}
 
 
 class Word(BaseModel):

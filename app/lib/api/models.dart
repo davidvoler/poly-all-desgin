@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../state/lang.dart';
 
 /// Lightweight shape returned by `GET /courses` — just enough to render
@@ -206,6 +208,38 @@ class ExerciseOption {
       );
 }
 
+/// One token of an exercise's `ruby_text` — a base run plus an optional
+/// reading ("ruby"/furigana) above it. The server's `ruby_text` is a sparse
+/// list: only the runs that carry a reading are present, so the tokens do
+/// NOT reconstruct the whole sentence on their own (see
+/// `buildSentenceTokens` in the quiz, which re-aligns them).
+class RubyToken {
+  final String text;
+  final String? ruby;
+  const RubyToken({required this.text, this.ruby});
+
+  bool get hasRuby => ruby != null && ruby!.isNotEmpty;
+
+  factory RubyToken.fromJson(Map<String, dynamic> j) => RubyToken(
+        text: (j['text'] as String?) ?? '',
+        ruby: (j['ruby'] as String?),
+      );
+}
+
+/// One per-word translation from an exercise's `annotations`: the [word] is
+/// a substring of the sentence; [translation] is in the user's native
+/// language.
+class WordAnnotation {
+  final String word;
+  final String translation;
+  const WordAnnotation({required this.word, required this.translation});
+
+  factory WordAnnotation.fromJson(Map<String, dynamic> j) => WordAnnotation(
+        word: (j['word'] as String?) ?? '',
+        translation: (j['translation'] as String?) ?? '',
+      );
+}
+
 /// Shape returned by `GET /api/v1/exercise/?lesson_id=…` — one
 /// question to display on the quiz screen.
 class Exercise {
@@ -225,6 +259,12 @@ class Exercise {
   final String sentenceAlt1;
   final String sentenceAlt2;
   final String sentenceAlt3;
+  // Per-token furigana keyed by reading system ('hiragana' | 'katakana' |
+  // 'romanji'). Empty when the content didn't supply ruby. Sparse: only the
+  // runs that carry a reading are present (see [RubyToken]).
+  final Map<String, List<RubyToken>> rubyText;
+  // Per-word translations for the sentence's key words. Empty when none.
+  final List<WordAnnotation> annotations;
 
   const Exercise({
     required this.id,
@@ -239,7 +279,19 @@ class Exercise {
     this.sentenceAlt1 = '',
     this.sentenceAlt2 = '',
     this.sentenceAlt3 = '',
+    this.rubyText = const {},
+    this.annotations = const [],
   });
+
+  /// Furigana tokens for a reading system ('hiragana'/'katakana'/'romanji'),
+  /// or empty when this exercise has none for that system.
+  List<RubyToken> rubyTokens(String key) => rubyText[key] ?? const [];
+
+  /// True when this exercise carries furigana for at least one reading system.
+  bool get hasRubyText => rubyText.values.any((t) => t.isNotEmpty);
+
+  /// True when this exercise carries any per-word annotation.
+  bool get hasAnnotations => annotations.isNotEmpty;
 
   /// The non-empty alternatives in slot order (alt1, alt2, alt3) — used to
   /// gate the text-alternative control: only shown when this is non-empty.
@@ -264,7 +316,65 @@ class Exercise {
         sentenceAlt1: (j['sentence_alt1'] as String?) ?? '',
         sentenceAlt2: (j['sentence_alt2'] as String?) ?? '',
         sentenceAlt3: (j['sentence_alt3'] as String?) ?? '',
+        rubyText: _parseRubyText(j['ruby_text']),
+        annotations: _parseAnnotations(j['annotations']),
       );
+
+  /// Parse the server's `ruby_text` into per-system token lists. Defensive
+  /// against the historical jsonb inconsistencies (object / null / a
+  /// double-encoded JSON string) — anything unexpected yields an empty map.
+  static Map<String, List<RubyToken>> _parseRubyText(Object? raw) {
+    final map = _asMap(raw);
+    if (map == null) return const {};
+    final out = <String, List<RubyToken>>{};
+    map.forEach((key, value) {
+      if (value is List) {
+        out[key] = value
+            .whereType<Map>()
+            .map((m) => RubyToken.fromJson(m.cast<String, dynamic>()))
+            .toList();
+      }
+    });
+    return out;
+  }
+
+  /// Parse the server's `annotations` into a list of per-word translations.
+  /// Defensive against array / null / double-encoded-string jsonb shapes.
+  static List<WordAnnotation> _parseAnnotations(Object? raw) {
+    final list = _asList(raw);
+    if (list == null) return const [];
+    return list
+        .whereType<Map>()
+        .map((m) => WordAnnotation.fromJson(m.cast<String, dynamic>()))
+        .where((a) => a.word.isNotEmpty)
+        .toList();
+  }
+
+  static Map? _asMap(Object? raw) {
+    if (raw is Map) return raw;
+    if (raw is String && raw.isNotEmpty) {
+      final decoded = _tryDecode(raw);
+      if (decoded is Map) return decoded;
+    }
+    return null;
+  }
+
+  static List? _asList(Object? raw) {
+    if (raw is List) return raw;
+    if (raw is String && raw.isNotEmpty) {
+      final decoded = _tryDecode(raw);
+      if (decoded is List) return decoded;
+    }
+    return null;
+  }
+
+  static Object? _tryDecode(String s) {
+    try {
+      return jsonDecode(s);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 /// Write-only payload for `POST /api/v1/user_data/` — one row per
