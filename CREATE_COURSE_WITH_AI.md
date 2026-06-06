@@ -1,21 +1,136 @@
-# Create a course with AI 
+# Create a course with AI
 
+Goal: let an editor describe the course they want, have an LLM draft it in
+our existing **course import format**, optionally enrich it (audio, Japanese
+ruby), and import it — without hand-writing `exercises.txt` files.
 
-*** Plan ***
-- [] Design the UI for creating course with UI
-- [] What would be the structure of the course 
-- [] Create examples - that create full course 
-- [] type of exercise
-    - [] sentences / single option 
-    - [] sentence / multiple correct options 
-    - [] words - match 
-    - [] explanations
-    - [] identify words in sentences 
-    - [] learn alphabet
-- [] Other service polyglots system can offer 
-    - [] Generate audio (Azure/Google)
-    - [] Generate ruby text japanese - with backend utilities 
-- [] Ask AI to create the course in a given format - So it can be imported into our import course 
+The import format already exists (see `content/example_course/README.md`),
+so the AI's job is "fill that format". This keeps the AI an *authoring aid*
+on top of the deterministic importer rather than a new content pipeline.
 
-*** Pricing ***
-- [] how would you price course generation. 
+---
+
+## Plan
+
+- [v] Design the UI for creating a course with AI  → see **Design** below.
+- [v] What would be the structure of the course     → reuses the import format
+      (course → modules → lessons → exercises). No new structure invented.
+- [in progress] Create examples that generate a full course → one worked
+      example below; more to live under `content/example_course/`.
+- [~] Type of exercise — mapping to the import format:
+    - [v] sentences / single option — prompt line + one `[+]`, rest `[-]`.
+    - [v] sentence / multiple correct options — multiple `[+]` lines.
+    - [v] identify words in a sentence — same `[+]`/`[-]` format, options are
+          the candidate words (correct = words present in the sentence).
+    - [v] explanations — `--- Explanation` block after the options.
+    - [ ] words — match — **NOT** in the current import format. Needs a format
+          extension (e.g. a `[match] a = b` line type) + parser + app widget.
+    - [ ] learn alphabet — **NOT** in the current format. Needs a new exercise
+          type (single glyph → reading/sound) + parser + app widget.
+- [~] Other services the platform can offer (post-generation enrichment):
+    - [ ] Generate audio (Azure / Google TTS) — a backend job that walks the
+          generated sentences, synthesises `.mp3` per sentence slug, and drops
+          them beside `exercises.txt` (the importer already links audio by
+          sentence text). Azure Neural / Google WaveNet, picked per language.
+    - [v] Generate Japanese ruby text — backend utility already exists (the
+          `ruby_text` jsonb on exercises is produced this way). The AI does
+          NOT write furigana; the backend annotates after import.
+- [v] Ask AI to create the course in the import format — the dashboard builds
+      a ready-to-run **prompt** that embeds the format spec + the editor's
+      parameters; the model returns the folder text, which goes through the
+      existing upload/import path.
+
+---
+
+## Design (UI)
+
+A dashboard page at `/create-course` ("Create with AI"), reachable from the
+sidebar and a CTA on the Courses page. Single scrolling form, grouped:
+
+1. **Basics** — course title, language taught, student language(s), CEFR level
+   (A1–C1), topic/focus blurb.
+2. **Structure** — modules, lessons per module, exercises per lesson. Shows a
+   live total ("≈ 120 exercises") which drives the cost estimate.
+3. **Exercise mix** — multi-select of the supported types (single-option,
+   multiple-correct, identify-words, explanations). Unsupported types
+   (word-match, alphabet) are shown disabled with a "format extension needed"
+   note so the roadmap is visible.
+4. **Enrichment** — switches: generate audio (Azure/Google), generate ruby
+   (Japanese only), include explanations.
+5. **Generate** — a live **AI prompt** preview assembled from the inputs +
+   the import-format spec. Two paths:
+   - **Copy prompt** → run it in any LLM → paste/upload the result on the
+     Courses page (works today, no backend needed).
+   - **Generate with AI** (phase 2) → backend `/editor/ai/generate` calls the
+     LLM server-side, runs enrichment, and hands back a course id.
+
+The **initial implementation** ships steps 1–5 as a frontend prompt-builder
+(Copy prompt path). The server generation + enrichment is phase 2.
+
+### Course generation flow (phases)
+
+```
+editor form ──▶ build prompt ──▶ [phase 1] copy → external LLM → upload zip
+                              └──▶ [phase 2] POST /editor/ai/generate
+                                       │  LLM → import-format text
+                                       │  → existing importer → course (draft)
+                                       │  → audio job (Azure/Google)
+                                       │  → ruby job (ja)
+                                       ▼
+                                   course opens in the editor (review)
+```
+
+### Output format the AI is asked for
+
+The model returns the same per-file text the importer reads, as a single
+fenced document the dashboard splits by path header, e.g.:
+
+```
+=== course.txt ===
+name: Japanese for Hebrew Speakers
+description: Everyday Japanese for absolute beginners.
+language: Japanese
+student_languages: Hebrew
+
+=== module1/module.txt ===
+module: Greetings
+
+=== module1/lesson1/lesson.txt ===
+lesson: Saying hello
+
+=== module1/lesson1/exercises.txt ===
+---
+こんにちは
+[+] שלום
+[-] תודה
+[-] להתראות
+--- Explanation
+Used during the day; おはよう is for the morning.
+```
+
+(Single-document form keeps phase-1 copy/paste simple; phase-2 server path can
+zip the split files straight into the existing upload endpoint.)
+
+---
+
+## Pricing (proposals)
+
+Two metered costs, billed as credits so the editor sees an estimate before
+committing.
+
+**Course generation (LLM):** cost is dominated by output tokens. A lesson of
+~10 exercises is roughly ~1–2k output tokens; a 6-module × 5-lesson × 10-ex
+course ≈ 300 exercises ≈ 0.4–0.8M output tokens.
+- Proposal: price per generated exercise (predictable for editors), e.g.
+  **1 credit / exercise**, with 1 credit ≈ raw LLM cost × ~4 markup. Show the
+  running estimate from the structure step. Regeneration of a single
+  lesson/exercise costs only that slice.
+
+**Audio recording (TTS):** Azure Neural ≈ **$16 / 1M characters**, Google
+WaveNet ≈ **$16 / 1M chars** too. A sentence ≈ 30–60 chars.
+- Proposal: price **per 1,000 characters** (or a flat per-sentence rate ≈
+  cents), TTS cost × ~3 markup, charged when the audio job runs (separately
+  from generation, since audio can be (re)done on an existing course).
+
+Ruby generation is a cheap backend utility (no per-call LLM) → bundle it free
+with Japanese courses.

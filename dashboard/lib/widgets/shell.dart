@@ -29,6 +29,10 @@ const List<NavItem> kNavItems = [
   NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/'),
   NavItem(label: 'Languages', icon: Icons.language, route: '/languages'),
   NavItem(label: 'Courses', icon: Icons.menu_book_outlined, route: '/courses'),
+  NavItem(
+      label: 'Create with AI',
+      icon: Icons.auto_awesome_outlined,
+      route: '/create-course'),
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),

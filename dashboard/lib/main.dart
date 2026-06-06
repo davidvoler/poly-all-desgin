@@ -6,6 +6,7 @@ import 'api/dashboard_api.dart';
 import 'config/app_config.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
+import 'pages/create_course_page.dart';
 import 'pages/create_school_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
@@ -95,6 +96,7 @@ class DashboardApp extends StatelessWidget {
         // school to sign into.
         '/create-school': (_) => const CreateSchoolPage(),
         '/courses': (_) => const _Guarded(child: CoursesPage()),
+        '/create-course': (_) => const _Guarded(child: CreateCoursePage()),
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
         '/editors': (_) =>
