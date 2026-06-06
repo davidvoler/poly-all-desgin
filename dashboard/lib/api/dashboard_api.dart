@@ -442,6 +442,20 @@ class DashboardApi {
     return (res.data?['course_id'] as int?);
   }
 
+  /// Import a course pasted as one `=== path ===`-delimited document (the
+  /// output of the Create-with-AI flow). Returns the new course id.
+  Future<int?> importCourseText({required String document}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/editor/upload/text',
+      data: {'document': document},
+      options: Options(
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 10),
+      ),
+    );
+    return res.data?['course_id'] as int?;
+  }
+
   /// Download a course's zip export. Returns the raw bytes — caller
   /// is responsible for writing them somewhere the user can find
   /// (file_picker's saveFile on desktop, a Blob anchor on web).

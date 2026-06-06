@@ -53,6 +53,11 @@ class CoursesPage extends ConsumerWidget {
       title: 'Courses',
       activeRoute: '/courses',
       topbarTrailing: [
+        GhostButton(
+          label: 'Create with AI',
+          leading: Icons.auto_awesome_outlined,
+          onTap: () => Navigator.pushNamed(context, '/create-course'),
+        ),
         PrimaryButton(
           label: 'Upload course',
           leading: Icons.file_upload_outlined,

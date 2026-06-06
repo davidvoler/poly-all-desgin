@@ -33,8 +33,10 @@ async def load_exercise(course_id: int, module_id: int, lesson_id: int, exercise
     to_sentence_id = exercise.get('to_sentence_id', 0)
     weight = exercise.get('weight', 0)
     explanation = exercise.get('explanation')
-    anotations = exercise.get('annotations', '')
-    ruby_text = exercise.get('ruby_text', '')
+    # annotations / ruby_text are jsonb columns — must be valid JSON or NULL.
+    # An empty string would fail the jsonb cast, so default to None.
+    anotations = exercise.get('annotations') or None
+    ruby_text = exercise.get('ruby_text') or None
 
 
     sql = """

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/dashboard_api.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
@@ -64,6 +65,11 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   bool _audio = false;
   bool _ruby = false;
 
+  // Paste-and-import: the LLM output and the in-flight import state.
+  final _pasted = TextEditingController();
+  bool _importing = false;
+  String? _importError;
+
   static const _levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
   @override
@@ -72,7 +78,35 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
     _language.dispose();
     _studentLanguage.dispose();
     _topic.dispose();
+    _pasted.dispose();
     super.dispose();
+  }
+
+  /// Import the pasted `=== path ===` document via the server text-import
+  /// endpoint, then jump to the new course's detail page.
+  Future<void> _importPasted() async {
+    final doc = _pasted.text.trim();
+    if (doc.isEmpty || _importing) return;
+    setState(() {
+      _importing = true;
+      _importError = null;
+    });
+    try {
+      final id =
+          await ref.read(dashboardApiProvider).importCourseText(document: doc);
+      if (!mounted) return;
+      ref.invalidate(editorCoursesProvider);
+      setState(() => _importing = false);
+      if (id != null) {
+        Navigator.pushReplacementNamed(context, '/course', arguments: id);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _importing = false;
+        _importError = '$e';
+      });
+    }
   }
 
   int get _totalExercises =>
@@ -450,33 +484,154 @@ class _PromptColumn extends StatelessWidget {
             leading: Icons.auto_awesome,
             onTap: state._copyPrompt,
           ),
+          const SizedBox(height: 12),
+          _CostEstimate(
+            exercises: state._totalExercises,
+            audio: state._audio,
+          ),
+          const SizedBox(height: 12),
+          _PasteImport(state: state),
+        ],
+      ),
+    );
+  }
+}
+
+/// Estimated cost of generating this course, per the pricing in
+/// CREATE_COURSE_WITH_AI.md: ~1 credit / exercise, plus audio billed per
+/// 1k characters when the audio enrichment is on (rough sentence-length
+/// assumption). Indicative only — final rates TBD.
+class _CostEstimate extends StatelessWidget {
+  final int exercises;
+  final bool audio;
+  const _CostEstimate({required this.exercises, required this.audio});
+
+  @override
+  Widget build(BuildContext context) {
+    // Rough: ~40 characters of synthesised audio per exercise sentence.
+    final audioK = (exercises * 40 / 1000).ceil();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: DashColors.w(0.04),
+        borderRadius: DashRadii.input,
+        border: Border.all(color: DashColors.w(0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payments_outlined, size: 15, color: DashColors.w(0.6)),
+              const SizedBox(width: 8),
+              Text('ESTIMATED COST', style: DashText.sectionLabel(size: 10)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _costRow('Generation', '≈ $exercises credits', '1 / exercise'),
+          if (audio) ...[
+            const SizedBox(height: 4),
+            _costRow('Audio', '≈ $audioK k chars', 'TTS, per 1k chars'),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            'Indicative — billed when generation runs. Final rates TBD.',
+            style: TextStyle(fontSize: 11, color: DashColors.w(0.45)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _costRow(String label, String value, String note) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(label,
+              style: const TextStyle(fontSize: 13, color: Colors.white)),
+        ),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+        const SizedBox(width: 8),
+        Text(note, style: TextStyle(fontSize: 11, color: DashColors.w(0.45))),
+      ],
+    );
+  }
+}
+
+/// Paste the LLM's `=== path ===` output and import it straight into the
+/// catalogue (server text-import endpoint), skipping the zip round-trip.
+class _PasteImport extends StatelessWidget {
+  final _CreateCoursePageState state;
+  const _PasteImport({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: DashColors.w(0.04),
+        borderRadius: DashRadii.input,
+        border: Border.all(color: DashColors.w(0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.content_paste_go_outlined,
+                  size: 15, color: DashColors.w(0.6)),
+              const SizedBox(width: 8),
+              Text('PASTE RESULT & IMPORT',
+                  style: DashText.sectionLabel(size: 10)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "Paste the model's output here to create the course directly.",
+            style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+          ),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: DashColors.w(0.04),
-              borderRadius: DashRadii.input,
-              border: Border.all(color: DashColors.w(0.10)),
+          TextField(
+            controller: state._pasted,
+            minLines: 4,
+            maxLines: 10,
+            style: const TextStyle(
+                fontSize: 12, fontFamily: 'monospace', color: Colors.white),
+            decoration: InputDecoration(
+              hintText: '=== course.txt ===\nname: …',
+              hintStyle: TextStyle(fontSize: 12, color: DashColors.w(0.30)),
+              filled: true,
+              fillColor: Colors.black.withValues(alpha: 0.28),
+              contentPadding: const EdgeInsets.all(12),
+              border: OutlineInputBorder(
+                borderRadius: DashRadii.input,
+                borderSide: BorderSide(color: DashColors.w(0.12)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: DashRadii.input,
+                borderSide: BorderSide(color: DashColors.w(0.12)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: DashRadii.input,
+                borderSide:
+                    BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+              ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.bolt_outlined,
-                    size: 16, color: DashColors.w(0.55)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Server-side "Generate with AI" (runs the model + audio + '
-                    'ruby for you) is coming in a later phase.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.4,
-                      color: DashColors.w(0.55),
-                    ),
-                  ),
-                ),
-              ],
+          ),
+          if (state._importError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Import failed — ${state._importError}',
+              style: const TextStyle(fontSize: 12, color: DashColors.red400),
             ),
+          ],
+          const SizedBox(height: 10),
+          PrimaryButton(
+            label: state._importing ? 'Importing…' : 'Import course',
+            leading: Icons.download_done_outlined,
+            onTap: state._importing ? null : state._importPasted,
           ),
         ],
       ),

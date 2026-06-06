@@ -67,6 +67,28 @@ sidebar and a CTA on the Courses page. Single scrolling form, grouped:
 The **initial implementation** ships steps 1–5 as a frontend prompt-builder
 (Copy prompt path). The server generation + enrichment is phase 2.
 
+### Built (phase 1)
+
+- Dashboard page `/create-course` ("Create with AI") — sidebar item + a CTA on
+  the Courses page. Form (basics, structure with live exercise count, exercise
+  mix, audio/ruby enrichment) → **live AI prompt** + Copy.
+- **Cost estimate** panel (≈1 credit/exercise, audio per 1k chars) per the
+  pricing below.
+- **Paste result & import** — paste the model's `=== path ===` output and import
+  it directly via `POST /api/v1/editor/upload/text`, which splits the document
+  into the course folder and runs the same parser + loader as the zip upload,
+  then opens the new course.
+- **Importer fix (prerequisite):** `editor/utils/parse_course.py` +
+  `folder_to_db.py` did not actually parse the documented/exported format — it
+  crashed on nested lesson folders, never captured the prompt sentence, ignored
+  `--- Explanation`, didn't map `name`/`language`/`student_languages` →
+  `title`/`lang`/`to_lang`, and inserted `''` into the jsonb columns. All fixed
+  and verified end-to-end (example course imports with correct sentences,
+  options, explanations, and ISO langs). The zip upload benefits from the same
+  fix.
+
+Phase 2 (not built): server-side `/editor/ai/generate` (LLM + audio + ruby).
+
 ### Course generation flow (phases)
 
 ```
