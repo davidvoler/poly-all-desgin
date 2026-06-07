@@ -644,3 +644,17 @@ full record with ruby_test and annotation:
   - dashboard: course detail loads head + module summaries first; each module card lazy-loads its
     lessons on expand (starts collapsed). The old /detail endpoint is kept for back-compat.
   - verified on course 38 (57 modules): initial load is module summaries only, lessons fetched per module.
+
+
+
+*** get ready for Generate with UI ***
+Japanese/Hebrew course does not look correct
+Shall we try generate with UI se if we get better results
+- [] Implement explanation exercise
+  - [] ui
+  - [] import - type explanation could have multiple lines - and maybe ruby text
+- [] In Identify words - add translation/transliteration to the words
+- [] Consider using AI for generating based on a youtube movie  
+
+
+

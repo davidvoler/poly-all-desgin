@@ -63,3 +63,20 @@ distribution/retention); donation-only funding (won't pay bills at low scale).
 **Next decisions:** (1) confirm the Phase-0 wedge (private teachers vs. one
 pilot school); (2) confirm metered creation as the first paid feature; (3) keep
 published courses public to seed the commons + grant story.
+
+
+
+*** MVP Model ***
+Goals:
+  - Grow
+  - Get initial feedback
+Features
+- learning is free 
+- schools have free access and invitation - mechanism 
+- opening a school require email request. 
+- school can create content for close groups - its students
+- private teacher are school of a single author 
+- content generation - AI - instructions on how to create
+- generation online with Polyglot - not in this phase - we do not implement the payment mechanism
+- maybe generate only with polyglot is enabled but very very limited - only for people we know 
+
