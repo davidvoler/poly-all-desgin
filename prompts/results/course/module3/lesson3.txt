@@ -1,0 +1,106 @@
+---
+title: Lesson 3 - The Particle を (wo) — Object Marker
+weight: 3
+---
+type: explanation
+を (wo) marks the direct object of a sentence — the thing that receives the action. It comes after the noun and before the verb. Example: みずをのむ — "drink water".
+---
+type: single_selection
+text: みずをのむ
+romanji: Mizu wo nomu
+option: drink water
+correct: true
+option: want water
+option: like water
+option: water is cold
+---
+type: single_selection
+text: コーヒーをのむ
+romanji: Kōhī wo nomu
+option: drink coffee
+correct: true
+option: want coffee
+option: like coffee
+option: coffee is hot
+---
+type: single_selection
+text: サラはコーヒーをのみます
+romanji: Sara wa kōhī wo nomimasu
+option: Sara drinks coffee
+correct: true
+option: Sara likes coffee
+option: Sara wants coffee
+option: Sara is making coffee
+---
+type: identify_words
+text: ワタナベさんはみずをのみます
+romanji: Watanabe-san wa mizu wo nomimasu
+option: を
+correct: true
+option: は
+correct: true
+option: みず
+correct: true
+option: のみます
+correct: true
+option: か
+---
+type: single_selection
+text: ジョージはねこをみます
+romanji: Jōji wa neko wo mimasu
+option: George looks at the cat
+correct: true
+option: George likes the cat
+option: George is a cat
+option: George feeds the cat
+---
+type: single_selection
+text: わたしはコーヒーをのみます
+romanji: Watashi wa kōhī wo nomimasu
+option: I drink coffee
+correct: true
+option: I like coffee
+option: I want coffee
+option: I make coffee
+---
+type: multiple_choice
+text: を (wo)
+romanji: wo
+option: marks the object of the action
+correct: true
+option: comes after the noun being acted on
+correct: true
+option: marks the topic of the sentence
+option: makes a sentence a question
+---
+type: single_selection
+text: ねこはみずをのみます
+romanji: Neko wa mizu wo nomimasu
+option: The cat drinks water
+correct: true
+option: The cat likes water
+option: The cat wants water
+option: Water likes cats
+---
+type: single_selection
+text: サラはねこをみます
+romanji: Sara wa neko wo mimasu
+option: Sara looks at the cat
+correct: true
+option: Sara likes the cat
+option: Sara feeds the cat
+option: Sara is a cat
+---
+type: identify_words
+text: わたしはみずをのみます
+romanji: Watashi wa mizu wo nomimasu
+option: を
+correct: true
+option: は
+correct: true
+option: わたし
+correct: true
+option: のみます
+correct: true
+option: か
+option: ね

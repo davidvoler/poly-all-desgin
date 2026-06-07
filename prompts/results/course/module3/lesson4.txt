@@ -1,0 +1,106 @@
+---
+title: Lesson 4 - The Particle に (ni) — Direction and Time
+weight: 4
+---
+type: explanation
+に (ni) has two main uses: direction ("to" or "at" a place) and time ("at" or "on" a specific time). Example: がっこうにいく — "go to school". あさにのむ — "drink in the morning".
+---
+type: single_selection
+text: あさにコーヒーをのむ
+romanji: Asa ni kōhī wo nomu
+option: drink coffee in the morning
+correct: true
+option: drink coffee at night
+option: like coffee in the morning
+option: make coffee in the morning
+---
+type: single_selection
+text: まいにちみずをのむ
+romanji: Mainichi mizu wo nomu
+option: drink water every day
+correct: true
+option: drink water in the morning
+option: drink water at night
+option: want water every day
+---
+type: single_selection
+text: サラはがっこうにいきます
+romanji: Sara wa gakkō ni ikimasu
+option: Sara goes to school
+correct: true
+option: Sara is at school
+option: Sara likes school
+option: Sara comes from school
+---
+type: identify_words
+text: ワタナベさんはあさにコーヒーをのみます
+romanji: Watanabe-san wa asa ni kōhī wo nomimasu
+option: に
+correct: true
+option: は
+correct: true
+option: を
+correct: true
+option: あさ
+correct: true
+option: か
+---
+type: single_selection
+text: ジョージはまいにちみずをのみます
+romanji: Jōji wa mainichi mizu wo nomimasu
+option: George drinks water every day
+correct: true
+option: George drinks water in the morning
+option: George likes water every day
+option: George wants water every day
+---
+type: single_selection
+text: わたしはよるにコーヒーをのみます
+romanji: Watashi wa yoru ni kōhī wo nomimasu
+option: I drink coffee at night
+correct: true
+option: I drink coffee in the morning
+option: I like coffee at night
+option: I make coffee at night
+---
+type: multiple_choice
+text: に (ni)
+romanji: ni
+option: marks direction — going "to" a place
+correct: true
+option: marks time — "at" or "in" a time period
+correct: true
+option: marks the object of the action
+option: makes a sentence a question
+---
+type: single_selection
+text: ねこはまいにちみずをのみます
+romanji: Neko wa mainichi mizu wo nomimasu
+option: The cat drinks water every day
+correct: true
+option: The cat drinks water in the morning
+option: The cat likes water every day
+option: The cat wants water every day
+---
+type: single_selection
+text: サラはよるにがっこうにいきます
+romanji: Sara wa yoru ni gakkō ni ikimasu
+option: Sara goes to school at night
+correct: true
+option: Sara goes to school in the morning
+option: Sara likes going to school at night
+option: Sara comes from school at night
+---
+type: identify_words
+text: わたしはあさにみずをのみます
+romanji: Watashi wa asa ni mizu wo nomimasu
+option: に
+correct: true
+option: は
+correct: true
+option: を
+correct: true
+option: あさ
+correct: true
+option: ね
+option: か

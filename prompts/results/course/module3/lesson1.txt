@@ -1,0 +1,105 @@
+---
+title: Lesson 1 - The Particle は (wa) — Topic Marker
+weight: 1
+---
+type: explanation
+は (wa) marks the topic of the sentence — the thing being talked about. Everything after は says something about that topic.
+---
+type: single_selection
+text: ねこはかわいい
+romanji: Neko wa kawaii
+option: The cat is cute
+correct: true
+option: I like cats
+option: Is the cat cute?
+option: The cat is not cute
+---
+type: single_selection
+text: みずはつめたい
+romanji: Mizu wa tsumetai
+option: The water is cold
+correct: true
+option: I want cold water
+option: Is the water cold?
+option: Cold water, please
+---
+type: single_selection
+text: サラはがくせいです
+romanji: Sara wa gakusei desu
+option: Sara is a student
+correct: true
+option: Sara likes students
+option: Is Sara a student?
+option: Sara is not a student
+---
+type: identify_words
+text: ワタナベさんはせんせいです
+romanji: Watanabe-san wa sensei desu
+option: は
+correct: true
+option: ワタナベ
+correct: true
+option: せんせい
+correct: true
+option: です
+correct: true
+option: か
+---
+type: single_selection
+text: コーヒーはあつい
+romanji: Kōhī wa atsui
+option: The coffee is hot
+correct: true
+option: I like hot coffee
+option: Is the coffee hot?
+option: Hot coffee, please
+---
+type: single_selection
+text: ジョージはげんきです
+romanji: Jōji wa genki desu
+option: George is well
+correct: true
+option: George is a student
+option: Is George well?
+option: George is not well
+---
+type: multiple_choice
+text: は (wa)
+romanji: wa
+option: marks the topic of a sentence
+correct: true
+option: comes after the subject
+correct: true
+option: makes a sentence a question
+option: makes a sentence negative
+---
+type: single_selection
+text: ねこはみずがすきです
+romanji: Neko wa mizu ga suki desu
+option: The cat likes water
+correct: true
+option: The cat doesn't like water
+option: Water likes cats
+option: Is the cat thirsty?
+---
+type: single_selection
+text: わたしはサラです
+romanji: Watashi wa Sara desu
+option: I am Sara
+correct: true
+option: Sara is me
+option: Are you Sara?
+option: Sara likes me
+---
+type: identify_words
+text: みずはつめたいですか
+romanji: Mizu wa tsumetai desu ka
+option: は
+correct: true
+option: み
+correct: true
+option: か
+correct: true
+option: です
+correct: true
+option: ね

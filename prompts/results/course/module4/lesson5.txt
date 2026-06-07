@@ -1,0 +1,160 @@
+---
+title: Lesson 5 - Sentence Structure — [Subject] は [Subject2] と [Verb]
+weight: 5
+---
+type: explanation
+To say someone does something with someone else, use と before the verb. The full pattern: [topic]は [person]と [place]で [object]を [verb]. Build it up piece by piece.
+---
+type: sentence_structure
+text: わたしはサラとがっこうにいきます
+romanji: Watashi wa Sara to gakkō ni ikimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: と
+romanji: to
+meaning: with
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+---
+type: single_selection
+text: わたしはサラとがっこうにいきます
+romanji: Watashi wa Sara to gakkō ni ikimasu
+option: I go to school with Sara
+correct: true
+option: Sara and I like school
+option: Sara goes to school for me
+option: I go to school like Sara
+---
+type: sentence_structure
+text: ジョージはワタナベさんとがっこうでべんきょうします
+romanji: Jōji wa Watanabe-san to gakkō de benkyō shimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: ワタナベさん
+romanji: Watanabe-san
+meaning: Watanabe (polite)
+pos: proper noun
+word: と
+romanji: to
+meaning: with
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: べんきょうします
+romanji: benkyō shimasu
+meaning: study
+pos: verb
+---
+type: single_selection
+text: ジョージはワタナベさんとがっこうでべんきょうします
+romanji: Jōji wa Watanabe-san to gakkō de benkyō shimasu
+option: George studies at school with Watanabe
+correct: true
+option: George and Watanabe like studying at school
+option: George teaches Watanabe at school
+option: George studies for Watanabe at school
+---
+type: sentence_structure
+text: サラはジョージといえでコーヒーをのみます
+romanji: Sara wa Jōji to ie de kōhī wo nomimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: と
+romanji: to
+meaning: with
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: サラはジョージといえでコーヒーをのみます
+romanji: Sara wa Jōji to ie de kōhī wo nomimasu
+option: Sara drinks coffee at home with George
+correct: true
+option: George drinks coffee at home with Sara
+option: Sara and George make coffee at home
+option: Sara likes drinking coffee with George
+---
+type: identify_words
+text: わたしはサラとがっこうでにほんごをべんきょうします
+romanji: Watashi wa Sara to gakkō de nihongo wo benkyō shimasu
+option: は
+correct: true
+option: と
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: も
+option: か
+---
+type: single_selection
+text: ワタナベさんはサラといえであさにコーヒーをのみます
+romanji: Watanabe-san wa Sara to ie de asa ni kōhī wo nomimasu
+option: Watanabe drinks coffee with Sara at home in the morning
+correct: true
+option: Sara drinks coffee with Watanabe at home in the morning
+option: Watanabe makes coffee with Sara at home in the morning
+option: Watanabe likes coffee with Sara at home

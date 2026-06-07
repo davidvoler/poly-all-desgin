@@ -1,0 +1,123 @@
+---
+title: Lesson 6 - New Word — かきます (write)
+weight: 6
+---
+type: explanation
+かきます (kakimasu) means "write". Together with よみます, たべます, のみます, and いきます, you now have five verbs — enough to build many different sentences.
+---
+type: single_selection
+text: かきます
+romanji: kakimasu
+option: write
+correct: true
+option: read
+option: eat
+option: drink
+---
+type: single_selection
+text: わたしはてがみをかきます
+romanji: Watashi wa tegami wo kakimasu
+option: I write a letter
+correct: true
+option: I read a letter
+option: I send a letter
+option: I like a letter
+---
+type: single_selection
+text: サラはがっこうでにほんごをかきます
+romanji: Sara wa gakkō de nihongo wo kakimasu
+option: Sara writes Japanese at school
+correct: true
+option: Sara reads Japanese at school
+option: Sara studies Japanese at school
+option: Sara likes Japanese at school
+---
+type: sentence_structure
+text: ワタナベさんはまいにちてがみをかきます
+romanji: Watanabe-san wa mainichi tegami wo kakimasu
+word: ワタナベさん
+romanji: Watanabe-san
+meaning: Watanabe (polite)
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: てがみ
+romanji: tegami
+meaning: letter
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: かきます
+romanji: kakimasu
+meaning: write
+pos: verb
+---
+type: single_selection
+text: ワタナベさんはまいにちてがみをかきます
+romanji: Watanabe-san wa mainichi tegami wo kakimasu
+option: Watanabe writes a letter every day
+correct: true
+option: Watanabe reads a letter every day
+option: Watanabe sends a letter every day
+option: Watanabe likes letters every day
+---
+type: single_selection
+text: ジョージはいえでよるにてがみをかきます
+romanji: Jōji wa ie de yoru ni tegami wo kakimasu
+option: George writes a letter at home at night
+correct: true
+option: George reads a letter at home at night
+option: George sends a letter at home at night
+option: George likes letters at home at night
+---
+type: multiple_choice
+text: かきます
+romanji: kakimasu
+option: write
+correct: true
+option: writes
+correct: true
+option: read
+option: writing (present)
+correct: true
+---
+type: single_selection
+text: サラはジョージにてがみをかきますか
+romanji: Sara wa Jōji ni tegami wo kakimasu ka
+option: Does Sara write a letter to George?
+correct: true
+option: Sara writes a letter to George
+option: Does George write a letter to Sara?
+option: Does Sara read a letter from George?
+---
+type: single_selection
+text: はい、サラはまいにちジョージにてがみをかきます
+romanji: Hai, Sara wa mainichi Jōji ni tegami wo kakimasu
+option: Yes, Sara writes a letter to George every day
+correct: true
+option: No, Sara writes a letter to George every day
+option: Yes, Sara reads a letter from George every day
+option: Yes, George writes a letter to Sara every day
+---
+type: identify_words
+text: わたしはいえであさにてがみをかきます
+romanji: Watashi wa ie de asa ni tegami wo kakimasu
+option: は
+correct: true
+option: で
+correct: true
+option: に
+correct: true
+option: を
+correct: true
+option: が
+option: の
+option: も

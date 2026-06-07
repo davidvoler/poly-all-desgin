@@ -1,0 +1,153 @@
+---
+title: Lesson 2 - Sentence Structure — [Subject] は まいにち [Object] を [Verb]
+weight: 2
+---
+type: explanation
+Adding a time word like まいにち (every day) or あさに (in the morning) before the object tells us when the action happens. The verb still comes last.
+---
+type: sentence_structure
+text: わたしはまいにちみずをのみます
+romanji: Watashi wa mainichi mizu wo nomimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: わたしはまいにちみずをのみます
+romanji: Watashi wa mainichi mizu wo nomimasu
+option: I drink water every day
+correct: true
+option: I drink water in the morning
+option: I want water every day
+option: Every day I want water
+---
+type: sentence_structure
+text: サラはあさにコーヒーをのみます
+romanji: Sara wa asa ni kōhī wo nomimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: あさ
+romanji: asa
+meaning: morning
+pos: noun
+word: に
+romanji: ni
+meaning: in / at (time)
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: サラはあさにコーヒーをのみます
+romanji: Sara wa asa ni kōhī wo nomimasu
+option: Sara drinks coffee in the morning
+correct: true
+option: Sara drinks coffee every day
+option: Sara wants coffee in the morning
+option: Sara makes coffee in the morning
+---
+type: sentence_structure
+text: ワタナベさんはよるにみずをのみます
+romanji: Watanabe-san wa yoru ni mizu wo nomimasu
+word: ワタナベさん
+romanji: Watanabe-san
+meaning: Watanabe (polite)
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: よる
+romanji: yoru
+meaning: evening / night
+pos: noun
+word: に
+romanji: ni
+meaning: at (time)
+pos: particle
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: ワタナベさんはよるにみずをのみます
+romanji: Watanabe-san wa yoru ni mizu wo nomimasu
+option: Watanabe drinks water at night
+correct: true
+option: Watanabe drinks water in the morning
+option: Watanabe wants water at night
+option: Watanabe makes water at night
+---
+type: single_selection
+text: ジョージはまいにちコーヒーをのみます
+romanji: Jōji wa mainichi kōhī wo nomimasu
+option: George drinks coffee every day
+correct: true
+option: George drinks coffee in the morning
+option: George wants coffee every day
+option: George makes coffee every day
+---
+type: identify_words
+text: わたしはあさにみずをのみます
+romanji: Watashi wa asa ni mizu wo nomimasu
+option: わたし
+correct: true
+option: は
+correct: true
+option: あさ
+correct: true
+option: に
+correct: true
+option: みず
+correct: true
+option: を
+correct: true
+option: のみます
+correct: true
+option: よる

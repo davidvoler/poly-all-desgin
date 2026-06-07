@@ -1,0 +1,171 @@
+---
+title: Lesson 8 - Sentence Structure — Questions with か
+weight: 8
+---
+type: explanation
+Any statement can become a question by adding か at the end. The word order stays exactly the same — Japanese does not invert the sentence to form a question.
+---
+type: sentence_structure
+text: サラはがっこうにいきますか
+romanji: Sara wa gakkō ni ikimasu ka
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+word: か
+romanji: ka
+meaning: ? (question marker)
+pos: particle
+---
+type: single_selection
+text: サラはがっこうにいきますか
+romanji: Sara wa gakkō ni ikimasu ka
+option: Does Sara go to school?
+correct: true
+option: Sara goes to school
+option: Sara goes to school, doesn't she?
+option: Where does Sara go to school?
+---
+type: sentence_structure
+text: ジョージはいえでコーヒーをのみますか
+romanji: Jōji wa ie de kōhī wo nomimasu ka
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+word: か
+romanji: ka
+meaning: ? (question marker)
+pos: particle
+---
+type: single_selection
+text: ジョージはいえでコーヒーをのみますか
+romanji: Jōji wa ie de kōhī wo nomimasu ka
+option: Does George drink coffee at home?
+correct: true
+option: George drinks coffee at home
+option: Does George make coffee at home?
+option: Does George drink coffee at school?
+---
+type: single_selection
+text: はい、ジョージはいえでまいにちコーヒーをのみます
+romanji: Hai, Jōji wa ie de mainichi kōhī wo nomimasu
+option: Yes, George drinks coffee at home every day
+correct: true
+option: No, George drinks coffee at home every day
+option: Yes, George makes coffee at home every day
+option: Yes, George drinks coffee at school every day
+---
+type: sentence_structure
+text: ワタナベさんのがくせいはまいにちがっこうにいきますか
+romanji: Watanabe-san no gakusei wa mainichi gakkō ni ikimasu ka
+word: ワタナベさん
+romanji: Watanabe-san
+meaning: Watanabe (polite)
+pos: proper noun
+word: の
+romanji: no
+meaning: 's (possession)
+pos: particle
+word: がくせい
+romanji: gakusei
+meaning: student
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+word: か
+romanji: ka
+meaning: ? (question marker)
+pos: particle
+---
+type: single_selection
+text: ワタナベさんのがくせいはまいにちがっこうにいきますか
+romanji: Watanabe-san no gakusei wa mainichi gakkō ni ikimasu ka
+option: Does Watanabe's student go to school every day?
+correct: true
+option: Watanabe's student goes to school every day
+option: Does Watanabe go to school with the student every day?
+option: Does Watanabe's student study every day?
+---
+type: single_selection
+text: いいえ、わたしはいえでべんきょうします
+romanji: Iie, watashi wa ie de benkyō shimasu
+option: No, I study at home
+correct: true
+option: Yes, I study at home
+option: No, I go to school
+option: No, I study at school
+---
+type: identify_words
+text: サラはジョージといえでコーヒーをのみますか
+romanji: Sara wa Jōji to ie de kōhī wo nomimasu ka
+option: は
+correct: true
+option: と
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: か
+correct: true
+option: に
+option: も

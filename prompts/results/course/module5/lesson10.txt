@@ -1,0 +1,178 @@
+---
+title: Lesson 10 - Module 5 Review — All Words and Structures
+weight: 10
+---
+type: explanation
+We now have five verbs (のみます、たべます、よみます、かきます、いきます), two existence verbs (います、あります), several adjectives, and eight particles. This lesson puts them all together.
+---
+type: sentence_structure
+text: わたしはともだちとがっこうでにほんごをべんきょうします
+romanji: Watashi wa tomodachi to gakkō de nihongo wo benkyō shimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: ともだち
+romanji: tomodachi
+meaning: friend
+pos: noun
+word: と
+romanji: to
+meaning: with
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: にほんご
+romanji: nihongo
+meaning: Japanese
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: べんきょうします
+romanji: benkyō shimasu
+meaning: study
+pos: verb
+---
+type: single_selection
+text: わたしはともだちとがっこうでにほんごをべんきょうします
+romanji: Watashi wa tomodachi to gakkō de nihongo wo benkyō shimasu
+option: I study Japanese at school with a friend
+correct: true
+option: My friend studies Japanese at school
+option: I go to school with a friend to study
+option: I teach Japanese at school with a friend
+---
+type: single_selection
+text: サラのいえにはちいさくてかわいいねこがいます
+romanji: Sara no ie ni wa chiisaikute kawaii neko ga imasu
+option: There is a small and cute cat at Sara's house
+correct: true
+option: Sara's small cat is cute
+option: Sara's cat is small and lives at home
+option: There is a cat that Sara likes at home
+---
+type: single_selection
+text: ジョージはいつもともだちのいえでおいしいごはんをたべます
+romanji: Jōji wa itsumo tomodachi no ie de oishii gohan wo tabemasu
+option: George always eats delicious rice at a friend's house
+correct: true
+option: George sometimes eats rice at a friend's house
+option: George always makes delicious rice at a friend's house
+option: George always drinks coffee at a friend's house
+---
+type: multiple_choice
+text: Verbs learned so far
+romanji: (select all verbs)
+option: のみます — drink
+correct: true
+option: たべます — eat
+correct: true
+option: よみます — read
+correct: true
+option: かきます — write
+correct: true
+option: いきます — go
+correct: true
+option: います — there is (living)
+correct: true
+option: あります — there is (object)
+correct: true
+option: おいしい — delicious
+---
+type: single_selection
+text: ワタナベさんはときどきがっこうでともだちとにほんごのほんをよみます
+romanji: Watanabe-san wa tokidoki gakkō de tomodachi to nihongo no hon wo yomimasu
+option: Watanabe sometimes reads a Japanese book at school with a friend
+correct: true
+option: Watanabe always reads a Japanese book at school with a friend
+option: Watanabe sometimes writes a Japanese book at school with a friend
+option: Watanabe sometimes buys a Japanese book at school with a friend
+---
+type: sentence_structure
+text: サラはまいにちいえでともだちにてがみをかきます
+romanji: Sara wa mainichi ie de tomodachi ni tegami wo kakimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: ともだち
+romanji: tomodachi
+meaning: friend
+pos: noun
+word: に
+romanji: ni
+meaning: to (recipient)
+pos: particle
+word: てがみ
+romanji: tegami
+meaning: letter
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: かきます
+romanji: kakimasu
+meaning: write
+pos: verb
+---
+type: single_selection
+text: サラはまいにちいえでともだちにてがみをかきます
+romanji: Sara wa mainichi ie de tomodachi ni tegami wo kakimasu
+option: Sara writes a letter to a friend at home every day
+correct: true
+option: Sara reads a letter from a friend at home every day
+option: Sara sends a letter to a friend at home every day
+option: Sara likes writing letters at home every day
+---
+type: single_selection
+text: ジョージのともだちはにほんごとえいごがすきです
+romanji: Jōji no tomodachi wa nihongo to eigo ga suki desu
+option: George's friend likes Japanese and English
+correct: true
+option: George likes Japanese and English
+option: George's friend studies Japanese and English
+option: George's friend speaks Japanese and English
+---
+type: identify_words
+text: わたしのともだちはいつもいえでおいしいごはんをたべます
+romanji: Watashi no tomodachi wa itsumo ie de oishii gohan wo tabemasu
+option: の
+correct: true
+option: は
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: が
+option: に
+option: と

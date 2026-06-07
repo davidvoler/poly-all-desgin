@@ -1,0 +1,117 @@
+---
+title: Lesson 2 - New Word — すきです (like)
+weight: 2
+---
+type: explanation
+すきです (suki desu) means "like". The thing you like is marked with が (ga) — a new particle that works like を but is used with feelings and preferences. Example: コーヒーがすきです — "I like coffee".
+---
+type: single_selection
+text: コーヒーがすきです
+romanji: Kōhī ga suki desu
+option: I like coffee
+correct: true
+option: I drink coffee
+option: I want coffee
+option: Coffee is good
+---
+type: single_selection
+text: わたしはねこがすきです
+romanji: Watashi wa neko ga suki desu
+option: I like cats
+correct: true
+option: I want a cat
+option: My cat is cute
+option: I have a cat
+---
+type: single_selection
+text: サラはごはんがすきです
+romanji: Sara wa gohan ga suki desu
+option: Sara likes rice
+correct: true
+option: Sara eats rice
+option: Sara makes rice
+option: Sara wants rice
+---
+type: sentence_structure
+text: ジョージはにほんごがすきです
+romanji: Jōji wa nihongo ga suki desu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: にほんご
+romanji: nihongo
+meaning: Japanese (language)
+pos: noun
+word: が
+romanji: ga
+meaning: (subject/preference marker)
+pos: particle
+word: すきです
+romanji: suki desu
+meaning: like
+pos: adjective + copula
+---
+type: single_selection
+text: ジョージはにほんごがすきです
+romanji: Jōji wa nihongo ga suki desu
+option: George likes Japanese
+correct: true
+option: George studies Japanese
+option: George speaks Japanese
+option: George teaches Japanese
+---
+type: single_selection
+text: ワタナベさんはねこもいぬもすきです
+romanji: Watanabe-san wa neko mo inu mo suki desu
+option: Watanabe likes both cats and dogs
+correct: true
+option: Watanabe likes cats or dogs
+option: Watanabe has cats and dogs
+option: Watanabe's cats and dogs are cute
+---
+type: multiple_choice
+text: すきです (suki desu)
+romanji: (select all correct)
+option: means "like"
+correct: true
+option: the liked thing is marked with が
+correct: true
+option: the liked thing is marked with を
+option: すき is an adjective
+correct: true
+---
+type: single_selection
+text: サラはコーヒーがすきですか
+romanji: Sara wa kōhī ga suki desu ka
+option: Does Sara like coffee?
+correct: true
+option: Sara likes coffee
+option: Does Sara drink coffee?
+option: Is Sara's coffee good?
+---
+type: single_selection
+text: はい、わたしもコーヒーがすきです
+romanji: Hai, watashi mo kōhī ga suki desu
+option: Yes, I like coffee too
+correct: true
+option: No, I like coffee too
+option: Yes, I drink coffee too
+option: Yes, I make coffee too
+---
+type: identify_words
+text: わたしはサラのねこがとてもすきです
+romanji: Watashi wa Sara no neko ga totemo suki desu
+option: は
+correct: true
+option: の
+correct: true
+option: が
+correct: true
+option: を
+option: で
+option: に
