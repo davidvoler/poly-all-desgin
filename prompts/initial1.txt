@@ -1,0 +1,59 @@
+
+
+I want to create a course of Japanese for English speakers 
+The course is for beginners 
+could you please create a single lesson with 12 exercises 
+Initially we can start with very simple sentences
+
+
+The course will only contain exercise of this 3 types 
+single_selection
+a sentences with a few options - one correct option
+multiple_choice
+a sentence with multiple options more than one option could be correct
+explanation
+non interactive explanation  
+identify words
+a sentences and options of words - correct when the word is in the sentences and in correct when the word is not 
+For now these are all the question type we do not need any other 
+
+The format is as follows:
+
+---
+title:  Lesson 1 intro to...
+weight: 1
+---
+type: single_selection
+text: おはよう
+romanji: Ohayō 
+option: Good morning
+correct: true
+option:  How are you 
+option:  Yes
+---
+type: explanation 
+some explanation will come here 
+yet another line of explanation 
+---
+type: identify_words
+text: 猫は悲しそうに見える
+romanji: Neko wa kanashi-sō ni mieru
+option: 猫
+correct: true
+option: は
+correct: true
+option:おはよう
+option: 思った
+
+---
+type: multiple_choice
+text: 花
+romanji: hana
+option: flower
+correct: true
+options: blossom
+correct: true 
+option: flowers
+correct: true 
+option: cat
+--
