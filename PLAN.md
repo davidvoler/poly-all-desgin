@@ -352,5 +352,26 @@ TIME FOR DETAILS - LET'S COMPLETE THE UI.
 
 
 
+*** Editing ***
+- [] Simplify editing and co-editing logic 
+     - [] Anyone can edit - after signing the term and conditions 
+     - [w] Each course has the following states 
+          school_id 
+          Editing Stage 
+          - draft
+          - preview
+          - published 
+          Access State
+          - public
+          - invitation
+          - private ? only for me 
+          Co Editing 
+          - private - default 
+          - Allow copy  
+          - Allow All  
+- [] Add link in the home page to create content 
+- [v] Create the terms and conditions
+
+
 
 

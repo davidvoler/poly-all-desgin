@@ -90,4 +90,12 @@ They can pay by active invitation
 - Schools could be our growth factor - even if we do not charge them money we should allow them to create private content - to a certain extent
 - we need users, free content could be a start. but how do we encourage people to create content? 
 Co-Editing could be interesting, this would allow users to improve content, but it could be complicated to manage. 
- 
+
+
+Summary 
+
+
+- invitation - for closed content - no need for schools for a single user
+- schools - add features as we go
+  - follow up on students progress 
+  - shared editing 
