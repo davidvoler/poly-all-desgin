@@ -156,3 +156,52 @@ WaveNet ≈ **$16 / 1M chars** too. A sentence ≈ 30–60 chars.
 
 Ruby generation is a cheap backend utility (no per-call LLM) → bundle it free
 with Japanese courses.
+
+
+
+## Creating course with Claude - Lesson learned 
+
+- The sentences got very long after a few lessons 
+- We have a single exercise oer sentences - beginners need repetition and need multiple exercise per lesson
+- show translation for any sentence - after checking answer
+- add comments to exercise - after exercise
+- new format is nice 
+- annotated sentences could be an exercise type - with some explanation
+A sentence like:
+Good morning, and thanks for the water
+can not be in the 5 lesson for beginner 
+it is too complicated and has 2 parts
+
+I am not sure Claude is good for the task 
+romanji: Kōhī wa arigatō gozaimasu ka
+option: Would you like coffee?
+this looks to me like a wrong translation
+### Suggestion
+
+- Create multiple steps for each lesson/module 
+  - words - suggest to start with common known words like greeting words 
+  - sentences 
+  - exercise 
+- In each lesson/module define 
+  - max words per sentences 
+  - number of exercise per sentence
+
+We can also think of a course that has a curve of values 
+ - number of words per module/lesson
+ - number of sentences per lesson
+ - number of exercises per lesson 
+ - max number of words in sentences 
+ - number of exercises per sentences 
+ 
+
+### Summary 
+words -> sentences -> exercise
+well defined parameters for each module/lesson.
+Finalize the structure 
+Add comments after exercise is solved. 
+guess the verb game. 
+hint
+
+
+try with different models. 
+

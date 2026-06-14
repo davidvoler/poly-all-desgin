@@ -80,3 +80,14 @@ Features
 - generation online with Polyglot - not in this phase - we do not implement the payment mechanism
 - maybe generate only with polyglot is enabled but very very limited - only for people we know 
 
+
+
+### My Comments on the plan 
+
+- if we charge for content creation - we should consider invitations - as private teacher would like to earn money for their efforts. Than as a result we will have to collect money for them. 
+Alternatively they can have their own way to get money from their students. We only allow them to close the content for their student only 
+They can pay by active invitation  
+- Schools could be our growth factor - even if we do not charge them money we should allow them to create private content - to a certain extent
+- we need users, free content could be a start. but how do we encourage people to create content? 
+Co-Editing could be interesting, this would allow users to improve content, but it could be complicated to manage. 
+ 
