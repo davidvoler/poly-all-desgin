@@ -66,7 +66,8 @@ ALTER TABLE course_simple.course ADD COLUMN metadata jsonb;
 
 
 
-ALTER TABLE user_data.course ADD COLUMN edit_stage varchar(20) default 'draft';
-ALTER TABLE user_data.course ADD COLUMN access varchar(20) default 'private';
-ALTER TABLE user_data.course ADD COLUMN share_edit varchar(20) default 'private';
+ALTER TABLE course_simple.course ADD COLUMN edit_stage varchar(20) default 'draft';
+ALTER TABLE course_simple.course ADD COLUMN access varchar(20) default 'private';
+ALTER TABLE course_simple.course ADD COLUMN share_edit varchar(20) default 'private';
+ALTER TABLE course_simple.course ADD COLUMN copied_from int8 default 0;
 

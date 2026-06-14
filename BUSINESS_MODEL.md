@@ -94,7 +94,6 @@ Co-Editing could be interesting, this would allow users to improve content, but 
 
 Summary 
 
-
 - invitation - for closed content - no need for schools for a single user
 - schools - add features as we go
   - follow up on students progress 

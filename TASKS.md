@@ -658,3 +658,28 @@ Shall we try generate with UI se if we get better results
 
 
 
+*** Editing ***
+- [v] Simplify editing and co-editing logic 
+     - [] Anyone can edit - after signing the term and conditions 
+     - [w] Each course has the following states 
+          school_id 
+          Editing Stage 
+          - draft
+          - preview
+          - published 
+          Access State
+          - public
+          - invitation
+          - private ? only for me 
+          Co Editing 
+          - private - default 
+          - Allow copy  
+          - Allow All  
+- [v] Create the terms and conditions
+- [] Do we need to add a new question types - like ruby text or annotated sentence?
+- [] The export is now a Json - need to export to our format
+- [] remove create school for now - hide it - use a script to create new schools 
+- [] 
+
+
+- [] Add link in the home page to create content 
