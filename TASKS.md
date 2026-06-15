@@ -667,6 +667,15 @@ Shall we try generate with UI se if we get better results
 
 
 ### Branch step-11-mvp-phase-2-acl-co-editing
+
+
+- [] Simplify the Dashboard access
+  - [] default dashboard access is to default school
+  - [] login to different school - https://dashboard.polyglots.social/school_id or  https://school_id.dashboard.polyglots.social/
+The above solution would allow users to be part of multiple schools and login ech time to a different one with the same user in the system. 
+
+
+
 - [v] Simplify editing and co-editing logic 
      - [] Anyone can edit - after signing the term and conditions 
      - [w] Each course has the following states 
