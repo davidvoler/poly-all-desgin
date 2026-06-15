@@ -78,11 +78,11 @@ class AppConfig {
         defaultValue: '',
       );
 
-  static String get auth0RedirectUri => _read(
-        'AUTH0_REDIRECT_URI',
-        fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
-        defaultValue: '',
-      );
+  /// On web, Auth0 redirects back to wherever the app is currently
+  /// served. `Uri.base.origin` is the page's origin (scheme + host +
+  /// port, no path/query/fragment) — the exact value to register as
+  /// an Allowed Callback URL.
+  static String get auth0RedirectUri => Uri.base.origin;
 
   /// True in non-production builds. Surfaces dev-only affordances —
   /// e.g. the login page keeps an email/password form so we don't

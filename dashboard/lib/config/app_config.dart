@@ -86,11 +86,12 @@ class AppConfig {
         defaultValue: '',
       );
 
-  static String get auth0RedirectUri => _read(
-        'AUTH0_REDIRECT_URI',
-        fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
-        defaultValue: '',
-      );
+  // static String get auth0RedirectUri => _read(
+  //       'AUTH0_REDIRECT_URI',
+  //       fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
+  //       defaultValue: '',
+  //     );
+  static String get auth0RedirectUri => Uri.base.origin;
 
   /// True in non-production builds. Surfaces dev-only affordances —
   /// e.g. the login page keeps the email/password form so testing
