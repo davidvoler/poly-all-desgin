@@ -45,7 +45,9 @@ _DEFAULT_CORS_ORIGINS = (
     "http://127.0.0.1:8000,"
     "https://www.polyglots.social,"
     "https://app.polyglots.social,"
-    "https://dashboard.polyglots.social"
+    "https://dashboard.polyglots.social",    
+    "https://school1.app.polyglots.social",    
+    "https://school1.dashboard.polyglots.social",    
 )
 _cors_origins = [
     o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
