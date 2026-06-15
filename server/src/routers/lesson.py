@@ -3,7 +3,9 @@ from models.course import Lesson, LessonCompleted
 from utils.auth_deps import current_user_id
 from utils.db import get_query_results, run_query
 from routers.course import user_course_status
+from fastapi import Request
 router = APIRouter()
+
 
 
 @router.get("/", response_model=list[Lesson])
@@ -72,3 +74,15 @@ async def lesson_completed(lesson_completed: LessonCompleted,
 
     print(lesson_completed)
     return {"message": "Lesson completion recorded successfully"}
+
+@router.get("/status")
+async def get_current_url(request:Request):
+    return {"url": str(request.url),
+            "path": str(request.url.path),
+            "query": str(request.url.query),
+            "base_url": str(request.base_url),
+            "host": str(request.client.host),
+            "port": str(request.client.port),
+            "scheme": str(request.url.scheme),
+            "hostname": str(request.url.hostname),
+            "user_agent": str(request.headers.get("user-agent"))}
