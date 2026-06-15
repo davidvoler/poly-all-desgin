@@ -2,6 +2,8 @@
 HttpOnly `user_id` cookie set by routers/auth.py. Use this on every
 user-scoped endpoint instead of accepting `user_id` from the client —
 the cookie is the only source the server should trust."""
+from urllib.parse import urlparse
+
 from fastapi import HTTPException, Request
 
 
@@ -33,7 +35,9 @@ def school_id_from_hostname(hostname: str) -> int:
 
 def current_user_id_school_id(request: Request) -> (int, int):
     raw = request.cookies.get("user_id")
-    hostname = request.url.hostname
+    origin = request.headers.get("origin")
+    print(f"Determining user_id and school_id from request. Origin: {origin}, Hostname: {request.url.hostname}")
+    hostname = urlparse(origin).hostname if origin else request.url.hostname
     school_id = school_id_from_hostname(hostname)
     if not raw:
         return 0, school_id
