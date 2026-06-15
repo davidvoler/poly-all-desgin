@@ -23,8 +23,12 @@ from editor.routes import (
     review as editor_review,
     lesson as editor_lesson,
 )
-
-app = FastAPI()
+enable_docs =  bool(os.environ.get("ENABLE_DOCS", ""))
+app = FastAPI(
+    docs_url="/docs" if enable_docs else None, 
+    redoc_url="/redoc" if enable_docs else None, 
+    openapi_url="/openapi.json" if enable_docs else None
+)
 
 # CORS — credentialed requests (i.e. every /api/v1/auth/* call, which
 # carries the HttpOnly user_id cookie) require an explicit origin
