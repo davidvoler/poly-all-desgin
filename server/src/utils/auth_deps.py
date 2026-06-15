@@ -22,6 +22,7 @@ def current_user_id(request: Request) -> int:
 
 
 def school_id_from_hostname(hostname: str) -> int:
+    print(f"Determining school_id from hostname: {hostname}")
     if not hostname:
         return -1
     if hostname in ["localhost", "127.0.0.1", "app.polyglots.social", "dashboard.polyglots.social"]:
