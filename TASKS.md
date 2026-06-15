@@ -679,7 +679,34 @@ Shall we try generate with UI se if we get better results
 - [] Do we need to add a new question types - like ruby text or annotated sentence?
 - [] The export is now a Json - need to export to our format
 - [] remove create school for now - hide it - use a script to create new schools 
-- [] 
+
+*** Complete the Export/Import formats ***
+
+- [] create an example lesson 
+- [] improve the create with AI page - add more features
 
 
-- [] Add link in the home page to create content 
+*** Create with AI ***
+
+- [] Try with one of gemini's model
+  - [] buy tokens 
+  - [] Experiment with a few languages  
+- [] Try with open api - ChatGPT tokens 
+- [] Add recording functionality with Azure 
+- [] Use some hash of the string to create the sentence id - so recording can be used
+
+*** Final touches ***
+- [] Add link in the home page to create content?
+
+*** Payment - research stage ***
+- [] researched the different option for payment 
+- [] There are solution that give you a service of of payment management - the cost is around 3.5% of the fee
+- [] For now we should not do payment - but pseudo payment - so we have features -- require payment -- but they will not be open on the web - only when running locally
+- [] Create content with AI - Bring your own Agent - BYOA - would be our choice
+- [] The ability to charge for our customers - premium content - will have to be delayed. But we will have the options to share private using with invitation code. 
+
+
+Summary 
+- Payment delayed for later stage
+- Use your own agent to create content 
+- Invitation for private content - no charge for now 

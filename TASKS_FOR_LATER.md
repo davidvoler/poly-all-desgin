@@ -206,3 +206,62 @@ Rules: column order follows `@scripts` then `ruby` then `tr` (then optional
 
 
 
+
+*** Payments — charge creators for content creation ***
+
+Goal (per BUSINESS_MODEL.md Phase 1): learning stays free; creators pay only for
+the expensive compute they trigger — AI course generation (~per exercise) and
+audio/TTS (~per 1k chars). This is the first paid feature, lowest-friction first
+revenue. Aligns with the "Create with AI → buy tokens" line above.
+
+Core design — PREPAID CREDITS, not charge-per-action:
+  1. Creator buys a credit pack via a hosted checkout page (no card data on us).
+  2. AI generation / TTS deducts credits from a wallet balance.
+  3. Balance hits zero → buy more.
+This avoids real-time metered billing (the hard version), gives cash upfront,
+and the deduct logic is just `UPDATE wallet SET balance = balance - cost`.
+
+   Decision points (resolved per workflow rule — "write options + pick best"):
+   - Provider:
+     - [selected] Merchant of Record (Lemon Squeezy) — becomes the seller of
+       record, handles EU VAT / global sales tax / invoicing for us. Best for a
+       solo/open-source project selling internationally; removes the biggest
+       hidden compliance headache. Hosted checkout = URL + webhook. ~5%+ fees.
+     - [ ] Stripe Checkout — lowest fees (~2.9%+30c), best Python SDK, but WE own
+       VAT/tax compliance (Stripe Tax helps, still on us). Switch path is small
+       (swap SDK call + webhook verify) if MoR fees bite later.
+     - [ ] Paddle — same MoR model as Lemon Squeezy; pick if LS limitations show.
+   - Billing model:
+     - [selected] Prepaid credit packs (wallet + ledger). Simplest; cash upfront.
+     - [ ] Stripe subscriptions / usage-based metered billing — overkill until
+       schools/orgs go recurring (Phase 2); defer.
+   - Source of truth for granting credits:
+     - [selected] Webhook only — provider calls our backend on successful
+       payment; verify signature, then credit the wallet. NEVER grant from the
+       client (it can lie about payment success).
+
+   Backend (FastAPI — new server/src/billing/):
+   - [] DDL: `billing.wallet(user_id, balance, updated_at)` +
+        `billing.transactions(id, user_id, delta, reason, ref, created_at)` ledger.
+   - [] POST /api/v1/billing/checkout — create a hosted checkout session for a
+        chosen pack, return its URL. Auth-gated (X-School-User-Id / cookie).
+   - [] POST /api/v1/billing/webhook — verify provider signature, credit wallet,
+        write a ledger row keyed on the provider event id (idempotent — ignore
+        duplicate webhook deliveries).
+   - [] GET /api/v1/billing/wallet — current balance + recent ledger.
+   - [] Deduct on spend — in the AI-generation + TTS endpoints: check balance →
+        deduct → record ledger row; 402 with a clear message when insufficient.
+        Reuse the per-exercise / per-1k-char costs from CREATE_COURSE_WITH_AI.md.
+
+   Dashboard (Flutter):
+   - [] "Buy credits" UI (pack options) → call /checkout → open returned URL with
+        url_launcher (web: new tab; desktop: browser).
+   - [] Show wallet balance in the header / Settings; refresh on return from
+        checkout. Surface the 402 "out of credits" state on generate/TTS.
+
+   Notes:
+   - Keep secrets server-side only (provider API key + webhook signing secret via
+     env, same pattern as AUTH0_* in docker-compose).
+   - Dev escape-hatch: when the provider key is unset, expose a dev-only "grant
+     credits" path so local flows work without a real provider account (mirror
+     the AUTH0_DOMAIN-unset pattern). Disable automatically once the key is set.
