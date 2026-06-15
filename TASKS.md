@@ -657,8 +657,16 @@ Shall we try generate with UI se if we get better results
 - [] Consider using AI for generating based on a youtube movie  
 
 
+### Branch step-11-mvp-phase-1-editor
 
-*** Editing ***
+*** Formats of question and course ***
+- [] Do we need to add a new question types - like ruby text or annotated sentence?
+- [] The export is now a Json - need to export to our format
+- [] remove create school for now - hide it - use a script to create new schools 
+- [] default school should be the public school 
+
+
+### Branch step-11-mvp-phase-2-acl-co-editing
 - [v] Simplify editing and co-editing logic 
      - [] Anyone can edit - after signing the term and conditions 
      - [w] Each course has the following states 
@@ -676,9 +684,10 @@ Shall we try generate with UI se if we get better results
           - Allow copy  
           - Allow All  
 - [v] Create the terms and conditions
-- [] Do we need to add a new question types - like ruby text or annotated sentence?
-- [] The export is now a Json - need to export to our format
-- [] remove create school for now - hide it - use a script to create new schools 
+
+
+### Branch step-11-mvp-phase-3-create-with-ai
+
 
 *** Complete the Export/Import formats ***
 
@@ -695,18 +704,21 @@ Shall we try generate with UI se if we get better results
 - [] Add recording functionality with Azure 
 - [] Use some hash of the string to create the sentence id - so recording can be used
 
-*** Final touches ***
-- [] Add link in the home page to create content?
+
+### Branch step-11-mvp-phase-4-pseudo-payment
 
 *** Payment - research stage ***
-- [] researched the different option for payment 
-- [] There are solution that give you a service of of payment management - the cost is around 3.5% of the fee
+- [v] researched the different option for payment 
+- [v] There are solution that give you a service of of payment management - the cost is around 3.5% of the fee
 - [] For now we should not do payment - but pseudo payment - so we have features -- require payment -- but they will not be open on the web - only when running locally
 - [] Create content with AI - Bring your own Agent - BYOA - would be our choice
 - [] The ability to charge for our customers - premium content - will have to be delayed. But we will have the options to share private using with invitation code. 
-
 
 Summary 
 - Payment delayed for later stage
 - Use your own agent to create content 
 - Invitation for private content - no charge for now 
+
+### Branch step-11-mvp-phase-10-final-mvp
+*** Final touches ***
+- [] Add link in the home page to create content?
