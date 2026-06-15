@@ -44,3 +44,15 @@ def current_user_id_school_id(request: Request) -> (int, int):
         return int(raw), school_id
     except (TypeError, ValueError):
         return 0, school_id
+
+def get_user_roles(user_id: int, school_id: int) -> list[str]:
+    # Placeholder function to retrieve user roles from the database
+    # In a real implementation, this would query the database for the user's roles
+    if user_id == 1:
+        return ["admin", "user"]
+    elif user_id == 2:
+        return ["user"]
+    else:
+        return []
+    
+

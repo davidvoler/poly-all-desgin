@@ -659,25 +659,45 @@ Shall we try generate with UI se if we get better results
 
 ### Branch step-11-mvp-phase-1-editor
 
-*** Formats of question and course ***
-- [] Do we need to add a new question types - like ruby text or annotated sentence?
-- [] The export is now a Json - need to export to our format
-- [] remove create school for now - hide it - use a script to create new schools 
-- [] default school should be the public school 
 
-
-### Branch step-11-mvp-phase-2-acl-co-editing
-
-
-- [] Simplify the Dashboard access
+- [v] Simplify the Dashboard access
   - [] default dashboard access is to default school
   - [w] login to different school - https://dashboard.polyglots.social/school_id or  https://school_id.dashboard.polyglots.social/
 The above solution would allow users to be part of multiple schools and login ech time to a different one with the same user in the system. 
 
 - [v] solve subdomain/domain school
 - [] unify dashboard login / app login to a single server api
-- [] load school from url 
+- [v] load school from url
+- [v] save it in a cookie - how save is it? 
+- [] use it everywhere - to get courses, lessons etc.
+- [] different login for certain schools - public/any private/invitation
+- [p] load user roles/permission 
+- [p] invitation join school 
+- [p] invitation course  
 
+school tables are quite good - maybe they need a few changes - but mostly the design is ok 
+- [] make a list of changes and needed
+- [] user roles - should be json or list
+- [] invitation - private - or multiple 
+- [] all user data should be in school context
+- [] school should use int for id not string everywhere 
+activity_log - good - future  
+billing_methods - future 
+course_access - in course record 
+password_resets - not used for now - we use auth0
+plan_features - future 
+plans - future 
+school_invites - require updates - 
+school_users - good - a user maybe member in multiple schools - but we will always see a single school context
+schools - needed - we also need school icon
+student_enrollments - future 
+super_admins - remove - just a role 
+terms_acceptances - needed 
+- [] hide show elements in dashboard - depending on roles 
+- [] hide show courses - depending on school 
+- [] consider adding school to secured cookie 
+
+#### ACL
 
 - [v] Simplify editing and co-editing logic 
      - [] Anyone can edit - after signing the term and conditions 
@@ -697,10 +717,31 @@ The above solution would allow users to be part of multiple schools and login ec
           - Allow All  
 - [v] Create the terms and conditions
 
+#### Summary 
+when this stage is completed 
+- we can login logout to a school 
+- we can create content in a school
+- we see all the courses we have created 
+- We can see all courses that are in review mode - with a review badge 
+- We can not see courses in draft mode 
+- We can not see courses that are private
+#### Estimate 
+2/4 full working days 
+
+### Branch step-11-mvp-phase-2-formats
+- [] Do we need to add a new question types - like ruby text or annotated sentence?
+- [] The export is now a Json - need to export to our format
+- [] remove create school for now - hide it - use a script to create new schools 
+- [] default school should be the public school 
+- [] consider almost valid yaml - we still have to solve the explanation with multi line text 
+
+correct_option: 
+wrong_option:
+replacing 
+option:
+correct: true 
 
 ### Branch step-11-mvp-phase-3-create-with-ai
-
-
 *** Complete the Export/Import formats ***
 
 - [] create an example lesson 
