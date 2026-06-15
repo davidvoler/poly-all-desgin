@@ -37,7 +37,7 @@ def current_user_id_school_id(request: Request) -> (int, int):
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
     print(f"Determining user_id and school_id from request. Origin: {origin}, Hostname: {request.url.hostname}")
-    hostname = urlparse(origin).hostname if origin else request.url.hostname
+    hostname = urlparse(origin).hostname if origin else ""
     school_id = school_id_from_hostname(hostname)
     if not raw:
         return 0, school_id
