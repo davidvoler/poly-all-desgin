@@ -29,14 +29,13 @@ def school_id_from_hostname(hostname: str) -> int:
         return -1
     if hostname in ["localhost", "127.0.0.1", "app.polyglots.social", "dashboard.polyglots.social"]:
         return 1
-    if hostname.startswith("school1"):
+    elif hostname in ("school1.app.polyglots.social", "school1.dashboard.polyglots.social"):
         return 2
     return -1
 
 def current_user_id_school_id(request: Request) -> (int, int):
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
-    print(f"Determining user_id and school_id from request. Origin: {origin}, Hostname: {request.url.hostname}")
     hostname = urlparse(origin).hostname if origin else ""
     school_id = school_id_from_hostname(hostname)
     if not raw:
@@ -45,10 +44,3 @@ def current_user_id_school_id(request: Request) -> (int, int):
         return int(raw), school_id
     except (TypeError, ValueError):
         return 0, school_id
-    # if not raw:
-    #     raise HTTPException(status_code=401, detail="Not signed in")
-    # try:
-    #     return int(raw)
-    # except (TypeError, ValueError):
-    #     raise HTTPException(status_code=401, detail="Malformed session cookie")
-
