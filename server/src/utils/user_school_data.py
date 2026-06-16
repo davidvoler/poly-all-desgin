@@ -1,0 +1,39 @@
+from utils.db import get_query_results
+from models.auth import SchoolUser
+
+def _get_user_dashboard_permission(user:dict, school_payment_status: bool) -> dict:
+    status = user.get("status", 'inactive')
+    roles = user.get("roles", [])
+    signed_terms_version = user.get("signed_terms_version", 0)
+    permissions = {
+        "about": True,
+        "settings": False,
+        "courses": False,
+        "create_with_ai": False,
+    }
+    if status != "active":
+        return permissions
+    if signed_terms_version < _get_latest_terms_version():
+        permissions["signed_terms"] = True
+    if "admin" in roles:
+        permissions["settings"] = True
+        permissions["courses"] = True
+    if "editor" in roles:
+        permissions["courses"] = True
+    if "ai_creator" in roles and school_payment_status:
+        permissions["create_with_ai"] = True
+    return permissions    
+
+async def _get_school_user(user_id: int, school_id: int) -> dict:
+    sql = "SELECT * FROM schools.school_users WHERE user_id = %s AND school_id = %s"
+    params = (user_id, school_id)
+    results = await get_query_results(sql, params)
+    return results[0] if results else {}
+
+
+async def get_user_full_data(user_id: int, school_id: int) -> SchoolUser:
+    user_data = await _get_school_user(user_id, school_id)
+    permissions = _get_user_dashboard_permission(user_data, school_payment_status=True)  # Placeholder for actual payment status
+    school_user =  SchoolUser(**user_data)
+    school_user.permissions = permissions
+    return school_user

@@ -87,6 +87,7 @@ DROP TABLE IF EXISTS school.schools;
 CREATE TABLE school.schools (
 	school_id serial4 NOT NULL,
 	school_url varchar(64) NOT NULL,
+	school_dashboard_url varchar(64) NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"plan" varchar(32) DEFAULT 'free'::character varying NOT NULL,
 	is_public bool DEFAULT false NOT NULL,
@@ -99,7 +100,8 @@ CREATE TABLE school.schools (
 	created_at timestamp DEFAULT now() NOT NULL,
 	updated_at timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT schools_pkey PRIMARY KEY (school_id),
-	CONSTRAINT schools_url_uq UNIQUE (school_url)
+	CONSTRAINT schools_url_uq UNIQUE (school_url),
+	CONSTRAINT schools_dashboard_url_uq UNIQUE (school_dashboard_url)
 );
 
 DROP TABLE IF EXISTS school.terms_acceptances;

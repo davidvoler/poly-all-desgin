@@ -3,9 +3,10 @@ HttpOnly `user_id` cookie set by routers/auth.py. Use this on every
 user-scoped endpoint instead of accepting `user_id` from the client —
 the cookie is the only source the server should trust."""
 from urllib.parse import urlparse
+from utils.user_school_data import get_user_full_data
+from models.auth import SchoolUserBase, SchoolUser
 
 from fastapi import HTTPException, Request
-
 
 def current_user_id(request: Request) -> int:
     raw = request.cookies.get("user_id")
@@ -33,26 +34,30 @@ def school_id_from_hostname(hostname: str) -> int:
         return 2
     return -1
 
-def current_user_id_school_id(request: Request) -> (int, int):
+async def current_school_user(request: Request) -> SchoolUserBase:
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
     hostname = urlparse(origin).hostname if origin else ""
     school_id = school_id_from_hostname(hostname)
     if not raw:
-        return 0, school_id
+        return SchoolUserBase(user_id=0, school_id=school_id)
     try:
-        return int(raw), school_id
+        return SchoolUserBase(user_id=int(raw), school_id=school_id)
     except (TypeError, ValueError):
-        return 0, school_id
+        return SchoolUserBase(user_id=0, school_id=school_id)
 
-def get_user_roles(user_id: int, school_id: int) -> list[str]:
-    # Placeholder function to retrieve user roles from the database
-    # In a real implementation, this would query the database for the user's roles
-    if user_id == 1:
-        return ["admin", "user"]
-    elif user_id == 2:
-        return ["user"]
-    else:
-        return []
     
+async def current_school_user_full(request: Request) -> SchoolUser:
+    raw = request.cookies.get("user_id")
+    origin = request.headers.get("origin")
+    hostname = urlparse(origin).hostname if origin else ""
+    school_id = school_id_from_hostname(hostname)
+    user_id = -1
+    try:
+        user_id = int(raw)
+    except (TypeError, ValueError):
+        #TODO: Handle the error
+        user_id = -1
+    return await get_user_full_data(user_id, school_id)
+            
 
