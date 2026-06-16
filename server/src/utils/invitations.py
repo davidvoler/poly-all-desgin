@@ -1,4 +1,6 @@
 
+from utils.db import run_query, get_query_results
+
 
 def verify_school_invitation_code(invitation_code: str, school_id: int) -> bool:
     """

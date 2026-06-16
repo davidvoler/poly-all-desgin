@@ -681,18 +681,23 @@ school tables are quite good - maybe they need a few changes - but mostly the de
 - [] invitation - private - or multiple 
 - [] all user data should be in school context
 - [] school should use int for id not string everywhere 
-activity_log - good - future  
-billing_methods - future 
-course_access - in course record 
-password_resets - not used for now - we use auth0
-plan_features - future 
-plans - future 
+
+Change tables 
+
+activity_log - good - future  - leave untouched 
+billing_methods - future - leave untouched 
+course_access - in course record - leave untouched 
+password_resets - not used for now - we use auth0 - leave untouched 
+plan_features - future - leave untouched 
+plans - future - leave untouched 
 school_invites - require updates - 
 school_users - good - a user maybe member in multiple schools - but we will always see a single school context
 schools - needed - we also need school icon
 student_enrollments - future 
-super_admins - remove - just a role 
-terms_acceptances - needed 
+- [w] super_admins - remove - just a role - remove 
+- [w] terms_acceptances - needed
+
+
 - [] hide show elements in dashboard - depending on roles 
 - [] hide show courses - depending on school 
 - [] consider adding school to secured cookie 
