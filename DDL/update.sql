@@ -166,4 +166,26 @@ VALUES
 (6,2,'{super_admin,school_admin,teacher}'),
 (6,3,'{super_admin,school_admin,teacher}');
 
+
+
+
+CREATE TABLE user_data.preference (
+	user_id int4 NOT NULL,
+	school_id int8 DEFAULT 1 NULL,
+	ui_lang varchar(12) NULL,
+	lang varchar(12) DEFAULT ''::character varying NOT NULL,
+	to_lang varchar(12) DEFAULT ''::character varying NULL,
+	course_id int4 NULL,
+	module_id int4 NULL,
+	lesson_id int4 NULL,
+	created_at date DEFAULT now() NULL,
+	updated_at date DEFAULT now() NULL,
+	lesson_name varchar(300) NULL,
+	module_name varchar(300) NULL,
+	course_name varchar(300) NULL,
+	quiz_settings jsonb NULL,
+	CONSTRAINT preference_pkey PRIMARY KEY (user_id,school_id, lang)
+);
+DROP TABLE IF EXISTS user_data.preference;
+
 -- DONE

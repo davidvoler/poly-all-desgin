@@ -70,6 +70,7 @@ class UserPref(BaseModel):
     a second round-trip. `preference` is null for a brand-new user who
     hasn't picked a course yet."""
     user_id: int
+    school_id: int
     email: str
     name: str
     preference: dict | None = None

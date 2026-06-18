@@ -6,7 +6,7 @@ class Preference(BaseModel):
     # Optional on request — the server fills it from the auth cookie.
     # Always populated on response (the DB row has it).
     user_id: int | None = None
-    school: str|None = "pgs"
+    school_id: int|None = None
     course_id: int|None = None
     module_id: int|None = None
     lesson_id: int|None = None

@@ -3,8 +3,9 @@ HttpOnly `user_id` cookie set by routers/auth.py. Use this on every
 user-scoped endpoint instead of accepting `user_id` from the client —
 the cookie is the only source the server should trust."""
 from datetime import datetime, timedelta
+import json
 from urllib.parse import urlparse
-from utils.db import get_query_results
+from utils.db import get_query_results, run_query
 from utils.user_school_data import get_user_full_data
 from models.auth import SchoolUserBase, SchoolUser
 from fastapi import HTTPException, Request
@@ -21,7 +22,7 @@ async def _load_schools_cache():
     SCHOOL_CACHE_LAST_LOADED = datetime.now()
 
 
-async def get_schools_cache():
+async def get_schools_cache() -> dict:
     n = datetime.now()
     global SCHOOL_CACHE
     if not SCHOOL_CACHE or (n - SCHOOL_CACHE_LAST_LOADED) > timedelta(hours=1):
@@ -70,7 +71,12 @@ async def current_school_user(request: Request) -> SchoolUserBase:
     except (TypeError, ValueError):
         return SchoolUserBase(user_id=0, school_id=school_id)
 
-    
+async def current_school(request: Request) -> int:
+    origin = request.headers.get("origin")
+    hostname = urlparse(origin).hostname if origin else ""
+    school_id = await school_id_from_hostname(hostname)
+    return school_id    
+
 async def current_school_user_full(request: Request) -> SchoolUser:
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
@@ -85,4 +91,24 @@ async def current_school_user_full(request: Request) -> SchoolUser:
         user_id = -1
     return await get_user_full_data(user_id, school_id)
             
+
+
+
+
+async def get_or_create_school_user(user_id: int, school_id: int) -> int:
+    data = await get_query_results(
+        """SELECT * FROM school.school_users WHERE user_id = %s AND school_id = %s
+        WHERE user_id = %s AND school_id = %s LIMIT 1""",
+        (user_id, school_id),
+    )
+    for row in data:
+        return SchoolUser(**row)
+    # User not found, create a new one
+    school_user = SchoolUser(user_id=user_id, school_id=school_id, roles=["student"])
+    await run_query(
+        """INSERT INTO school.school_users (user_id, school_id, roles)
+        VALUES (%s, %s, %s)""",
+        (school_user.user_id, school_user.school_id, json.dumps(school_user.roles)),
+    )
+    return school_user
 

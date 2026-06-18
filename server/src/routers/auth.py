@@ -22,11 +22,12 @@ import logging
 import os
 
 import bcrypt
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response, Depends
 
 from models.user_data import PasswordLoginRequest, UserAuth0Request, UserPref
 from school.utils import auth0 as auth0_verifier
 from utils.db import get_query_results, run_query
+from utils.auth_deps import current_school, get_or_create_school_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -63,7 +64,7 @@ def _cookie_kwargs() -> dict:
     }
 
 
-async def _fetch_user_pref(user_id: int) -> UserPref | None:
+async def _fetch_user_pref(user_id: int, school_id: int = 1) -> UserPref | None:
     """Combine the user row with the most-recent preference. Returns
     None when the user_id doesn't exist — caller decides how to map
     that to an HTTP status."""
@@ -79,14 +80,15 @@ async def _fetch_user_pref(user_id: int) -> UserPref | None:
         SELECT user_id, course_id, module_id, lesson_id,
                ui_lang, lang, to_lang
         FROM user_data.preference
-        WHERE user_id = %s
+        WHERE user_id = %s AND school_id = %s
         ORDER BY updated_at DESC
         LIMIT 1
         """,
-        (user_id,),
+        (user_id, school_id),
     )
     return UserPref(
         user_id=u["user_id"],
+        school_id=school_id,
         email=u.get("email") or "",
         name="",   # the users table doesn't store name today; harmless
         preference=prefs[0] if prefs else None,
@@ -108,6 +110,8 @@ def _verify_password(plain: str, hashed: str) -> bool:
         # Malformed stored hash — treat as failed verify rather than 500.
         return False
 
+
+    
 
 async def _get_or_create_user(email: str) -> int:
     """Upsert by email — returns the user_id. The users table's
@@ -144,6 +148,7 @@ async def _get_or_create_user(email: str) -> int:
 async def get_or_create_user(
     payload: UserAuth0Request,
     response: Response,
+    school_id: int = Depends(current_school)
 ):
     """Sign in (or sign up) with an Auth0 ID token. Sets a 1-year
     HttpOnly `user_id` cookie so subsequent app launches can call
@@ -180,7 +185,8 @@ async def get_or_create_user(
         raise HTTPException(status_code=400, detail="email is required")
 
     user_id = await _get_or_create_user(email)
-    pref = await _fetch_user_pref(user_id)
+    school_user = await get_or_create_school_user(user_id, school_id)
+    pref = await _fetch_user_pref(user_id, school_id=school_id)
     if pref is None:
         # Should never happen — we just upserted — but treat as 500
         # rather than handing back a half-baked response.
@@ -202,7 +208,7 @@ async def get_or_create_user(
 
 
 @router.post("/login_with_password", response_model=UserPref)
-async def login_with_password(payload: PasswordLoginRequest, response: Response):
+async def login_with_password(payload: PasswordLoginRequest, response: Response, school_id: int = Depends(current_school)):
     """Sign-up-or-sign-in via email + password.
 
       * **Existing email** → verify the bcrypt hash. 401 on mismatch.
@@ -258,7 +264,7 @@ async def login_with_password(payload: PasswordLoginRequest, response: Response)
             raise HTTPException(status_code=500, detail="Failed to create user")
         user_id = int(inserted[0]["user_id"])
 
-    pref = await _fetch_user_pref(user_id)
+    pref = await _fetch_user_pref(user_id, school_id=school_id)
     if pref is None:
         raise HTTPException(status_code=500, detail="User row missing")
 
@@ -267,7 +273,7 @@ async def login_with_password(payload: PasswordLoginRequest, response: Response)
 
 
 @router.post("/login_with_cookie", response_model=UserPref)
-async def login_with_cookie(request: Request):
+async def login_with_cookie(request: Request, school_id: int = Depends(current_school)):
     """Restore a session from the `user_id` cookie. Returns 401 when
     the cookie is missing or points at a deleted row — the client
     falls back to the login screen in that case."""
@@ -279,7 +285,7 @@ async def login_with_cookie(request: Request):
     except (TypeError, ValueError):
         raise HTTPException(status_code=401, detail="Malformed session cookie")
 
-    pref = await _fetch_user_pref(user_id)
+    pref = await _fetch_user_pref(user_id, school_id=school_id)
     if pref is None:
         raise HTTPException(status_code=401, detail="Unknown user")
     return pref

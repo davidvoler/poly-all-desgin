@@ -1,9 +1,10 @@
 import json
 
 from fastapi import APIRouter, Depends
-from utils.auth_deps import current_user_id
+from utils.auth_deps import current_user_id, current_school_user_full
 from utils.db import get_query_results, run_query
 from models.preference import Preference
+from models.auth import SchoolUser
 router = APIRouter()
 
 
@@ -17,17 +18,18 @@ async def get_user_preferences(user_id: int = Depends(current_user_id)):
 
 @router.post("/")
 async def update_user_preferences(preferences: Preference,
-                                  user_id: int = Depends(current_user_id)):
+                                  school_user:SchoolUser = Depends(current_school_user_full)):
     # Trust the cookie, not the body — clients shouldn't be able to
     # write another user's preference row by tampering with user_id.
+
     query = """
     INSERT into user_data.preference (user_id, course_id, module_id, lesson_id, ui_lang, lang, to_lang, course_name, module_name, lesson_name, quiz_settings)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-    on conflict (user_id, lang) do update
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+    on conflict (user_id,school_id, lang) do update
     SET course_id = %s, module_id = %s, lesson_id = %s,
         ui_lang = %s, lang = %s, to_lang = %s, course_name = %s, module_name = %s, lesson_name = %s,
         quiz_settings = %s::jsonb
-    WHERE  user_data.preference.user_id = %s AND user_data.preference.lang = %s
+    WHERE  user_id = %s AND school_id = %s AND lang = %s
     """
     # jsonb is written as a JSON string + ::jsonb cast (psycopg3 doesn't
     # auto-adapt a plain dict). None stays NULL.
@@ -37,7 +39,8 @@ async def update_user_preferences(preferences: Preference,
         else None
     )
     params = (
-        user_id,
+        school_user.user_id,
+        school_user.school_id,
         preferences.course_id,
         preferences.module_id,
         preferences.lesson_id,
@@ -58,7 +61,8 @@ async def update_user_preferences(preferences: Preference,
         preferences.module_name,
         preferences.lesson_name,
         quiz_settings_json,
-        user_id,
+        school_user.user_id,
+        school_user.school_id,
         preferences.lang
     )
     await run_query(query, params)
