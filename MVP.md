@@ -12,7 +12,7 @@
 - [] hide show elements in dashboard - depending on roles 
 - [] hide show courses - depending on school 
 - [v] remove create school for now - hide it - use a script to create new schools 
-- [] we need user prefs per school 
+- [v] we need user prefs per school 
 
 
 ### Branch step-11-mvp-phase-3-formats

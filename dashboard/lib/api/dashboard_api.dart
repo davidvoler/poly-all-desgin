@@ -31,12 +31,22 @@ final dioProvider = Provider<Dio>((ref) {
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 15),
       responseType: ResponseType.json,
+      // `/api/v1/auth/*` sets an HttpOnly `user_id` cookie and resolves
+      // the school from the request hostname. The dashboard and API run
+      // on different ports (cross-origin on web), so the browser only
+      // stores/sends that cookie when credentials are enabled. Ignored
+      // on native, where Dio carries cookies regardless.
+      extra: {'withCredentials': true},
     ),
   );
 });
 
-/// Response body of POST /api/v1/school_users/login — what we hand
-/// back to the UI to gate routes.
+/// Signed-in session, built from the `UserPref` returned by
+/// POST /api/v1/auth/login_with_password (and /get_or_create_user). The
+/// school is resolved server-side from the request hostname, so there's
+/// no slug to send or store. `schoolUserId` carries the caller's
+/// `user_id` — the identity the new `school.school_users(school_id,
+/// user_id)` model keys on.
 class LoginInfo {
   final int schoolUserId;
   final int schoolId;
@@ -44,7 +54,8 @@ class LoginInfo {
   final String schoolName;
   final String name;
   final String email;
-  final String role; // owner | editor | viewer
+  final String role; // primary role, derived from [roles]
+  final List<String> roles;
 
   const LoginInfo({
     required this.schoolUserId,
@@ -54,26 +65,58 @@ class LoginInfo {
     required this.name,
     required this.email,
     required this.role,
+    this.roles = const [],
   });
 
-  factory LoginInfo.fromJson(Map<String, dynamic> j) => LoginInfo(
-        schoolUserId: j['school_user_id'] as int,
-        schoolId: j['school_id'] as int,
-        schoolSlug: (j['school_slug'] as String?) ?? '',
-        schoolName: (j['school_name'] as String?) ?? '',
-        name: (j['name'] as String?) ?? '',
-        email: (j['email'] as String?) ?? '',
-        role: (j['role'] as String?) ?? 'editor',
-      );
+  /// Roles that unlock admin-only surfaces (Editors + Settings). Spans
+  /// both the new (`school_admin`/`super_admin`) and legacy
+  /// (`admin`/`owner`) vocabularies so cached sessions keep working.
+  static const _adminRoles = {
+    'admin',
+    'owner',
+    'school_admin',
+    'super_admin',
+  };
+
+  /// Tolerates two shapes:
+  ///   * new `/api/v1/auth` UserPref — `{user_id, school_id, email,
+  ///     school_user: {roles: [...]}}`
+  ///   * legacy `/school_users/login` LoginResponse / cached sessions —
+  ///     flat `{school_user_id, role, school_slug, ...}`
+  factory LoginInfo.fromJson(Map<String, dynamic> j) {
+    final su = j['school_user'];
+    final roles = <String>[
+      if (su is Map && su['roles'] is List)
+        for (final r in su['roles'] as List) '$r',
+      // legacy cache persisted a flat `roles` array
+      if (su is! Map && j['roles'] is List)
+        for (final r in j['roles'] as List) '$r',
+    ];
+    // user_id is the new identity; fall back to the legacy PK.
+    final uid = (j['user_id'] ?? j['school_user_id'] ?? 0) as int;
+    final role = (j['role'] as String?) ??
+        (roles.isNotEmpty ? roles.first : 'editor');
+    return LoginInfo(
+      schoolUserId: uid,
+      schoolId: (j['school_id'] as int?) ?? 0,
+      schoolSlug: (j['school_slug'] as String?) ?? '',
+      schoolName: (j['school_name'] as String?) ?? '',
+      name: (j['name'] as String?) ?? '',
+      email: (j['email'] as String?) ?? '',
+      role: role,
+      roles: roles,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
-        'school_user_id': schoolUserId,
+        'user_id': schoolUserId,
         'school_id': schoolId,
         'school_slug': schoolSlug,
         'school_name': schoolName,
         'name': name,
         'email': email,
         'role': role,
+        'roles': roles,
       };
 
   String get initials {
@@ -85,9 +128,9 @@ class LoginInfo {
   }
 
   /// Only admins can manage staff (Editors page) or change the school
-  /// itself (Settings page). Tolerate the pre-migration "owner" label
-  /// for sessions cached before the role rename.
-  bool get isAdmin => role == 'admin' || role == 'owner';
+  /// itself (Settings page).
+  bool get isAdmin =>
+      _adminRoles.contains(role) || roles.any(_adminRoles.contains);
 }
 
 /// Thin client over the dashboard-side endpoints.
@@ -95,35 +138,34 @@ class DashboardApi {
   final Dio _dio;
   DashboardApi(this._dio);
 
+  /// Email + password sign-in against the unified auth router. The
+  /// school is resolved server-side from the request hostname, so no
+  /// slug is sent. Sets the HttpOnly `user_id` session cookie.
   Future<LoginInfo> login({
     required String email,
     required String password,
-    String? schoolSlug,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/login',
+      '/api/v1/auth/login_with_password',
       data: {
         'email': email,
         'password': password,
-        if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
       },
     );
     return LoginInfo.fromJson(res.data ?? const {});
   }
 
   /// Exchange an Auth0 ID token for a [LoginInfo]. The server verifies
-  /// the token against the configured Auth0 JWKS, matches the
-  /// `email` claim to an existing school_users row, and returns the
-  /// same shape as the password-login route.
+  /// the token against the configured Auth0 JWKS, trusts the `email`
+  /// claim, resolves the school from the request hostname, and returns
+  /// the same `UserPref` shape as the password-login route.
   Future<LoginInfo> loginWithAuth0({
     required String idToken,
-    String? schoolSlug,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/login_auth0',
+      '/api/v1/auth/get_or_create_user',
       data: {
         'id_token': idToken,
-        if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
       },
     );
     return LoginInfo.fromJson(res.data ?? const {});
@@ -757,14 +799,12 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> signIn({
     required String email,
     required String password,
-    String? schoolSlug,
   }) async {
     state = const AuthSigningIn();
     try {
       final info = await ref.read(dashboardApiProvider).login(
             email: email,
             password: password,
-            schoolSlug: schoolSlug,
           );
       await _persist(info);
       _setAuthHeader(info.schoolUserId);
@@ -801,7 +841,6 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Pass [connection] to skip Auth0's hosted picker and go straight
   /// to a specific identity provider (e.g. `google-oauth2`).
   Future<void> signInWithAuth0({
-    String? schoolSlug,
     String? connection,
   }) async {
     state = const AuthSigningIn();
@@ -814,7 +853,6 @@ class AuthNotifier extends Notifier<AuthState> {
       }
       final info = await ref.read(dashboardApiProvider).loginWithAuth0(
             idToken: idToken,
-            schoolSlug: schoolSlug,
           );
       await _persist(info);
       _setAuthHeader(info.schoolUserId);
@@ -833,8 +871,8 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Shortcut for [signInWithAuth0] that pins the connection to Google.
   /// The Auth0 dashboard must have google-oauth2 enabled for the SPA
   /// application.
-  Future<void> signInWithGoogle({String? schoolSlug}) =>
-      signInWithAuth0(schoolSlug: schoolSlug, connection: 'google-oauth2');
+  Future<void> signInWithGoogle() =>
+      signInWithAuth0(connection: 'google-oauth2');
 
   Future<void> signOut() async {
     try {

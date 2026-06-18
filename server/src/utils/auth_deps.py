@@ -3,7 +3,6 @@ HttpOnly `user_id` cookie set by routers/auth.py. Use this on every
 user-scoped endpoint instead of accepting `user_id` from the client —
 the cookie is the only source the server should trust."""
 from datetime import datetime, timedelta
-import json
 from urllib.parse import urlparse
 from utils.db import get_query_results, run_query
 from utils.user_school_data import get_user_full_data
@@ -58,18 +57,6 @@ async def school_id_from_hostname(hostname: str) -> int:
             return school_id
     return -1
 
-async def current_school_user(request: Request) -> SchoolUserBase:
-    raw = request.cookies.get("user_id")
-    origin = request.headers.get("origin")
-    hostname = urlparse(origin).hostname if origin else ""
-    school_id = await school_id_from_hostname(hostname)
-    print(f"Current school user: raw={raw}, hostname={hostname}, school_id={school_id}")
-    if not raw:
-        return SchoolUserBase(user_id=0, school_id=school_id)
-    try:
-        return SchoolUserBase(user_id=int(raw), school_id=school_id)
-    except (TypeError, ValueError):
-        return SchoolUserBase(user_id=0, school_id=school_id)
 
 async def current_school(request: Request) -> int:
     origin = request.headers.get("origin")
@@ -96,20 +83,24 @@ async def current_school_user_full(request: Request) -> SchoolUser:
 
 
 
-async def get_or_create_school_user(user_id: int, school_id: int) -> int:
+async def get_or_create_school_user(user_id: int, school_id: int) -> SchoolUser:
     data = await get_query_results(
-        """SELECT * FROM school.school_users WHERE user_id = %s AND school_id = %s
+        """SELECT * FROM school.school_users
         WHERE user_id = %s AND school_id = %s LIMIT 1""",
         (user_id, school_id),
     )
     for row in data:
         return SchoolUser(**row)
-    # User not found, create a new one
+    # User not found, create a new one. `roles` is a varchar[] column —
+    # pass the Python list directly so psycopg adapts it to a Postgres
+    # array; json.dumps would store the literal string "[...]" instead.
     school_user = SchoolUser(user_id=user_id, school_id=school_id, roles=["student"])
     await run_query(
         """INSERT INTO school.school_users (user_id, school_id, roles)
         VALUES (%s, %s, %s)""",
-        (school_user.user_id, school_user.school_id, json.dumps(school_user.roles)),
+        (school_user.user_id, school_user.school_id, school_user.roles),
     )
     return school_user
+
+
 

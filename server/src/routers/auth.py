@@ -27,7 +27,8 @@ from fastapi import APIRouter, HTTPException, Request, Response, Depends
 from models.user_data import PasswordLoginRequest, UserAuth0Request, UserPref
 from school.utils import auth0 as auth0_verifier
 from utils.db import get_query_results, run_query
-from utils.auth_deps import current_school, get_or_create_school_user
+from utils.auth_deps import current_school, get_or_create_school_user, current_school_user_full
+from models.auth import SchoolUserBase, SchoolUser
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -298,3 +299,12 @@ async def logout(response: Response):
     for key in (_COOKIE_NAME, "lang", "to_lang"):
         response.delete_cookie(key)
     return {"ok": True}
+
+
+
+
+@router.post("/school_user_data", response_model=SchoolUser)
+async def logout(response: Response, user = Depends(current_school_user_full)):
+    return user
+    
+    

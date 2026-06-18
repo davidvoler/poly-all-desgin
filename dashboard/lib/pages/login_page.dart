@@ -36,17 +36,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref.read(authProvider.notifier).signIn(
           email: _email.text.trim(),
           password: _password.text,
-          schoolSlug: _schoolSlug.text.trim().isEmpty
-              ? null
-              : _schoolSlug.text.trim(),
         );
   }
 
   Future<void> _submitGoogle() async {
-    final slug = _schoolSlug.text.trim();
-    await ref
-        .read(authProvider.notifier)
-        .signInWithGoogle(schoolSlug: slug.isEmpty ? null : slug);
+    await ref.read(authProvider.notifier).signInWithGoogle();
   }
 
   @override
