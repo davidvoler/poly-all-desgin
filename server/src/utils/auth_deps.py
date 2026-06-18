@@ -2,11 +2,32 @@
 HttpOnly `user_id` cookie set by routers/auth.py. Use this on every
 user-scoped endpoint instead of accepting `user_id` from the client —
 the cookie is the only source the server should trust."""
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
+from utils.db import get_query_results
 from utils.user_school_data import get_user_full_data
 from models.auth import SchoolUserBase, SchoolUser
-
 from fastapi import HTTPException, Request
+
+SCHOOL_CACHE = {}
+SCHOOL_CACHE_LAST_LOADED = datetime.now()
+
+
+async def _load_schools_cache():
+    global SCHOOL_CACHE
+    sql = "SELECT * FROM school.schools"
+    results = await get_query_results(sql, None)
+    SCHOOL_CACHE = {row['school_id']: row for row in results}
+    SCHOOL_CACHE_LAST_LOADED = datetime.now()
+
+
+async def get_schools_cache():
+    n = datetime.now()
+    global SCHOOL_CACHE
+    if not SCHOOL_CACHE or (n - SCHOOL_CACHE_LAST_LOADED) > timedelta(hours=1):
+        await _load_schools_cache()
+    return SCHOOL_CACHE
+
 
 def current_user_id(request: Request) -> int:
     raw = request.cookies.get("user_id")
@@ -24,21 +45,24 @@ def current_user_id(request: Request) -> int:
     #     raise HTTPException(status_code=401, detail="Malformed session cookie")
 
 
-def school_id_from_hostname(hostname: str) -> int:
+
+
+async def school_id_from_hostname(hostname: str) -> int:
     print(f"Determining school_id from hostname: {hostname}")
-    if not hostname:
-        return -1
-    if hostname in ["localhost", "127.0.0.1", "app.polyglots.social", "dashboard.polyglots.social"]:
-        return 1
-    elif hostname in ("school1.app.polyglots.social", "school1.dashboard.polyglots.social"):
-        return 2
+    schools_cache = await get_schools_cache()
+    print(f"Schools hostname: {hostname}")
+    for school_id, school in schools_cache.items():
+        print(f"Checking school_id={school_id}, school_url={school['school_url']}, school_dashboard_url={school['school_dashboard_url']}")
+        if school['school_url'] == hostname or school['school_dashboard_url'] == hostname:
+            return school_id
     return -1
 
 async def current_school_user(request: Request) -> SchoolUserBase:
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
     hostname = urlparse(origin).hostname if origin else ""
-    school_id = school_id_from_hostname(hostname)
+    school_id = await school_id_from_hostname(hostname)
+    print(f"Current school user: raw={raw}, hostname={hostname}, school_id={school_id}")
     if not raw:
         return SchoolUserBase(user_id=0, school_id=school_id)
     try:
@@ -51,7 +75,8 @@ async def current_school_user_full(request: Request) -> SchoolUser:
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
     hostname = urlparse(origin).hostname if origin else ""
-    school_id = school_id_from_hostname(hostname)
+    school_id = await school_id_from_hostname(hostname)
+    print(f"Current school user full: raw={raw}, hostname={hostname}, school_id={school_id}")
     user_id = -1
     try:
         user_id = int(raw)

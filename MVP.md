@@ -11,8 +11,7 @@
 - [] unify dashboard login / app login to a single server api
 - [] hide show elements in dashboard - depending on roles 
 - [] hide show courses - depending on school 
-- [] consider adding school to secured cookie 
-- [] remove create school for now - hide it - use a script to create new schools 
+- [v] remove create school for now - hide it - use a script to create new schools 
 
 
 

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-from utils.auth_deps import current_user_id_school_id, get_user_roles
-from utils.auth_deps import current_user_id, get_user_id_school_id
+from utils.auth_deps import current_school_user_full, current_user_id
 from utils.db import get_query_results
 
 
@@ -33,7 +32,7 @@ def _get_user_dashboard_permission(user:dict, school_payment_status: bool) -> di
     return permissions    
 
 async def _get_school_user(user_id: int, school_id: int) -> dict:
-    sql = "SELECT * FROM schools.school_users WHERE user_id = %s AND school_id = %s"
+    sql = "SELECT * FROM school.school_users WHERE user_id = %s AND school_id = %s"
     params = (user_id, school_id)
     results = await get_query_results(sql, params)
     return results[0] if results else {}

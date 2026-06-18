@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-from utils.auth_deps import current_user_id_school_id, get_user_roles
-from utils.auth_deps import current_user_id, get_user_id_school_id
+from utils.auth_deps import current_school_user_full, current_user_id
 from utils.db import get_query_results
 
 router = APIRouter()

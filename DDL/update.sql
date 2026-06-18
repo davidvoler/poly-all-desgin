@@ -157,4 +157,13 @@ insert INTO school.schools (school_url, school_dashboard_url, name, plan, is_pub
 ('app.polyglots.social', 'dashboard.polyglots.social', 'polyglots.social', 'free', true, 'public', 'polyglots_social_logo.png'),
 ('school1.app.polyglots.social', 'school1.dashboard.polyglots.social', 'school1', 'free', true, 'public', 'school1_logo.png');
 
+Alter table user_data.users add column school_id int8 default 1;
+
+
+insert INTO school.school_users (school_id, user_id, roles) 
+VALUES
+(6,1,'{super_admin,school_admin,teacher}'),
+(6,2,'{super_admin,school_admin,teacher}'),
+(6,3,'{super_admin,school_admin,teacher}');
+
 -- DONE

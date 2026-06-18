@@ -16,7 +16,6 @@ both routes accept an unverified email/sub payload so a dev can
 sign in without an Auth0 tenant. The dashboard's /login_auth0 route
 takes a similar stance — see `school.utils.auth0.is_enabled()`.
 """
-from __future__ import annotations
 
 import hashlib
 import logging
