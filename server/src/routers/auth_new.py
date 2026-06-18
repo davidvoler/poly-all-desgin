@@ -3,10 +3,14 @@ from models.auth import PasswordLoginRequest, UserAuth0Request, UserPref, Invita
 from server.src.routers.auth_new_utils import auth_user_with_cookie
 from utils.auth_deps import  current_school
 from models.school import School
-from utils.auth_utils import (auth_user, 
+from utils.auth_utils import (auth_auth0_user, 
                               use_invitation, 
                               auth_user_with_password,
-                              auth_user_with_cookie)
+                              auth_user_with_cookie,
+                              school_create_user,
+                              school_require_invitation, 
+                              get_user,
+                              create_user)
 
 router = APIRouter()
 
@@ -19,13 +23,17 @@ async def get_or_create_user(
     school: School = Depends(current_school)):
     if not school:
         raise HTTPException(status_code=400, detail="Unknown school")
-    if school.school_type == "private":
-        raise HTTPException(status_code=403, detail="This school doesn't allow new sign-ups")
-    auth_ok = await auth_user(payload)
+    auth_ok = await auth_auth0_user(payload)
     if not auth_ok:
         raise HTTPException(status_code=401, detail="Auth0 verification failed")
-    #TODO: return full data and set cookie
-    
+    user = await get_user(payload.email, school.school_id, payload.sub)
+    if not user:
+        if school_create_user(school):
+            user = create_user(payload.email, school.school_id, payload.sub, payload.name)
+        if school_require_invitation(school):
+            return {
+                "requires_invitation":True
+            }
     return {}
 
 

@@ -44,21 +44,18 @@ class PasswordLoginRequest(BaseModel):
 
 
 class UserPref(BaseModel):
-    """Return shape for the auth routes — combines the bare user row
-    with the most-recent Preference so the home page can paint without
-    a second round-trip. `preference` is null for a brand-new user who
-    hasn't picked a course yet.
-
-    `school_user` carries the caller's membership in the school resolved
-    from the request hostname (roles, status, signed-terms). The
-    dashboard reads `school_user.roles` to gate admin-only UI, so it
-    must be serialized — not silently dropped."""
     user_id: int
     school_id: int
-    email: str
     name: str
     preference: dict | None = None
-    school_user: SchoolUser | None = None
+    roles: list[str]| None = [] # applicable for dashboard users
+    plan: list[str] | None = [] # applicable for none free schools
+    school_user_id: int | None = None
+    #school data
+    school_name: str | None = None
+    school_type: str | None = None
+    logo_url: str | None = None
+    primary_color: str | None = None
 
 
 class InvitationUseRequest(BaseModel):
