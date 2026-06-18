@@ -63,4 +63,11 @@ class InvitationUseRequest(BaseModel):
     email: str | None = None
     name: str | None = None
     sub: str | None = None
-    invitation_token: str
+    invitation_token: str| None = None
+    course_id: int | None = None
+    lang: str | None = None
+    to_lang: str | None = None
+    
+
+
+

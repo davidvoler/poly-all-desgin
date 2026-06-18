@@ -30,13 +30,16 @@ def school_require_invitation(school: School) -> bool:
     return False
 
 def create_user(user_id, school_id, email, name) -> UserPref:
-    return UserPref(
-        user_id=user_id,
-        school_id=school_id,
-        email=email,
-        name=name,
-        preference=None,
-        school_user=None
-    )
+    pass
 def get_user(email: str, school_id: int, sub: str) -> UserPref:
     pass
+
+def create_user_with_invitation(payload: InvitationUseRequest) -> UserPref:
+    """ get or create user
+        get or create school_user
+        mark invitation as used
+        set user preferences if in invitation
+    """
+    pass
+
+

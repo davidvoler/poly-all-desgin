@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response, Depends
-from models.auth import PasswordLoginRequest, UserAuth0Request, UserPref, InvitationUseRequest
+from models.auth import PasswordLoginRequest, SchoolUser, UserAuth0Request, UserPref, InvitationUseRequest
 from server.src.routers.auth_new_utils import auth_user_with_cookie
+from server.src.school.models import school
 from utils.auth_deps import  current_school
 from models.school import School
 from utils.auth_utils import (auth_auth0_user, 
@@ -10,9 +11,13 @@ from utils.auth_utils import (auth_auth0_user,
                               school_create_user,
                               school_require_invitation, 
                               get_user,
-                              create_user)
+                              create_user,
+                              create_user_with_invitation)
 
 router = APIRouter()
+
+
+
 
 
 
@@ -81,11 +86,25 @@ async def logout(response: Response):
 
 
 @router.post("/school_user_permission", response_model=SchoolUser)
-async def logout(response: Response, user = Depends(current_school_user_full)):
+async def school_user_permission( response: Response, user = Depends(current_school_user_full)):
     """Check the user's permissions for the current school. Get it from Databases - do not use cache 
     Use this url before important tasks such as deleting users or courses """
     #TODO: return school+user information
     return user
+
+
+
+@router.post("/join_with_invitation", response_model=UserPref)
+async def join_with_invitation(payload: InvitationUseRequest, response: Response, user = Depends(current_school_user_full)):
+    user_exists = get_user(payload.email, payload.school_id, payload.sub)
+    if user_exists:
+        #TODO: login user and return data
+        pass
+    else:
+        return await create_user_with_invitation(payload)
+    
+
+
 
 """
 1. return full information 
@@ -109,4 +128,13 @@ What is the process for a private school
 - login - if user doesn't exist, ask for invitation code - ond create a new user after invitation code is verified 
   What is the simplest way to start with?
 
+Deep link flow for private schools:
+ - user clicks on an invitation link that includes the invitation token
+ - authenticate with auth0
+ - send to the server auth data + invitation data 
+ - if users is not new in school - just login the user
+ - if user is completely new - or new in school 
+    - validate the invitation token
+    - if valid, create the user and log them in, set user preferences like course, language, etc. based on the invitation data
+    - if invalid, return an error
 """
