@@ -118,7 +118,6 @@ DROP TABLE IF EXISTS school.super_admins;
 
 
 
--- DONE
 
 
 
@@ -148,3 +147,14 @@ CREATE TABLE school.course_invitations (
     uses_count int4 default 0,
 	CONSTRAINT course_invitations_pkey PRIMARY KEY (invitation_id)
 );
+
+
+
+
+
+insert INTO school.schools (school_url, school_dashboard_url, name, plan, is_public, school_type,logo_url) VALUES
+('localhost', 'localhost', 'local', 'free', true, 'public', 'polyglots_social_logo.png'),
+('app.polyglots.social', 'dashboard.polyglots.social', 'polyglots.social', 'free', true, 'public', 'polyglots_social_logo.png'),
+('school1.app.polyglots.social', 'school1.dashboard.polyglots.social', 'school1', 'free', true, 'public', 'school1_logo.png');
+
+-- DONE
