@@ -7,13 +7,13 @@
   - [v] school has a specific domain subdomain 
 
 ### Branch step-11-mvp-phase-2-dashboard
-
-- [] unify dashboard login / app login to a single server api
+- [w] unify dashboard login / app login to a single server api
 - [] hide show elements in dashboard - depending on roles 
 - [] hide show courses - depending on school 
 - [v] remove create school for now - hide it - use a script to create new schools 
 - [v] we need user prefs per school 
-
+- [v] login logic
+- [w] implement login logic with invitation
 
 ### Branch step-11-mvp-phase-3-formats
 - [] Simplify format creation - move the fields into a separate file - create a map of fields 

@@ -78,8 +78,6 @@ async def logout(response: Response, user = Depends(current_school_user_full)):
     Use this url before important tasks such as deleting users or courses """
     #TODO: return school+user information
     return user
-    
-
 
 """
 1. return full information 
