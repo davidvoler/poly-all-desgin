@@ -27,7 +27,7 @@ from fastapi import APIRouter, HTTPException, Request, Response, Depends
 from models.user_data import PasswordLoginRequest, UserAuth0Request, UserPref
 from school.utils import auth0 as auth0_verifier
 from utils.db import get_query_results, run_query
-from utils.auth_deps import current_school, get_or_create_school_user, current_school_user_full
+from utils.auth_deps import current_school_id, get_or_create_school_user, current_school_user_full
 from models.auth import SchoolUserBase, SchoolUser
 
 logger = logging.getLogger(__name__)
@@ -149,7 +149,7 @@ async def _get_or_create_user(email: str) -> int:
 async def get_or_create_user(
     payload: UserAuth0Request,
     response: Response,
-    school_id: int = Depends(current_school)
+    school_id: int = Depends(current_school_id)
 ):
     """Sign in (or sign up) with an Auth0 ID token. Sets a 1-year
     HttpOnly `user_id` cookie so subsequent app launches can call
@@ -209,7 +209,7 @@ async def get_or_create_user(
 
 
 @router.post("/login_with_password", response_model=UserPref)
-async def login_with_password(payload: PasswordLoginRequest, response: Response, school_id: int = Depends(current_school)):
+async def login_with_password(payload: PasswordLoginRequest, response: Response, school_id: int = Depends(current_school_id)):
     """Sign-up-or-sign-in via email + password.
 
       * **Existing email** → verify the bcrypt hash. 401 on mismatch.
@@ -274,7 +274,7 @@ async def login_with_password(payload: PasswordLoginRequest, response: Response,
 
 
 @router.post("/login_with_cookie", response_model=UserPref)
-async def login_with_cookie(request: Request, school_id: int = Depends(current_school)):
+async def login_with_cookie(request: Request, school_id: int = Depends(current_school_id)):
     """Restore a session from the `user_id` cookie. Returns 401 when
     the cookie is missing or points at a deleted row — the client
     falls back to the login screen in that case."""

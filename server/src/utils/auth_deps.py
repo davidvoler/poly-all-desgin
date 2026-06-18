@@ -8,6 +8,8 @@ from utils.db import get_query_results, run_query
 from utils.user_school_data import get_user_full_data
 from models.auth import SchoolUserBase, SchoolUser
 from fastapi import HTTPException, Request
+from models.school import School
+
 
 SCHOOL_CACHE = {}
 SCHOOL_CACHE_LAST_LOADED = datetime.now()
@@ -58,11 +60,23 @@ async def school_id_from_hostname(hostname: str) -> int:
     return -1
 
 
-async def current_school(request: Request) -> int:
+async def current_school_id(request: Request) -> int:
     origin = request.headers.get("origin")
     hostname = urlparse(origin).hostname if origin else ""
     school_id = await school_id_from_hostname(hostname)
     return school_id    
+
+async def current_school(request: Request) -> School:
+    origin = request.headers.get("origin")
+    hostname = urlparse(origin).hostname if origin else ""
+    schools_cache = await get_schools_cache()
+    print(f"Schools hostname: {hostname}")
+    for school_id, school in schools_cache.items():
+        print(f"Checking school_id={school_id}, school_url={school['school_url']}, school_dashboard_url={school['school_dashboard_url']}")
+        if school['school_url'] == hostname or school['school_dashboard_url'] == hostname:
+            return School(**school)
+    return None
+
 
 async def current_school_user_full(request: Request) -> SchoolUser:
     raw = request.cookies.get("user_id")
