@@ -49,20 +49,9 @@ alter table course_simple.lesson ADD COLUMN weight int2 default 0;
 ALTER TABLE user_data.preference ADD COLUMN quiz_settings jsonb;
 ALTER TABLE course_simple.exercise ADD COLUMN ruby_text jsonb;
 ALTER TABLE course_simple.exercise ADD COLUMN annotations jsonb;
--- DONE
 
--- Course-level display metadata: which reading/alternative variants the
--- course offers and how to label them in the quiz. Shape:
---   {
---     "ruby_text":    [{"name": "hiragana", "icon": "translate",
---                       "tooltip_text": "Hiragana reading"}, ...],
---     "sentence_alt": [{"slot": 1, "name": "Diacritics", "icon": "format_size",
---                       "tooltip_text": "With diacritical marks"}, ...]
---   }
--- Lets the app render variant pickers from data instead of hardcoded
--- per-language labels. Free-form jsonb; null/empty falls back to defaults.
 ALTER TABLE course_simple.course ADD COLUMN metadata jsonb;
--- DONE
+
 
 
 
@@ -81,7 +70,7 @@ CREATE TABLE school.school_users (
 	status varchar(20) DEFAULT 'active'::character varying NOT NULL,
 	signed_terms_version int8 DEFAULT NULL,
 	created_at timestamp DEFAULT now(),
-	CONSTRAINT school_user PRIMARY KEY (school_id, user_id),
+	CONSTRAINT school_user PRIMARY KEY (school_id, user_id)
 );
 DROP TABLE IF EXISTS school.schools;
 CREATE TABLE school.schools (
@@ -115,7 +104,6 @@ CREATE TABLE school.terms_acceptances (
 	CONSTRAINT terms_acceptances_pkey PRIMARY KEY (terms_id, school_id, user_id)
 );
 
-
 DROP TABLE IF EXISTS school.terms;
 CREATE TABLE school.terms (
 	terms_id  serial4 PRIMARY KEY NOT NULL,
@@ -123,7 +111,40 @@ CREATE TABLE school.terms (
     language varchar(12) NOT NULL,
     title varchar(255) NOT NULL,
     body text NOT NULL,
+	created_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL
 );
 DROP TABLE IF EXISTS school.super_admins;
 
 
+
+-- DONE
+
+
+
+drop TABLE IF EXISTS school.school_invitations;
+CREATE TABLE school.school_invitations (
+	invitation_id serial4 NOT NULL,
+	school int8 default 1,
+    invitation_code varchar(50) NOT NULL,
+    created_at timestamp DEFAULT now(),
+    redeemed_at timestamp NULL,
+    expiration timestamp NULL,
+    max_uses int4 default 1,
+    uses_count int4 default 0,
+	CONSTRAINT school_invitations_pkey PRIMARY KEY (invitation_id)
+);
+
+drop TABLE IF EXISTS school.course_invitations;
+CREATE TABLE school.course_invitations (
+	invitation_id serial4 NOT NULL,
+	school int8 default 1,
+    course_id int8 default 0,
+    invitation_code varchar(50) NOT NULL,
+    created_at timestamp DEFAULT now(),
+    redeemed_at timestamp NULL,
+    expiration timestamp NULL,
+    max_uses int4 default 1,
+    uses_count int4 default 0,
+	CONSTRAINT course_invitations_pkey PRIMARY KEY (invitation_id)
+);
