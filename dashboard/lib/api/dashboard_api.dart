@@ -230,6 +230,52 @@ class DashboardApi {
     return EditorCourseDetail.fromJson(res.data ?? const {});
   }
 
+  /// Course head (no modules) — paired with [fetchCourseModules] so the
+  /// detail page can render without loading every lesson up front.
+  Future<EditorCourse> fetchCourse({
+    required int courseId,
+    required int schoolId,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/editor/courses/$courseId',
+      queryParameters: {'school_id': schoolId},
+    );
+    return EditorCourse.fromJson(res.data ?? const {});
+  }
+
+  /// Lightweight module list (with lesson counts, no nested lessons) for the
+  /// paginated course-detail page.
+  Future<List<EditorModuleSummary>> fetchCourseModules({
+    required int courseId,
+    required int schoolId,
+  }) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/editor/courses/$courseId/modules',
+      queryParameters: {'school_id': schoolId},
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(EditorModuleSummary.fromJson)
+        .toList();
+  }
+
+  /// Lessons (with exercise counts) for a single module — fetched on demand
+  /// when the module card is expanded.
+  Future<List<EditorLessonRemote>> fetchModuleLessons({
+    required int courseId,
+    required int moduleId,
+    required int schoolId,
+  }) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/api/v1/editor/courses/$courseId/modules/$moduleId/lessons',
+      queryParameters: {'school_id': schoolId},
+    );
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(EditorLessonRemote.fromJson)
+        .toList();
+  }
+
   Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
       {String? status, String? lang, String? q}) async {
     final res = await _dio.get<List<dynamic>>(
@@ -383,8 +429,31 @@ class DashboardApi {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/editor/upload/',
       data: form,
+      // Course upload is long-running server-side (unzip + parse_course +
+      // load_course's many DB inserts), well past the Dio defaults
+      // (connect 5s / receive 15s). Override per-request so a big course
+      // doesn't abort mid-parse; the global defaults stay tight for
+      // ordinary calls. sendTimeout covers streaming the zip body up.
+      options: Options(
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 10),
+      ),
     );
     return (res.data?['course_id'] as int?);
+  }
+
+  /// Import a course pasted as one `=== path ===`-delimited document (the
+  /// output of the Create-with-AI flow). Returns the new course id.
+  Future<int?> importCourseText({required String document}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/editor/upload/text',
+      data: {'document': document},
+      options: Options(
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 10),
+      ),
+    );
+    return res.data?['course_id'] as int?;
   }
 
   /// Download a course's zip export. Returns the raw bytes — caller
@@ -946,6 +1015,43 @@ final courseDetailProvider =
   if (me == null) return null;
   return ref.read(dashboardApiProvider).fetchCourseDetail(
         courseId: courseId,
+        schoolId: me.schoolId,
+      );
+});
+
+/// Course head (no modules) for the paginated detail page. Keyed by course
+/// id; reuses the current user's schoolId scope.
+final courseHeadProvider =
+    FutureProvider.family<EditorCourse?, int>((ref, courseId) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return null;
+  return ref.read(dashboardApiProvider).fetchCourse(
+        courseId: courseId,
+        schoolId: me.schoolId,
+      );
+});
+
+/// Lightweight module list (with lesson counts) for a course — the first
+/// payload the detail page loads. Keyed by course id.
+final courseModulesProvider =
+    FutureProvider.family<List<EditorModuleSummary>, int>((ref, courseId) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchCourseModules(
+        courseId: courseId,
+        schoolId: me.schoolId,
+      );
+});
+
+/// Lessons for a single module, fetched on demand when its card expands.
+/// Keyed by (courseId, moduleId).
+final moduleLessonsProvider = FutureProvider.family<List<EditorLessonRemote>,
+    ({int courseId, int moduleId})>((ref, key) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return const [];
+  return ref.read(dashboardApiProvider).fetchModuleLessons(
+        courseId: key.courseId,
+        moduleId: key.moduleId,
         schoolId: me.schoolId,
       );
 });

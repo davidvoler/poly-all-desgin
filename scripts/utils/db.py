@@ -5,6 +5,7 @@ _conn = None
 # from aerospike import client
 _aerospike_client = None
 
+
 def get_pg_connection_string(user=None, password=None, db_name=None, host=None, port=None):
     if not user:
         user = os.getenv("POSTGRES_USER", "polyglots")

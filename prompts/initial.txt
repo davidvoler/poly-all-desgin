@@ -1,0 +1,41 @@
+
+
+I want to create a course of Japanese for Hebrew speakers 
+The course is for beginners 
+could you please create a single lesson with 10 exercises 
+
+I need the results in the following format 
+---
+title:  Lesson 2 intro to...
+weight: 2
+---
+type: single_selection
+text: これは逃してはならない絶好の機会だと彼は思った。
+text_hiragana: これのがしてはならないぜっこうきかいおもっ
+text_romanji: kore nogashi tehanaranai zekkou kikai omotsu 
+text_katakana: コレノガシテハナラナイゼッコウキカイオモッ
+annotation: 逃
+meaning: לִברוֹחַ
+romanji: Táo
+annotation: 機会
+meaning: הִזדַמְנוּת
+romanji: Kikai
+option:  הוא חש שזו הזדמנות טובה מדי מכדי שיחמיץ אותה.
+correct: true
+option:  טום שאל את מרי אם היא רוצה ללכת לקולנוע.
+option:  כשהיא הייתה סטודנטית, היא הלכה לדיסקוטק רק פעם אחת.
+---
+type: explanation 
+some explanation will come here 
+yet another line of explanation 
+---
+type: identify_words
+text: これは逃してはならない絶好の機会だと彼は思った。
+option: 逃
+correct: true
+option: 食べ
+option:事実
+option: 思った
+correct: true
+
+

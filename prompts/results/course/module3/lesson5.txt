@@ -1,0 +1,106 @@
+---
+title: Lesson 5 - The Particle の (no) — Possession
+weight: 5
+---
+type: explanation
+の (no) connects two nouns to show possession or belonging — like 's in English. Example: サラのねこ means "Sara's cat". ワタナベさんのコーヒー means "Watanabe's coffee".
+---
+type: single_selection
+text: サラのねこ
+romanji: Sara no neko
+option: Sara's cat
+correct: true
+option: Sara likes cats
+option: Sara is a cat
+option: Cat named Sara
+---
+type: single_selection
+text: ワタナベさんのコーヒー
+romanji: Watanabe-san no kōhī
+option: Watanabe's coffee
+correct: true
+option: Coffee for Watanabe
+option: Watanabe likes coffee
+option: Coffee named Watanabe
+---
+type: single_selection
+text: サラのねこはかわいい
+romanji: Sara no neko wa kawaii
+option: Sara's cat is cute
+correct: true
+option: Sara likes cute cats
+option: Is Sara's cat cute?
+option: Sara's cat is not cute
+---
+type: identify_words
+text: ワタナベさんのみずはつめたい
+romanji: Watanabe-san no mizu wa tsumetai
+option: の
+correct: true
+option: は
+correct: true
+option: みず
+correct: true
+option: ワタナベ
+correct: true
+option: か
+---
+type: single_selection
+text: ジョージのコーヒーはあつい
+romanji: Jōji no kōhī wa atsui
+option: George's coffee is hot
+correct: true
+option: George likes hot coffee
+option: Is George's coffee hot?
+option: George's coffee is cold
+---
+type: single_selection
+text: わたしのねこはみずをのみます
+romanji: Watashi no neko wa mizu wo nomimasu
+option: My cat drinks water
+correct: true
+option: My cat likes water
+option: I drink water with my cat
+option: My cat wants water
+---
+type: multiple_choice
+text: の (no)
+romanji: no
+option: shows possession — like 's in English
+correct: true
+option: connects two nouns
+correct: true
+option: marks the topic of the sentence
+option: marks the object of the action
+---
+type: single_selection
+text: サラのねこはまいにちみずをのみます
+romanji: Sara no neko wa mainichi mizu wo nomimasu
+option: Sara's cat drinks water every day
+correct: true
+option: Sara drinks water with her cat every day
+option: Sara's cat likes water every day
+option: Sara's cat wants water every day
+---
+type: single_selection
+text: ワタナベさんのがくせいはげんきです
+romanji: Watanabe-san no gakusei wa genki desu
+option: Watanabe's student is well
+correct: true
+option: Watanabe is a well student
+option: Is Watanabe's student well?
+option: Watanabe's student is not well
+---
+type: identify_words
+text: わたしのねこはかわいいですか
+romanji: Watashi no neko wa kawaii desu ka
+option: の
+correct: true
+option: は
+correct: true
+option: か
+correct: true
+option: ねこ
+correct: true
+option: を
+option: に

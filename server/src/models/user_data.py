@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 
 class Results(BaseModel):
-    user_id: int 
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str
     lesson_id: int | None = 0
     module_id: int| None = 0

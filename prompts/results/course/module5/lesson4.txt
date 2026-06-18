@@ -1,0 +1,121 @@
+---
+title: Lesson 4 - New Word — おおきい / ちいさい (big / small)
+weight: 4
+---
+type: explanation
+おおきい (ōkii) means "big" and ちいさい (chiisai) means "small". Like かわいい and あつい, these adjectives come before the noun or after は with です.
+---
+type: single_selection
+text: おおきいねこ
+romanji: Ōkii neko
+option: a big cat
+correct: true
+option: a small cat
+option: a cute cat
+option: a fast cat
+---
+type: single_selection
+text: ちいさいいぬ
+romanji: Chiisai inu
+option: a small dog
+correct: true
+option: a big dog
+option: a cute dog
+option: a fast dog
+---
+type: single_selection
+text: ねこはおおきいです
+romanji: Neko wa ōkii desu
+option: The cat is big
+correct: true
+option: The cat is small
+option: The cat is cute
+option: The cat is hot
+---
+type: sentence_structure
+text: ジョージのいえはおおきいです
+romanji: Jōji no ie wa ōkii desu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: の
+romanji: no
+meaning: 's (possession)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: おおきい
+romanji: ōkii
+meaning: big
+pos: adjective
+word: です
+romanji: desu
+meaning: is (polite)
+pos: verb (copula)
+---
+type: single_selection
+text: ジョージのいえはおおきいです
+romanji: Jōji no ie wa ōkii desu
+option: George's house is big
+correct: true
+option: George's house is small
+option: George likes big houses
+option: Is George's house big?
+---
+type: single_selection
+text: サラのねこはちいさくてかわいいです
+romanji: Sara no neko wa chiisaikute kawaii desu
+option: Sara's cat is small and cute
+correct: true
+option: Sara's cat is big and cute
+option: Sara's cat is small but not cute
+option: Sara's cat is big but cute
+---
+type: multiple_choice
+text: おおきい / ちいさい
+romanji: (select all correct)
+option: おおきい means big
+correct: true
+option: ちいさい means small
+correct: true
+option: they come before the noun they describe
+correct: true
+option: ちいさい means big
+---
+type: single_selection
+text: ワタナベさんのがっこうはおおきいですか
+romanji: Watanabe-san no gakkō wa ōkii desu ka
+option: Is Watanabe's school big?
+correct: true
+option: Watanabe's school is big
+option: Is Watanabe's school small?
+option: Watanabe's school is small
+---
+type: single_selection
+text: いいえ、ちいさいですが、きれいです
+romanji: Iie, chiisai desu ga, kirei desu
+option: No, it is small but beautiful
+correct: true
+option: Yes, it is small and beautiful
+option: No, it is big but beautiful
+option: No, it is small and not beautiful
+---
+type: identify_words
+text: サラのちいさいねこはいえにいます
+romanji: Sara no chiisai neko wa ie ni imasu
+option: の
+correct: true
+option: は
+correct: true
+option: に
+correct: true
+option: が
+option: を
+option: で

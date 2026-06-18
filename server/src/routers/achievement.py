@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models.achievement import Achievement, AchievementType
 from models import achievement
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results, run_query
 from datetime import datetime, timedelta
 router = APIRouter()
@@ -102,10 +103,12 @@ async def user_achievements(user_id, lang: str, course_id: int):
 
 
 @router.get("/get_achievements", response_model=list[Achievement])
-async def get_achievements(user_id, course_id: int, lang: str):
+async def get_achievements(course_id: int, lang: str,
+                           user_id: int = Depends(current_user_id)):
     return await user_achievements(user_id, lang, course_id)
 
 
 @router.post("/check_new_achievements", response_model=list[Achievement])
-async def new_achievements(user_id, course_id: int, lang: str):
+async def new_achievements(course_id: int, lang: str,
+                           user_id: int = Depends(current_user_id)):
     return await check_new_achievement(user_id, lang, course_id)

@@ -1,0 +1,83 @@
+---
+title: Lesson 1 - Thank You
+weight: 1
+---
+type: single_selection
+text: ありがとう
+romanji: Arigatō
+option: Thank you
+correct: true
+option: Good morning
+option: Goodbye
+option: Yes
+---
+type: single_selection
+text: ありがとう、ワタナベさん
+romanji: Arigatō, Watanabe-san
+option: Thank you, Watanabe
+correct: true
+option: Hello, Watanabe
+option: Goodbye, Watanabe
+option: Sorry, Watanabe
+---
+type: single_selection
+text: ありがとう、ジョージ
+romanji: Arigatō, Jōji
+option: Thank you, George
+correct: true
+option: Good morning, George
+option: Excuse me, George
+option: Sorry, George
+---
+type: explanation
+は (wa) is the topic particle. It marks what the sentence is about.
+---
+type: single_selection
+text: コーヒーはありがとう
+romanji: Kōhī wa arigatō
+option: Thanks for the coffee
+correct: true
+option: I like coffee
+option: Coffee, please
+option: Good coffee
+---
+type: identify_words
+text: コーヒーはありがとう
+romanji: Kōhī wa arigatō
+option: コーヒー
+correct: true
+option: は
+correct: true
+option: ありがとう
+correct: true
+option: さようなら
+---
+type: single_selection
+text: ありがとうございます
+romanji: Arigatō gozaimasu
+option: Thank you very much
+correct: true
+option: Thank you, Watanabe
+option: Good morning
+option: You're welcome
+---
+type: multiple_choice
+text: ありがとう
+romanji: Arigatō
+option: thank you
+correct: true
+option: thanks
+correct: true
+option: goodbye
+option: sorry
+---
+type: identify_words
+text: ありがとう、ワタナベさん
+romanji: Arigatō, Watanabe-san
+option: ありがとう
+correct: true
+option: ワタナベ
+correct: true
+option: さん
+correct: true
+option: コーヒー

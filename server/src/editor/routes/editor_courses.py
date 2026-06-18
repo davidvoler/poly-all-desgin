@@ -5,6 +5,7 @@ from editor.models.course import (
     EditorCourseDetail,
     EditorLesson,
     EditorModule,
+    EditorModuleSummary,
 )
 from school.utils.auth import require_school_member
 from utils.db import get_query_results
@@ -25,6 +26,7 @@ def _row_to_course(row: dict) -> EditorCourse:
         module_count=int(row.get('module_count') or 0),
         student_count=int(row.get('student_count') or 0),
         updated_at=row.get('updated_at'),
+        metadata=row.get('metadata') or {},
     )
 
 
@@ -59,7 +61,7 @@ async def list_editor_courses(
     sql = f"""
         SELECT
             c.course_id, c.title, c.description, c.lang, c.to_lang,
-            c.status, c.lesson_count,
+            c.status, c.lesson_count, c.metadata,
             ca.access, ca.updated_at,
             mods.module_count,
             COALESCE(stu.student_count, 0) AS student_count
@@ -90,7 +92,7 @@ async def get_editor_course(course_id: int, school_id: int, _caller: int | None 
     rows = await get_query_results(
         """
         SELECT c.course_id, c.title, c.description, c.lang, c.to_lang,
-               c.status, c.lesson_count,
+               c.status, c.lesson_count, c.metadata,
                ca.access, ca.updated_at,
                (SELECT COUNT(*) FROM course_simple.module
                     WHERE course_id = c.course_id) AS module_count,
@@ -108,6 +110,83 @@ async def get_editor_course(course_id: int, school_id: int, _caller: int | None 
     return _row_to_course(rows[0])
 
 
+@router.get("/{course_id}/modules", response_model=list[EditorModuleSummary])
+async def list_course_modules(
+    course_id: int,
+    school_id: int,
+    _caller: int | None = Depends(require_school_member),
+):
+    """Lightweight module list for the paginated course-detail page — one
+    row per module with its lesson count, no nested lessons/exercises. The
+    dashboard renders the module tree from this and lazy-loads each
+    module's lessons on expand (see `/modules/{module_id}/lessons`)."""
+    rows = await get_query_results(
+        """
+        SELECT m.module_id, m.title, m.description, m.weight,
+               (SELECT COUNT(*) FROM course_simple.lesson l
+                    WHERE l.module_id = m.module_id) AS lesson_count
+        FROM course_simple.module m
+        WHERE m.course_id = %s
+        ORDER BY m.weight, m.module_id
+        """,
+        (course_id,),
+    )
+    return [
+        EditorModuleSummary(
+            module_id=r['module_id'],
+            title=r.get('title') or '',
+            description=r.get('description') or '',
+            weight=int(r.get('weight') or 0),
+            lesson_count=int(r.get('lesson_count') or 0),
+        )
+        for r in rows
+    ]
+
+
+@router.get(
+    "/{course_id}/modules/{module_id}/lessons",
+    response_model=list[EditorLesson],
+)
+async def list_module_lessons(
+    course_id: int,
+    module_id: int,
+    school_id: int,
+    _caller: int | None = Depends(require_school_member),
+):
+    """Lessons (with per-lesson exercise counts) for a single module —
+    fetched on demand when the dashboard expands a module card, so a large
+    course never loads every lesson up front."""
+    lesson_rows = await get_query_results(
+        """
+        SELECT lesson_id, title, description, words
+        FROM course_simple.lesson
+        WHERE course_id = %s AND module_id = %s
+        ORDER BY lesson_id
+        """,
+        (course_id, module_id),
+    )
+    ex_counts = await get_query_results(
+        """
+        SELECT lesson_id, COUNT(*) AS c
+        FROM course_simple.exercise
+        WHERE course_id = %s AND module_id = %s
+        GROUP BY lesson_id
+        """,
+        (course_id, module_id),
+    )
+    ex_by_lesson = {r['lesson_id']: int(r['c']) for r in ex_counts}
+    return [
+        EditorLesson(
+            lesson_id=l['lesson_id'],
+            title=l.get('title') or '',
+            description=l.get('description') or '',
+            words=list(l.get('words') or []),
+            exercise_count=ex_by_lesson.get(l['lesson_id'], 0),
+        )
+        for l in lesson_rows
+    ]
+
+
 @router.get("/{course_id}/detail", response_model=EditorCourseDetail)
 async def get_course_detail(course_id: int, school_id: int, _caller: int | None = Depends(require_school_member)):
     """Full nested structure for the course detail page — one round
@@ -117,7 +196,7 @@ async def get_course_detail(course_id: int, school_id: int, _caller: int | None 
     head = await get_query_results(
         """
         SELECT c.course_id, c.title, c.description, c.lang, c.to_lang,
-               c.status, c.lesson_count, c.updated_at,
+               c.status, c.lesson_count, c.updated_at, c.metadata,
                ca.access,
                (SELECT COUNT(*) FROM course_simple.module
                     WHERE course_id = c.course_id) AS module_count,
@@ -196,5 +275,6 @@ async def get_course_detail(course_id: int, school_id: int, _caller: int | None 
         module_count=int(h.get('module_count') or 0),
         student_count=int(h.get('student_count') or 0),
         updated_at=h.get('updated_at'),
+        metadata=h.get('metadata') or {},
         modules=modules,
     )

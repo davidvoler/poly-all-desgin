@@ -1,189 +1,141 @@
+import os
+import re
 import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from editor.utils.folder_to_db import load_course_content
-from school.utils.activity import log_activity
-from school.utils.auth import require_school_member
-from utils.db import get_query_results, run_query
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel
+
+from editor.utils.parse_course import parse_course
+from editor.utils.folder_to_db import load_course
+from utils.auth_deps import current_user_id
+from utils.db import run_query
 
 router = APIRouter()
 
 TEMP_FOLDER = "../content/temp"
 
+# Header line that separates files in a pasted single-document course, e.g.
+# `=== module1/lesson1/exercises.txt ===`.
+_FILE_HEADER = re.compile(r'^===\s*(.+?)\s*===\s*$')
+
+
+async def _import_course_folder(course_root: str) -> int:
+    """Parse a course folder (must contain course.txt) and load it into the
+    DB, then register it as a draft for the school. Returns the new
+    course_id. Shared by the zip-upload and text-paste import paths."""
+    course_data = parse_course(course_root)
+    if not course_data:
+        raise HTTPException(
+            status_code=400,
+            detail="No course.txt found / course folder is malformed",
+        )
+    course_id = await load_course(course_data)
+    if not course_id or course_id < 0:
+        raise HTTPException(status_code=500, detail="Failed to load course")
+
+    # TODO: resolve the caller's school instead of hardcoding 1.
+    school_id = 1
+    await run_query(
+        "INSERT INTO school.course_access (school_id, course_id, status) "
+        "VALUES (%s, %s, %s)",
+        (school_id, course_id, 'draft'),
+    )
+    return course_id
+
+
+def _write_document_tree(document: str, root: Path) -> bool:
+    """Split a single `=== path ===`-delimited document into files under
+    [root]. Returns True when a course.txt was written. Rejects absolute /
+    traversing paths so a pasted blob can't escape the temp dir."""
+    files: dict[str, list[str]] = {}
+    current: str | None = None
+    for line in document.split('\n'):
+        m = _FILE_HEADER.match(line)
+        if m:
+            current = m.group(1).strip()
+            files.setdefault(current, [])
+            continue
+        if current is not None:
+            files[current].append(line)
+
+    wrote_course = False
+    for rel, lines in files.items():
+        rel = rel.lstrip('/')
+        if not rel or '..' in Path(rel).parts:
+            continue
+        dest = (root / rel).resolve()
+        if not str(dest).startswith(str(root.resolve())):
+            continue  # path traversal guard
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text('\n'.join(lines).strip('\n') + '\n', encoding='utf-8')
+        if rel == 'course.txt':
+            wrote_course = True
+    return wrote_course
+
 
 @router.post("/")
-async def upload_course(
-    school_id: int = Form(...),
-    actor_user_id: int | None = Form(None),
-    course_title: str | None = Form(None),
-    lang: str | None = Form(None),
-    to_lang: str | None = Form(None),
-    file: UploadFile = File(...),
-    _caller: int | None = Depends(require_school_member),
-):
-    """Accept a .zip course archive, extract it under TEMP_FOLDER, and
-    return the destination path + file listing.
-
-    When the caller supplies `school_id` + `course_title` (the dashboard
-    always does), the route also:
-      - creates a `course_simple.course` row in 'draft' status,
-      - links it to the school via `school.course_access`,
-      - writes a `course_upload` activity entry,
-    so the dashboard sees the new course on the next list refresh.
-    Actual lesson/exercise ingestion from the extracted folder is still
-    TODO (folder_to_db.load_course_from_folder isn't wired here yet)."""
+async def upload_course(file: UploadFile = File(...),
+                        user_id: int = Depends(current_user_id)):
+    """Accept a .zip course archive, extract it, parse, and load it."""
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Expected a .zip file")
-
     Path(TEMP_FOLDER).mkdir(parents=True, exist_ok=True)
     dest = Path(tempfile.mkdtemp(prefix="course_", dir=TEMP_FOLDER))
-    dest_resolved = dest.resolve()
 
-    # Stream the upload to disk first (zipfile needs a seekable file),
-    # then extract.
     tmp_zip = dest / "_upload.zip"
     with tmp_zip.open("wb") as out:
         shutil.copyfileobj(file.file, out)
-
     try:
         with zipfile.ZipFile(tmp_zip) as zf:
-            # Reject zip-slip — entries that resolve outside `dest`.
-            for name in zf.namelist():
-                try:
-                    (dest_resolved / name).resolve().relative_to(dest_resolved)
-                except ValueError:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Unsafe path in archive: {name}",
-                    )
             zf.extractall(dest)
     except zipfile.BadZipFile:
         raise HTTPException(status_code=400, detail="File is not a valid zip")
     finally:
         tmp_zip.unlink(missing_ok=True)
 
-    extracted = sorted(
-        str(p.relative_to(dest))
-        for p in dest.rglob("*")
-        if p.is_file()
-    )
-
-    # Create the course row + access overlay so the dashboard's Courses
-    # table picks it up immediately. We use sensible defaults; the
-    # uploader can edit metadata after the fact.
-    course_lang = (lang or 'ar').lower()
-    course_to_lang = (to_lang or 'en').lower()
-
-    # Public schools accept any language; private schools restrict
-    # uploads to their `languages_taught` whitelist. Either way, when
-    # the upload's language isn't yet on the public school's record we
-    # auto-extend `languages_taught` so the Languages page picks it up.
-    school_rows = await get_query_results(
-        "SELECT is_public, languages_taught FROM school.schools WHERE school_id = %s",
-        (school_id,),
-    )
-    if not school_rows:
-        raise HTTPException(status_code=404, detail="School not found")
-    is_public = bool(school_rows[0].get('is_public'))
-    taught = list(school_rows[0].get('languages_taught') or [])
-
-    if not is_public and taught and course_lang not in taught:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Language '{course_lang}' isn't in this school's "
-                f"taught languages ({', '.join(taught)}). "
-                "Add it on the Languages page first."
-            ),
-        )
-
-    if is_public and course_lang not in taught:
-        await run_query(
-            """
-            UPDATE school.schools
-            SET languages_taught = array_append(languages_taught, %s),
-                updated_at = now()
-            WHERE school_id = %s
-            """,
-            (course_lang, school_id),
-        )
-
-    course_id: int | None = None
-    derived_title = course_title or _title_from_filename(file.filename)
-    inserted = await get_query_results(
-        """
-        INSERT INTO course_simple.course (title, lang, to_lang, status, owner_user_id)
-        VALUES (%s, %s, %s, 'draft', %s)
-        RETURNING course_id
-        """,
-        (derived_title, course_lang, course_to_lang, actor_user_id),
-    )
-    ingest = {'modules': 0, 'skipped': 0}
-    if inserted:
-        course_id = inserted[0]['course_id']
-        await run_query(
-            """
-            INSERT INTO school.course_access (school_id, course_id, access, status)
-            VALUES (%s, %s, 'members', 'draft')
-            ON CONFLICT (school_id, course_id) DO NOTHING
-            """,
-            (school_id, course_id),
-        )
-        # Best-effort ingestion of the extracted folder. Failures here
-        # don't abort the upload — the course row + access overlay are
-        # already persisted, and the editor can fix things up later.
-        try:
-            ingest = await load_course_content(course_id, str(dest))
-        except Exception:
-            # Swallow — load_course_content is itself best-effort, but
-            # an outer exception (e.g. permission error) shouldn't 500
-            # the whole upload.
-            ingest = {'modules': 0, 'skipped': 0}
-        # Sync `course.lesson_count` from the rows we just inserted so
-        # the Courses table + detail page reflect the new totals
-        # without waiting for a manual refresh.
-        await run_query(
-            """
-            UPDATE course_simple.course
-               SET lesson_count = (
-                       SELECT COUNT(*) FROM course_simple.lesson
-                        WHERE course_id = %s
-                   ),
-                   updated_at = now()
-             WHERE course_id = %s
-            """,
-            (course_id, course_id),
-        )
-
-        modules_blurb = (
-            f", {ingest['modules']} modules loaded"
-            if ingest['modules'] > 0 else ''
-        )
-        await log_activity(
-            school_id=school_id,
-            actor_user_id=actor_user_id,
-            kind='course_upload',
-            summary=(
-                f"Uploaded course {derived_title} — "
-                f"{len(extracted)} files{modules_blurb}"
-            ),
-        )
-
+    # The archive contains a single top-level course folder.
+    folders = [f for f in os.listdir(dest)
+               if not f.startswith('.') and not f.startswith('__')]
+    if not folders:
+        raise HTTPException(status_code=400, detail="Empty archive")
+    course_root = os.path.join(str(dest), folders[0])
+    course_id = await _import_course_folder(course_root)
     return {
         "course_id": course_id,
-        "path": str(dest),
-        "file_count": len(extracted),
-        "modules_loaded": ingest['modules'],
-        "modules_skipped": ingest['skipped'],
-        "files": extracted,
+        "message": f"Course uploaded and parsed successfully with id {course_id}",
     }
 
 
-def _title_from_filename(name: str) -> str:
-    """Strip extension + replace separators with spaces so the seeded
-    course row reads naturally before the editor fills in a real title."""
-    stem = Path(name).stem
-    return stem.replace('_', ' ').replace('-', ' ').strip() or 'Untitled course'
+class CourseDocument(BaseModel):
+    # A single document with `=== path ===` headers before each file (the
+    # shape the AI-create flow asks the model to produce).
+    document: str
+    course_title: str | None = None
+
+
+@router.post("/text")
+async def upload_course_text(payload: CourseDocument,
+                             user_id: int = Depends(current_user_id)):
+    """Import a course pasted as one `=== path ===`-delimited document —
+    the output of the 'Create with AI' flow. Splits it into the course
+    folder, then runs the same parse + load path as the zip upload."""
+    if not payload.document.strip():
+        raise HTTPException(status_code=400, detail="Empty document")
+    Path(TEMP_FOLDER).mkdir(parents=True, exist_ok=True)
+    dest = Path(tempfile.mkdtemp(prefix="course_txt_", dir=TEMP_FOLDER))
+    course_root = dest / "course"
+    course_root.mkdir(parents=True, exist_ok=True)
+
+    if not _write_document_tree(payload.document, course_root):
+        raise HTTPException(
+            status_code=400,
+            detail="Document has no '=== course.txt ===' section",
+        )
+    course_id = await _import_course_folder(str(course_root))
+    return {
+        "course_id": course_id,
+        "message": f"Course imported successfully with id {course_id}",
+    }

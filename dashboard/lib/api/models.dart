@@ -196,6 +196,7 @@ class EditorCourse {
   final int moduleCount;
   final int studentCount;
   final String updatedHuman;
+  final CourseMeta meta;
 
   const EditorCourse({
     required this.courseId,
@@ -209,6 +210,7 @@ class EditorCourse {
     required this.moduleCount,
     required this.studentCount,
     required this.updatedHuman,
+    this.meta = CourseMeta.empty,
   });
 
   factory EditorCourse.fromJson(Map<String, dynamic> j) {
@@ -227,6 +229,7 @@ class EditorCourse {
       moduleCount: (j['module_count'] as int?) ?? 0,
       studentCount: (j['student_count'] as int?) ?? 0,
       updatedHuman: _humanizeIso(raw),
+      meta: CourseMeta.fromJson(j['metadata']),
     );
   }
 }
@@ -332,6 +335,81 @@ class EditorModuleRemote {
       );
 }
 
+/// Lightweight module row for the paginated course-detail page — carries the
+/// per-module lesson count but no nested lessons (those are fetched on demand
+/// when the module is expanded). Mirrors the server's EditorModuleSummary.
+class EditorModuleSummary {
+  final int moduleId;
+  final String title;
+  final String description;
+  final int weight;
+  final int lessonCount;
+  const EditorModuleSummary({
+    required this.moduleId,
+    required this.title,
+    required this.description,
+    required this.weight,
+    required this.lessonCount,
+  });
+  factory EditorModuleSummary.fromJson(Map<String, dynamic> j) =>
+      EditorModuleSummary(
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        weight: (j['weight'] as int?) ?? 0,
+        lessonCount: (j['lesson_count'] as int?) ?? 0,
+      );
+}
+
+/// One course-metadata variant descriptor (a reading or sentence-alt the
+/// course declares) — display name plus optional icon/tooltip and, for
+/// sentence-alt variants, the slot it labels.
+class VariantDescriptor {
+  final String name;
+  final String? icon;
+  final String? tooltip;
+  final int? slot;
+  const VariantDescriptor({
+    required this.name,
+    this.icon,
+    this.tooltip,
+    this.slot,
+  });
+  factory VariantDescriptor.fromJson(Map<String, dynamic> j) =>
+      VariantDescriptor(
+        name: (j['name'] as String?) ?? '',
+        icon: j['icon'] as String?,
+        tooltip: j['tooltip_text'] as String?,
+        slot: (j['slot'] as num?)?.toInt(),
+      );
+}
+
+/// Course-level display metadata: the reading (`ruby_text`) and full-sentence
+/// (`sentence_alt`) variants the course offers. Empty when unset.
+class CourseMeta {
+  final List<VariantDescriptor> rubyText;
+  final List<VariantDescriptor> sentenceAlt;
+  const CourseMeta({this.rubyText = const [], this.sentenceAlt = const []});
+
+  static const empty = CourseMeta();
+  bool get isEmpty => rubyText.isEmpty && sentenceAlt.isEmpty;
+
+  factory CourseMeta.fromJson(Object? raw) {
+    if (raw is! Map) return CourseMeta.empty;
+    List<VariantDescriptor> parse(Object? v) => v is List
+        ? v
+            .whereType<Map>()
+            .map((m) => VariantDescriptor.fromJson(m.cast<String, dynamic>()))
+            .where((d) => d.name.isNotEmpty)
+            .toList()
+        : const [];
+    return CourseMeta(
+      rubyText: parse(raw['ruby_text']),
+      sentenceAlt: parse(raw['sentence_alt']),
+    );
+  }
+}
+
 class EditorCourseDetail {
   final int courseId;
   final String title;
@@ -344,6 +422,7 @@ class EditorCourseDetail {
   final int moduleCount;
   final int studentCount;
   final String updatedHuman;
+  final CourseMeta meta;
   final List<EditorModuleRemote> modules;
 
   const EditorCourseDetail({
@@ -358,6 +437,7 @@ class EditorCourseDetail {
     required this.moduleCount,
     required this.studentCount,
     required this.updatedHuman,
+    this.meta = CourseMeta.empty,
     required this.modules,
   });
 
@@ -370,6 +450,7 @@ class EditorCourseDetail {
         toLang: (j['to_lang'] as String?) ?? '',
         status: _statusFromWire(j['status'] as String?),
         access: _accessFromWire(j['access'] as String?),
+        meta: CourseMeta.fromJson(j['metadata']),
         lessonCount: (j['lesson_count'] as int?) ?? 0,
         moduleCount: (j['module_count'] as int?) ?? 0,
         studentCount: (j['student_count'] as int?) ?? 0,

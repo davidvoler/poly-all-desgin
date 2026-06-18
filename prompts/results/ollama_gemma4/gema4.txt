@@ -1,0 +1,89 @@
+---
+title: Lesson 1: Introductions and Basic Structure (A は B です)
+weight: 1
+---
+type: explanation 
+שלום! Welcome to Japanese! The most important thing to know first is the particle は (wa). 
+במילים פשוטות, המילה "は" משמשת להדגשת הנושא (הנושא של המשפט) – כמו להגיד "ככל שנחשוב על..." או "לגבי...". 
+המשפט הבסיסי ביותר הוא: [נושא] は [נושא] です. 
+(למשל: わたし は [Watashi] - אני; がくせい です [Gakusei desu] - סטודנט. המשמעות: אני סטודנט).
+הסימני קריאה ודקדוק (。) מופיעים בסוף המשפט.
+---
+type: single_selection
+text: こんにちは。わたしはジェמהです。
+text_hiragana: こんにちは。わたしはじぇまです。
+text_romanji: konnichiwa. watashi wa jema desu.
+text_katakana: コンニチハ。ワタシワジェマデス。
+annotation: こんにちは
+meaning: שלום (Good Day)
+romanji: Konnichiwa
+option: ביי (Good evening)
+option: בוקר טוב
+option: תודה רבה
+correct: false
+---
+type: identify_words
+text: わたしはジェמהです。
+option: わたし
+correct: true
+option: は
+option: です
+option: ジェマ
+correct: true
+---
+type: multiple_choice
+text: המילה わたし משמעותה:
+option: אתה/את
+option: אתם
+option: אני
+option: זה
+correct: true
+---
+type: multiple_choice
+text: כיצד אומרים "אתה/את" (You)?
+option: あなた (Anata)
+option: きみ (Kimi)
+option: かれ (Kare)
+option: かのじょ (Kanojo)
+correct: true
+---
+type: translation_fill_blank
+text: אני אומר/ת (I say): わたしは _______ です。
+option: [שם] (שם פרטי)
+option: わたし (watashi)
+option: あなた (anata)
+option: 今日 (kyō)
+correct: true
+---
+type: multiple_choice
+text: מהו הניקוד של המילת הקישור "ה" (wa)?
+option: です (Desu)
+option: は (Ha)
+option: に (Ni)
+option: か (Ka)
+correct: true
+---
+type: word_matching
+text: תתאם את המילה עם משמעותה:
+option: 先生 (sensei)
+option: מורה
+option: תלמיד (gakusei)
+option: מילה ל"עיר"
+correct: true
+---
+type: multiple_choice
+text: איך מגיבים לשאלה "אתה מי?" (お名前は？)?
+option: おやすみ (Oyasumi)
+option: はい (Hai)
+option: わたしは...です (Watashi wa... desu)
+option: ありがとう (Arigatou)
+correct: true
+---
+type: sentence_rearrangement
+text: סדר את המילים ליצירת משפט תקין:
+options: (1) です (2) わたしの (3) 名前は (4) リオ (Rio)
+option: (1)-(2)-(3)-(4)
+option: (3)-(1)-(2)-(4)
+option: (3)-(4)-(2)-(1)
+option: (4)-(3)-(1)-(2)
+correct: true

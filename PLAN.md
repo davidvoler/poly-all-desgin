@@ -348,10 +348,6 @@ TIME FOR DETAILS - LET'S COMPLETE THE UI.
      - number of lessons per day/week
      - number of new words per day/week
 - [v] end of practice - similar to end of lesson - achievements
-- [] 
-
-
-
 
 
 

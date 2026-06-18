@@ -254,9 +254,528 @@ We have 2 main way of creating content
 
 
 
-*** tasks saved for later stage ***
-- [ ] I prefer using Oauth - so we can skip password change password functionality - for now at least
-- [] Real SMTP for password reset — out of scope without infrastructure.
-- [ ] Pagination on Students table (currently capped at 200).
-- [ ] Cohort filter chips on Students page.
-- [ ] Public-school sibling site (community-contributor variant from design_experiments/school_public/) — substantial new UI; deferred to dedicated pass.
+*** school types subscription content access etc - planning  ***
+The full school types and rules 
+
+1. public - content is open 
+
+school type | subscription  | roles        | content access   | payment plan
+----------------------------------------------------------------
+open content| NA.           |Ad,Au,Ed,Re   | open.            | NA
+non profit. | by invite,    |              | open to sub.     | NA
+Payment     |               |              | By Subscription  | Plan
+
+
+Questions
+1. do we have a single space where you can see all courses - some are free, some require schools subscription and some require paying money
+In that concept a school is yet another filter 
+The alternative - each school has its own space and yuo can see courses belonging to a certain school only when you are in a school context. 
+If we are taking this approach - all tables should have school in them, a user's data is also schools based (words, sentences and of course lessons and courses)
+
+How about freelance teachers - does the system cater for them - can they offer payed content 
+Can they offer teacher student relationship? 
+
+
+
+
+*** Tasks ***
+
+- [v] API calls should include user_id so we can get course per specific user - we had the default user_id=1 it is time to remove it and get the real user_id from secured cookie 
+
+- [v] We can allow anonymous user - in that case user_id = 0 - we do not save results 
+- [v] When getting lessons we now have this information - lets use this data in the student app
+class Lesson(BaseModel):
+    lesson_id: int 
+    title: str| None = ''
+    description: str | None = ''
+    words: list[str] | None = []
+    completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
+
+- [v] when getting courses we have now the info:
+class Course(BaseModel):
+    course_id: int 
+    title: str| None = ''
+    description: str | None = ''
+    lang: str
+    to_lang: str 
+    tags : list[str] | None = []
+    lesson_count: int | None = 0
+    user_lessons_done: int | None = 0
+    avg_score: float | None = 0.0
+    progress: int | None = 0
+    current_module: int | None = 1
+    current_lesson: int | None = 1
+please use it in the client side to mark the current course - current module and current lesson
+We also have the progress information 
+- [v] modules also return now the following fields 
+ completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
+    current: int 
+
+
+*** user state ***
+
+- [v] when a user logs-in we should have the following information 
+  - [v] lang - the language she is learning 
+  - [v] to_lang - the languages she speaks 
+  - [v] ui_lang - user interface lang  
+  - [v] current course - name + id  (DDL + `Preference` model now carry
+        `course_name`; client `Preference` model / save() extended)
+  - [v] current module  (`module_name` added; persisted on module tap +
+        lesson tap)
+  - [v] current lesson (`lesson_name` persisted on lesson tap and on
+        auto-advance in quiz_page)
+
+When to update?
+- [v] whenever a user starts a lesson — `_LessonsSection` tap saves
+      module_id/name + lesson_id/name in one POST; quiz_page next-lesson
+      handler saves lesson_id/name.
+- [v] when ever a user selects a new course — `_CourseCard` tap saves
+      course_id/name + lang/to_lang and silently syncs the speak/learning
+      providers so the home medallion follows immediately.
+- [v] When a user changes lang or to lang preference — `SpeakLangNotifier`
+      / `LearningLangNotifier` already POST `to_lang` / `lang` via
+      `preferenceProvider.save`.
+- [v] when a user changes ui_lang preferences — `UiLangNotifier.set`
+      already POSTs `ui_lang`.
+
+What to do with This preferences 
+- [v] home page
+  - [v] top round section — `_Medallion` no longer takes a hardcoded
+        progress; reads the current course's progress from
+        `coursesListProvider` keyed on `preference.courseId`.
+  - [v] rectangular course section — `_CourseCaption` now prefers
+        `preference.{course,module,lesson}Name`, falling back to the
+        old courses-list / lessons-provider lookup when names aren't
+        persisted (legacy rows).
+  - [v] practice now button label — switches to "Continue · <lesson
+        name>" when `preference.lessonName` is set; falls back to the
+        translated "Practice Now" otherwise.
+- [v] course select page 
+  - [v] "I speak" / "Learning" pickers — the boot-time
+        `_PreferenceBootstrap` already silently seeds them; tapping a
+        course on the courses page now silently syncs both to the
+        course's lang pair too.
+- [v] Course page
+  - [v] We should scroll to the current module and lesson — added
+        `ScrollController`s on the modules strip + lessons list and a
+        one-shot post-frame animateTo keyed on (course, module) and
+        (module, currentLesson) so the strip jumps to the user's
+        active row when the page first paints.
+
+
+
+
+*** getting ready for MVP Student ***
+- [v] solve oauth - consider alternatives for auth0
+- [] upload some generated courses as an example - verify that the process works well
+- [] current lessons - get it correctly in client
+- [] lessons done/started/current get it from server
+- [] view lessons by school - save current school? 
+*** getting ready for MVP School ***
+- [w] Dashboard - have the dashboard working for - public and non profit schools 
+- [] unify users student and school 
+- [] we do need a school role (and maybe subscription)
+- [] Different pages visible to different users 
+- [] dashboard scenario 
+    - [] connection - shall we have only a single users management for schools 
+    - [] Create school - let's hide it for now - we will find a way to do it later 
+    - [] Start generating courses and try to upload 
+*** getting ready for MVP Content ***
+- [] learn how to generate courses with AI
+- [] Generate  arabic v3 again 
+    - [] but this time without diacritical signs 
+    - [] prefer sentences with sound 
+- [w] Generate Japanese
+
+
+
+*** Dashboard and content tasks ***
+
+- [v] full round - generate and upload
+- [] simplify user permission - you can see and edit your courses 
+- [v] export japanese with sentence id and to sentences id 
+- [v] export japanese with correct hiragana and katakana (text or kana)
+- [] on student show the ability to replace text alt1
+- [] add to exercise elements for future use of annotated text
+- [] dashboards - do not load full course - load module by module - create a lesson page
+- [] dashboard - add delete course 
+
+
+*** summary - trying to load Japanese course ***
+- [v] create and load Japanese course 
+- [] Lesson Learned 
+  - [] We need a correct weight for module - we got it wrong 
+  - [w] We need a correct weight for lesson
+  - [w] We need a correct wight for exercise 
+- [] there are too many identical translations for the same text in japanese - maybe we should limit to 2 or three
+
+*** UI Tasks - Quiz Page ***
+
+- [v] align the sentence to the right or left according to the language 
+- [v] The sentences box should contain only the sentences - remove question_type from this box 
+- [v] remove the text "- Translate this sentences -"
+- [v] ToolBox (play sound, correct) in a separate section under the sentence 
+- [v] Remove A, B, C and D from options 
+- [v] Option text should be bigger - by default 
+- [v] Add configuration button to the quiz page with the following options 
+  - [v] resize sentences  - 3 sizes 
+  - [v] resize options - 3 sizes 
+  - [v] Auto play audio - play audio automatically when moving to the next question 
+- [v] The sentence area should be sized to contain 2 lines
+- [v] Next to the play button add a button play slow - with a different icon - this should play in 0.75 of the speed
+- [v] The button order should be from left to right play - correct incorrect - play slow - even when correct/incorrect icon is not visible it should keep its place 
+- [v] The button toolbox should not have a background 
+- [v] The heart icon and a number (3) on the top for the page - Replace it with a star icon indicating the number of answers we got correct
+
+*** UI Tasks - phase 2  - Quiz Page ***
+- [v] Add Instruction between the the lesson title section and and the sentences section 
+  - [v] for exercise of type simple - select correct translation -
+  - [v] for exercise of type recognize - select words in the sentence -
+  - [v] for exercise of type read  = select the correct reading - 
+- [v] in exercise of type recognize - hide the sentence text - add a button to show text - it should always be there 
+- [v] in recognize - When we check answers keep the words in the same size - now they are growing 
+- [v] We should have the following types of indication for words 
+    - words that are in sentences and user selected 
+    - words that are not in sentence and user selected 
+    - words that are in sentence and usr did not select 
+    - words that are not in sentence and user did not select - stay in original color
+- [v] The score for identify words is (correct_selected - incorrect_selected) 
+      Partial credit: score = correctRatio - 0.2*incorrectCount, -1 if zero
+      correct, 1.0/0.9 if all correct. Best logic computable from the server's
+      (correct_ratio, incorrect_count) contract; rewards finding some words.
+
+   Decision points (resolved per workflow rule — "write options + pick best"):
+   - Data source for text variants / annotations (diacritics, transliteration,
+     furigana, per-word translation+audio). The Exercise/server model has NONE
+     of these fields today.
+     - [selected] Build phases 3 & 4 as a self-contained DEMO (the phase-4 demo
+       page, linked from home) driven by in-app sample data, with reusable,
+       data-driven widgets (RubyText, AnnotatedSentence, text-variant toggle) so
+       the live quiz can be wired later once the server supplies the fields.
+     - [ ] Add fields across server + DB + content pipeline now — out of scope
+       for a UI pass; would block the visible feature on a backend change.
+     - [ ] Generate variants client-side (transliteration/romaji libs) — no
+       reliable maintained Dart lib for Arabic diacritics or JA romaji; rejected.
+   - Ruby-text rendering:
+     - [selected] Custom RubyText widget (no dependency), Wrap of per-segment
+       [reading / base] columns → guaranteed multiline, no abandoned-package risk.
+     - [ ] flutter_ruby_text package — aging, multiline support uncertain.
+
+*** Quiz Page UI -  phase 3  ***
+
+- [v] Add text alternative button - it should be different for each language
+      (text-variant toggle, demonstrated in the annotations demo page)
+  - [v] for arabic show diacritical signs 
+  - [v] for languages that it is applicable - transliteration
+*** Quiz Page UI -  phase 4 - annotations ***
+- [v] lets now implement The following in a demo page - with a link to this demo page from home page  
+- [v] for japanese - It is common to annotate kanji with the correct reading in Hiragana, Katakano or Romanji - HAve used in the past a flutter lib called Flutter Ruby Text  - https://pub.dev/documentation/flutter_ruby_text/latest/ - I am not use it is the best but any working library will do - we need it to support multiline ruby text
+      (implemented a custom multiline RubyText widget — see decision above)
+- [v] annotated sentence - for any language we may want to annotate some words in the sentence - the annotation should be small - the translation - and an icone to play the sound of the word
+
+*** Quiz Page - phase 5 - implement demo ***
+
+   Decision points (resolved per workflow rule — "write options + pick best"):
+   - Where the new options live:
+     - [selected] BOTH — full controls in the quiz Settings sheet, plus
+       quick-toggle icons in the toolbox for the two most-used (text-alternative
+       cycle + annotations on/off). Lets us compare which feels better.
+     - [ ] Settings only — fewer surfaces but more taps to reach.
+   - Availability gating granularity (some exercises lack transliteration /
+     annotated format):
+     - [selected] Per-exercise data flags — a control shows/enables only when
+       the current exercise carries that data (hasTransliteration / hasDiacritics
+       / hasRuby / hasAnnotations). Naturally covers per-course too (if no
+       exercise has it, it never appears).
+     - [ ] Per-course flag only — coarser, can't vary within a course.
+   - Source of the alt/ruby/annotation DATA (server sends none today):
+     - [selected] New OPTIONAL fields on the Exercise JSON, populated by the
+       content pipeline / translation-API later; controls hidden until present.
+       The /annotated demo already shows the rendering.
+     - [ ] Block phase 5 on the content/API work — would stall the UI.
+   - quiz_settings persistence (task 6):
+     - [selected] jsonb column on user_data.preference + mirrored in client
+       Preference; QuizSettings still cached in SharedPreferences as the local
+       fallback, synced up to the server prefs when signed in.
+     - [ ] Local SharedPreferences only — already exists, but not cross-device.
+
+- [v] We have some new options for quiz - we can ad them to the quiz settings, and to the toolbox - or only to the settings We can see what looks better and more user friendly
+      (both: settings sheet has the full controls; toolbox has the text-alternative
+      quick-toggle. Compare and tell me which placement you prefer.)
+- [v] Some options are available per corse - only if the course - or even exercise level - some exercise will not have the annotated text format - some will not have transliteration. 
+      (gated on per-exercise data: text-alt/ruby controls appear only when the
+      exercise carries the matching sentence_alt* fields)
+- [v] Add text alternative icon to the toolbox/settings - transliteration, diacritical signs 
+      (uses existing sentence_alt1/2/3; JA content already has hiragana/romaji/katakana)
+- [v] if Japanese we should have RubyText options - with a selection of what transliteration to put on tom - hiragana, katakana or romanji 
+      (settings "Ruby" picker; renders the chosen reading above the sentence.
+      NOTE: whole-sentence ruby for now — per-kanji furigana needs token-level
+      data the live exercise lacks; the /annotated demo shows per-token ruby.)
+- [~] Add Annotated text to the toolbox 
+      PARTIAL: showAnnotations setting + plumbing exist and the /annotated demo
+      renders annotations, but the live-quiz toggle is gated OFF because real
+      exercises carry no per-word annotation data (only word1/2/3, no per-word
+      translation/audio). Lights up once that data exists — see the "Word
+      translation + audio API integration" decision block above.
+- [v] Add a json field to the user preferences for quiz_settings
+      (preference.quiz_settings jsonb; client QuizSettings mirrors to it + reads
+      it back, SharedPreferences as offline fallback)
+
+
+- [v] Fixing logic for lesson score calculation = the lessons score calculation should stay as it was - sum(score) - for all lessons 
+      Verified: lesson score is already sum(score) of exercises — client
+      _buildSummary.totalScore (sum) → posted per attempt → server lesson.py
+      rolls up sum(score)/max(score) across attempts from user_data.lesson_status.
+      Locked the intent with comments (client + server) so future scoring
+      changes don't drift it to avg/normalised. Also fixed a latent bug:
+      course.py user_course_status queried a non-existent `lesson_completed`
+      table → now `lesson_status` (it was unused/dead, so no behaviour change).
+      NOTE: course-level avg_score (courses list) is intentionally avg, not sum.
+
+- [] In exercise type recognize - the icon for show text should be in the toolbar under the sentence - and should be an icon only with tooltip show text. Add tooltip to all other icons - play, play slow
+- [] 
+
+
+
+
+*** Demo Page - More options ***
+
+- [v] in the demo page add a version of annotated sentence - where the annotation are simpler and are show in a tooltip above the word with only the word translation and a icon to play.  
+
+
+
+*** Demo continue *** 
+- [v] Ruby Text + annotated sentence + play and translation - tooltip annotation over furigana words (demo, in-app data). Google-api/live-data wiring still pending. 
+- [] prepare the Japanese - Hebrew with the new data 
+
+
+*** Annotated sentence data - Discussion ***
+
+-  the annotation should come from imported data - we can do some automation to get the data - but google translate is not so good with context 
+-  find a way to describe simple text annotations in text
+-  maybe we can use the audio from lingva.ml
+
+data format in text file:
+translation annotation
+
+sentences: I was looking for my dog
+-*- looking : cercare
+-*- dog: cane
+
+
+- ruby text format - we have to verify if ruby text format can be automated - and if the automation is correct 
+- we need to as claude about the data format 
+
+*** Annotated sentence data - implementation ***
+
+- [v] let's start from creating a ui format for combined ruby text with annotations 
+- [v] Let's create the new exercise format - annotated text + ruby text
+- [] japanese we have 3 ruby text and word annotation will be shared in all versions 
+- [] decide the format in exercise - we do not want to do any formatting on server side we can have the data in multiple formats. 
+- [] describe the text file format 
+
+- the format 
+ ruby_hiragana: [{text:t, ruby:r}, {text:t, ruby:r}]
+ ruby_katakana: [{text:t, ruby:r}, {text:t, ruby:r}]
+ ruby_romanji: [{text:t, ruby:r}, {text:t, ruby:r}]
+automated 
+ - annotation
+sentence: time is money
+{time}{translation}
+{money}{translation}
+transliteration:
+alternative:
+
+
+The text format:
+words for translation
+word1 and word2 are not the key we know 
+word1: translation
+word2: translation
+
+{} words : translation 
+{} words : translation 
+
+The alternative would be to have a single annotation field - in it we can have different types of annotations
+
+
+
+*** Implement Demo page - in quiz ***
+
+- [v] extent exercise model annotations + ruby_text - server (annotations now list; validators coerce the inconsistent jsonb: array / double-encoded-string / null)
+- [v] extent exercise model annotations + ruby_text - app the structure of ruby text:
+{"romanji": [{"ruby": "hitori", "text": "一人"}], "hiragana": [{"ruby": "ひとり", "text": "一人"}], "katakana": [{"ruby": "ヒトリ", "text": "一人"}]}
+- [v] implement the ruby text in quiz when available - the course  course_id 38 should have both annotation and ruby_text  (per-token furigana re-aligned onto the sentence; ruby picker gated on ruby_text keys)
+- [v] implement annotated text in quiz when we have annotation - the structure of annotation is:
+[{"word": "とても", "translation": "דַי"}]
+  (tappable highlighted words pop a translation tooltip; settings + toolbox toggle, reusable SentenceView widget)
+
+
+full record with ruby_test and annotation:
+38	1518	109524	1150430	simple	通り	[{"text": "מתישהו"}, {"text": "רְחוֹב", "correct": true}, {"text": "פודקאסט"}]	/ja/ja/ja_male_ja-JP-KeitaNeural_1f441354cdde04159cb1b398ab.mp3	通り			3182717881	2969032030		1	2026-06-04 15:38:05.947	2026-06-04 15:38:05.947	トウリ	とうり	touri	{"romanji": [{"ruby": "touri", "text": "通り"}], "hiragana": [{"ruby": "とうり", "text": "通り"}], "katakana": [{"ruby": "トウリ", "text": "通り"}]}	[{"word": "通り", "translation": "רְחוֹב"}]
+
+
+
+*** course metadeta ***
+- [v] ruby_text - list of object[{name: {icon, tooltip_text} ] for example hiragana, katakana, romanji for japanese, translit for other lanaguges
+- [v] sentence_alt1 list of object[{name: {icon, tooltip_text} ] diacritical signs - transliteration etc
+
+  Implemented as a single `course_simple.course.metadata` jsonb column (DDL/update.sql):
+    {"ruby_text":   [{"name":"Hiragana","icon":"translate","tooltip_text":"..."}, ...],
+     "sentence_alt":[{"slot":1,"name":"Diacritics","icon":"format_size","tooltip_text":"..."}, ...]}
+  - server: Course.metadata + EditorCourse(Detail).metadata, returned by /course, /editor/courses*.
+  - app: CourseMeta model + currentCourseMetaProvider; quiz settings sheet labels the ruby +
+    text-alternative pickers from the course descriptors (name + Tooltip), falling back to the
+    built-in per-language labels when a course declares none.
+  - dashboard: course header shows read-only variant chips (icon + name + tooltip).
+  - course_id 38 seeded with ja ruby/alt metadata for the demo. Editing the metadata in the
+    dashboard UI is a follow-up (currently read-only / seeded via SQL).
+
+*** dashboard - course editing ***
+- [v] multiple pages course/module/lesson so when you load a large course you do not need to load all of it - only a list of module 
+  - server: GET /editor/courses/{id}/modules (module summaries + lesson_count, no lessons) and
+    GET /editor/courses/{id}/modules/{module_id}/lessons (lessons + exercise_count, on demand).
+  - dashboard: course detail loads head + module summaries first; each module card lazy-loads its
+    lessons on expand (starts collapsed). The old /detail endpoint is kept for back-compat.
+  - verified on course 38 (57 modules): initial load is module summaries only, lessons fetched per module.
+
+
+
+*** get ready for Generate with UI ***
+Japanese/Hebrew course does not look correct
+Shall we try generate with UI se if we get better results
+- [] Implement explanation exercise
+  - [] ui
+  - [] import - type explanation could have multiple lines - and maybe ruby text
+- [] In Identify words - add translation/transliteration to the words
+- [] Consider using AI for generating based on a youtube movie  
+
+
+### Branch step-11-mvp-phase-1-editor
+- [v] Simplify the Dashboard access
+  - [W] default dashboard access is to default school
+  - [w] login to different school - https://dashboard.polyglots.social/school_id or  https://school_id.dashboard.polyglots.social/
+The above solution would allow users to be part of multiple schools and login ech time to a different one with the same user in the system. 
+
+- [v] solve subdomain/domain school
+- [] unify dashboard login / app login to a single server api
+- [v] load school from url
+- [v] save it in a cookie - how save is it? 
+- [] use it everywhere - to get courses, lessons etc.
+- [] different logic for certain schools - public/any private/invitation
+- [p] load user roles/permission 
+- [p] invitation join school 
+- [p] invitation course  
+
+school tables are quite good - maybe they need a few changes - but mostly the design is ok 
+- [w] make a list of changes and needed
+- [] user roles - should be json or list
+- [] invitation - private - or multiple 
+- [] all user data should be in school context
+- [] school should use int for id not string everywhere 
+
+Change tables 
+
+activity_log - good - future  - leave untouched 
+billing_methods - future - leave untouched 
+course_access - in course record - leave untouched 
+password_resets - not used for now - we use auth0 - leave untouched 
+plan_features - future - leave untouched 
+plans - future - leave untouched 
+school_invites - require updates - 
+school_users - good - a user maybe member in multiple schools - but we will always see a single school context
+schools - needed - we also need school icon
+student_enrollments - future 
+- [w] super_admins - remove - just a role - remove 
+- [w] terms_acceptances - needed
+
+
+- [] hide show elements in dashboard - depending on roles 
+- [] hide show courses - depending on school 
+- [] consider adding school to secured cookie 
+
+#### ACL
+
+- [v] Simplify editing and co-editing logic 
+     - [] Anyone can edit - after signing the term and conditions 
+     - [w] Each course has the following states 
+          school_id 
+          Editing Stage 
+          - draft
+          - preview
+          - published 
+          Access State
+          - public
+          - invitation
+          - private ? only for me 
+          Co Editing 
+          - private - default 
+          - Allow copy  
+          - Allow All  
+- [v] Create the terms and conditions
+
+#### Summary 
+when this stage is completed 
+- we can login logout to a school 
+- we can create content in a school
+- we see all the courses we have created 
+- We can see all courses that are in review mode - with a review badge 
+- We can not see courses in draft mode 
+- We can not see courses that are private
+#### Estimate 
+2/4 full working days 
+
+### Branch step-11-mvp-phase-2-formats
+- [] Do we need to add a new question types - like ruby text or annotated sentence?
+- [] The export is now a Json - need to export to our format
+- [] remove create school for now - hide it - use a script to create new schools 
+- [] default school should be the public school 
+- [] consider almost valid yaml - we still have to solve the explanation with multi line text 
+
+correct_option: 
+wrong_option:
+replacing 
+option:
+correct: true 
+
+### Branch step-11-mvp-phase-3-create-with-ai
+*** Complete the Export/Import formats ***
+
+- [] create an example lesson 
+- [] improve the create with AI page - add more features
+
+
+*** Create with AI ***
+
+- [] Try with one of gemini's model
+  - [] buy tokens 
+  - [] Experiment with a few languages  
+- [] Try with open api - ChatGPT tokens 
+- [] Add recording functionality with Azure 
+- [] Use some hash of the string to create the sentence id - so recording can be used
+
+
+### Branch step-11-mvp-phase-4-pseudo-payment
+
+*** Payment - research stage ***
+- [v] researched the different option for payment 
+- [v] There are solution that give you a service of of payment management - the cost is around 3.5% of the fee
+- [] For now we should not do payment - but pseudo payment - so we have features -- require payment -- but they will not be open on the web - only when running locally
+- [] Create content with AI - Bring your own Agent - BYOA - would be our choice
+- [] The ability to charge for our customers - premium content - will have to be delayed. But we will have the options to share private using with invitation code. 
+
+Summary 
+- Payment delayed for later stage
+- Use your own agent to create content 
+- Invitation for private content - no charge for now 
+
+
+### Branch step-11-mvp-phase-10-final-mvp
+*** Final touches ***
+- [] Add link in the home page to create content?

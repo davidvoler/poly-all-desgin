@@ -1,0 +1,84 @@
+---
+title: Lesson 2 - Good Morning
+weight: 2
+---
+type: single_selection
+text: おはよう
+romanji: Ohayō
+option: Good morning
+correct: true
+option: Good evening
+option: Thank you
+option: Goodbye
+---
+type: single_selection
+text: おはよう、ジョージ
+romanji: Ohayō, Jōji
+option: Good morning, George
+correct: true
+option: Thank you, George
+option: Goodbye, George
+option: Good evening, George
+---
+type: single_selection
+text: おはよう、ワタナベさん
+romanji: Ohayō, Watanabe-san
+option: Good morning, Watanabe
+correct: true
+option: Thank you, Watanabe
+option: Sorry, Watanabe
+option: Good evening, Watanabe
+---
+type: explanation
+ございます (gozaimasu) makes a phrase more polite and formal. You will see it added to many expressions.
+---
+type: single_selection
+text: おはようございます
+romanji: Ohayō gozaimasu
+option: Good morning (polite)
+correct: true
+option: Good morning (casual)
+option: Good evening (polite)
+option: Thank you very much
+---
+type: identify_words
+text: おはようございます
+romanji: Ohayō gozaimasu
+option: おはよう
+correct: true
+option: ございます
+correct: true
+option: ありがとう
+option: さようなら
+---
+type: multiple_choice
+text: おはよう
+romanji: Ohayō
+option: good morning
+correct: true
+option: morning greeting
+correct: true
+option: good evening
+option: thank you
+---
+type: single_selection
+text: おはよう、コーヒーはありがとう
+romanji: Ohayō, kōhī wa arigatō
+option: Good morning, and thanks for the coffee
+correct: true
+option: Good morning, do you want coffee?
+option: Thank you, the coffee is good
+option: Good morning, goodbye
+---
+type: identify_words
+text: おはよう、コーヒーはありがとう
+romanji: Ohayō, kōhī wa arigatō
+option: おはよう
+correct: true
+option: コーヒー
+correct: true
+option: は
+correct: true
+option: ありがとう
+correct: true
+option: ございます

@@ -1,0 +1,107 @@
+---
+title: Lesson 6 - Particles Review — は、か、を、に、の
+weight: 6
+---
+type: explanation
+We have now seen five particles. は marks the topic. を marks the object. に marks direction or time. の shows possession. か makes a question.
+---
+type: single_selection
+text: ねこはみずをのみます
+romanji: Neko wa mizu wo nomimasu
+option: The cat drinks water
+correct: true
+option: The cat likes water
+option: Water drinks the cat
+option: The cat wants water
+---
+type: single_selection
+text: サラのねこはあさにみずをのみますか
+romanji: Sara no neko wa asa ni mizu wo nomimasu ka
+option: Does Sara's cat drink water in the morning?
+correct: true
+option: Sara's cat drinks water in the morning
+option: Sara drinks water with her cat in the morning
+option: Does Sara drink water in the morning?
+---
+type: identify_words
+text: ワタナベさんのがくせいはまいにちがっこうにいきます
+romanji: Watanabe-san no gakusei wa mainichi gakkō ni ikimasu
+option: の
+correct: true
+option: は
+correct: true
+option: に
+correct: true
+option: を
+option: か
+---
+type: single_selection
+text: ジョージはよるにコーヒーをのみます
+romanji: Jōji wa yoru ni kōhī wo nomimasu
+option: George drinks coffee at night
+correct: true
+option: George drinks coffee in the morning
+option: George likes coffee at night
+option: George makes coffee at night
+---
+type: multiple_choice
+text: Which particles have we learned?
+romanji: (select all correct answers)
+option: は — topic marker
+correct: true
+option: か — question marker
+correct: true
+option: を — object marker
+correct: true
+option: に — direction and time marker
+correct: true
+option: の — possession marker
+correct: true
+option: で — location of action marker
+---
+type: single_selection
+text: わたしのねこはサラのねこをみます
+romanji: Watashi no neko wa Sara no neko wo mimasu
+option: My cat looks at Sara's cat
+correct: true
+option: Sara's cat looks at my cat
+option: My cat and Sara's cat are friends
+option: Sara's cat likes my cat
+---
+type: single_selection
+text: ワタナベさんはあさにがっこうにいきます
+romanji: Watanabe-san wa asa ni gakkō ni ikimasu
+option: Watanabe goes to school in the morning
+correct: true
+option: Watanabe likes school in the morning
+option: Watanabe comes from school in the morning
+option: Watanabe is at school in the morning
+---
+type: single_selection
+text: サラのコーヒーはあつくないですか
+romanji: Sara no kōhī wa atsukunai desu ka
+option: Isn't Sara's coffee hot?
+correct: true
+option: Is Sara's coffee hot?
+option: Sara's coffee is not hot
+option: Sara's coffee is hot
+---
+type: identify_words
+text: わたしはまいにちみずとコーヒーをのみます
+romanji: Watashi wa mainichi mizu to kōhī wo nomimasu
+option: は
+correct: true
+option: を
+correct: true
+option: に
+option: の
+option: か
+---
+type: single_selection
+text: ジョージのねこはかわいいですか
+romanji: Jōji no neko wa kawaii desu ka
+option: Is George's cat cute?
+correct: true
+option: George's cat is cute
+option: George likes cute cats
+option: George's cat is not cute

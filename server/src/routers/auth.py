@@ -158,6 +158,7 @@ async def get_or_create_user(
         on a box that has AUTH0_DOMAIN set, so prod can't accidentally
         accept unverified email."""
     email: str | None = None
+    print("payload", payload)
 
     if payload.id_token and auth0_verifier.is_enabled():
         try:

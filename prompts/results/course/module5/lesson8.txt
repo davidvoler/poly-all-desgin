@@ -1,0 +1,139 @@
+---
+title: Lesson 8 - New Word — いつも / ときどき (always / sometimes)
+weight: 8
+---
+type: explanation
+いつも (itsumo) means "always" and ときどき (tokidoki) means "sometimes". Like まいにち, these time adverbs slot in right after は, before the place or object.
+---
+type: single_selection
+text: いつも
+romanji: itsumo
+option: always
+correct: true
+option: sometimes
+option: never
+option: every day
+---
+type: single_selection
+text: ときどき
+romanji: tokidoki
+option: sometimes
+correct: true
+option: always
+option: never
+option: every morning
+---
+type: single_selection
+text: わたしはいつもあさにコーヒーをのみます
+romanji: Watashi wa itsumo asa ni kōhī wo nomimasu
+option: I always drink coffee in the morning
+correct: true
+option: I sometimes drink coffee in the morning
+option: I never drink coffee in the morning
+option: I drink coffee every morning
+---
+type: single_selection
+text: サラはときどきともだちのいえにいきます
+romanji: Sara wa tokidoki tomodachi no ie ni ikimasu
+option: Sara sometimes goes to a friend's house
+correct: true
+option: Sara always goes to a friend's house
+option: Sara never goes to a friend's house
+option: Sara goes to a friend's house every day
+---
+type: sentence_structure
+text: ジョージはいつもいえでよるにほんをよみます
+romanji: Jōji wa itsumo ie de yoru ni hon wo yomimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いつも
+romanji: itsumo
+meaning: always
+pos: adverb
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: よる
+romanji: yoru
+meaning: night
+pos: noun
+word: に
+romanji: ni
+meaning: at (time)
+pos: particle
+word: ほん
+romanji: hon
+meaning: book
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: よみます
+romanji: yomimasu
+meaning: read
+pos: verb
+---
+type: single_selection
+text: ジョージはいつもいえでよるにほんをよみます
+romanji: Jōji wa itsumo ie de yoru ni hon wo yomimasu
+option: George always reads a book at home at night
+correct: true
+option: George sometimes reads a book at home at night
+option: George reads a book at home every night
+option: George always writes a book at home at night
+---
+type: multiple_choice
+text: いつも vs ときどき
+romanji: (select all correct)
+option: いつも means always
+correct: true
+option: ときどき means sometimes
+correct: true
+option: both come after は in the sentence
+correct: true
+option: いつも means sometimes
+---
+type: single_selection
+text: ワタナベさんはときどきともだちとコーヒーをのみますか
+romanji: Watanabe-san wa tokidoki tomodachi to kōhī wo nomimasu ka
+option: Does Watanabe sometimes drink coffee with a friend?
+correct: true
+option: Watanabe sometimes drinks coffee with a friend
+option: Does Watanabe always drink coffee with a friend?
+option: Does Watanabe drink coffee with a friend?
+---
+type: single_selection
+text: はい、でもわたしはいつもひとりでのみます
+romanji: Hai, demo watashi wa itsumo hitori de nomimasu
+option: Yes, but I always drink alone
+correct: true
+option: No, but I always drink alone
+option: Yes, but I sometimes drink alone
+option: Yes, but I always drink with a friend
+---
+type: identify_words
+text: サラはときどきがっこうでともだちとごはんをたべます
+romanji: Sara wa tokidoki gakkō de tomodachi to gohan wo tabemasu
+option: は
+correct: true
+option: で
+correct: true
+option: と
+correct: true
+option: を
+correct: true
+option: が
+option: の
+option: に

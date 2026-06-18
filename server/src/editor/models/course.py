@@ -17,6 +17,9 @@ class EditorCourse(BaseModel):
     module_count: int = 0
     student_count: int = 0
     updated_at: DateTime | None = None
+    # Course-level display metadata (reading / sentence-alt variant
+    # descriptors). Same shape as the public Course.metadata.
+    metadata: dict | None = {}
 
 
 class CourseStatusUpdate(BaseModel):
@@ -43,6 +46,18 @@ class EditorModule(BaseModel):
     lessons: list[EditorLesson] = []
 
 
+class EditorModuleSummary(BaseModel):
+    """Lightweight module row for the paginated course-detail page — no
+    nested lessons, just the per-module lesson count. The dashboard lazy-
+    loads each module's lessons (GET .../modules/{id}/lessons) on expand so
+    a large course renders from a small initial payload."""
+    module_id: int
+    title: str = ''
+    description: str = ''
+    weight: int = 0
+    lesson_count: int = 0
+
+
 class EditorCourseDetail(BaseModel):
     """Full nested structure for the course detail page — course row +
     modules + lessons + per-lesson exercise counts. The dashboard
@@ -58,6 +73,7 @@ class EditorCourseDetail(BaseModel):
     module_count: int = 0
     student_count: int = 0
     updated_at: DateTime | None = None
+    metadata: dict | None = {}
     modules: list[EditorModule] = []
 
 

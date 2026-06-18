@@ -1,0 +1,105 @@
+---
+title: Lesson 8 - The Particle と (to) — And / Together With
+weight: 8
+---
+type: explanation
+と (to) has two uses: it connects nouns meaning "and" (みずとコーヒー — "water and coffee"), and it means "together with" a person (サラとべんきょうする — "study with Sara").
+---
+type: single_selection
+text: みずとコーヒー
+romanji: Mizu to kōhī
+option: water and coffee
+correct: true
+option: water or coffee
+option: water with coffee
+option: water for coffee
+---
+type: single_selection
+text: サラとジョージはがくせいです
+romanji: Sara to Jōji wa gakusei desu
+option: Sara and George are students
+correct: true
+option: Sara likes George the student
+option: Sara or George is a student
+option: Sara and George are teachers
+---
+type: single_selection
+text: わたしはサラとがっこうにいきます
+romanji: Watashi wa Sara to gakkō ni ikimasu
+option: I go to school with Sara
+correct: true
+option: I go to school like Sara
+option: Sara and I like school
+option: Sara goes to school for me
+---
+type: identify_words
+text: ワタナベさんはみずとコーヒーをのみます
+romanji: Watanabe-san wa mizu to kōhī wo nomimasu
+option: と
+correct: true
+option: は
+correct: true
+option: を
+correct: true
+option: に
+option: か
+---
+type: single_selection
+text: ねこといぬはかわいい
+romanji: Neko to inu wa kawaii
+option: Cats and dogs are cute
+correct: true
+option: Cats or dogs are cute
+option: Cats with dogs are cute
+option: The cat and dog are not cute
+---
+type: single_selection
+text: ジョージはサラとがっこうでべんきょうします
+romanji: Jōji wa Sara to gakkō de benkyō shimasu
+option: George studies at school with Sara
+correct: true
+option: George and Sara like school
+option: George studies for Sara at school
+option: George teaches Sara at school
+---
+type: multiple_choice
+text: と (to)
+romanji: to
+option: connects nouns meaning "and"
+correct: true
+option: means "together with" a person
+correct: true
+option: marks the object of the action
+option: makes a sentence a question
+---
+type: single_selection
+text: わたしのねことサラのねこはかわいい
+romanji: Watashi no neko to Sara no neko wa kawaii
+option: My cat and Sara's cat are cute
+correct: true
+option: My cat or Sara's cat is cute
+option: My cat with Sara's cat is cute
+option: My cat and Sara's cat are not cute
+---
+type: single_selection
+text: ワタナベさんはまいにちみずとコーヒーをのみますか
+romanji: Watanabe-san wa mainichi mizu to kōhī wo nomimasu ka
+option: Does Watanabe drink water and coffee every day?
+correct: true
+option: Watanabe drinks water and coffee every day
+option: Does Watanabe like water and coffee every day?
+option: Does Watanabe make water and coffee every day?
+---
+type: identify_words
+text: サラとジョージはいえでコーヒーをのみます
+romanji: Sara to Jōji wa ie de kōhī wo nomimasu
+option: と
+correct: true
+option: は
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: の
+option: に

@@ -1,0 +1,92 @@
+---
+title: Lesson 4 - The Letter ね (ne)
+weight: 4
+---
+type: explanation
+ね makes the sound "ne". You will see it in ねこ — the hiragana spelling of 猫 (cat). It also appears at the end of sentences as a soft "isn't it?" or "right?".
+---
+type: single_selection
+text: ね
+romanji: ne
+option: the letter "ne"
+correct: true
+option: the letter "na"
+option: the letter "ni"
+option: the letter "nu"
+---
+type: identify_words
+text: ねこ
+romanji: neko
+option: ね
+correct: true
+option: こ
+correct: true
+option: み
+option: あ
+---
+type: single_selection
+text: ね is the first sound in which word?
+romanji: (choose the word that starts with ね)
+option: ねこ (cat)
+correct: true
+option: みず (water)
+option: ありがとう (thank you)
+option: おはよう (good morning)
+---
+type: single_selection
+text: ねこはかわいいね
+romanji: Neko wa kawaii ne
+option: The cat is cute, isn't it?
+correct: true
+option: Is the cat cute?
+option: The cat is not cute
+option: I like the cat
+---
+type: single_selection
+text: おはよう、ねこ
+romanji: Ohayō, neko
+option: Good morning, cat
+correct: true
+option: Thank you, cat
+option: Goodbye, cat
+option: Good evening, cat
+---
+type: identify_words
+text: ねこはかわいいね
+romanji: Neko wa kawaii ne
+option: ね
+correct: true
+option: こ
+correct: true
+option: か
+correct: true
+option: み
+---
+type: single_selection
+text: ねこはみずはいいえ
+romanji: Neko wa mizu wa iie
+option: The cat says no to water
+correct: true
+option: The cat likes water
+option: No cat, no water
+option: The cat wants water
+---
+type: multiple_choice
+text: ね
+romanji: ne
+option: found in ねこ (cat)
+correct: true
+option: the sound "ne"
+correct: true
+option: used at sentence end to mean "isn't it?"
+correct: true
+option: found in みず (water)
+---
+type: single_selection
+text: みずはいいえ、コーヒーはありがとうね
+romanji: Mizu wa iie, kōhī wa arigatō ne
+option: No water, thanks for the coffee, right?
+correct: true
+option: Yes water, no coffee
+option: Thank you for the water and coffee
+option: Good morning, coffee please

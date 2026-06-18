@@ -1,0 +1,152 @@
+---
+title: Lesson 4 - Sentence Structure — [Subject] は [Place] に いきます
+weight: 4
+---
+type: explanation
+To say someone goes somewhere, use: [topic]は [place]に いきます. Note the difference: で marks where an action happens, に marks where someone is going.
+---
+type: sentence_structure
+text: わたしはがっこうにいきます
+romanji: Watashi wa gakkō ni ikimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+---
+type: single_selection
+text: わたしはがっこうにいきます
+romanji: Watashi wa gakkō ni ikimasu
+option: I go to school
+correct: true
+option: I am at school
+option: I study at school
+option: I like school
+---
+type: sentence_structure
+text: サラはまいにちがっこうにいきます
+romanji: Sara wa mainichi gakkō ni ikimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+---
+type: single_selection
+text: サラはまいにちがっこうにいきます
+romanji: Sara wa mainichi gakkō ni ikimasu
+option: Sara goes to school every day
+correct: true
+option: Sara is at school every day
+option: Sara likes school every day
+option: Sara studies every day
+---
+type: sentence_structure
+text: ジョージはあさにいえにいきます
+romanji: Jōji wa asa ni ie ni ikimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: あさ
+romanji: asa
+meaning: morning
+pos: noun
+word: に
+romanji: ni
+meaning: in (time)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+---
+type: single_selection
+text: ジョージはあさにいえにいきます
+romanji: Jōji wa asa ni ie ni ikimasu
+option: George goes home in the morning
+correct: true
+option: George is at home in the morning
+option: George likes home in the morning
+option: George studies at home in the morning
+---
+type: multiple_choice
+text: に vs で
+romanji: (select all correct)
+option: に marks direction — going TO a place
+correct: true
+option: で marks location — where the action happens
+correct: true
+option: に and で mean the same thing
+option: で marks direction — going TO a place
+---
+type: single_selection
+text: ワタナベさんはまいにちがっこうにいきますか
+romanji: Watanabe-san wa mainichi gakkō ni ikimasu ka
+option: Does Watanabe go to school every day?
+correct: true
+option: Watanabe goes to school every day
+option: Does Watanabe study at school every day?
+option: Does Watanabe like school every day?
+---
+type: identify_words
+text: わたしはあさにがっこうにいきます
+romanji: Watashi wa asa ni gakkō ni ikimasu
+option: は
+correct: true
+option: に
+correct: true
+option: がっこう
+correct: true
+option: あさ
+correct: true
+option: いきます
+correct: true
+option: を
+option: で
