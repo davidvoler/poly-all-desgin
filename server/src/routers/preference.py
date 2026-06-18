@@ -21,15 +21,17 @@ async def update_user_preferences(preferences: Preference,
                                   school_user:SchoolUser = Depends(current_school_user_full)):
     # Trust the cookie, not the body — clients shouldn't be able to
     # write another user's preference row by tampering with user_id.
+    print(preferences)
+    print(school_user)
 
     query = """
-    INSERT into user_data.preference (user_id, course_id, module_id, lesson_id, ui_lang, lang, to_lang, course_name, module_name, lesson_name, quiz_settings)
+    INSERT into user_data.preference (user_id, school_id, course_id, module_id, lesson_id, ui_lang, lang, to_lang, course_name, module_name, lesson_name, quiz_settings)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
     on conflict (user_id,school_id, lang) do update
     SET course_id = %s, module_id = %s, lesson_id = %s,
         ui_lang = %s, lang = %s, to_lang = %s, course_name = %s, module_name = %s, lesson_name = %s,
         quiz_settings = %s::jsonb
-    WHERE  user_id = %s AND school_id = %s AND lang = %s
+    WHERE  user_data.preference.user_id = %s AND user_data.preference.school_id = %s AND user_data.preference.lang = %s
     """
     # jsonb is written as a JSON string + ::jsonb cast (psycopg3 doesn't
     # auto-adapt a plain dict). None stays NULL.

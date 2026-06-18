@@ -33,7 +33,8 @@ async def _get_school_user(user_id: int, school_id: int) -> dict:
 
 async def get_user_full_data(user_id: int, school_id: int) -> SchoolUser:
     user_data = await _get_school_user(user_id, school_id)
-    permissions = _get_user_dashboard_permission(user_data, school_payment_status=True)  # Placeholder for actual payment status
+    # permissions = _get_user_dashboard_permission(user_data, school_payment_status=True)  # Placeholder for actual payment status
+    print(user_data)
     school_user =  SchoolUser(**user_data)
-    school_user.permissions = permissions
+    # school_user.permissions = permissions
     return school_user

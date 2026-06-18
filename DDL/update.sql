@@ -160,7 +160,7 @@ insert INTO school.schools (school_url, school_dashboard_url, name, plan, is_pub
 Alter table user_data.users add column school_id int8 default 1;
 
 
-insert INTO school.school_users (school_id, user_id, roles) 
+insert INTO school.school_users ( user_id,school_id, roles) 
 VALUES
 (6,1,'{super_admin,school_admin,teacher}'),
 (6,2,'{super_admin,school_admin,teacher}'),

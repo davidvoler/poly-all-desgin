@@ -82,13 +82,14 @@ async def current_school_user_full(request: Request) -> SchoolUser:
     origin = request.headers.get("origin")
     hostname = urlparse(origin).hostname if origin else ""
     school_id = await school_id_from_hostname(hostname)
-    print(f"Current school user full: raw={raw}, hostname={hostname}, school_id={school_id}")
     user_id = -1
     try:
         user_id = int(raw)
     except (TypeError, ValueError):
+        print(f"Error parsing user_id from cookie: {e}")
         #TODO: Handle the error
         user_id = -1
+    print (user_id, school_id)
     return await get_user_full_data(user_id, school_id)
             
 

@@ -5,9 +5,8 @@ class SchoolUser(BaseModel):
     school_id: int = 0
     roles: list[str] = []
     status: str = "active"
-    signed_terms_version: int = 0
-    permissions: dict[str, bool] = {}
-    is_school_public: bool = False
+    signed_terms_version: int|None = None
+    roles: list = []
 
 
 class SchoolUserBase(BaseModel):
