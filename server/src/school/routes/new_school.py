@@ -1,8 +1,8 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from server.src.school.models import school
-from server.src.utils.db import get_query_results
-from utils.auth_deps import current_school, current_school_user
+from school.models import school
+from utils.db import get_query_results
+from utils.auth_deps import current_school, current_school_user, current_school_user_full
 from models.auth import  SchoolUser
 router = APIRouter()
 
@@ -59,8 +59,16 @@ async def become_editor(school_user: SchoolUser = Depends(current_school_user)):
     return {}
 
 
+@router.post("/sign_editor_terms")
+async def sign_editor_terms(school_user: SchoolUser = Depends(current_school_user_full)):
+    return {}
 
 
 
+@router.get("/editor_terms")
+async def sign_editor_terms():
+    with open("legal/EDITOR_TERMS.txt", "r") as f:
+        terms = f.read()
+    return {"terms": terms}
 
 

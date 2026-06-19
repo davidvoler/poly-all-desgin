@@ -31,10 +31,14 @@ async def _get_school_user(user_id: int, school_id: int) -> dict:
     return results[0] if results else {}
 
 
-async def get_user_full_data(user_id: int, school_id: int) -> SchoolUser:
-    user_data = await _get_school_user(user_id, school_id)
-    # permissions = _get_user_dashboard_permission(user_data, school_payment_status=True)  # Placeholder for actual payment status
-    print(user_data)
+async def get_user_full_data(user_id: int, school ) -> SchoolUser:
+    user_data = await _get_school_user(user_id, school.school_id)
     school_user =  SchoolUser(**user_data)
-    # school_user.permissions = permissions
+    school_user.school_name = school.name
+    school_user.school_type = school.school_type
+    school_user.logo_url = school.logo_url
+    school_user.primary_color = school.primary_color
+    school_user.school_id = school.school_id
+    school_user.domain = school.domain
+    school_user.dashboard = school.dashboard
     return school_user

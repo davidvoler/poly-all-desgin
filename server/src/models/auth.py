@@ -1,13 +1,20 @@
 from pydantic import BaseModel
 
 class SchoolUser(BaseModel):
-    user_id: int = 0
-    school_id: int = 0
-    roles: list[str] = []
-    status: str = "active"
+    user_id: int | None = 0
+    school_id: int | None = 0
+    roles: list[str]| None = []
+    status: str | None = "active"
     signed_terms_version: int|None = None
     roles: list[str]| None = []
     #school data
+    domain: str | None = None
+    dashboard: bool | None = False
+    school_name: str | None = None
+    school_type: str | None = None
+    logo_url: str | None = None
+    primary_color: str | None = None
+
 
 class User(BaseModel):
     user_id: int = 0
@@ -21,13 +28,21 @@ class SchoolUserBase(BaseModel):
 
 
 class SchoolData(BaseModel):
-    school_id: int
+    school_id: int | None = None
+    name: str | None = None
+    plan: str = 'free'                       # free | pro | enterprise
+    school_type: str = 'private'             # public | no_charge | private
+    logo_url: str | None = None
+    primary_color: str | None = None
+    domain: str | None = None
+    dashboard: bool = False
     roles: list[str]
-    status: str
-    school_name: str
-    school_type: str
-    logo_url: str | None
-    primary_color: str | None
+    status: str | None = None
+    school_name: str | None = None
+    school_type: str | None = None
+    logo_url: str | None = None
+    primary_color: str | None = None
+    dashboard: bool = False
 
 
 class SchoolDataWithUser(SchoolData):

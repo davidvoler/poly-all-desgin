@@ -7,13 +7,23 @@
   - [v] school has a specific domain subdomain 
 
 ### Branch step-11-mvp-phase-2-dashboard
-- [w] unify dashboard login / app login to a single server api
-- [] hide show elements in dashboard - depending on roles 
-- [] hide show courses - depending on school 
+- [v] unify dashboard login / app login to a single server api
 - [v] remove create school for now - hide it - use a script to create new schools 
 - [v] we need user prefs per school 
 - [v] login logic
 - [w] implement login logic with invitation
+- [] consider creating a single auth-preference element including 
+    - school
+    - user
+    - school_user + roles
+    - preferences 
+    If we have this object on the server side we have all the data - to make decisions on the server side 
+- in this phase we care mostly about public school - let's concentrate on these features 
+- [] redo dashboard api
+- [] hide show elements in dashboard - depending on roles 
+- [] hide show courses - depending on school 
+
+
 
 ### Branch step-11-mvp-phase-3-formats
 - [] Simplify format creation - move the fields into a separate file - create a map of fields 

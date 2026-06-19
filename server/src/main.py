@@ -14,9 +14,9 @@ from routers import (
     user_stats,
     practice,
     achievement, 
-    auth_new
+    auth_new,
 )
-from school.routes import school as school_routes, users as school_users
+from school.routes import school as school_routes, users as school_users, new_school
 from editor.routes import (
     upload_course,
     export_course,
@@ -114,6 +114,9 @@ app.include_router(school_routes.router,
 app.include_router(school_users.router,
     prefix="/api/v1/school_users",
     tags=["school_users"])
+app.include_router(new_school.router,
+    prefix="/api/v1/new_school",
+    tags=["new_school"])
 
 # --- Course editor (dashboard-side, not the public app) -----------------------
 app.include_router(upload_course.router,

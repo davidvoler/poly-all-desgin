@@ -60,6 +60,25 @@ async def school_id_from_hostname(hostname: str) -> int:
             return school_id
     return -1
 
+async def school_hostname(hostname: str) -> School:
+    schools_cache = await get_schools_cache()
+    print(f"Schools hostname: {hostname}")
+    scool = {}
+    for school_id, school in schools_cache.items():
+        print(f"Checking school_id={school_id}, school_url={school['school_url']}, school_dashboard_url={school['school_dashboard_url']}")
+        if school['school_url'] == hostname:
+            is_dashboard = False
+            school = school
+        elif school['school_dashboard_url'] == hostname:
+            is_dashboard = True
+            school = school
+    if school == {}:
+        raise HTTPException(status_code=404, detail="School not found")
+    results =  School(**school)
+    results.domain = hostname
+    results.dashboard = is_dashboard
+    return results
+
 
 async def current_school_id(request: Request) -> int:
     origin = request.headers.get("origin")
@@ -85,7 +104,8 @@ async def current_school_user_full(request: Request) -> SchoolUser:
     raw = request.cookies.get("user_id")
     origin = request.headers.get("origin")
     hostname = urlparse(origin).hostname if origin else ""
-    school_id = await school_id_from_hostname(hostname)
+    school = await school_hostname(hostname)
+    print(f"hostname: {hostname}")
     user_id = -1
     try:
         user_id = int(raw)
@@ -93,8 +113,8 @@ async def current_school_user_full(request: Request) -> SchoolUser:
         print(f"Error parsing user_id from cookie: {e}")
         #TODO: Handle the error
         user_id = -1
-    print (user_id, school_id)
-    return await get_user_full_data(user_id, school_id)
+    print (user_id, school.school_id)
+    return await get_user_full_data(user_id, school)
             
 
 
