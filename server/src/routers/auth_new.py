@@ -29,7 +29,7 @@ from utils.auth_utils import (auth_auth0_user, auth_user_with_cookie,
                               clear_session_cookies, create_user,
                               create_user_with_invitation, get_user,
                               is_school_user_active, school_require_invitation,
-                              set_lang_cookies, set_session_cookie)
+                              set_session_cookie)
 
 router = APIRouter()
 
@@ -67,8 +67,7 @@ async def get_or_create_user(
         user_id = int(user["user_id"])
 
     pref = await build_user_pref(user_id, school)
-    set_session_cookie(response, user_id)
-    set_lang_cookies(response, pref.preference)
+    set_session_cookie(response, user_id, school.domain)
     return pref
 
 
@@ -86,8 +85,7 @@ async def use_invitation(
     if not pref:
         raise HTTPException(status_code=400, detail="Invalid invitation")
 
-    set_session_cookie(response, pref.user_id)
-    set_lang_cookies(response, pref.preference)
+    set_session_cookie(response, pref.user_id, school.domain)
     return pref
 
 
@@ -106,8 +104,7 @@ async def login_with_password(
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     pref = await build_user_pref(user_id, school)
-    set_session_cookie(response, user_id)
-    set_lang_cookies(response, pref.preference)
+    set_session_cookie(response, user_id, school.domain)
     return pref
 
 
@@ -164,7 +161,5 @@ async def join_with_invitation(
         pref = await create_user_with_invitation(payload, school)
         if not pref:
             raise HTTPException(status_code=400, detail="Invalid invitation")
-
-    set_session_cookie(response, pref.user_id)
-    set_lang_cookies(response, pref.preference)
+    set_session_cookie(response, pref.user_id, school.domain)
     return pref

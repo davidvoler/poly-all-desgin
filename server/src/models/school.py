@@ -10,4 +10,5 @@ class School(BaseModel):
     school_type: str = 'private'             # public | no_charge | private
     logo_url: str | None = None
     primary_color: str = '#1E88E5'
+    domain: str | None = None
 

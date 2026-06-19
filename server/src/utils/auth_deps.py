@@ -75,7 +75,9 @@ async def current_school(request: Request) -> School:
     for school_id, school in schools_cache.items():
         print(f"Checking school_id={school_id}, school_url={school['school_url']}, school_dashboard_url={school['school_dashboard_url']}")
         if school['school_url'] == hostname or school['school_dashboard_url'] == hostname:
-            return School(**school)
+            school =  School(**school)
+            school.domain = hostname
+            return school
     return None
 
 

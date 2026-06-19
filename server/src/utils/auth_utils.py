@@ -39,13 +39,12 @@ _COOKIE_NAME = "user_id"
 # --------------------------------------------------------------------------
 # Session cookie
 # --------------------------------------------------------------------------
-def _cookie_kwargs() -> dict:
+def _cookie_kwargs(domain: str | None = None) -> dict:
     """HttpOnly always. SameSite + Secure + Domain depend on env — see the
     long-form notes in routers/auth.py. Kept identical so a cookie set by
     either router is readable by the other."""
     secure = os.getenv("COOKIE_SECURE", "").lower() in {"1", "true", "yes"}
     samesite = os.getenv("COOKIE_SAMESITE", "lax").lower()
-    domain = os.getenv("COOKIE_DOMAIN", "").strip() or None
     return {
         "max_age": _COOKIE_MAX_AGE,
         "httponly": True,
@@ -55,24 +54,13 @@ def _cookie_kwargs() -> dict:
     }
 
 
-def set_session_cookie(response: Response, user_id: int) -> None:
-    response.set_cookie(key=_COOKIE_NAME, value=str(user_id), **_cookie_kwargs())
+def set_session_cookie(response: Response, user_id: int, domain: str | None = None) -> None:
+    response.set_cookie(key=_COOKIE_NAME, value=str(user_id), **_cookie_kwargs(domain))
 
-
-def set_lang_cookies(response: Response, pref: dict | None) -> None:
-    """Mirror the legacy behaviour: stash lang preferences in cookies so a
-    fresh client without local storage can pre-fill its language picker
-    before the first /preference call lands."""
-    if not pref:
-        return
-    for key in ("lang", "to_lang"):
-        value = pref.get(key)
-        if value:
-            response.set_cookie(key=key, value=value, **_cookie_kwargs())
 
 
 def clear_session_cookies(response: Response) -> None:
-    for key in (_COOKIE_NAME, "lang", "to_lang"):
+    for key in (_COOKIE_NAME):
         response.delete_cookie(key)
 
 
