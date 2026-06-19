@@ -924,15 +924,17 @@ final schoolProvider = FutureProvider<SchoolInfo?>((ref) async {
 });
 
 final schoolStatsProvider = FutureProvider<SchoolStats>((ref) async {
-  final me = ref.watch(currentUserProvider);
-  if (me == null) return const SchoolStats();
-  return ref.read(dashboardApiProvider).fetchSchoolStats(me.schoolId);
+  // Stats disabled — the dashboard no longer calls
+  // /api/v1/school/<id>/stats. fetchSchoolStats() is left in place for when
+  // stats are reinstated; consumers fall back to the empty SchoolStats.
+  return const SchoolStats();
 });
 
 final activityProvider = FutureProvider<List<ActivityRowRemote>>((ref) async {
-  final me = ref.watch(currentUserProvider);
-  if (me == null) return const [];
-  return ref.read(dashboardApiProvider).fetchActivity(me.schoolId);
+  // Activity feed disabled — the dashboard no longer calls
+  // /api/v1/school/<id>/activity. fetchActivity() is left in place for when
+  // the feed is reinstated; the Overview panel falls back to its empty state.
+  return const [];
 });
 
 final languagesProvider = FutureProvider<List<LanguageSummary>>((ref) async {

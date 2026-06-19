@@ -6,7 +6,7 @@ class SchoolUser(BaseModel):
     roles: list[str] = []
     status: str = "active"
     signed_terms_version: int|None = None
-    roles: list = []
+    roles: list[str]| None = []
     #school data
 
 class User(BaseModel):

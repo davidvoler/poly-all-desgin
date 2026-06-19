@@ -22,6 +22,8 @@ from school.routes.users import _hash_password
 from school.utils.activity import log_activity
 from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
+from utils.auth_deps import current_school
+
 
 router = APIRouter()
 
@@ -106,22 +108,16 @@ def _row_to_school(row: dict) -> School:
     )
 
 
-@router.get("/", response_model=list[School])
-async def list_schools():
-    """List every school — only used by the create-school onboarding
-    flow to check if any school exists yet."""
-    rows = await get_query_results(
-        f"SELECT {_SCHOOL_COLS} FROM school.schools ORDER BY created_at",
-        (),
-    )
-    return [_row_to_school(r) for r in rows]
 
 
 @router.get("/{school_id}", response_model=School)
-async def get_school(school_id: int, _caller: int | None = Depends(require_school_member)):
+async def get_school(school_id: int, _caller: int | None = Depends(require_school_member), current_school: School = Depends(current_school)):
+    print(current_school)
+    print(current_school.school_id)
+    print('-------')
     rows = await get_query_results(
-        f"SELECT {_SCHOOL_COLS} FROM school.schools WHERE school_id = %s",
-        (school_id,),
+        f"SELECT * FROM school.schools WHERE school_id = %s",
+        (current_school.school_id,),
     )
     if not rows:
         raise HTTPException(status_code=404, detail="School not found")
@@ -220,35 +216,21 @@ async def delete_school(school_id: int, _caller: int | None = Depends(require_sc
 
 
 @router.get("/{school_id}/stats", response_model=SchoolStats)
-async def get_school_stats(school_id: int, _caller: int | None = Depends(require_school_member)):
+async def get_school_stats(school_id: int, school: School = Depends(current_school)):
     """Counts shown in the Overview header tiles. One round-trip; each
     sub-query is independent so the planner can parallelise."""
-    rows = await get_query_results(
-        """
-        SELECT
-            (SELECT cardinality(languages_taught)
-                FROM school.schools WHERE school_id = %s) AS active_languages,
-            (SELECT COUNT(*) FROM school.course_access
-                WHERE school_id = %s) AS courses,
-            (SELECT COUNT(*) FROM school.school_users
-                WHERE school_id = %s AND role IN ('admin','editor','super_editor')) AS editors,
-            (SELECT COUNT(DISTINCT user_id) FROM school.student_enrollments
-                WHERE school_id = %s) AS students
-        """,
-        (school_id, school_id, school_id, school_id),
-    )
-    r = rows[0] if rows else {}
+    
     return SchoolStats(
-        school_id=school_id,
-        active_languages=int(r.get('active_languages') or 0),
-        courses=int(r.get('courses') or 0),
-        editors=int(r.get('editors') or 0),
-        students=int(r.get('students') or 0),
+        school_id=school.school_id,
+        active_languages=0,
+        courses=0,
+        editors=0,
+        students=0,
     )
 
 
 @router.get("/{school_id}/activity", response_model=list[ActivityRow])
-async def get_activity(school_id: int, limit: int = 10, _caller: int | None = Depends(require_school_member)):
+async def get_activity(school_id: int, limit: int = 10, school: School = Depends(current_school)):
     """Feeds the Overview "Recent activity" panel. Joins to
     school_users so we can render the actor's name (NULL when the row
     represents a system event, e.g. an automated import)."""
@@ -256,16 +238,16 @@ async def get_activity(school_id: int, limit: int = 10, _caller: int | None = De
         """
         SELECT al.activity_id, al.school_id, al.actor_user_id,
                al.kind, al.summary, al.created_at,
-               su.name AS actor_name
+               '' AS actor_name
         FROM school.activity_log al
         LEFT JOIN school.school_users su
             ON su.user_id = al.actor_user_id
-                OR su.school_user_id = al.actor_user_id
+                OR su.user_id = al.actor_user_id
         WHERE al.school_id = %s
         ORDER BY al.created_at DESC
         LIMIT %s
         """,
-        (school_id, limit),
+        (school.school_id, limit),
     )
     out: list[ActivityRow] = []
     for r in rows:
@@ -284,7 +266,7 @@ async def get_activity(school_id: int, limit: int = 10, _caller: int | None = De
 
 
 @router.get("/{school_id}/languages", response_model=list[LanguageSummary])
-async def get_languages_summary(school_id: int, role: str | None = None, _caller: int | None = Depends(require_school_member)):
+async def get_languages_summary(school_id: int, role: str | None = None, school: School = Depends(current_school)):
     """Powers both halves of the Languages page. With `role` omitted,
     returns both lists ('teach' before 'native'); pass role='teach' or
     role='native' to filter to one. Per-language counts come from
@@ -311,7 +293,7 @@ async def get_languages_summary(school_id: int, role: str | None = None, _caller
         WHERE ca.school_id = %s
         GROUP BY c.lang
         """,
-        (school_id,),
+        (school.school_id,),
     )
     by_code = {r['code']: r for r in course_rows}
 

@@ -121,3 +121,15 @@ async def get_or_create_school_user(user_id: int, school_id: int) -> SchoolUser:
 
 
 
+async def current_school_user(request: Request) -> SchoolUserBase:
+    raw = request.cookies.get("user_id")
+    origin = request.headers.get("origin")
+    hostname = urlparse(origin).hostname if origin else ""
+    school_id = await school_id_from_hostname(hostname)
+    user_id = -1
+    try:
+        user_id = int(raw)
+    except (TypeError, ValueError) as e:
+        print(f"Error parsing user_id from cookie: {e}")
+    return await current_school_user_full(user_id, school_id)
+
