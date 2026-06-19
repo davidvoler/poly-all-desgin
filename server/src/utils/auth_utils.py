@@ -60,7 +60,7 @@ def set_session_cookie(response: Response, user_id: int, domain: str | None = No
 
 
 def clear_session_cookies(response: Response) -> None:
-    for key in (_COOKIE_NAME):
+    for key in (_COOKIE_NAME,):
         response.delete_cookie(key)
 
 

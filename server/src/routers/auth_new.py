@@ -96,9 +96,11 @@ async def login_with_password(
         school: School = Depends(current_school)):
     """Email + password sign-in. Never creates a user — an unknown email is a
     401, not a sign-up."""
+    print(school)
+    print('-------IIIII')
     if not school:
         raise HTTPException(status_code=400, detail="Unknown school")
-
+    
     user_id = await auth_user_with_password(payload)
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -123,7 +125,6 @@ async def login_with_cookie(
         raise HTTPException(status_code=401, detail="Not signed in")
     if not await is_school_user_active(user_id, school.school_id):
         raise HTTPException(status_code=401, detail="Account is not active")
-
     return await build_user_pref(user_id, school)
 
 

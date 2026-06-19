@@ -13,7 +13,8 @@ from routers import (
     preference,
     user_stats,
     practice,
-    achievement
+    achievement, 
+    auth_new
 )
 from school.routes import school as school_routes, users as school_users
 from editor.routes import (
@@ -102,9 +103,9 @@ app.include_router(practice.router,
 app.include_router(achievement.router,
     prefix="/api/v1/achievement",
     tags=["achievement"])
-app.include_router(auth.router,
+app.include_router(auth_new.router,
     prefix="/api/v1/auth",
-    tags=["auth"])
+    tags=["auth_new"])
 
 # --- School-admin dashboard ---------------------------------------------------
 app.include_router(school_routes.router,
