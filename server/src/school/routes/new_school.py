@@ -61,9 +61,10 @@ async def become_editor(school_user: SchoolUser = Depends(current_school_user)):
 
 @router.post("/sign_editor_terms")
 async def sign_editor_terms(school_user: SchoolUser = Depends(current_school_user_full)):
-    return {}
-
-
+    sql = "UPDATE school.school_users SET signed_terms_version = 1 WHERE user_id = %s AND school_id = %s"
+    params = (school_user.user_id, school_user.school_id)
+    await get_query_results(sql, params)
+    return {"message": "Editor terms signed"}   
 
 @router.get("/editor_terms")
 async def sign_editor_terms():

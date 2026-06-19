@@ -14,6 +14,7 @@ class SchoolUser(BaseModel):
     school_type: str | None = None
     logo_url: str | None = None
     primary_color: str | None = None
+    signed_terms_version: int | None = None
 
 
 class User(BaseModel):
