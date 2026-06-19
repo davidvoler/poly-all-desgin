@@ -18,7 +18,6 @@ from school.models.school import (
     SchoolStats,
     StudentRow,
 )
-from school.routes.users import _hash_password
 from school.utils.activity import log_activity
 from school.utils.auth import require_school_member
 from utils.db import get_query_results, run_query
@@ -133,86 +132,6 @@ async def get_school_by_slug(slug: str):
     if not rows:
         raise HTTPException(status_code=404, detail="School not found")
     return _row_to_school(rows[0])
-
-
-@router.post("/", response_model=School)
-async def create_school(payload: SchoolCreate):
-    """Onboards a school + seeds its owner. Slug must be globally
-    unique (enforced by the schools_slug_uq constraint); we surface that
-    as a 409 instead of letting psycopg's UniqueViolation leak."""
-    existing = await get_query_results(
-        "SELECT 1 FROM school.schools WHERE slug = %s",
-        (payload.slug,),
-    )
-    if existing:
-        raise HTTPException(status_code=409, detail="Slug already in use")
-
-    # Honour explicit school_type; fall back to is_public for older
-    # callers (the wizard still sends is_public).
-    effective_type = payload.school_type
-    if payload.is_public and effective_type == 'private':
-        effective_type = 'public'
-    effective_is_public = (effective_type == 'public')
-    insert = await get_query_results(
-        """
-        INSERT INTO school.schools (slug, name, plan, is_public, school_type)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING school_id
-        """,
-        (payload.slug, payload.name, payload.plan, effective_is_public,
-         effective_type),
-    )
-    if not insert:
-        raise HTTPException(status_code=500, detail="Failed to create school")
-    school_id = insert[0]['school_id']
-
-    # Seed owner with a bcrypt-hashed password so the new school is
-    # immediately usable from the login screen.
-    pw_hash = _hash_password(payload.owner_password)
-    await run_query(
-        """
-        INSERT INTO school.school_users
-            (school_id, user_id, name, email, password_hash, role)
-        VALUES (%s, NULL, %s, %s, %s, 'admin')
-        """,
-        (school_id, payload.owner_name, payload.owner_email, pw_hash),
-    )
-    return await get_school(school_id)
-
-
-@router.put("/{school_id}", response_model=School)
-async def update_school(school_id: int, payload: School, _caller: int | None = Depends(require_school_member)):
-    """Partial update — only the fields the Settings page actually edits.
-    Keeps `is_public` mirrored to `school_type` so old clients reading
-    is_public still see consistent data."""
-    effective_type = payload.school_type or 'private'
-    effective_is_public = (effective_type == 'public')
-    await run_query(
-        """
-        UPDATE school.schools
-        SET name = %s, plan = %s, is_public = %s, school_type = %s,
-            logo_url = %s, primary_color = %s,
-            languages_taught = %s, native_languages = %s,
-            updated_at = now()
-        WHERE school_id = %s
-        """,
-        (
-            payload.name, payload.plan, effective_is_public, effective_type,
-            payload.logo_url, payload.primary_color,
-            payload.languages_taught, payload.native_languages,
-            school_id,
-        ),
-    )
-    return await get_school(school_id)
-
-
-@router.delete("/{school_id}")
-async def delete_school(school_id: int, _caller: int | None = Depends(require_school_member)):
-    ok = await run_query(
-        "DELETE FROM school.schools WHERE school_id = %s",
-        (school_id,),
-    )
-    return {"ok": ok}
 
 
 @router.get("/{school_id}/stats", response_model=SchoolStats)

@@ -335,20 +335,13 @@ class DashboardApi {
         .toList();
   }
 
+  // school_users API removed — the dashboard no longer calls
+  // /api/v1/school_users/*. The read returns an empty list (the Editors
+  // page renders its empty state); the writes below throw so any lingering
+  // UI surfaces a clear error rather than silently faking success.
   Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
       {String? role, String? q}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school_users/',
-      queryParameters: {
-        'school_id': schoolId,
-        'role': ?role,
-        'q': ?q,
-      },
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(SchoolUser.fromJson)
-        .toList();
+    return const [];
   }
 
   Future<List<StudentRowRemote>> fetchStudents(int schoolId,
@@ -404,39 +397,15 @@ class DashboardApi {
     String role = 'editor',
     List<String> assignedLanguages = const [],
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/',
-      data: {
-        'school_id': schoolId,
-        'name': name,
-        'email': email,
-        'password': ?password,
-        'role': role,
-        'assigned_languages': assignedLanguages,
-      },
-    );
-    return SchoolUser.fromJson(res.data ?? const {});
+    throw UnsupportedError('school_users API removed');
   }
 
   Future<SchoolUser> updateSchoolUser(SchoolUser u) async {
-    final res = await _dio.put<Map<String, dynamic>>(
-      '/api/v1/school_users/${u.schoolUserId}',
-      data: {
-        'school_user_id': u.schoolUserId,
-        'school_id': u.schoolId,
-        'name': u.name,
-        'email': u.email,
-        'role': roleToWire(u.role),
-        'assigned_languages': u.assignedLanguages,
-        'courses_owned': u.coursesOwned,
-        'status': u.status,
-      },
-    );
-    return SchoolUser.fromJson(res.data ?? const {});
+    throw UnsupportedError('school_users API removed');
   }
 
   Future<void> deleteSchoolUser(int schoolUserId) async {
-    await _dio.delete<dynamic>('/api/v1/school_users/$schoolUserId');
+    throw UnsupportedError('school_users API removed');
   }
 
   /// Upload a zipped course archive. `fileBytes` is preferred for web
@@ -643,27 +612,14 @@ class DashboardApi {
     required String email,
     String? schoolSlug,
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/forgot_password',
-      data: {
-        'email': email,
-        'school_slug': ?schoolSlug,
-      },
-    );
-    return (res.data?['token'] as String?);
+    throw UnsupportedError('school_users API removed');
   }
 
   Future<void> resetPassword({
     required String token,
     required String newPassword,
   }) async {
-    await _dio.post<dynamic>(
-      '/api/v1/school_users/reset_password',
-      data: {
-        'token': token,
-        'new_password': newPassword,
-      },
-    );
+    throw UnsupportedError('school_users API removed');
   }
 
   /// Create a brand-new school + seed its owner in one shot, then log
