@@ -13,7 +13,8 @@ from models.school import School
 
 SCHOOL_CACHE = {}
 SCHOOL_CACHE_LAST_LOADED = datetime.now()
-
+COOKIE_MAX_AGE = 60 * 60 * 24 * 30 # 30 days in seconds
+COOKIE_NAME = "user_id"
 
 async def _load_schools_cache():
     global SCHOOL_CACHE
@@ -86,7 +87,7 @@ async def current_school_user_full(request: Request) -> SchoolUser:
     user_id = -1
     try:
         user_id = int(raw)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as e:
         print(f"Error parsing user_id from cookie: {e}")
         #TODO: Handle the error
         user_id = -1

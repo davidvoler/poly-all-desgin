@@ -9,6 +9,10 @@ class SchoolUser(BaseModel):
     roles: list = []
     #school data
 
+class User(BaseModel):
+    user_id: int = 0
+    name: str = ""
+    
 
 class SchoolUserBase(BaseModel):
     user_id: int = 0
@@ -44,10 +48,11 @@ class PasswordLoginRequest(BaseModel):
 
 
 class UserPref(BaseModel):
-    user_id: int
-    school_id: int
-    name: str
-    preference: dict | None = None
+    user_id: int | None = None
+    school_id: int | None = None
+    name: str | None = None
+    domain: str | None = ''
+    preference: dict | None = {}
     roles: list[str]| None = [] # applicable for dashboard users
     plan: list[str] | None = [] # applicable for none free schools
     school_user_id: int | None = None
@@ -56,6 +61,10 @@ class UserPref(BaseModel):
     school_type: str | None = None
     logo_url: str | None = None
     primary_color: str | None = None
+    # Set when a private school needs the client to collect an invitation
+    # code before the user can be created/joined. When True the rest of the
+    # payload is empty — the client should show the invitation prompt.
+    requires_invitation: bool = False
 
 
 class InvitationUseRequest(BaseModel):

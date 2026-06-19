@@ -1,140 +1,170 @@
-from fastapi import APIRouter, HTTPException, Request, Response, Depends
-from models.auth import PasswordLoginRequest, SchoolUser, UserAuth0Request, UserPref, InvitationUseRequest
-from server.src.routers.auth_new_utils import auth_user_with_cookie
-from server.src.school.models import school
-from utils.auth_deps import  current_school
+"""Learner-app auth (v2) — school-scoped sign-in built on utils/auth_utils.
+
+Resolves the school from the request Origin (current_school) instead of a
+bare school_id, and returns a full UserPref (preference + roles + school
+branding) on every successful login.
+
+Flows:
+  * get_or_create_user  — Auth0 sign-in. Public schools auto-create the
+    user; private schools return requires_invitation=True so the client
+    collects an invitation code and calls /use_invitation.
+  * use_invitation      — deep-link / private-school join: validate the
+    invitation, create-or-login the user, seed preferences, set the cookie.
+  * login_with_password — email + password; never auto-creates (401 on
+    unknown email).
+  * login_with_cookie   — restore a session from the cookie, re-checking the
+    user is still an active member (does not refresh the cookie).
+
+This router is not mounted yet — wire it into main.py (e.g. prefix
+"/api/v1/auth2") once it supersedes routers/auth.py.
+"""
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from models.auth import (InvitationUseRequest, PasswordLoginRequest, SchoolUser,
+                         UserAuth0Request, UserPref)
 from models.school import School
-from utils.auth_utils import (auth_auth0_user, 
-                              use_invitation, 
-                              auth_user_with_password,
-                              auth_user_with_cookie,
-                              school_create_user,
-                              school_require_invitation, 
-                              get_user,
-                              create_user,
-                              create_user_with_invitation)
+from utils.auth_deps import current_school, current_school_user_full
+from utils.auth_utils import (auth_auth0_user, auth_user_with_cookie,
+                              auth_user_with_password, build_user_pref,
+                              clear_session_cookies, create_user,
+                              create_user_with_invitation, get_user,
+                              is_school_user_active, school_require_invitation,
+                              set_lang_cookies, set_session_cookie)
 
 router = APIRouter()
 
 
-
-
-
-
 @router.post("/get_or_create_user", response_model=UserPref)
 async def get_or_create_user(
-    payload: UserAuth0Request,
-    response: Response,
-    school: School = Depends(current_school)):
+        payload: UserAuth0Request,
+        response: Response,
+        school: School = Depends(current_school)):
+    """Auth0 sign-in/sign-up. Sets the session cookie and returns the full
+    UserPref. On a private school where the user doesn't exist yet, returns
+    requires_invitation=True instead of creating the user."""
     if not school:
         raise HTTPException(status_code=400, detail="Unknown school")
-    auth_ok = await auth_auth0_user(payload)
-    if not auth_ok:
+
+    email = await auth_auth0_user(payload)
+    if not email:
         raise HTTPException(status_code=401, detail="Auth0 verification failed")
-    user = await get_user(payload.email, school.school_id, payload.sub)
+
+    user = await get_user(email)
     if not user:
-        if school_create_user(school):
-            user = create_user(payload.email, school.school_id, payload.sub, payload.name)
         if school_require_invitation(school):
-            return {
-                "requires_invitation":True
-            }
-    return {}
+            # Private school: defer creation until the client supplies a valid
+            # invitation code (then it calls /use_invitation).
+            return UserPref(
+                requires_invitation=True,
+                school_id=school.school_id,
+                school_name=school.name,
+                school_type=school.school_type,
+            )
+        user_id = await create_user(email, school.school_id)
+        if not user_id:
+            raise HTTPException(status_code=500, detail="Failed to create user")
+    else:
+        user_id = int(user["user_id"])
+
+    pref = await build_user_pref(user_id, school)
+    set_session_cookie(response, user_id)
+    set_lang_cookies(response, pref.preference)
+    return pref
 
 
 @router.post("/use_invitation", response_model=UserPref)
 async def use_invitation(
-    payload: InvitationUseRequest,
-    response: Response,
-    school: School = Depends(current_school)):
+        payload: InvitationUseRequest,
+        response: Response,
+        school: School = Depends(current_school)):
+    """Redeem an invitation code: validate it, create-or-login the user, seed
+    any preference carried on the invite, and set the session cookie."""
+    if not school:
+        raise HTTPException(status_code=400, detail="Unknown school")
 
-    invitation_ok = await use_invitation(payload, school)
-    if not invitation_ok:
+    pref = await create_user_with_invitation(payload, school)
+    if not pref:
         raise HTTPException(status_code=400, detail="Invalid invitation")
-    #TODO: return full data and set cookie
+
+    set_session_cookie(response, pref.user_id)
+    set_lang_cookies(response, pref.preference)
+    return pref
 
 
 @router.post("/login_with_password", response_model=UserPref)
-async def login_with_password(payload: PasswordLoginRequest, 
-                              response: Response, 
-                              school: School = Depends(current_school)):
+async def login_with_password(
+        payload: PasswordLoginRequest,
+        response: Response,
+        school: School = Depends(current_school)):
+    """Email + password sign-in. Never creates a user — an unknown email is a
+    401, not a sign-up."""
+    if not school:
+        raise HTTPException(status_code=400, detail="Unknown school")
 
-    auth_ok = await auth_user_with_password(payload)
-    if not auth_ok:
+    user_id = await auth_user_with_password(payload)
+    if not user_id:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    #TODO: return full data and set cookie
-    
+
+    pref = await build_user_pref(user_id, school)
+    set_session_cookie(response, user_id)
+    set_lang_cookies(response, pref.preference)
+    return pref
+
 
 @router.post("/login_with_cookie", response_model=UserPref)
-async def login_with_cookie(request: Request, 
-                            school: School = Depends(current_school)):
-    login_ok = await auth_user_with_cookie(request, school)
-    if not login_ok:
+async def login_with_cookie(
+        request: Request,
+        school: School = Depends(current_school)):
+    """Restore a session from the `user_id` cookie. Re-checks the user is
+    still an active member of this school (the extra-security step), and does
+    NOT refresh the cookie."""
+    if not school:
+        raise HTTPException(status_code=400, detail="Unknown school")
+
+    user_id = auth_user_with_cookie(request)
+    if not user_id:
         raise HTTPException(status_code=401, detail="Not signed in")
-    #TODO: return full data but don't update the cookie 
+    if not await is_school_user_active(user_id, school.school_id):
+        raise HTTPException(status_code=401, detail="Account is not active")
+
+    return await build_user_pref(user_id, school)
 
 
 @router.post("/logout")
 async def logout(response: Response):
-    """Clear the session cookies. The client doesn't need to send any
-    body — just hit this and forget."""
-    for key in (_COOKIE_NAME, "lang", "to_lang"):
-        response.delete_cookie(key)
+    """Clear the session cookies. The client doesn't need to send any body —
+    just hit this and forget."""
+    clear_session_cookies(response)
     return {"ok": True}
 
 
-
-
 @router.post("/school_user_permission", response_model=SchoolUser)
-async def school_user_permission( response: Response, user = Depends(current_school_user_full)):
-    """Check the user's permissions for the current school. Get it from Databases - do not use cache 
-    Use this url before important tasks such as deleting users or courses """
-    #TODO: return school+user information
+async def school_user_permission(user: SchoolUser = Depends(current_school_user_full)):
+    """The user's roles/status for the current school, read straight from the
+    DB (no cache). Call this before sensitive actions like deleting users or
+    courses."""
     return user
 
 
-
 @router.post("/join_with_invitation", response_model=UserPref)
-async def join_with_invitation(payload: InvitationUseRequest, response: Response, user = Depends(current_school_user_full)):
-    user_exists = get_user(payload.email, payload.school_id, payload.sub)
-    if user_exists:
-        #TODO: login user and return data
-        pass
+async def join_with_invitation(
+        payload: InvitationUseRequest,
+        response: Response,
+        school: School = Depends(current_school)):
+    """Like /use_invitation but tolerant of an already-joined user: existing
+    members are simply logged back in; everyone else goes through the
+    invitation-validated create path."""
+    if not school:
+        raise HTTPException(status_code=400, detail="Unknown school")
+
+    existing = await get_user(payload.email)
+    if existing and await is_school_user_active(int(existing["user_id"]), school.school_id):
+        pref = await build_user_pref(int(existing["user_id"]), school)
     else:
-        return await create_user_with_invitation(payload)
-    
+        pref = await create_user_with_invitation(payload, school)
+        if not pref:
+            raise HTTPException(status_code=400, detail="Invalid invitation")
 
-
-
-"""
-1. return full information 
-    a. pref 
-    b. school info
-    c. user_school info (roles, plan, etc.)
-2. login with password - do not create a new user if the email doesn't exist, just return 401
-3. login with cookie -  this is where we add extra security - verify the user is active etc. 
-4. consider a single function for user verification 
-5. Where do we request the user to enter invitation code  
-
-6. we have multiple fields in school for school type 
-    a. is_public
-    b. plan
-    c. school_type
-    Do we need all of them? Can we simplify?
-    
-What is the process for a private school 
-- login - create user - > verify invitation code  
-- login with invitation code - optional
-- login - if user doesn't exist, ask for invitation code - ond create a new user after invitation code is verified 
-  What is the simplest way to start with?
-
-Deep link flow for private schools:
- - user clicks on an invitation link that includes the invitation token
- - authenticate with auth0
- - send to the server auth data + invitation data 
- - if users is not new in school - just login the user
- - if user is completely new - or new in school 
-    - validate the invitation token
-    - if valid, create the user and log them in, set user preferences like course, language, etc. based on the invitation data
-    - if invalid, return an error
-"""
+    set_session_cookie(response, pref.user_id)
+    set_lang_cookies(response, pref.preference)
+    return pref
