@@ -134,7 +134,7 @@ class LoginInfo {
 }
 
 /// The current user's school-scoped capabilities, read from
-/// GET /api/v1/new_school/me. `permissions` is the server-computed map
+/// GET /api/v1/school/me. `permissions` is the server-computed map
 /// (`courses`, `settings`, `editors`, `create_with_ai`, `signed_terms`,
 /// `about`) the dashboard uses to hide/show nav + gate the Courses page.
 /// `signed_terms == true` means the user still owes an acceptance of the
@@ -203,14 +203,14 @@ class DashboardApi {
   /// school resolved server-side from the request hostname. Backs
   /// [meProvider]; drives nav visibility and the Courses terms gate.
   Future<DashboardMe> fetchMe() async {
-    final res = await _dio.get<Map<String, dynamic>>('/api/v1/new_school/me');
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/school/me');
     return DashboardMe.fromJson(res.data ?? const {});
   }
 
   /// The editor Terms & Conditions text + its current version.
   Future<({String terms, int version})> fetchEditorTerms() async {
     final res =
-        await _dio.get<Map<String, dynamic>>('/api/v1/new_school/editor_terms');
+        await _dio.get<Map<String, dynamic>>('/api/v1/school/editor_terms');
     final data = res.data ?? const {};
     return (
       terms: (data['terms'] as String?) ?? '',
@@ -220,7 +220,7 @@ class DashboardApi {
 
   /// Record the caller's acceptance of the current editor Terms & Conditions.
   Future<void> signEditorTerms() async {
-    await _dio.post<dynamic>('/api/v1/new_school/sign_editor_terms');
+    await _dio.post<dynamic>('/api/v1/school/sign_editor_terms');
   }
 
   /// Email + password sign-in against the unified auth router. The
@@ -277,45 +277,30 @@ class DashboardApi {
   }
 
   // --- Reads --------------------------------------------------------
+  //
+  // The school profile / stats / activity / languages / students / plans /
+  // billing endpoints moved to server/src/school/routes/school_old.py, which
+  // is no longer mounted. They're stubbed here (reads → empty, writes →
+  // UnsupportedError) so the dashboard renders empty/disabled states instead
+  // of 404-ing. Re-wire them if/when that functionality lands in the new
+  // school.py router.
 
   Future<SchoolInfo> fetchSchool(int schoolId) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/school/$schoolId',
-    );
-    return SchoolInfo.fromJson(res.data ?? const {});
+    throw UnsupportedError('school profile endpoint removed (school_old.py)');
   }
 
   Future<SchoolStats> fetchSchoolStats(int schoolId) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/school/$schoolId/stats',
-    );
-    return SchoolStats.fromJson(res.data ?? const {});
+    return const SchoolStats();
   }
 
   Future<List<ActivityRowRemote>> fetchActivity(int schoolId,
       {int limit = 10}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/activity',
-      queryParameters: {'limit': limit},
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(ActivityRowRemote.fromJson)
-        .toList();
+    return const [];
   }
 
   Future<List<LanguageSummary>> fetchLanguages(int schoolId,
       {String? role}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/languages',
-      queryParameters: {
-        'role': ?role,
-      },
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(LanguageSummary.fromJson)
-        .toList();
+    return const [];
   }
 
   Future<LessonDetailRemote> fetchLessonDetail(int lessonId) async {
@@ -409,7 +394,7 @@ class DashboardApi {
   /// filters are applied client-side by the consuming providers/pages.
   Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
       {String? status, String? lang, String? q}) async {
-    final res = await _dio.get<List<dynamic>>('/api/v1/new_school/courses');
+    final res = await _dio.get<List<dynamic>>('/api/v1/school/courses');
     var rows = (res.data ?? const [])
         .cast<Map<String, dynamic>>()
         .map(EditorCourse.fromJson)
@@ -434,7 +419,7 @@ class DashboardApi {
   Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
       {String? role, String? q}) async {
     final res =
-        await _dio.get<List<dynamic>>('/api/v1/new_school/school_users');
+        await _dio.get<List<dynamic>>('/api/v1/school/school_users');
     var rows = (res.data ?? const [])
         .cast<Map<String, dynamic>>()
         .map(SchoolUser.fromJson)
@@ -452,19 +437,7 @@ class DashboardApi {
 
   Future<List<StudentRowRemote>> fetchStudents(int schoolId,
       {String? lang, String? status, String? q, int limit = 200}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/students',
-      queryParameters: {
-        'lang': ?lang,
-        'status': ?status,
-        'q': ?q,
-        'limit': limit,
-      },
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(StudentRowRemote.fromJson)
-        .toList();
+    return const [];
   }
 
   // --- Writes -------------------------------------------------------
@@ -479,20 +452,7 @@ class DashboardApi {
     required List<String> languagesTaught,
     required List<String> nativeLanguages,
   }) async {
-    await _dio.put<dynamic>(
-      '/api/v1/school/$schoolId',
-      data: {
-        'school_id': schoolId,
-        'slug': '',
-        'name': name,
-        'plan': plan,
-        'is_public': isPublic,
-        'logo_url': logoUrl,
-        'primary_color': primaryColor,
-        'languages_taught': languagesTaught,
-        'native_languages': nativeLanguages,
-      },
-    );
+    throw UnsupportedError('school profile endpoint removed (school_old.py)');
   }
 
   Future<SchoolUser> createSchoolUser({
@@ -592,16 +552,7 @@ class DashboardApi {
     int? courseId,
     String? cohort,
   }) async {
-    await _dio.post<dynamic>(
-      '/api/v1/school/$schoolId/students',
-      data: {
-        'email': email,
-        'name': name,
-        'lang': lang,
-        'course_id': ?courseId,
-        'cohort': ?cohort,
-      },
-    );
+    throw UnsupportedError('students endpoint removed (school_old.py)');
   }
 
   /// Bulk-enroll from a CSV upload. Returns the {added, skipped,
@@ -614,32 +565,13 @@ class DashboardApi {
     List<int>? fileBytes,
     String? filePath,
   }) async {
-    final MultipartFile multipart;
-    if (fileBytes != null) {
-      multipart = MultipartFile.fromBytes(fileBytes, filename: filename);
-    } else if (filePath != null) {
-      multipart = await MultipartFile.fromFile(filePath, filename: filename);
-    } else {
-      throw ArgumentError('Either fileBytes or filePath is required');
-    }
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school/$schoolId/students/csv',
-      queryParameters: {
-        'lang': lang,
-        'cohort': ?cohort,
-      },
-      data: FormData.fromMap({'file': multipart}),
-    );
-    return res.data ?? const {};
+    throw UnsupportedError('students endpoint removed (school_old.py)');
   }
 
   // --- Plans + billing (Settings page) ------------------------------
 
   Future<List<Map<String, dynamic>>> fetchPlans(int schoolId) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/plans',
-    );
-    return (res.data ?? const []).cast<Map<String, dynamic>>();
+    return const [];
   }
 
   Future<Map<String, dynamic>> upsertPlan({
@@ -652,36 +584,14 @@ class DashboardApi {
     bool featured = false,
     required List<Map<String, dynamic>> features,
   }) async {
-    final body = {
-      'tier': tier,
-      'price_cents': priceCents,
-      'cadence': cadence,
-      'blurb': ?blurb,
-      'featured': featured,
-      'features': features,
-    };
-    final res = planId == null
-        ? await _dio.post<Map<String, dynamic>>(
-            '/api/v1/school/$schoolId/plans',
-            data: body,
-          )
-        : await _dio.put<Map<String, dynamic>>(
-            '/api/v1/school/$schoolId/plans/$planId',
-            data: body,
-          );
-    return res.data ?? const {};
+    throw UnsupportedError('plans endpoint removed (school_old.py)');
   }
 
   Future<void> deletePlan({required int schoolId, required int planId}) async {
-    await _dio.delete<dynamic>('/api/v1/school/$schoolId/plans/$planId');
+    throw UnsupportedError('plans endpoint removed (school_old.py)');
   }
 
   Future<Map<String, dynamic>?> fetchBilling(int schoolId) async {
-    final res = await _dio.get<dynamic>(
-      '/api/v1/school/$schoolId/billing',
-    );
-    final data = res.data;
-    if (data is Map) return data.cast<String, dynamic>();
     return null;
   }
 
@@ -692,19 +602,11 @@ class DashboardApi {
     required int expMonth,
     required int expYear,
   }) async {
-    await _dio.put<dynamic>(
-      '/api/v1/school/$schoolId/billing',
-      data: {
-        'brand': brand,
-        'last4': last4,
-        'exp_month': expMonth,
-        'exp_year': expYear,
-      },
-    );
+    throw UnsupportedError('billing endpoint removed (school_old.py)');
   }
 
   Future<void> deleteSchool(int schoolId) async {
-    await _dio.delete<dynamic>('/api/v1/school/$schoolId');
+    throw UnsupportedError('school delete endpoint removed (school_old.py)');
   }
 
   // --- Password reset ----------------------------------------------
@@ -980,7 +882,7 @@ final currentUserProvider = Provider<LoginInfo?>((ref) {
 // state without an extra null branch.
 
 /// The signed-in user's roles + permissions + signed-terms state, from
-/// GET /api/v1/new_school/me. Nav visibility (shell.dart), route guards
+/// GET /api/v1/school/me. Nav visibility (shell.dart), route guards
 /// (main.dart), and the Courses terms gate all read this. Resolves to null
 /// when signed out; consumers fall back to role-based checks while it loads.
 final meProvider = FutureProvider<DashboardMe?>((ref) async {

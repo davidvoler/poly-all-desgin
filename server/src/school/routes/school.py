@@ -1,716 +1,144 @@
-import csv
-import io
-from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-
-from school.models.school import (
-    ActivityRow,
-    BillingMethod,
-    BillingMethodWrite,
-    EnrollStudentRequest,
-    LanguageSummary,
-    Plan,
-    PlanFeature,
-    PlanWrite,
-    School,
-    SchoolCreate,
-    SchoolStats,
-    StudentRow,
-)
-from school.utils.activity import log_activity
-from school.utils.auth import require_school_member
+from editor.models.course import EditorCourse
+from editor.routes.editor_courses import _row_to_course
+from models.auth import SchoolUser
+from utils.auth_deps import current_school_user, current_school_user_full
 from utils.db import get_query_results, run_query
-from utils.auth_deps import current_school
-
+from utils.user_school_data import LATEST_TERMS_VERSION
 
 router = APIRouter()
 
-
-# Static metadata used to dress up bare language codes coming back from
-# the database. Keeps the dashboard from having to know any locales
-# itself — the server pre-renders flag/native/english/rtl. New languages
-# only need a row here.
-_LANG_META: dict[str, dict] = {
-    'ar': {'flag': '🇸🇦', 'native': 'العربية', 'english': 'Arabic', 'rtl': True},
-    'he': {'flag': '🇮🇱', 'native': 'עברית', 'english': 'Hebrew', 'rtl': True},
-    'it': {'flag': '🇮🇹', 'native': 'Italiano', 'english': 'Italian', 'rtl': False},
-    'en': {'flag': '🇺🇸', 'native': 'English', 'english': 'English', 'rtl': False},
-    'es': {'flag': '🇪🇸', 'native': 'Español', 'english': 'Spanish', 'rtl': False},
-    'fr': {'flag': '🇫🇷', 'native': 'Français', 'english': 'French', 'rtl': False},
-    'ja': {'flag': '🇯🇵', 'native': '日本語', 'english': 'Japanese', 'rtl': False},
-    'el': {'flag': '🇬🇷', 'native': 'Ελληνικά', 'english': 'Greek', 'rtl': False},
-}
+# Roles that may see every course in the school (vs. only their own uploads).
+_ALL_COURSES_ROLES = {"admin", "owner", "school_admin", "super_admin",
+                      "super_editor", "teacher"}
 
 
-def _lang_meta(code: str) -> dict:
-    return _LANG_META.get(code) or {
-        'flag': '',
-        'native': code,
-        'english': code.upper(),
-        'rtl': False,
-    }
+@router.get("/me", response_model=SchoolUser)
+async def get_me(school_user: SchoolUser = Depends(current_school_user_full)):
+    """The signed-in user for the school resolved from the request hostname:
+    roles, status, signed_terms_version, the computed `permissions` map, and
+    school branding. This is the single object the dashboard reads to hide/show
+    nav items and to decide whether to gate the Courses page behind the editor
+    Terms & Conditions."""
+    return school_user
 
 
-def _humanize(dt: datetime | None) -> str:
-    """Render a timestamp as "3 m ago" / "2 h ago" / "Yesterday" /
-    "3 days ago" — matches the strings the design uses. None → "Never"."""
-    if dt is None:
-        return 'Never'
-    now = datetime.now(tz=dt.tzinfo) if dt.tzinfo else datetime.now()
-    delta = now - dt
-    sec = int(delta.total_seconds())
-    if sec < 60:
-        return 'Just now'
-    if sec < 3600:
-        return f'{sec // 60} m ago'
-    if sec < 86400:
-        return f'{sec // 3600} h ago'
-    days = sec // 86400
-    if days == 1:
-        return 'Yesterday'
-    if days < 28:
-        return f'{days} days ago'
-    if days < 365:
-        return f'{days // 7} weeks ago'
-    return f'{days // 365} years ago'
+@router.get("/courses", response_model=list[EditorCourse])
+async def get_courses(school_user: SchoolUser = Depends(current_school_user)):
+    """Courses the caller can see, role-scoped. Admins / super-editors /
+    teachers see every course in the school; a plain editor sees only the
+    courses they own. Returns the same rich `EditorCourse` shape as
+    /api/v1/editor/courses/ (module/lesson/student counts + access overlay) so
+    the dashboard table renders unchanged."""
+    if not school_user or not school_user.user_id:
+        raise HTTPException(status_code=401, detail="Not signed in")
+    roles = school_user.roles or []
+    school_id = school_user.school_id
 
-
-_SCHOOL_COLS = (
-    "school_id, slug, name, plan, is_public, school_type, streak_days, "
-    "languages_taught, native_languages, logo_url, primary_color, "
-    "created_at, updated_at"
-)
-
-
-def _row_to_school(row: dict) -> School:
-    """Maps a `school.schools` row to the response model. Defensive on
-    nulls so a freshly-seeded row (no logo, empty languages) still
-    serialises cleanly. is_public is derived from school_type so the
-    legacy flag stays in sync without the dashboard having to think
-    about it."""
-    school_type = (row.get('school_type') or 'private')
-    return School(
-        school_id=row.get('school_id'),
-        slug=row.get('slug') or '',
-        name=row.get('name') or '',
-        plan=row.get('plan') or 'free',
-        school_type=school_type,
-        is_public=(school_type == 'public') or bool(row.get('is_public')),
-        streak_days=row.get('streak_days') or 0,
-        languages_taught=list(row.get('languages_taught') or []),
-        native_languages=list(row.get('native_languages') or []),
-        logo_url=row.get('logo_url'),
-        primary_color=row.get('primary_color') or '#1E88E5',
-        created_at=row.get('created_at'),
-        updated_at=row.get('updated_at'),
-    )
-
-
-
-
-@router.get("/{school_id}", response_model=School)
-async def get_school(school_id: int, _caller: int | None = Depends(require_school_member), current_school: School = Depends(current_school)):
-    print(current_school)
-    print(current_school.school_id)
-    print('-------')
-    rows = await get_query_results(
-        f"SELECT * FROM school.schools WHERE school_id = %s",
-        (current_school.school_id,),
-    )
-    if not rows:
-        raise HTTPException(status_code=404, detail="School not found")
-    return _row_to_school(rows[0])
-
-
-@router.get("/by_slug/{slug}", response_model=School)
-async def get_school_by_slug(slug: str):
-    rows = await get_query_results(
-        f"SELECT {_SCHOOL_COLS} FROM school.schools WHERE slug = %s",
-        (slug,),
-    )
-    if not rows:
-        raise HTTPException(status_code=404, detail="School not found")
-    return _row_to_school(rows[0])
-
-
-@router.get("/{school_id}/stats", response_model=SchoolStats)
-async def get_school_stats(school_id: int, school: School = Depends(current_school)):
-    """Counts shown in the Overview header tiles. One round-trip; each
-    sub-query is independent so the planner can parallelise."""
-    
-    return SchoolStats(
-        school_id=school.school_id,
-        active_languages=0,
-        courses=0,
-        editors=0,
-        students=0,
-    )
-
-
-@router.get("/{school_id}/activity", response_model=list[ActivityRow])
-async def get_activity(school_id: int, limit: int = 10, school: School = Depends(current_school)):
-    """Feeds the Overview "Recent activity" panel. Joins to
-    school_users so we can render the actor's name (NULL when the row
-    represents a system event, e.g. an automated import)."""
-    rows = await get_query_results(
-        """
-        SELECT al.activity_id, al.school_id, al.actor_user_id,
-               al.kind, al.summary, al.created_at,
-               '' AS actor_name
-        FROM school.activity_log al
-        LEFT JOIN school.school_users su
-            ON su.user_id = al.actor_user_id
-                OR su.user_id = al.actor_user_id
-        WHERE al.school_id = %s
-        ORDER BY al.created_at DESC
-        LIMIT %s
-        """,
-        (school.school_id, limit),
-    )
-    out: list[ActivityRow] = []
-    for r in rows:
-        created = r.get('created_at')
-        out.append(ActivityRow(
-            activity_id=r['activity_id'],
-            school_id=r['school_id'],
-            actor_user_id=r.get('actor_user_id'),
-            actor_name=r.get('actor_name') or 'System',
-            kind=r.get('kind') or 'generic',
-            summary=r.get('summary') or '',
-            created_at=created,
-            when_human=_humanize(created),
-        ))
-    return out
-
-
-@router.get("/{school_id}/languages", response_model=list[LanguageSummary])
-async def get_languages_summary(school_id: int, role: str | None = None, school: School = Depends(current_school)):
-    """Powers both halves of the Languages page. With `role` omitted,
-    returns both lists ('teach' before 'native'); pass role='teach' or
-    role='native' to filter to one. Per-language counts come from
-    course_simple.course and school.student_enrollments."""
-    school_rows = await get_query_results(
-        "SELECT languages_taught, native_languages FROM school.schools WHERE school_id = %s",
-        (school_id,),
-    )
-    if not school_rows:
-        raise HTTPException(status_code=404, detail="School not found")
-    taught = list(school_rows[0].get('languages_taught') or [])
-    native = list(school_rows[0].get('native_languages') or [])
-
-    # Per-course counts (for the "we teach" cards).
-    course_rows = await get_query_results(
-        """
-        SELECT c.lang AS code,
-               COUNT(DISTINCT c.course_id) AS courses,
-               COUNT(DISTINCT se.user_id)  AS students
-        FROM course_simple.course c
-        JOIN school.course_access ca ON ca.course_id = c.course_id
-        LEFT JOIN school.student_enrollments se
-            ON se.school_id = ca.school_id AND se.course_id = c.course_id
-        WHERE ca.school_id = %s
-        GROUP BY c.lang
-        """,
-        (school.school_id,),
-    )
-    by_code = {r['code']: r for r in course_rows}
-
-    # Native-language stats — student count per native language for this
-    # school. user_data.preference.to_lang is the student's native code.
-    total_students_rows = await get_query_results(
-        """
-        SELECT COUNT(DISTINCT se.user_id) AS total
-        FROM school.student_enrollments se WHERE se.school_id = %s
-        """,
-        (school_id,),
-    )
-    total_students = int((total_students_rows[0] if total_students_rows else {}).get('total') or 0)
-
-    native_rows = await get_query_results(
-        """
-        SELECT p.to_lang AS code, COUNT(DISTINCT se.user_id) AS students
-        FROM school.student_enrollments se
-        JOIN user_data.preference p ON p.user_id = se.user_id
-        WHERE se.school_id = %s AND p.to_lang IS NOT NULL
-        GROUP BY p.to_lang
-        """,
-        (school_id,),
-    )
-    native_by_code = {r['code']: int(r['students']) for r in native_rows}
-
-    out: list[LanguageSummary] = []
-    if role in (None, 'teach'):
-        for code in taught:
-            meta = _lang_meta(code)
-            c = by_code.get(code) or {}
-            out.append(LanguageSummary(
-                lang=code,
-                role='teach',
-                flag=meta['flag'],
-                native=meta['native'],
-                english=meta['english'],
-                rtl=meta['rtl'],
-                courses=int(c.get('courses') or 0),
-                students=int(c.get('students') or 0),
-                active=True,
-            ))
-    if role in (None, 'native'):
-        for code in native:
-            meta = _lang_meta(code)
-            students = native_by_code.get(code, 0)
-            pct = (
-                f'{round(students / total_students * 100)}%'
-                if total_students > 0 else None
-            )
-            out.append(LanguageSummary(
-                lang=code,
-                role='native',
-                flag=meta['flag'],
-                native=meta['native'],
-                english=f"{meta['english']} · spoken natively",
-                rtl=meta['rtl'],
-                students=students,
-                percent_of_school=pct,
-                active=True,
-            ))
-    return out
-
-
-@router.get("/{school_id}/students", response_model=list[StudentRow])
-async def get_students(
-    school_id: int,
-    lang: str | None = None,
-    status: str | None = None,
-    q: str | None = None,
-    limit: int = 200,
-    _caller: int | None = Depends(require_school_member),
-):
-    """Roster for the Students page. Joins enrollment rows with
-    user_data.users (for name/email) and course_simple.course (for the
-    course label). Filter by `lang` (the language the student is
-    learning), `status` (active|slowing|inactive|no_course), or `q`
-    (case-insensitive substring of email)."""
-    where = ["se.school_id = %s"]
+    where = ["ca.school_id = %s"]
     params: list = [school_id]
-    if lang:
-        where.append("se.lang = %s")
-        params.append(lang)
-    if status:
-        where.append("se.status = %s")
-        params.append(status)
-    if q and q.strip():
-        # user_data.users doesn't store a separate name column today,
-        # so search hits the email — same source the dashboard builds
-        # the displayed name from.
-        where.append("u.email ILIKE %s")
-        params.append(f"%{q.strip()}%")
+    if not any(r in _ALL_COURSES_ROLES for r in roles):
+        # Plain editor (or student with no course role) → only own uploads.
+        where.append("c.owner_user_id = %s")
+        params.append(school_user.user_id)
 
     sql = f"""
         SELECT
-            se.user_id, se.lang, se.course_id, se.progress,
-            se.last_active, se.status,
-            COALESCE(u.email, '') AS email,
-            COALESCE(SPLIT_PART(u.email, '@', 1), '') AS email_local,
-            c.title AS course_title
-        FROM school.student_enrollments se
-        LEFT JOIN user_data.users u ON u.user_id = se.user_id
-        LEFT JOIN course_simple.course c ON c.course_id = se.course_id
+            c.course_id, c.title, c.description, c.lang, c.to_lang,
+            c.status, c.lesson_count, c.metadata,
+            ca.access, ca.updated_at,
+            mods.module_count,
+            COALESCE(stu.student_count, 0) AS student_count
+        FROM course_simple.course c
+        JOIN school.course_access ca ON ca.course_id = c.course_id
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS module_count
+            FROM course_simple.module GROUP BY course_id
+        ) mods ON mods.course_id = c.course_id
+        LEFT JOIN (
+            SELECT course_id, COUNT(DISTINCT user_id) AS student_count
+            FROM school.student_enrollments WHERE school_id = %s
+            GROUP BY course_id
+        ) stu ON stu.course_id = c.course_id
         WHERE {' AND '.join(where)}
-        ORDER BY se.last_active DESC NULLS LAST
-        LIMIT %s
+        ORDER BY c.status, c.updated_at DESC NULLS LAST
     """
-    rows = await get_query_results(sql, (*params, limit))
-    out: list[StudentRow] = []
+    # The student-count subquery also needs school_id — prepend it so the
+    # placeholders line up (same shape as editor_courses.list_editor_courses).
+    final_params = (school_id, *params)
+    rows = await get_query_results(sql, final_params)
+    return [_row_to_course(r) for r in rows]
+
+
+@router.get("/school_users")
+async def get_school_users(school_user: SchoolUser = Depends(current_school_user)):
+    """Staff roster for the caller's school. Admins/teachers only. Joins
+    user_data.users for the email and flattens `roles[]` to a primary `role`
+    so the dashboard's SchoolUser.fromJson maps cleanly."""
+    if not school_user or not school_user.user_id:
+        raise HTTPException(status_code=401, detail="Not signed in")
+    roles = school_user.roles or []
+    if not any(r in _ALL_COURSES_ROLES for r in roles):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    sql = """
+        SELECT su.user_id, su.school_id, su.roles, su.status,
+               su.signed_terms_version, su.created_at,
+               u.email
+        FROM school.school_users su
+        LEFT JOIN user_data.users u ON u.user_id = su.user_id
+        WHERE su.school_id = %s
+        ORDER BY su.created_at NULLS LAST, su.user_id
+    """
+    rows = await get_query_results(sql, [school_user.school_id])
+    results = []
     for r in rows:
-        code = r.get('lang') or ''
-        meta = _lang_meta(code)
-        # Build a display name from the email local-part since
-        # user_data.users doesn't store a separate name column.
-        local = (r.get('email_local') or '').replace('.', ' ')
-        name = ' '.join(s.capitalize() for s in local.split() if s) or '—'
-        last_seen = r.get('last_active')
-        out.append(StudentRow(
-            user_id=r['user_id'],
-            name=name,
-            email=r.get('email') or '',
-            lang=code,
-            lang_flag=meta['flag'],
-            lang_name=meta['english'],
-            course=r.get('course_title') or '—',
-            course_id=r.get('course_id'),
-            progress=float(r.get('progress') or 0.0),
-            last_seen=last_seen,
-            last_seen_human=_humanize(last_seen),
-            status=r.get('status') or 'active',
-        ))
-    return out
+        r_roles = r.get("roles") or []
+        email = r.get("email") or ""
+        results.append({
+            "school_user_id": r["user_id"],
+            "school_id": r["school_id"],
+            # users table has no name column today; derive a label from the
+            # email local-part so the roster isn't blank.
+            "name": email.split("@")[0] if email else "",
+            "email": email,
+            "role": r_roles[0] if r_roles else "editor",
+            "roles": r_roles,
+            "assigned_languages": [],
+            "courses_owned": 0,
+            "status": r.get("status") or "active",
+        })
+    return results
 
 
-async def _upsert_enrollment(
-    *,
-    school_id: int,
-    email: str,
-    name: str,
-    lang: str,
-    course_id: int | None,
-    cohort: str | None,
-) -> int:
-    """Shared find-or-create user + upsert enrollment used by both the
-    single-add endpoint and the bulk CSV endpoint. Returns user_id."""
-    user_rows = await get_query_results(
-        "SELECT user_id FROM user_data.users WHERE email = %s LIMIT 1",
-        (email,),
-    )
-    if user_rows:
-        user_id = user_rows[0]['user_id']
-    else:
-        # email_hash is NOT NULL in user_data.users — use the email as
-        # a placeholder hash for now (real auth flow swaps this).
-        inserted = await get_query_results(
-            """
-            INSERT INTO user_data.users (email_hash, email)
-            VALUES (%s, %s)
-            RETURNING user_id
-            """,
-            (email, email),
-        )
-        if not inserted:
-            raise HTTPException(status_code=500, detail=f"Failed to create user {email}")
-        user_id = inserted[0]['user_id']
-
-    status = 'no_course' if course_id is None else 'active'
-    await run_query(
-        """
-        INSERT INTO school.student_enrollments
-            (school_id, user_id, course_id, lang, cohort, status, last_active)
-        VALUES (%s, %s, %s, %s, %s, %s, now())
-        ON CONFLICT (school_id, user_id, (COALESCE(course_id, 0)))
-        DO UPDATE SET lang = EXCLUDED.lang,
-                      cohort = EXCLUDED.cohort,
-                      status = EXCLUDED.status,
-                      last_active = now()
-        """,
-        (school_id, user_id, course_id, lang, cohort, status),
-    )
-    return user_id
+@router.post("/become_editor")
+async def become_editor(school_user: SchoolUser = Depends(current_school_user)):
+    """
+    if school is public
+    1. sign editor terms and conditions
+    2. add editor role to school_user
+    if school is private
+    1. verify editor invitation code
+    2. sign editor terms and conditions
+    3. add editor role to school_user
+    """
+    return {}
 
 
-@router.post("/{school_id}/students", response_model=StudentRow)
-async def enroll_student(school_id: int, payload: EnrollStudentRequest, _caller: int | None = Depends(require_school_member)):
-    """Single-student enrollment from the dashboard's "Add student"
-    dialog. Either reuses an existing user_data.users row (matched by
-    email) or creates a fresh one, then upserts the enrollment.
-    Returns the row in the same shape get_students serves so the
-    dashboard can prepend it to the table without a refetch."""
-    user_id = await _upsert_enrollment(
-        school_id=school_id,
-        email=payload.email,
-        name=payload.name,
-        lang=payload.lang,
-        course_id=payload.course_id,
-        cohort=payload.cohort,
-    )
-    await log_activity(
-        school_id=school_id,
-        kind='students_added',
-        summary=(
-            f"Enrolled {payload.name or payload.email}"
-            f"{' in ' + payload.cohort if payload.cohort else ''}"
-        ),
-    )
-
-    meta = _lang_meta(payload.lang)
-    status = 'no_course' if payload.course_id is None else 'active'
-    return StudentRow(
-        user_id=user_id,
-        name=payload.name or payload.email.split('@')[0],
-        email=payload.email,
-        lang=payload.lang,
-        lang_flag=meta['flag'],
-        lang_name=meta['english'],
-        course='—' if payload.course_id is None else '',
-        course_id=payload.course_id,
-        progress=0.0,
-        last_seen=None,
-        last_seen_human='Just now',
-        status=status,
-    )
+@router.post("/sign_editor_terms")
+async def sign_editor_terms(school_user: SchoolUser = Depends(current_school_user_full)):
+    """Record that the caller accepted the current editor Terms & Conditions.
+    Stamps the latest version so the courses gate clears on the next /me read."""
+    sql = "UPDATE school.school_users SET signed_terms_version = %s WHERE user_id = %s AND school_id = %s"
+    params = (LATEST_TERMS_VERSION, school_user.user_id, school_user.school_id)
+    await run_query(sql, params)
+    return {"message": "Editor terms signed", "version": LATEST_TERMS_VERSION}
 
 
-@router.post("/{school_id}/students/csv")
-async def enroll_students_csv(
-    school_id: int,
-    lang: str,
-    cohort: str | None = None,
-    file: UploadFile = File(...),
-    _caller: int | None = Depends(require_school_member),
-):
-    """Bulk enrollment from a CSV upload. Expected columns (header row
-    required): `email`, `name` (optional), `course_id` (optional).
-    Rows missing an email are skipped. Returns counts so the dashboard
-    can render an inline summary instead of re-fetching the whole
-    roster to figure out what changed."""
-    raw = await file.read()
-    if not raw:
-        raise HTTPException(status_code=400, detail="Empty file")
-    # tolerate BOM + Excel-style line endings
-    text = raw.decode('utf-8-sig', errors='replace')
-    reader = csv.DictReader(io.StringIO(text))
-    if not reader.fieldnames or 'email' not in [f.strip().lower() for f in reader.fieldnames]:
-        raise HTTPException(
-            status_code=400,
-            detail="CSV must include an 'email' column",
-        )
-
-    # Normalise field names so callers can use any case.
-    def get(row: dict, key: str) -> str:
-        for k, v in row.items():
-            if k and k.strip().lower() == key:
-                return (v or '').strip()
-        return ''
-
-    added = 0
-    skipped = 0
-    errors: list[str] = []
-    for line_no, row in enumerate(reader, start=2):
-        email = get(row, 'email')
-        if not email or '@' not in email:
-            skipped += 1
-            continue
-        name = get(row, 'name')
-        course_raw = get(row, 'course_id')
-        course_id: int | None = None
-        if course_raw:
-            try:
-                course_id = int(course_raw)
-            except ValueError:
-                errors.append(f"Line {line_no}: invalid course_id '{course_raw}'")
-                continue
-        try:
-            await _upsert_enrollment(
-                school_id=school_id,
-                email=email,
-                name=name,
-                lang=lang,
-                course_id=course_id,
-                cohort=cohort,
-            )
-            added += 1
-        except HTTPException as e:
-            errors.append(f"Line {line_no}: {e.detail}")
-
-    if added > 0:
-        suffix = f" in {cohort}" if cohort else ''
-        await log_activity(
-            school_id=school_id,
-            kind='students_added',
-            summary=f"Added {added} students via CSV upload{suffix}",
-        )
-
-    return {
-        'added': added,
-        'skipped': skipped,
-        'errors': errors,
-    }
-
-
-# =============================================================
-# Subscription plans  (Settings → Subscription plans card grid)
-# =============================================================
-
-async def _plan_with_features(plan_row: dict) -> Plan:
-    """Hydrate a `school.plans` row with its features + subscriber
-    count. Used by every plans-endpoint response so the dashboard never
-    has to round-trip twice for a single card. The subscriber count is
-    `COUNT(DISTINCT user_id)` from `school.student_enrollments` where
-    plan_id matches — students who haven't been assigned a plan yet
-    don't get counted."""
-    plan_id = plan_row['plan_id']
-    feats = await get_query_results(
-        """
-        SELECT label, included, weight
-        FROM school.plan_features
-        WHERE plan_id = %s
-        ORDER BY weight, plan_feature_id
-        """,
-        (plan_id,),
-    )
-    sub_rows = await get_query_results(
-        """
-        SELECT COUNT(DISTINCT user_id) AS c
-        FROM school.student_enrollments
-        WHERE plan_id = %s
-        """,
-        (plan_id,),
-    )
-    subs = int((sub_rows[0] if sub_rows else {}).get('c') or 0)
-    return Plan(
-        plan_id=plan_id,
-        school_id=plan_row['school_id'],
-        tier=plan_row['tier'],
-        price_cents=int(plan_row.get('price_cents') or 0),
-        cadence=plan_row.get('cadence') or 'monthly',
-        blurb=plan_row.get('blurb'),
-        featured=bool(plan_row.get('featured')),
-        weight=int(plan_row.get('weight') or 0),
-        features=[PlanFeature(
-            label=f.get('label') or '',
-            included=bool(f.get('included')),
-            weight=int(f.get('weight') or 0),
-        ) for f in feats],
-        subscriber_count=subs,
-    )
-
-
-async def _replace_features(plan_id: int, features: list[PlanFeature]) -> None:
-    """Atomic 'set the feature list to exactly this' helper. Cheaper
-    than diffing for the small N we have, and avoids the editor having
-    to send stable feature ids."""
-    await run_query(
-        "DELETE FROM school.plan_features WHERE plan_id = %s",
-        (plan_id,),
-    )
-    for i, f in enumerate(features):
-        await run_query(
-            """
-            INSERT INTO school.plan_features (plan_id, label, included, weight)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (plan_id, f.label, f.included, f.weight or i),
-        )
-
-
-@router.get("/{school_id}/plans", response_model=list[Plan])
-async def list_plans(school_id: int, _caller: int | None = Depends(require_school_member)):
-    rows = await get_query_results(
-        """
-        SELECT plan_id, school_id, tier, price_cents, cadence,
-               blurb, featured, weight
-        FROM school.plans
-        WHERE school_id = %s
-        ORDER BY weight, plan_id
-        """,
-        (school_id,),
-    )
-    out: list[Plan] = []
-    for r in rows:
-        out.append(await _plan_with_features(r))
-    return out
-
-
-@router.post("/{school_id}/plans", response_model=Plan)
-async def create_plan(school_id: int, payload: PlanWrite, _caller: int | None = Depends(require_school_member)):
-    inserted = await get_query_results(
-        """
-        INSERT INTO school.plans
-            (school_id, tier, price_cents, cadence, blurb, featured, weight)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        RETURNING plan_id, school_id, tier, price_cents, cadence, blurb, featured, weight
-        """,
-        (school_id, payload.tier, payload.price_cents, payload.cadence,
-         payload.blurb, payload.featured, payload.weight),
-    )
-    if not inserted:
-        raise HTTPException(status_code=500, detail="Failed to create plan")
-    plan_id = inserted[0]['plan_id']
-    await _replace_features(plan_id, payload.features)
-    return await _plan_with_features(inserted[0])
-
-
-@router.put("/{school_id}/plans/{plan_id}", response_model=Plan)
-async def update_plan(school_id: int, plan_id: int, payload: PlanWrite, _caller: int | None = Depends(require_school_member)):
-    updated = await get_query_results(
-        """
-        UPDATE school.plans
-        SET tier = %s, price_cents = %s, cadence = %s, blurb = %s,
-            featured = %s, weight = %s
-        WHERE plan_id = %s AND school_id = %s
-        RETURNING plan_id, school_id, tier, price_cents, cadence, blurb, featured, weight
-        """,
-        (payload.tier, payload.price_cents, payload.cadence, payload.blurb,
-         payload.featured, payload.weight, plan_id, school_id),
-    )
-    if not updated:
-        raise HTTPException(status_code=404, detail="Plan not found")
-    await _replace_features(plan_id, payload.features)
-    return await _plan_with_features(updated[0])
-
-
-@router.delete("/{school_id}/plans/{plan_id}")
-async def delete_plan(school_id: int, plan_id: int, _caller: int | None = Depends(require_school_member)):
-    ok = await run_query(
-        "DELETE FROM school.plans WHERE plan_id = %s AND school_id = %s",
-        (plan_id, school_id),
-    )
-    return {"ok": ok}
-
-
-# =============================================================
-# Billing  (Settings → Billing card)
-# =============================================================
-
-@router.get("/{school_id}/billing", response_model=BillingMethod | None)
-async def get_billing(school_id: int, _caller: int | None = Depends(require_school_member)):
-    """Returns the primary card or null when there isn't one. Returning
-    null (rather than 404) keeps the dashboard's "Manage payment" /
-    empty-state branching straightforward."""
-    rows = await get_query_results(
-        """
-        SELECT billing_method_id, school_id, brand, last4, exp_month,
-               exp_year, is_primary
-        FROM school.billing_methods
-        WHERE school_id = %s AND is_primary
-        LIMIT 1
-        """,
-        (school_id,),
-    )
-    if not rows:
-        return None
-    r = rows[0]
-    return BillingMethod(
-        billing_method_id=r['billing_method_id'],
-        school_id=r['school_id'],
-        brand=r.get('brand') or 'Card',
-        last4=r.get('last4') or '',
-        exp_month=int(r.get('exp_month') or 0),
-        exp_year=int(r.get('exp_year') or 0),
-        is_primary=bool(r.get('is_primary')),
-    )
-
-
-@router.put("/{school_id}/billing", response_model=BillingMethod)
-async def upsert_billing(school_id: int, payload: BillingMethodWrite, _caller: int | None = Depends(require_school_member)):
-    """Upsert the primary card for a school. Implemented as
-    delete-then-insert (under the partial unique index `billing_primary_uq`)
-    so we don't have to track the row's id from the dashboard."""
-    if len(payload.last4) != 4 or not payload.last4.isdigit():
-        raise HTTPException(status_code=400, detail="last4 must be 4 digits")
-    if not (1 <= payload.exp_month <= 12):
-        raise HTTPException(status_code=400, detail="exp_month out of range")
-    await run_query(
-        "DELETE FROM school.billing_methods WHERE school_id = %s AND is_primary",
-        (school_id,),
-    )
-    inserted = await get_query_results(
-        """
-        INSERT INTO school.billing_methods
-            (school_id, brand, last4, exp_month, exp_year, is_primary)
-        VALUES (%s, %s, %s, %s, %s, true)
-        RETURNING billing_method_id, school_id, brand, last4, exp_month, exp_year, is_primary
-        """,
-        (school_id, payload.brand, payload.last4, payload.exp_month,
-         payload.exp_year),
-    )
-    if not inserted:
-        raise HTTPException(status_code=500, detail="Failed to save billing method")
-    r = inserted[0]
-    return BillingMethod(
-        billing_method_id=r['billing_method_id'],
-        school_id=r['school_id'],
-        brand=r['brand'],
-        last4=r['last4'],
-        exp_month=int(r['exp_month']),
-        exp_year=int(r['exp_year']),
-        is_primary=bool(r['is_primary']),
-    )
+@router.get("/editor_terms")
+async def get_editor_terms():
+    """The editor Terms & Conditions text + its current version. The dashboard
+    shows the text on the Courses gate and POSTs back to /sign_editor_terms."""
+    with open("legal/EDITOR_TERMS.txt", "r") as f:
+        terms = f.read()
+    return {"terms": terms, "version": LATEST_TERMS_VERSION}
