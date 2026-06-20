@@ -6,7 +6,10 @@ class SchoolUser(BaseModel):
     roles: list[str]| None = []
     status: str | None = "active"
     signed_terms_version: int|None = None
-    roles: list[str]| None = []
+    # Computed per-request dashboard capabilities (settings/courses/
+    # create_with_ai/signed_terms/editors). Populated in get_user_full_data;
+    # the dashboard reads it to hide/show nav + gate the terms dialog.
+    permissions: dict | None = {}
     #school data
     domain: str | None = None
     dashboard: bool | None = False
@@ -14,7 +17,6 @@ class SchoolUser(BaseModel):
     school_type: str | None = None
     logo_url: str | None = None
     primary_color: str | None = None
-    signed_terms_version: int | None = None
 
 
 class User(BaseModel):

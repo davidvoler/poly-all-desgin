@@ -49,32 +49,160 @@ class CoursesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Until the user accepts the current editor Terms & Conditions, the
+    // server reports permissions['signed_terms'] == true and we replace the
+    // whole Courses surface with the acceptance gate (hard block). The upload
+    // CTAs are hidden in that state too — there's nothing to act on yet.
+    final me = ref.watch(meProvider).value;
+    final needsTerms = me?.needsTerms ?? false;
     return DashboardShell(
       title: 'Courses',
       activeRoute: '/courses',
-      topbarTrailing: [
-        GhostButton(
-          label: 'Create with AI',
-          leading: Icons.auto_awesome_outlined,
-          onTap: () => Navigator.pushNamed(context, '/create-course'),
-        ),
-        PrimaryButton(
-          label: 'Upload course',
-          leading: Icons.file_upload_outlined,
-          onTap: () => _pickAndUpload(context, ref),
-        ),
-      ],
+      topbarTrailing: needsTerms
+          ? const []
+          : [
+              GhostButton(
+                label: 'Create with AI',
+                leading: Icons.auto_awesome_outlined,
+                onTap: () => Navigator.pushNamed(context, '/create-course'),
+              ),
+              PrimaryButton(
+                label: 'Upload course',
+                leading: Icons.file_upload_outlined,
+                onTap: () => _pickAndUpload(context, ref),
+              ),
+            ],
+      child: needsTerms
+          ? const _TermsGate()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _Dropzone(onBrowse: () => _pickAndUpload(context, ref)),
+                const SizedBox(height: 18),
+                const _CoursesPanel(),
+              ],
+            ),
+    );
+  }
+}
+
+/// Hard gate shown on the Courses page when the signed-in user hasn't yet
+/// accepted the current editor Terms & Conditions. Renders the terms text in
+/// a glass card with an Accept button; accepting POSTs to
+/// /new_school/sign_editor_terms and invalidates [meProvider] so the page
+/// re-renders with the real courses content.
+class _TermsGate extends ConsumerStatefulWidget {
+  const _TermsGate();
+
+  @override
+  ConsumerState<_TermsGate> createState() => _TermsGateState();
+}
+
+class _TermsGateState extends ConsumerState<_TermsGate> {
+  bool _accepting = false;
+
+  Future<void> _accept() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _accepting = true);
+    try {
+      await ref.read(dashboardApiProvider).signEditorTerms();
+      // Re-read permissions (clears signed_terms) and refetch the now-visible
+      // courses list.
+      ref.invalidate(meProvider);
+      ref.invalidate(editorCoursesProvider);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _accepting = false);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not record acceptance: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final termsAsync = ref.watch(_editorTermsProvider);
+    return GlassCard(
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _Dropzone(onBrowse: () => _pickAndUpload(context, ref)),
+          Row(
+            children: [
+              const Icon(Icons.gavel_outlined, color: Colors.white, size: 22),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Editor Terms & Conditions',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Accept the terms below to create and manage courses for this school.',
+            style: TextStyle(fontSize: 13, color: DashColors.w(0.70)),
+          ),
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 420),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: DashColors.w(0.04),
+                borderRadius: DashRadii.cardSm,
+                border: Border.all(color: DashColors.w(0.08)),
+              ),
+              child: termsAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                      child: CircularProgressIndicator(color: Colors.white)),
+                ),
+                error: (e, _) => Text(
+                  'Could not load the terms.\n$e',
+                  style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
+                ),
+                data: (t) => SingleChildScrollView(
+                  child: SelectableText(
+                    t.terms,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.5,
+                      color: DashColors.w(0.85),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 18),
-          const _CoursesPanel(),
+          Align(
+            alignment: Alignment.centerRight,
+            child: PrimaryButton(
+              label: _accepting ? 'Recording…' : 'Accept & continue',
+              leading: Icons.check,
+              onTap: _accepting || termsAsync.value == null ? null : _accept,
+            ),
+          ),
         ],
       ),
     );
   }
 }
+
+/// Editor Terms & Conditions text + version, fetched once for the gate.
+final _editorTermsProvider =
+    FutureProvider<({String terms, int version})>((ref) async {
+  return ref.read(dashboardApiProvider).fetchEditorTerms();
+});
 
 /// Picks a .zip, POSTs it to /api/v1/editor/upload/, then invalidates
 /// the courses + activity providers so the table and Overview feed

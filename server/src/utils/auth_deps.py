@@ -63,21 +63,17 @@ async def school_id_from_hostname(hostname: str) -> int:
 async def school_hostname(hostname: str) -> School:
     schools_cache = await get_schools_cache()
     print(f"Schools hostname: {hostname}")
-    scool = {}
     for school_id, school in schools_cache.items():
         print(f"Checking school_id={school_id}, school_url={school['school_url']}, school_dashboard_url={school['school_dashboard_url']}")
-        if school['school_url'] == hostname:
-            is_dashboard = False
-            school = school
-        elif school['school_dashboard_url'] == hostname:
-            is_dashboard = True
-            school = school
-    if school == {}:
-        raise HTTPException(status_code=404, detail="School not found")
-    results =  School(**school)
-    results.domain = hostname
-    results.dashboard = is_dashboard
-    return results
+        # Return on the first match so we resolve THIS hostname's school —
+        # the old loop reassigned the loop variable and always returned the
+        # last school in the cache.
+        if school['school_url'] == hostname or school['school_dashboard_url'] == hostname:
+            results = School(**school)
+            results.domain = hostname
+            results.dashboard = school['school_dashboard_url'] == hostname
+            return results
+    raise HTTPException(status_code=404, detail="School not found")
 
 
 async def current_school_id(request: Request) -> int:
@@ -141,15 +137,13 @@ async def get_or_create_school_user(user_id: int, school_id: int) -> SchoolUser:
 
 
 
-async def current_school_user(request: Request) -> SchoolUserBase:
-    raw = request.cookies.get("user_id")
-    origin = request.headers.get("origin")
-    hostname = urlparse(origin).hostname if origin else ""
-    school_id = await school_id_from_hostname(hostname)
-    user_id = -1
-    try:
-        user_id = int(raw)
-    except (TypeError, ValueError) as e:
-        print(f"Error parsing user_id from cookie: {e}")
-    return await current_school_user_full(user_id, school_id)
+async def current_school_user(request: Request) -> SchoolUser:
+    """The signed-in user for the school resolved from the request hostname.
+
+    Delegates to `current_school_user_full`, which reads the `user_id`
+    cookie + the Origin hostname and returns a fully-populated `SchoolUser`
+    (roles, status, signed_terms_version, computed permissions, and school
+    branding). Kept as a thin alias so existing `Depends(current_school_user)`
+    routes don't have to change."""
+    return await current_school_user_full(request)
 

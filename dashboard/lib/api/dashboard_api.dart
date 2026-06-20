@@ -133,10 +133,95 @@ class LoginInfo {
       _adminRoles.contains(role) || roles.any(_adminRoles.contains);
 }
 
+/// The current user's school-scoped capabilities, read from
+/// GET /api/v1/new_school/me. `permissions` is the server-computed map
+/// (`courses`, `settings`, `editors`, `create_with_ai`, `signed_terms`,
+/// `about`) the dashboard uses to hide/show nav + gate the Courses page.
+/// `signed_terms == true` means the user still owes an acceptance of the
+/// current editor Terms & Conditions.
+class DashboardMe {
+  final int schoolUserId;
+  final int schoolId;
+  final List<String> roles;
+  final int? signedTermsVersion;
+  final Map<String, bool> permissions;
+  // School branding, carried on the same /me payload so the shell doesn't
+  // need a separate GET /api/v1/school/{id}.
+  final String schoolName;
+  final String schoolType;
+  final String? logoUrl;
+  final String primaryColor;
+
+  const DashboardMe({
+    required this.schoolUserId,
+    required this.schoolId,
+    required this.roles,
+    required this.signedTermsVersion,
+    required this.permissions,
+    required this.schoolName,
+    required this.schoolType,
+    required this.logoUrl,
+    required this.primaryColor,
+  });
+
+  factory DashboardMe.fromJson(Map<String, dynamic> j) {
+    final perms = <String, bool>{};
+    final raw = j['permissions'];
+    if (raw is Map) {
+      for (final e in raw.entries) {
+        perms['${e.key}'] = e.value == true;
+      }
+    }
+    return DashboardMe(
+      schoolUserId: (j['user_id'] as int?) ?? 0,
+      schoolId: (j['school_id'] as int?) ?? 0,
+      roles: ((j['roles'] as List?) ?? const []).map((e) => '$e').toList(),
+      signedTermsVersion: j['signed_terms_version'] as int?,
+      permissions: perms,
+      schoolName: (j['school_name'] as String?) ?? '',
+      schoolType: (j['school_type'] as String?) ?? '',
+      logoUrl: j['logo_url'] as String?,
+      primaryColor: (j['primary_color'] as String?) ?? '#1E88E5',
+    );
+  }
+
+  /// Whether a permission key is granted. Unknown keys default to false so
+  /// new server-side gates fail closed on stale clients.
+  bool can(String key) => permissions[key] ?? false;
+
+  /// The Courses page is gated until the user accepts the current editor
+  /// Terms & Conditions.
+  bool get needsTerms => can('signed_terms');
+}
+
 /// Thin client over the dashboard-side endpoints.
 class DashboardApi {
   final Dio _dio;
   DashboardApi(this._dio);
+
+  /// The signed-in user's roles + permissions + signed-terms state for the
+  /// school resolved server-side from the request hostname. Backs
+  /// [meProvider]; drives nav visibility and the Courses terms gate.
+  Future<DashboardMe> fetchMe() async {
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/new_school/me');
+    return DashboardMe.fromJson(res.data ?? const {});
+  }
+
+  /// The editor Terms & Conditions text + its current version.
+  Future<({String terms, int version})> fetchEditorTerms() async {
+    final res =
+        await _dio.get<Map<String, dynamic>>('/api/v1/new_school/editor_terms');
+    final data = res.data ?? const {};
+    return (
+      terms: (data['terms'] as String?) ?? '',
+      version: (data['version'] as int?) ?? 1,
+    );
+  }
+
+  /// Record the caller's acceptance of the current editor Terms & Conditions.
+  Future<void> signEditorTerms() async {
+    await _dio.post<dynamic>('/api/v1/new_school/sign_editor_terms');
+  }
 
   /// Email + password sign-in against the unified auth router. The
   /// school is resolved server-side from the request hostname, so no
@@ -318,30 +403,51 @@ class DashboardApi {
         .toList();
   }
 
+  /// Courses the caller can see, role-scoped server-side (admins see all,
+  /// editors see their own). The school is resolved from the request
+  /// hostname + cookie, so `schoolId` is no longer sent. `status`/`lang`/`q`
+  /// filters are applied client-side by the consuming providers/pages.
   Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
       {String? status, String? lang, String? q}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/editor/courses/',
-      queryParameters: {
-        'school_id': schoolId,
-        'status': ?status,
-        'lang': ?lang,
-        'q': ?q,
-      },
-    );
-    return (res.data ?? const [])
+    final res = await _dio.get<List<dynamic>>('/api/v1/new_school/courses');
+    var rows = (res.data ?? const [])
         .cast<Map<String, dynamic>>()
         .map(EditorCourse.fromJson)
         .toList();
+    if (lang != null && lang.isNotEmpty) {
+      rows = rows.where((c) => c.lang == lang).toList();
+    }
+    if (q != null && q.trim().isNotEmpty) {
+      final needle = q.trim().toLowerCase();
+      rows = rows
+          .where((c) =>
+              c.title.toLowerCase().contains(needle) ||
+              c.description.toLowerCase().contains(needle))
+          .toList();
+    }
+    return rows;
   }
 
-  // school_users API removed — the dashboard no longer calls
-  // /api/v1/school_users/*. The read returns an empty list (the Editors
-  // page renders its empty state); the writes below throw so any lingering
-  // UI surfaces a clear error rather than silently faking success.
+  /// Staff roster for the caller's school, from the new_school router.
+  /// Admin/teacher only server-side (403 otherwise). The write actions below
+  /// remain unsupported — only the read is wired.
   Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
       {String? role, String? q}) async {
-    return const [];
+    final res =
+        await _dio.get<List<dynamic>>('/api/v1/new_school/school_users');
+    var rows = (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(SchoolUser.fromJson)
+        .toList();
+    if (q != null && q.trim().isNotEmpty) {
+      final needle = q.trim().toLowerCase();
+      rows = rows
+          .where((u) =>
+              u.name.toLowerCase().contains(needle) ||
+              u.email.toLowerCase().contains(needle))
+          .toList();
+    }
+    return rows;
   }
 
   Future<List<StudentRowRemote>> fetchStudents(int schoolId,
@@ -872,6 +978,16 @@ final currentUserProvider = Provider<LoginInfo?>((ref) {
 // signs in (and dispose when they sign out). When no one is signed in
 // they short-circuit with empty data so widgets render their loading
 // state without an extra null branch.
+
+/// The signed-in user's roles + permissions + signed-terms state, from
+/// GET /api/v1/new_school/me. Nav visibility (shell.dart), route guards
+/// (main.dart), and the Courses terms gate all read this. Resolves to null
+/// when signed out; consumers fall back to role-based checks while it loads.
+final meProvider = FutureProvider<DashboardMe?>((ref) async {
+  final me = ref.watch(currentUserProvider);
+  if (me == null) return null;
+  return ref.read(dashboardApiProvider).fetchMe();
+});
 
 final schoolProvider = FutureProvider<SchoolInfo?>((ref) async {
   final me = ref.watch(currentUserProvider);

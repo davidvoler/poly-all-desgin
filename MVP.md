@@ -19,7 +19,7 @@
     - preferences 
     If we have this object on the server side we have all the data - to make decisions on the server side 
 - in this phase we care mostly about public school - let's concentrate on these features 
-- [] redo dashboard api
+- [w] redo dashboard api
 - [] hide show elements in dashboard - depending on roles 
 - [] hide show courses - depending on school 
 

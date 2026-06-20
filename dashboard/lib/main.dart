@@ -95,15 +95,18 @@ class DashboardApp extends StatelessWidget {
         // since the whole point is to run before the user has any
         // school to sign into.
         '/create-school': (_) => const CreateSchoolPage(),
-        '/courses': (_) => const _Guarded(child: CoursesPage()),
-        '/create-course': (_) => const _Guarded(child: CreateCoursePage()),
-        '/course': (_) => const _Guarded(child: CourseDetailPage()),
+        '/courses': (_) =>
+            const _Guarded(permission: 'courses', child: CoursesPage()),
+        '/create-course': (_) => const _Guarded(
+            permission: 'create_with_ai', child: CreateCoursePage()),
+        '/course': (_) =>
+            const _Guarded(permission: 'courses', child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
-        '/editors': (_) =>
-            const _Guarded(adminOnly: true, child: EditorsPage()),
+        '/editors': (_) => const _Guarded(
+            adminOnly: true, permission: 'editors', child: EditorsPage()),
         '/students': (_) => const _Guarded(child: StudentsPage()),
-        '/settings': (_) =>
-            const _Guarded(adminOnly: true, child: SettingsPage()),
+        '/settings': (_) => const _Guarded(
+            adminOnly: true, permission: 'settings', child: SettingsPage()),
       },
     );
   }
@@ -136,12 +139,22 @@ class _AuthGate extends ConsumerWidget {
 class _Guarded extends ConsumerWidget {
   final Widget child;
   final bool adminOnly;
-  const _Guarded({required this.child, this.adminOnly = false});
+
+  /// Optional key in the server-computed permission map ([meProvider]).
+  /// When set and the map is loaded, access is decided by that flag;
+  /// while the map is still loading we fall back to the role-based
+  /// `adminOnly` check so a deep link doesn't bounce mid-fetch.
+  final String? permission;
+  const _Guarded({required this.child, this.adminOnly = false, this.permission});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     if (auth is! AuthSignedIn) return const LoginPage();
+    final perms = ref.watch(meProvider).value;
+    if (permission != null && perms != null) {
+      return perms.can(permission!) ? child : const _AdminOnlyDenied();
+    }
     if (adminOnly && !auth.info.isAdmin) {
       return const _AdminOnlyDenied();
     }
