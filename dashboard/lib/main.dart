@@ -95,12 +95,13 @@ class DashboardApp extends StatelessWidget {
         // since the whole point is to run before the user has any
         // school to sign into.
         '/create-school': (_) => const CreateSchoolPage(),
-        '/courses': (_) =>
-            const _Guarded(permission: 'courses', child: CoursesPage()),
-        '/create-course': (_) => const _Guarded(
-            permission: 'create_with_ai', child: CreateCoursePage()),
-        '/course': (_) =>
-            const _Guarded(permission: 'courses', child: CourseDetailPage()),
+        // Courses list + detail are open to every signed-in user; authoring
+        // is gated on the page (terms + role), not by hiding the section.
+        '/courses': (_) => const _Guarded(child: CoursesPage()),
+        // Create with AI is always reachable for any signed-in user; the
+        // page gates content authoring behind the terms when unsigned.
+        '/create-course': (_) => const _Guarded(child: CreateCoursePage()),
+        '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
         '/editors': (_) => const _Guarded(
             adminOnly: true, permission: 'editors', child: EditorsPage()),

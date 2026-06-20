@@ -26,22 +26,18 @@ async def get_me(school_user: SchoolUser = Depends(current_school_user_full)):
 
 @router.get("/courses", response_model=list[EditorCourse])
 async def get_courses(school_user: SchoolUser = Depends(current_school_user)):
-    """Courses the caller can see, role-scoped. Admins / super-editors /
-    teachers see every course in the school; a plain editor sees only the
-    courses they own. Returns the same rich `EditorCourse` shape as
+    """The school's course catalogue — visible to every signed-in member
+    (students included), so the dashboard can show the list to all users.
+    Authoring (upload / status changes) is gated elsewhere by terms + role,
+    not by hiding the list. Returns the same rich `EditorCourse` shape as
     /api/v1/editor/courses/ (module/lesson/student counts + access overlay) so
     the dashboard table renders unchanged."""
     if not school_user or not school_user.user_id:
         raise HTTPException(status_code=401, detail="Not signed in")
-    roles = school_user.roles or []
     school_id = school_user.school_id
 
     where = ["ca.school_id = %s"]
     params: list = [school_id]
-    if not any(r in _ALL_COURSES_ROLES for r in roles):
-        # Plain editor (or student with no course role) → only own uploads.
-        where.append("c.owner_user_id = %s")
-        params.append(school_user.user_id)
 
     sql = f"""
         SELECT

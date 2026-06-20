@@ -6,6 +6,7 @@ import '../api/dashboard_api.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
+import '../widgets/terms_gate.dart';
 
 /// "Create with AI" — collects the shape of a course an editor wants and
 /// assembles a ready-to-run LLM prompt that targets our import format (see
@@ -210,17 +211,30 @@ Rules:
 
   @override
   Widget build(BuildContext context) {
+    // Create with AI is always reachable, but authoring content requires
+    // accepting the editor Terms & Conditions first. When unsigned the server
+    // reports permissions['signed_terms'] == true and we replace the builder
+    // with the terms gate (and drop the "Upload result" CTA).
+    final needsTerms = ref.watch(meProvider).value?.needsTerms ?? false;
     return DashboardShell(
       title: 'Create with AI',
       activeRoute: '/create-course',
-      topbarTrailing: [
-        GhostButton(
-          label: 'Upload result',
-          leading: Icons.file_upload_outlined,
-          onTap: () => Navigator.pushReplacementNamed(context, '/courses'),
-        ),
-      ],
-      child: LayoutBuilder(
+      topbarTrailing: needsTerms
+          ? const []
+          : [
+              GhostButton(
+                label: 'Upload result',
+                leading: Icons.file_upload_outlined,
+                onTap: () => Navigator.pushReplacementNamed(context, '/courses'),
+              ),
+            ],
+      child: needsTerms
+          ? const TermsGate(
+              explanation:
+                  'Accepting the editor terms is required before you can add '
+                  'content. Review and accept below to start creating courses.',
+            )
+          : LayoutBuilder(
         builder: (context, c) {
           final wide = c.maxWidth > 900;
           final form = _FormColumn(state: this);

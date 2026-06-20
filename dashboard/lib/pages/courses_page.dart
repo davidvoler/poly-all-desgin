@@ -12,7 +12,6 @@ import '../widgets/common.dart';
 import '../widgets/data_table.dart';
 import '../widgets/search_field.dart';
 import '../widgets/shell.dart';
-import '../widgets/terms_gate.dart';
 
 /// Local mirror of the server-side course-status state graph in
 /// server/src/editor/routes/review.py. Keep in sync — the UI only
@@ -50,44 +49,92 @@ class CoursesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Until the user accepts the current editor Terms & Conditions, the
-    // server reports permissions['signed_terms'] == true and we replace the
-    // whole Courses surface with the acceptance gate (hard block). The upload
-    // CTAs are hidden in that state too — there's nothing to act on yet.
-    final me = ref.watch(meProvider).value;
-    final needsTerms = me?.needsTerms ?? false;
+    // The course list is shown to everyone. Uploading new content, though,
+    // requires accepting the editor Terms & Conditions first: when the server
+    // reports permissions['signed_terms'] == true we disable the upload CTAs
+    // and show a notice pointing to where the terms can be accepted.
+    final needsTerms = ref.watch(meProvider).value?.needsTerms ?? false;
     return DashboardShell(
       title: 'Courses',
       activeRoute: '/courses',
-      topbarTrailing: needsTerms
-          ? const []
-          : [
-              GhostButton(
-                label: 'Create with AI',
-                leading: Icons.auto_awesome_outlined,
-                onTap: () => Navigator.pushNamed(context, '/create-course'),
-              ),
-              PrimaryButton(
+      topbarTrailing: [
+        GhostButton(
+          label: 'Create with AI',
+          leading: Icons.auto_awesome_outlined,
+          onTap: () => Navigator.pushNamed(context, '/create-course'),
+        ),
+        if (needsTerms)
+          Tooltip(
+            message: 'Accept the editor terms to upload courses',
+            child: Opacity(
+              opacity: 0.5,
+              child: PrimaryButton(
                 label: 'Upload course',
                 leading: Icons.file_upload_outlined,
-                onTap: () => _pickAndUpload(context, ref),
+                onTap: null,
               ),
-            ],
-      child: needsTerms
-          ? TermsGate(
-              explanation:
-                  'Accepting the editor terms is required before you can add '
-                  'or manage content. Review and accept below to continue.',
-              onAccepted: () => ref.invalidate(editorCoursesProvider),
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Dropzone(onBrowse: () => _pickAndUpload(context, ref)),
-                const SizedBox(height: 18),
-                const _CoursesPanel(),
-              ],
             ),
+          )
+        else
+          PrimaryButton(
+            label: 'Upload course',
+            leading: Icons.file_upload_outlined,
+            onTap: () => _pickAndUpload(context, ref),
+          ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (needsTerms) ...[
+            const _TermsNotice(),
+            const SizedBox(height: 14),
+          ],
+          _Dropzone(
+            onBrowse: needsTerms ? null : () => _pickAndUpload(context, ref),
+          ),
+          const SizedBox(height: 18),
+          const _CoursesPanel(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Inline banner shown above the courses list when the signed-in user hasn't
+/// accepted the editor Terms & Conditions. The list stays visible; only
+/// uploading is disabled. "Review terms" jumps to Create with AI, which shows
+/// the full terms gate + Accept button.
+class _TermsNotice extends StatelessWidget {
+  const _TermsNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: DashColors.orange300.withValues(alpha: 0.10),
+        borderRadius: DashRadii.card,
+        border: Border.all(color: DashColors.orange300.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 18, color: DashColors.orange300),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Accept the editor Terms & Conditions to upload or create '
+              'content. Browsing the catalogue stays open to everyone.',
+              style: TextStyle(fontSize: 12.5, color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GhostButton(
+            label: 'Review terms',
+            leading: Icons.gavel_outlined,
+            onTap: () => Navigator.pushNamed(context, '/create-course'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -161,7 +208,8 @@ Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
 }
 
 class _Dropzone extends StatelessWidget {
-  final VoidCallback onBrowse;
+  /// Null disables the dropzone's Browse action (e.g. terms not yet accepted).
+  final VoidCallback? onBrowse;
   const _Dropzone({required this.onBrowse});
 
   @override
@@ -214,10 +262,13 @@ class _Dropzone extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              PrimaryButton(
-                label: 'Browse files',
-                leading: Icons.file_upload_outlined,
-                onTap: onBrowse,
+              Opacity(
+                opacity: onBrowse == null ? 0.5 : 1,
+                child: PrimaryButton(
+                  label: 'Browse files',
+                  leading: Icons.file_upload_outlined,
+                  onTap: onBrowse,
+                ),
               ),
               const SizedBox(width: 8),
               GhostButton(

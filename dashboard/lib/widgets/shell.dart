@@ -32,11 +32,12 @@ class NavItem {
 const List<NavItem> kNavItems = [
   NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/'),
   NavItem(label: 'Languages', icon: Icons.language, route: '/languages'),
+  // Courses list is open to everyone; uploading/editing is gated on the
+  // page itself (terms + role), not by hiding the section.
   NavItem(
       label: 'Courses',
       icon: Icons.menu_book_outlined,
-      route: '/courses',
-      permission: 'courses'),
+      route: '/courses'),
   // Create with AI is always available — the page itself gates content
   // authoring behind the editor Terms & Conditions when unsigned.
   NavItem(
