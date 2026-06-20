@@ -37,11 +37,12 @@ const List<NavItem> kNavItems = [
       icon: Icons.menu_book_outlined,
       route: '/courses',
       permission: 'courses'),
+  // Create with AI is always available — the page itself gates content
+  // authoring behind the editor Terms & Conditions when unsigned.
   NavItem(
       label: 'Create with AI',
       icon: Icons.auto_awesome_outlined,
-      route: '/create-course',
-      permission: 'create_with_ai'),
+      route: '/create-course'),
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),

@@ -413,7 +413,7 @@ class DashboardApi {
     return rows;
   }
 
-  /// Staff roster for the caller's school, from the new_school router.
+  /// Staff roster for the caller's school, from the school router.
   /// Admin/teacher only server-side (403 otherwise). The write actions below
   /// remain unsupported — only the read is wired.
   Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
@@ -644,19 +644,7 @@ class DashboardApi {
     required String ownerEmail,
     required String ownerPassword,
   }) async {
-    await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school/',
-      data: {
-        'slug': slug,
-        'name': name,
-        'plan': plan,
-        'is_public': isPublic,
-        'owner_name': ownerName,
-        'owner_email': ownerEmail,
-        'owner_password': ownerPassword,
-      },
-    );
-    return login(email: ownerEmail, password: ownerPassword);
+    throw UnsupportedError('school create endpoint removed (school_old.py)');
   }
 }
 
@@ -892,9 +880,10 @@ final meProvider = FutureProvider<DashboardMe?>((ref) async {
 });
 
 final schoolProvider = FutureProvider<SchoolInfo?>((ref) async {
-  final me = ref.watch(currentUserProvider);
-  if (me == null) return null;
-  return ref.read(dashboardApiProvider).fetchSchool(me.schoolId);
+  // School profile read moved to school_old.py (no longer mounted). Returning
+  // null keeps the Settings page on its "Sign in to edit profile." empty
+  // state instead of erroring; rewire when the profile endpoint returns.
+  return null;
 });
 
 final schoolStatsProvider = FutureProvider<SchoolStats>((ref) async {

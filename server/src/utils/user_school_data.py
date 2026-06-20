@@ -3,7 +3,7 @@ from models.auth import SchoolUser
 
 # Latest editor Terms & Conditions version. Bump when legal/EDITOR_TERMS.txt
 # is revised so already-signed users are re-prompted. Mirrors the default on
-# the school.terms table and POST /new_school/sign_editor_terms.
+# the school.terms table and POST /api/v1/school/sign_editor_terms.
 LATEST_TERMS_VERSION = 1
 
 # Roles that unlock admin-only surfaces (Settings, Editors). Spans the new
