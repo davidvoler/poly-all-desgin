@@ -39,18 +39,36 @@ _COOKIE_NAME = "user_id"
 # --------------------------------------------------------------------------
 # Session cookie
 # --------------------------------------------------------------------------
+def _normalize_cookie_domain(domain: str | None) -> str | None:
+    """Return a usable Set-Cookie `Domain`, or None for a host-only cookie.
+
+    Browsers reject an explicit `Domain=localhost` (or a bare IP / any host
+    without a dot), which silently drops the cookie — so the next request
+    arrives with no session. For those hosts we emit a host-only cookie
+    (no Domain attribute); it's still sent to the same host on any port, so
+    `localhost:<dashboard port>` → `localhost:8004` works in dev. A real
+    dotted domain (e.g. dashboard.polyglots.social) is passed through."""
+    if not domain:
+        return None
+    host = domain.split(":")[0].strip().lower()
+    if host in {"localhost", "127.0.0.1", "::1"} or "." not in host:
+        return None
+    return host
+
+
 def _cookie_kwargs(domain: str | None = None) -> dict:
     """HttpOnly always. SameSite + Secure + Domain depend on env — see the
     long-form notes in routers/auth.py. Kept identical so a cookie set by
     either router is readable by the other."""
+    httponly = os.getenv("COOKIE_HTTP_ONLY", "").lower() in {"1", "true", "yes"}
     secure = os.getenv("COOKIE_SECURE", "").lower() in {"1", "true", "yes"}
     samesite = os.getenv("COOKIE_SAMESITE", "lax").lower()
     return {
         "max_age": _COOKIE_MAX_AGE,
-        "httponly": True,
+        "httponly": httponly,
         "samesite": samesite,
         "secure": secure,
-        "domain": domain,
+        "domain": _normalize_cookie_domain(domain),
     }
 
 

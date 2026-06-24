@@ -97,7 +97,6 @@ async def login_with_password(
     """Email + password sign-in. Never creates a user — an unknown email is a
     401, not a sign-up."""
     print(school)
-    print('-------IIIII')
     if not school:
         raise HTTPException(status_code=400, detail="Unknown school")
     
@@ -106,6 +105,7 @@ async def login_with_password(
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     pref = await build_user_pref(user_id, school)
+    print("setting cookie ------- user_id", user_id)
     set_session_cookie(response, user_id, school.domain)
     return pref
 

@@ -268,7 +268,7 @@ async def login_with_password(payload: PasswordLoginRequest, response: Response,
     pref = await _fetch_user_pref(user_id, school_id=school_id)
     if pref is None:
         raise HTTPException(status_code=500, detail="User row missing")
-
+    print("setting cookie ------- user_id", user_id)
     response.set_cookie(key=_COOKIE_NAME, value=str(user_id), **_cookie_kwargs())
     return pref
 

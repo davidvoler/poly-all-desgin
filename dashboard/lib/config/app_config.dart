@@ -38,11 +38,14 @@ class AppConfig {
     return defaultValue;
   }
 
-  /// Server base URL the Dio client points at.
+  /// Server base URL the Dio client points at. Use `localhost` (not
+  /// 127.0.0.1) so it's same-site with the `flutter run -d chrome` page
+  /// origin — otherwise the SameSite=Lax session cookie is dropped on
+  /// every API call.
   static String get apiBaseUrl => _read(
         'API_BASE_URL',
         fromEnv: const String.fromEnvironment('API_BASE_URL'),
-        defaultValue: 'http://127.0.0.1:8004',
+        defaultValue: 'http://localhost:8004',
       );
 
   /// Audio CDN — unused by the dashboard today but kept for parity
