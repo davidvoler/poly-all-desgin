@@ -28,32 +28,35 @@ def elements_to_course(elements):
     modules = []
     lessons = []
     exercises = []
-    current_module = {}
-    current_lesson = {}
+    current_module = {
+        "lessons": []
+    }
+    current_lesson = {
+        "exercises": []
+    }
     for e in elements:
         element_type = e.get('type', 'exercise')
         if element_type == 'course':
-            print("Course element found:", e)
             course.update(e)
         elif element_type == 'module':
-            if current_module:
-                current_lesson['exercises'] = exercises
-                current_module['lessons'].append(current_lesson)
-                modules.append(current_module)
-                current_lesson = {}
-                exercises = []
+            current_lesson['exercises'] = exercises
+            lessons.append(current_lesson)
+            current_module['lessons'] = lessons
+            modules.append(current_module)
+            current_lesson = {}
+            lessons = []
+            exercises = []
             current_module = e
             current_module['lessons'] = []
         elif element_type == 'lesson':
-            if current_lesson:
-                current_lesson['exercises'] = exercises
-                lessons.append(current_lesson)
-                exercises = []
+            current_lesson['exercises'] = exercises
+            lessons.append(current_lesson)
+            exercises = []
             current_lesson = e
         elif element_type == 'exercise':
             exercises.append(e)
     current_lesson['exercises'] = exercises
-    current_module['lessons'].append(current_lesson)
+    current_module['lessons'] = lessons
     modules.append(current_module)
     course['modules'] = modules    
     return course
