@@ -24,11 +24,10 @@
 - [] hide show courses - depending on school 
 
 
-
 ### Branch step-11-mvp-phase-3-formats
-- [] Simplify format creation - move the fields into a separate file - create a map of fields 
+- [v] Simplify format creation - move the fields into a separate file - create a map of fields 
 - [] Simplify import 
-- [] Simplify export
+- [] Export - save as import 
 
 ### Branch step-11-mvp-phase-4-create-with-ai
 - [] Research MCP - How it can be used and how - Does it apply to polyglots case - do we need an MCP server
