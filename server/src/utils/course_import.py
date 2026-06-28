@@ -1,5 +1,5 @@
 import yaml
-
+import json
 
 
 
@@ -19,45 +19,43 @@ def _handle_single_element(element):
     return None
 
 
+
+
 def elements_to_course(elements):
     course = {
         'modules': []
     }
-    module = {}
-    lesson = {}
+    modules = []
+    lessons = []
     exercises = []
+    current_module = {}
+    current_lesson = {}
     for e in elements:
         element_type = e.get('type', 'exercise')
         if element_type == 'course':
+            print("Course element found:", e)
             course.update(e)
         elif element_type == 'module':
-            if module:
-                if lesson:
-                    if len(exercises) > 0:
-                        lesson['exercises'] = exercises
-                        exercises = []
-                    module['lessons'].append(lesson)
-                    lesson = {}
-                course['modules'].append(module)
-            module = e
-            module['lessons'] = []
+            if current_module:
+                current_lesson['exercises'] = exercises
+                current_module['lessons'].append(current_lesson)
+                modules.append(current_module)
+                current_lesson = {}
+                exercises = []
+            current_module = e
+            current_module['lessons'] = []
         elif element_type == 'lesson':
-            if lesson:
-                if len(exercises) > 0:
-                    lesson['exercises'] = exercises
-                    exercises = []
-                module['lessons'].append(lesson)
-                lesson = {}
+            if current_lesson:
+                current_lesson['exercises'] = exercises
+                lessons.append(current_lesson)
+                exercises = []
+            current_lesson = e
         elif element_type == 'exercise':
             exercises.append(e)
-    
-    if len(exercises) > 0:
-        lesson['exercises'] = exercises
-    if lesson:
-        module['lessons'].append(lesson)
-    if module:
-        course['modules'].append(module)
-
+    current_lesson['exercises'] = exercises
+    current_module['lessons'].append(current_lesson)
+    modules.append(current_module)
+    course['modules'] = modules    
     return course
     
 
@@ -72,30 +70,30 @@ def parse_elements(elements):
 
 
 def _print_course(course:dict):
-    print("Course Title:", course.get('title', 'N/A'))
-    print("Course Description:", course.get('description', 'N/A'))
-    print("Modules:")
+    print("Title:", course.get('title', 'N/A'))
+    print("Description:", course.get('description', 'N/A'))
+    print("lang:", course.get('lang', 'N/A'))
+    print("To Lang:", course.get('to_lang', 'N/A'))
     for module in course.get('modules', []):
-        print("  Module Title:", module.get('title', 'N/A'))
-        print("  Module Description:", module.get('description', 'N/A'))
-        print("  Lessons:")
+        print("\tTitle:", module.get('title', 'N/A'))
+        print("\tDescription:", module.get('description', 'N/A'))
         for lesson in module.get('lessons', []):
-            print("    Lesson Title:", lesson.get('title', 'N/A'))
-            print("    Lesson Description:", lesson.get('description', 'N/A'))
-            print("    Exercises:")
+            print("\t\tTitle:", lesson.get('title', 'N/A'))
+            print("\t\tDescription:", lesson.get('description', 'N/A'))
             for exercise in lesson.get('exercises', []):
-                print("      Exercise Content:", exercise)
+                print("\t\t\t", exercise)
 
 def load_course_from_file(file_path):
     with open(file_path, 'r') as file:
         course_data = file.read()
     elements = course_data.split('---')
     return parse_elements(elements)
+    
 
 
 
 if __name__ == "__main__":
-    file_path = "/Users/davidle/dev/tutorial/poly-all-desgin/content/example_course.yaml"
+    file_path = "/Users/davidle/dev/tutorial/poly-all-desgin/content/example_course1.yaml"
     elements = load_course_from_file(file_path)
     course = elements_to_course(elements)
     _print_course(course)
