@@ -1,3 +1,5 @@
+import re
+
 import yaml
 import json
 
@@ -9,7 +11,7 @@ def _handle_none_valid_yaml(element):
 def _handle_single_element(element):
     if element.strip():
         try:
-            return yaml.safe_load(element)
+            return  yaml.safe_load(element) 
         except yaml.YAMLError as e:
             print(f"Error parsing YAML element: {e}")
         try:
@@ -18,9 +20,6 @@ def _handle_single_element(element):
             print(f"Error handling None or invalid YAML element: {e}")
     return None
 
-
-
-
 def elements_to_course(elements):
     course = {
         'modules': []
@@ -28,32 +27,47 @@ def elements_to_course(elements):
     modules = []
     lessons = []
     exercises = []
+    module_weight = 0
+    lesson_weight = 0
+    exercise_weight = 0
     current_module = {
-        "lessons": []
     }
     current_lesson = {
-        "exercises": []
     }
     for e in elements:
         element_type = e.get('type', 'exercise')
         if element_type == 'course':
             course.update(e)
         elif element_type == 'module':
-            current_lesson['exercises'] = exercises
-            lessons.append(current_lesson)
-            current_module['lessons'] = lessons
-            modules.append(current_module)
-            current_lesson = {}
-            lessons = []
-            exercises = []
+            module_weight += 1
+            if current_lesson or len(exercises) > 0:
+                module_weight = current_module.get('weight', module_weight)
+                current_lesson['exercises'] = exercises
+                lessons.append(current_lesson)
+                current_module['lessons'] = lessons
+                modules.append(current_module)
+                current_lesson = {}
+                lessons = []
+                exercises = []
+                lesson_weight = 0
+                exercise_weight = 0
             current_module = e
+            current_module['weight'] = module_weight
             current_module['lessons'] = []
         elif element_type == 'lesson':
-            current_lesson['exercises'] = exercises
-            lessons.append(current_lesson)
-            exercises = []
+            lesson_weight += 1
+            if current_lesson or len(exercises) > 0:
+                lesson_weight = current_lesson.get('weight', lesson_weight)
+                current_lesson['weight'] = lesson_weight
+                current_lesson['exercises'] = exercises
+                lessons.append(current_lesson)
+                exercises = []
+                exercise_weight = 0
             current_lesson = e
         elif element_type == 'exercise':
+            exercise_weight += 1
+            exercise_weight = e.get('weight', exercise_weight)
+            e['weight'] = exercise_weight
             exercises.append(e)
     current_lesson['exercises'] = exercises
     current_module['lessons'] = lessons
@@ -96,7 +110,9 @@ def load_course_from_file(file_path):
 
 
 if __name__ == "__main__":
-    file_path = "/Users/davidle/dev/tutorial/poly-all-desgin/content/example_course1.yaml"
+    file_path = "/Users/davidle/dev/tutorial/poly-all-desgin/content/example_course2.yaml"
     elements = load_course_from_file(file_path)
     course = elements_to_course(elements)
     _print_course(course)
+    with open('output_course.json', 'w') as json_file:
+        json.dump(course, json_file, indent=4)  

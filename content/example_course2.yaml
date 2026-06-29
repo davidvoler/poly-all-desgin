@@ -1,0 +1,194 @@
+---
+type: course
+title: Example Course
+description: This is an example course to demonstrate the structure of a course YAML file.
+lang: en
+to_lang: es
+---
+type: module
+title: Introduction to Example Course
+description: This module provides an overview of the example course and its objectives. 
+---
+type: lesson
+title: Lesson 1 -  Getting Started
+description: In this lesson, we will cover the basics of getting started with the example course.
+---
+type: question #optional - this is the default type if not specified
+question_type: single_choice
+sentence: Cuál es tu nombre?
+correct_options:
+- What is your name?
+incorrect_options:
+- What is your age?
+- Where do you live?
+- What is your phone number? 
+hint: Nombre is name in Spanish.
+weight: 1
+---
+question_type: description
+description: Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.
+---
+question_type: multiple_choice
+sentence: ¿Cuál de las siguientes opciones son frutas?
+correct_options:
+- Manzana
+- Plátano
+incorrect_options:
+- Zanahoria
+- Lechuga
+---
+question_type: annotated_sentence
+sentence: La casa es grande.
+annotations:
+  - word: casa
+    annotation: house 
+description: La case = the house - Casa is feminine in Spanish. 
+---
+question_type: words in sentence
+sentence: El perro corre rápido.
+correct_options:
+- corre
+- perro
+incorrect_options:
+- gato
+- lento
+---
+type: lesson
+title: Lesson 2  
+description: In this lesson, we will cover the basics of getting started with the example course.
+---
+type: question #optional - this is the default type if not specified
+question_type: single_choice
+sentence: Cuál es tu nombre?
+correct_options:
+- What is your name?
+incorrect_options:
+- What is your age?
+- Where do you live?
+- What is your phone number? 
+hint: Nombre is name in Spanish.
+weight: 1
+---
+question_type: description
+description: Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.
+---
+question_type: multiple_choice
+sentence: ¿Cuál de las siguientes opciones son frutas?
+correct_options:
+- Manzana
+- Plátano
+incorrect_options:
+- Zanahoria
+- Lechuga
+---
+question_type: annotated_sentence
+sentence: La casa es grande.
+annotations:
+  - word: casa
+    annotation: house 
+description: La case = the house - Casa is feminine in Spanish. 
+---
+type: lesson
+title: Lesson 3 
+description: lesson 3 description
+---
+type: question #optional - this is the default type if not specified
+question_type: single_choice
+sentence: Cuál es tu nombre?
+correct_options:
+- What is your name?
+incorrect_options:
+- What is your age?
+- Where do you live?
+- What is your phone number?
+hint: Nombre is name in Spanish.
+weight: 1
+---
+question_type: description
+description: Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.
+---
+question_type: multiple_choice
+sentence: ¿Cuál de las siguientes opciones son frutas?
+correct_options:
+- Manzana
+- Plátano
+incorrect_options:
+- Zanahoria
+- Lechuga
+---
+question_type: annotated_sentence
+sentence: La casa es grande.
+annotations:
+  - word: casa
+    annotation: house 
+description: La case = the house - Casa is feminine in Spanish. 
+---
+question_type: words in sentence
+sentence: El perro corre rápido.
+correct_options:
+- corre
+- perro
+incorrect_options:
+- gato
+- lento
+---
+type: module
+title: second module
+description: This module provides an overview of the example course and its objectives. 
+---
+type: lesson
+title: Lesson 1 - second module first lesson
+description: In this lesson, we will cover the basics of getting started with the example course.
+---
+question_type: description
+description: Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.
+---
+question_type: multiple_choice
+sentence: ¿Cuál de las siguientes opciones son frutas?
+correct_options:
+- Manzana
+- Plátano
+incorrect_options:
+- Zanahoria
+- Lechuga
+---
+question_type: annotated_sentence
+sentence: La casa es grande.
+annotations:
+  - word: casa
+    annotation: house 
+description: La case = the house - Casa is feminine in Spanish. 
+---
+question_type: words in sentence
+sentence: El perro corre rápido.
+correct_options:
+- corre
+- perro
+incorrect_options:
+- gato
+- lento
+---
+type: module
+title: module 3
+description: placeholder description
+---
+type: module
+title: module 4
+description: placeholder description
+---
+type: module
+title: module 4
+description: placeholder description
+---
+type: module
+title: module 5
+description: placeholder description
+---
+type: module
+title: module 6
+description: placeholder description
+---
+type: module
+title: module 7
+description: placeholder description
+---
