@@ -831015,3 +831015,1295 @@ ruby_text:
   - ruby: アレ
     text: あれ
 annotations: []
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110765
+exercise_id: 1165279
+exercise_type: simple
+sentence: あれは何ですか。
+options:
+- text: זה מושלם.
+- text: מה זה?
+  correct: true
+- text: הוא מדהים!
+audio: /ja/jpn/jpn_2f9257a707171f23dc476056c5736b94a94221c5.mp3
+word1: あれ
+word2: null
+word3: null
+sentence_id: 1084665297
+to_sentence_id: 509150628
+explanation: null
+weight: 9
+created_at: 2026-06-04 15:38:09.713062
+updated_at: 2026-06-04 15:38:09.713062
+sentence_alt3: アレ
+sentence_alt1: あれ
+sentence_alt2: are
+ruby_text:
+  romanji:
+  - ruby: are
+    text: あれ
+  hiragana:
+  - text: あれ
+  katakana:
+  - ruby: アレ
+    text: あれ
+annotations: []
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110765
+exercise_id: 1165280
+exercise_type: simple
+sentence: あれは何ですか。
+options:
+- text: זה מה שמגיע לנו.
+- text: מה זה הדבר הזה?
+  correct: true
+- text: מה סכום המינימום להימור?
+audio: /ja/jpn/jpn_2f9257a707171f23dc476056c5736b94a94221c5.mp3
+word1: あれ
+word2: null
+word3: null
+sentence_id: 1084665297
+to_sentence_id: 380349205
+explanation: null
+weight: 10
+created_at: 2026-06-04 15:38:09.713284
+updated_at: 2026-06-04 15:38:09.713284
+sentence_alt3: アレ
+sentence_alt1: あれ
+sentence_alt2: are
+ruby_text:
+  romanji:
+  - ruby: are
+    text: あれ
+  hiragana:
+  - text: あれ
+  katakana:
+  - ruby: アレ
+    text: あれ
+annotations: []
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110765
+exercise_id: 1165281
+exercise_type: simple
+sentence: あれは何ですか。
+options:
+- text: מה הדבר הזה?
+  correct: true
+- text: מה הדבר שלמדנו?
+- text: מה מספר האורחים?
+- text: קילקלתי את זה?
+audio: /ja/jpn/jpn_2f9257a707171f23dc476056c5736b94a94221c5.mp3
+word1: あれ
+word2: null
+word3: null
+sentence_id: 1084665297
+to_sentence_id: 2705323464
+explanation: null
+weight: 11
+created_at: 2026-06-04 15:38:09.713530
+updated_at: 2026-06-04 15:38:09.713530
+sentence_alt3: アレ
+sentence_alt1: あれ
+sentence_alt2: are
+ruby_text:
+  romanji:
+  - ruby: are
+    text: あれ
+  hiragana:
+  - text: あれ
+  katakana:
+  - ruby: アレ
+    text: あれ
+annotations: []
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110765
+exercise_id: 1165282
+exercise_type: simple
+sentence: あれは何ですか。
+options:
+- text: מה זה?
+  correct: true
+- text: זה כל כך עסיסי.
+- text: איזה סרט?
+audio: /ja/jpn/jpn_2f9257a707171f23dc476056c5736b94a94221c5.mp3
+word1: あれ
+word2: null
+word3: null
+sentence_id: 1084665297
+to_sentence_id: 509150628
+explanation: null
+weight: 12
+created_at: 2026-06-04 15:38:09.713771
+updated_at: 2026-06-04 15:38:09.713771
+sentence_alt3: アレ
+sentence_alt1: あれ
+sentence_alt2: are
+ruby_text:
+  romanji:
+  - ruby: are
+    text: あれ
+  hiragana:
+  - text: あれ
+  katakana:
+  - ruby: アレ
+    text: あれ
+annotations: []
+---
+type: lesson
+lesson_id: 110766
+course_id: 38
+module_id: 1533
+title: 'Lesson 8: そんな'
+description: null
+words: null
+weight: 8
+annotations: null
+ruby_text1: null
+ruby_text2: null
+ruby_text3: null
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165283
+exercise_type: simple
+sentence: そんな
+options:
+- text: לוּחַ
+- text: אכל
+- text: כָּזֶה
+  correct: true
+audio: /ja/ja/ja_male_ja-JP-NaokiNeural_85f40ba5dd7d515227d23f6963.mp3
+word1: そんな
+word2: null
+word3: null
+sentence_id: 609812211
+to_sentence_id: 1090495141
+explanation: null
+weight: 1
+created_at: 2026-06-04 15:38:09.714208
+updated_at: 2026-06-04 15:38:09.714208
+sentence_alt3: ソンナ
+sentence_alt1: そんな
+sentence_alt2: sonna
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  hiragana:
+  - text: そんな
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+annotations:
+- word: そんな
+  translation: כָּזֶה
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165284
+exercise_type: simple
+sentence: そんなものだよ。
+options:
+- text: תזהרי מהדבורים.
+- text: זה רגיל.
+  correct: true
+- text: שב במקומך.
+- text: הקבצים אינם.
+audio: /ja/jpn/jpn_df6aebc69622e2439920aef3e031806fb747806a.mp3
+word1: そんな
+word2: もの
+word3: のだ
+sentence_id: 3511001517
+to_sentence_id: 1332596064
+explanation: null
+weight: 2
+created_at: 2026-06-04 15:38:09.714402
+updated_at: 2026-06-04 15:38:09.714402
+sentence_alt3: ソンナモノノダ
+sentence_alt1: そんなもののだ
+sentence_alt2: sonna mono noda
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: mono
+    text: もの
+  - ruby: noda
+    text: のだ
+  hiragana:
+  - text: そんな
+  - text: もの
+  - text: のだ
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: モノ
+    text: もの
+  - ruby: ノダ
+    text: のだ
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: もの
+  translation: דְבָרִים
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165285
+exercise_type: simple
+sentence: そんなことないよ。
+options:
+- text: משהו לא נכון.
+- text: זה ילד כלבבי.
+- text: זה לא נכון.
+  correct: true
+- text: יש פה מלון.
+audio: /ja/jpn/jpn_559d2ca00e589716962d5639e9c55966770cc9a7.mp3
+word1: そんな
+word2: こと
+word3: ない
+sentence_id: 1912104995
+to_sentence_id: 3605487536
+explanation: null
+weight: 3
+created_at: 2026-06-04 15:38:09.714614
+updated_at: 2026-06-04 15:38:09.714614
+sentence_alt3: ソンナコトナイ
+sentence_alt1: そんなことない
+sentence_alt2: sonna koto nai
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: koto
+    text: こと
+  - ruby: nai
+    text: ない
+  hiragana:
+  - text: そんな
+  - text: こと
+  - text: ない
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: コト
+    text: こと
+  - ruby: ナイ
+    text: ない
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: ない
+  translation: לא
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165286
+exercise_type: simple
+sentence: そんなことないよ。
+options:
+- text: זה ילד כלבבי.
+- text: זה לא נכון.
+  correct: true
+- text: זה לא בשבילך.
+audio: /ja/jpn/jpn_559d2ca00e589716962d5639e9c55966770cc9a7.mp3
+word1: そんな
+word2: こと
+word3: ない
+sentence_id: 1912104995
+to_sentence_id: 3605487536
+explanation: null
+weight: 4
+created_at: 2026-06-04 15:38:09.714829
+updated_at: 2026-06-04 15:38:09.714829
+sentence_alt3: ソンナコトナイ
+sentence_alt1: そんなことない
+sentence_alt2: sonna koto nai
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: koto
+    text: こと
+  - ruby: nai
+    text: ない
+  hiragana:
+  - text: そんな
+  - text: こと
+  - text: ない
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: コト
+    text: こと
+  - ruby: ナイ
+    text: ない
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: ない
+  translation: לא
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165287
+exercise_type: simple
+sentence: そんなことないよ。
+options:
+- text: תן בי אמון.
+- text: יש פה מלון.
+- text: משהו לא נכון.
+- text: זה לא נכון.
+  correct: true
+audio: /ja/jpn/jpn_559d2ca00e589716962d5639e9c55966770cc9a7.mp3
+word1: そんな
+word2: こと
+word3: ない
+sentence_id: 1912104995
+to_sentence_id: 3605487536
+explanation: null
+weight: 5
+created_at: 2026-06-04 15:38:09.715105
+updated_at: 2026-06-04 15:38:09.715105
+sentence_alt3: ソンナコトナイ
+sentence_alt1: そんなことない
+sentence_alt2: sonna koto nai
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: koto
+    text: こと
+  - ruby: nai
+    text: ない
+  hiragana:
+  - text: そんな
+  - text: こと
+  - text: ない
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: コト
+    text: こと
+  - ruby: ナイ
+    text: ない
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: ない
+  translation: לא
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165288
+exercise_type: simple
+sentence: そんなにじゃないよ。
+options:
+- text: לא כל כך.
+  correct: true
+- text: אני אוהב את ליל כל הקדושים.
+- text: כל כך הרבה מה ללמוד.
+- text: חה חה, גם אני!
+audio: /ja/ja/ja_female_ja-JP-NanamiNeural_0d41a66b523eb916a4015780fc.mp3
+word1: そんな
+word2: じゃ
+word3: ない
+sentence_id: 910320758
+to_sentence_id: 3392386449
+explanation: null
+weight: 6
+created_at: 2026-06-04 15:38:09.715359
+updated_at: 2026-06-04 15:38:09.715359
+sentence_alt3: ソンナジャナイ
+sentence_alt1: そんなじゃない
+sentence_alt2: sonna ja nai
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: ja
+    text: じゃ
+  - ruby: nai
+    text: ない
+  hiragana:
+  - text: そんな
+  - text: じゃ
+  - text: ない
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: ジャ
+    text: じゃ
+  - ruby: ナイ
+    text: ない
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: じゃ
+  translation: טוֹב
+- word: ない
+  translation: לא
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165289
+exercise_type: simple
+sentence: 私もそんな気がする。
+options:
+- text: תחזיקי את זה ככה.
+- text: גם אני חושבת ככה.
+  correct: true
+- text: גם טום ראה זאת.
+audio: /ja/jpn/jpn_65c43592a97f3d640a5ee4b9c64439422b04dfe7.mp3
+word1: そんな
+word2: 気
+word3: する
+sentence_id: 289752300
+to_sentence_id: 4198318218
+explanation: null
+weight: 7
+created_at: 2026-06-04 15:38:09.715605
+updated_at: 2026-06-04 15:38:09.715605
+sentence_alt3: ソンナキスル
+sentence_alt1: そんなきする
+sentence_alt2: sonna ki suru
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: ki
+    text: 気
+  - ruby: suru
+    text: する
+  hiragana:
+  - text: そんな
+  - ruby: き
+    text: 気
+  - text: する
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: キ
+    text: 気
+  - ruby: スル
+    text: する
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: 気
+  translation: אֲוִיר
+- word: する
+  translation: יהיה
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165290
+exercise_type: simple
+sentence: そんなことしないよ。
+options:
+- text: אינני עושה את זה.
+  correct: true
+- text: אינני יכול ממש להתלונן.
+- text: אינני מבטיחה להם הצלחה.
+audio: /ja/jpn/jpn_a11b1aa45014d8c42f841da22728a11f1bf18cae.mp3
+word1: そんな
+word2: こと
+word3: し
+sentence_id: 2450287874
+to_sentence_id: 2771104140
+explanation: null
+weight: 8
+created_at: 2026-06-04 15:38:09.715833
+updated_at: 2026-06-04 15:38:09.715833
+sentence_alt3: ソンナコトシ
+sentence_alt1: そんなことし
+sentence_alt2: sonna koto shi
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: koto
+    text: こと
+  - ruby: shi
+    text: し
+  hiragana:
+  - text: そんな
+  - text: こと
+  - text: し
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: コト
+    text: こと
+  - ruby: シ
+    text: し
+annotations:
+- word: そんな
+  translation: כָּזֶה
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165291
+exercise_type: simple
+sentence: そんなのありえないよ。
+options:
+- text: לא הייתי יכול לטעות יותר.
+- text: לא יכול להיות שזה אמיתי.
+  correct: true
+- text: לא נראה שאף אחד שמע.
+audio: /ja/jpn/jpn_58a63c79e95a0b95617291448d00760298827cf7.mp3
+word1: そんな
+word2: え
+word3: あり
+sentence_id: 1063124689
+to_sentence_id: 3160900875
+explanation: null
+weight: 9
+created_at: 2026-06-04 15:38:09.716067
+updated_at: 2026-06-04 15:38:09.716067
+sentence_alt3: ソンナアリエ
+sentence_alt1: そんなありえ
+sentence_alt2: sonna ari e
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  - ruby: ari
+    text: あり
+  - ruby: e
+    text: え
+  hiragana:
+  - text: そんな
+  - text: あり
+  - text: え
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+  - ruby: アリ
+    text: あり
+  - ruby: エ
+    text: え
+annotations:
+- word: そんな
+  translation: כָּזֶה
+- word: え
+  translation: תְמוּנָה
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110766
+exercise_id: 1165292
+exercise_type: simple
+sentence: 何がそんなに大事なの?
+options:
+- text: זו אני!
+- text: מה העניין?
+  correct: true
+- text: זה גנוב.
+audio: /ja/ja/ja_male_ja-JP-NaokiNeural_46d1dc95a1ff85465174dbc26e.mp3
+word1: そんな
+word2: null
+word3: null
+sentence_id: 1899437976
+to_sentence_id: 802732282
+explanation: null
+weight: 10
+created_at: 2026-06-04 15:38:09.716328
+updated_at: 2026-06-04 15:38:09.716328
+sentence_alt3: ソンナ
+sentence_alt1: そんな
+sentence_alt2: sonna
+ruby_text:
+  romanji:
+  - ruby: sonna
+    text: そんな
+  hiragana:
+  - text: そんな
+  katakana:
+  - ruby: ソンナ
+    text: そんな
+annotations:
+- word: そんな
+  translation: כָּזֶה
+---
+type: lesson
+lesson_id: 110767
+course_id: 38
+module_id: 1533
+title: 'Lesson 17: はあ'
+description: null
+words: null
+weight: 17
+annotations: null
+ruby_text1: null
+ruby_text2: null
+ruby_text3: null
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165294
+exercise_type: simple
+sentence: ペンはある？
+options:
+- text: יש מקומות שמורים?
+- text: יש לך עט?
+  correct: true
+- text: יש לי עט.
+- text: יש לכם עט?
+audio: /ja/jpn/jpn_4226c7388a6546af45fac7f2b71fd1f776822725.mp3
+word1: はあ
+word2: ペン
+word3: ある
+sentence_id: 942071801
+to_sentence_id: 2932979468
+explanation: null
+weight: 2
+created_at: 2026-06-04 15:38:09.716981
+updated_at: 2026-06-04 15:38:09.716981
+sentence_alt3: ペンハアアル
+sentence_alt1: ぺんはあある
+sentence_alt2: pen haa aru
+ruby_text:
+  romanji:
+  - ruby: pen
+    text: ペン
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: ぺん
+    text: ペン
+  - text: はあ
+  - text: ある
+  katakana:
+  - text: ペン
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165293
+exercise_type: simple
+sentence: 熱はあるの？
+options:
+- text: יש לך חום?
+  correct: true
+- text: יש לתום הוצאות.
+- text: יש לכם אוזניות?
+audio: /ja/jpn/jpn_6800b6d3e5bffac3f4de00aa4f9956e8da97bfc5.mp3
+word1: はあ
+word2: 熱
+word3: ある
+sentence_id: 1738748171
+to_sentence_id: 515777527
+explanation: null
+weight: 1
+created_at: 2026-06-04 15:38:09.716793
+updated_at: 2026-06-04 15:38:09.716793
+sentence_alt3: ネツハアアル
+sentence_alt1: ねつはあある
+sentence_alt2: netsu haa aru
+ruby_text:
+  romanji:
+  - ruby: netsu
+    text: 熱
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: ねつ
+    text: 熱
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: ネツ
+    text: 熱
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: 熱
+  translation: חום
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165295
+exercise_type: simple
+sentence: 材料はある？
+options:
+- text: דע מאיפה מגיעים המרכיבים.
+- text: יש לך חיות מחמד?
+- text: יש לך את המצרכים?
+  correct: true
+- text: אני אביא את המצרכים.
+audio: /ja/ja/ja_male_ja-JP-NaokiNeural_1d476c70a9b223f2e35fdb845c.mp3
+word1: はあ
+word2: 材料
+word3: ある
+sentence_id: 3796116724
+to_sentence_id: 924275958
+explanation: null
+weight: 3
+created_at: 2026-06-04 15:38:09.717207
+updated_at: 2026-06-04 15:38:09.717207
+sentence_alt3: ザイリョウハアアル
+sentence_alt1: ざいりょうはあある
+sentence_alt2: zairyou haa aru
+ruby_text:
+  romanji:
+  - ruby: zairyou
+    text: 材料
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: ざいりょう
+    text: 材料
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: ザイリョウ
+    text: 材料
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: 材料
+  translation: חוֹמֶר
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165296
+exercise_type: simple
+sentence: 熱はあるの？
+options:
+- text: מה זה שם?
+- text: יש לך חום?
+  correct: true
+- text: האם זה דם?
+audio: /ja/jpn/jpn_6800b6d3e5bffac3f4de00aa4f9956e8da97bfc5.mp3
+word1: はあ
+word2: 熱
+word3: ある
+sentence_id: 1738748171
+to_sentence_id: 515777527
+explanation: null
+weight: 4
+created_at: 2026-06-04 15:38:09.717481
+updated_at: 2026-06-04 15:38:09.717481
+sentence_alt3: ネツハアアル
+sentence_alt1: ねつはあある
+sentence_alt2: netsu haa aru
+ruby_text:
+  romanji:
+  - ruby: netsu
+    text: 熱
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: ねつ
+    text: 熱
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: ネツ
+    text: 熱
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: 熱
+  translation: חום
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165297
+exercise_type: simple
+sentence: 庭はあるの？
+options:
+- text: לְבַלוֹת בַּנְעִימִים!
+- text: יש לך גינה?
+  correct: true
+- text: רק אדמת גינה רגילה צריכה להיות בסדר.
+audio: /ja/ja/ja_female_ja-JP-NanamiNeural_0644b097a8b23cdf4506e4052e.mp3
+word1: はあ
+word2: 庭
+word3: ある
+sentence_id: 3808983805
+to_sentence_id: 2687035335
+explanation: null
+weight: 5
+created_at: 2026-06-04 15:38:09.717706
+updated_at: 2026-06-04 15:38:09.717706
+sentence_alt3: ニワハアアル
+sentence_alt1: にわはあある
+sentence_alt2: niwa haa aru
+ruby_text:
+  romanji:
+  - ruby: niwa
+    text: 庭
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: にわ
+    text: 庭
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: ニワ
+    text: 庭
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165298
+exercise_type: simple
+sentence: ご飯はあるの？
+options:
+- text: יש לך אורז?
+  correct: true
+- text: יש לנו די.
+- text: יש לנו צרכים.
+audio: /ja/jpn/jpn_d17584f6d3ad6a5e96ae9a402fde82e19e3f9da0.mp3
+word1: はあ
+word2: ご飯
+word3: ある
+sentence_id: 4142335319
+to_sentence_id: 4021616894
+explanation: null
+weight: 6
+created_at: 2026-06-04 15:38:09.717930
+updated_at: 2026-06-04 15:38:09.717930
+sentence_alt3: ゴメシハアアル
+sentence_alt1: めしはあある
+sentence_alt2: gomeshi haa aru
+ruby_text:
+  romanji:
+  - ruby: gomeshi
+    text: ご飯
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: めし
+    text: ご飯
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: ゴメシ
+    text: ご飯
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165299
+exercise_type: simple
+sentence: お米はあるの？
+options:
+- text: יש לך זִקְפָּה?
+- text: יש לנו די.
+- text: יש לנו דירה.
+- text: יש לך אורז?
+  correct: true
+audio: /ja/jpn/jpn_6c844a396bd78020d7e0cd2ecf1de522bf243cf7.mp3
+word1: はあ
+word2: 米
+word3: ある
+sentence_id: 3632452616
+to_sentence_id: 4021616894
+explanation: null
+weight: 7
+created_at: 2026-06-04 15:38:09.718166
+updated_at: 2026-06-04 15:38:09.718166
+sentence_alt3: コメハアアル
+sentence_alt1: こめはあある
+sentence_alt2: kome haa aru
+ruby_text:
+  romanji:
+  - ruby: kome
+    text: 米
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: こめ
+    text: 米
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: コメ
+    text: 米
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165300
+exercise_type: simple
+sentence: ご飯はあるの？
+options:
+- text: יש לי דעה.
+- text: יש לכם אורז?
+  correct: true
+- text: יש לך סרטן.
+audio: /ja/jpn/jpn_d17584f6d3ad6a5e96ae9a402fde82e19e3f9da0.mp3
+word1: はあ
+word2: ご飯
+word3: ある
+sentence_id: 4142335319
+to_sentence_id: 2960072808
+explanation: null
+weight: 8
+created_at: 2026-06-04 15:38:09.718397
+updated_at: 2026-06-04 15:38:09.718397
+sentence_alt3: ゴメシハアアル
+sentence_alt1: めしはあある
+sentence_alt2: gomeshi haa aru
+ruby_text:
+  romanji:
+  - ruby: gomeshi
+    text: ご飯
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: めし
+    text: ご飯
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: ゴメシ
+    text: ご飯
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165301
+exercise_type: recognize
+sentence: お米はあるの？
+options:
+- text: ある
+  correct: true
+- text: 一
+- text: 元気
+- text: 明日
+- text: 米
+  correct: true
+- text: みたい
+- text: はあ
+  correct: true
+- text: 思い
+audio: /ja/jpn/jpn_6c844a396bd78020d7e0cd2ecf1de522bf243cf7.mp3
+word1: はあ
+word2: 米
+word3: ある
+sentence_id: 3632452616
+to_sentence_id: 2960072808
+explanation: null
+weight: 9
+created_at: 2026-06-04 15:38:09.718645
+updated_at: 2026-06-04 15:38:09.718645
+sentence_alt3: コメハアアル
+sentence_alt1: こめはあある
+sentence_alt2: kome haa aru
+ruby_text:
+  romanji:
+  - ruby: kome
+    text: 米
+  - ruby: haa
+    text: はあ
+  - ruby: aru
+    text: ある
+  hiragana:
+  - ruby: こめ
+    text: 米
+  - text: はあ
+  - text: ある
+  katakana:
+  - ruby: コメ
+    text: 米
+  - ruby: ハア
+    text: はあ
+  - ruby: アル
+    text: ある
+annotations:
+- word: ある
+  translation: מְסוּיָם
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110767
+exercise_id: 1165302
+exercise_type: simple
+sentence: 熱はありますか。
+options:
+- text: דמעות נשרו מעיניו.
+- text: יש לך חום?
+  correct: true
+- text: יש במקפיא גלידה.
+- text: יש לתום הוצאות.
+audio: /ja/jpn/jpn_1297a4e8f56c69a19bb3defc3852103c6f396306.mp3
+word1: はあ
+word2: 熱
+word3: あり
+sentence_id: 3448003164
+to_sentence_id: 515777527
+explanation: null
+weight: 10
+created_at: 2026-06-04 15:38:09.718882
+updated_at: 2026-06-04 15:38:09.718882
+sentence_alt3: ネツハアアリ
+sentence_alt1: ねつはああり
+sentence_alt2: netsu haa ari
+ruby_text:
+  romanji:
+  - ruby: netsu
+    text: 熱
+  - ruby: haa
+    text: はあ
+  - ruby: ari
+    text: あり
+  hiragana:
+  - ruby: ねつ
+    text: 熱
+  - text: はあ
+  - text: あり
+  katakana:
+  - ruby: ネツ
+    text: 熱
+  - ruby: ハア
+    text: はあ
+  - ruby: アリ
+    text: あり
+annotations:
+- word: 熱
+  translation: חום
+---
+type: lesson
+lesson_id: 110768
+course_id: 38
+module_id: 1533
+title: 'Lesson 24: 家族'
+description: null
+words: null
+weight: 24
+annotations: null
+ruby_text1: null
+ruby_text2: null
+ruby_text3: null
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110768
+exercise_id: 1165303
+exercise_type: simple
+sentence: 家族
+options:
+- text: אוהב
+- text: שׁוּלְחָן כְּתִיבָה
+- text: כַּמוּבָן
+- text: משפחות
+  correct: true
+audio: /ja/ja/ja_male_ja-JP-DaichiNeural_152500212188af8ce6955a5bc0.mp3
+word1: 家族
+word2: null
+word3: null
+sentence_id: 2259505143
+to_sentence_id: 646883183
+explanation: null
+weight: 1
+created_at: 2026-06-04 15:38:09.719336
+updated_at: 2026-06-04 15:38:09.719336
+sentence_alt3: カゾク
+sentence_alt1: かぞく
+sentence_alt2: kazoku
+ruby_text:
+  romanji:
+  - ruby: kazoku
+    text: 家族
+  hiragana:
+  - ruby: かぞく
+    text: 家族
+  katakana:
+  - ruby: カゾク
+    text: 家族
+annotations:
+- word: 家族
+  translation: משפחות
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110768
+exercise_id: 1165304
+exercise_type: simple
+sentence: 大家族
+options:
+- text: תוכנית נהדרת
+- text: תנוחה מועדפת
+- text: משפחה גדולה
+  correct: true
+- text: לא הדקדוק
+audio: /ja/ja/ja-JP-NanamiNeural_2fe99614250d6ba0c90667f99f51fa.mp3
+word1: 家族
+word2: null
+word3: null
+sentence_id: 2090920028
+to_sentence_id: 835353059
+explanation: null
+weight: 2
+created_at: 2026-06-04 15:38:09.719622
+updated_at: 2026-06-04 15:38:09.719622
+sentence_alt3: カゾク
+sentence_alt1: かぞく
+sentence_alt2: kazoku
+ruby_text:
+  romanji:
+  - ruby: kazoku
+    text: 家族
+  hiragana:
+  - ruby: かぞく
+    text: 家族
+  katakana:
+  - ruby: カゾク
+    text: 家族
+annotations:
+- word: 家族
+  translation: משפחות
+---
+type: exercise
+course_id: 38
+module_id: 1533
+lesson_id: 110768
+exercise_id: 1165305
+exercise_type: simple
+sentence: 家族。
+options:
+- text: כֵּן,
+- text: עַד
+- text: מִשׁפָּחָה
+  correct: true
+audio: /ja/ja/ja_female_ja-JP-ShioriNeural_5ded8ce69d740f2052c1a7711c.mp3
+word1: 家族
+word2: null
+word3: null
+sentence_id: 3520582607
+to_sentence_id: 1989431375
+explanation: null
+weight: 3
+created_at: 2026-06-04 15:38:09.719845
+updated_at: 2026-06-04 15:38:09.719845
+sentence_alt3: カゾク
+sentence_alt1: かぞく
+sentence_alt2: kazoku
+ruby_text:
+  romanji:
+  - ruby: kazoku
+    text: 家族
+  hiragana:
+  - ruby: かぞく
+    text: 家族
+  katakana:
+  - ruby: カゾク
+    text: 家族
+annotations:
+- word: 家族
+  translation: משפחות
