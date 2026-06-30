@@ -5,7 +5,7 @@ import asyncio
 
 EXERCISE_FIELDS_TO_REMOVE = ['course_id', 'exercise_id', 'lesson_id','module_id', 'created_at', 'updated_at']
 MODULE_FIELDS_TO_REMOVE = ['module_id', 'course_id', 'created_at', 'updated_at']
-LESSON_FIELDS_TO_REMOVE = ['lesson_id', 'module_id', 'created_at', 'updated_at']
+LESSON_FIELDS_TO_REMOVE = ['lesson_id', 'module_id','course_id', 'created_at', 'updated_at']
 COURSE_FIELDS_TO_REMOVE = ['course_id', 'created_at', 'updated_at']
 
 def _remove_fields_and_nulls(data: dict, fields: list):
@@ -31,8 +31,9 @@ async def _export_lesson_data(lesson: dict, file):
     file.write("type: lesson\n")
     file.write(lesson_yaml)
     file.write("---\n")
-    sql = "SELECT * FROM course_simple.exercise WHERE lesson_id = %s"
+    sql = "SELECT * FROM course_simple.exercise WHERE lesson_id = %s order by weight"
     exercises = await get_query_results(sql, (lesson_id,))
+    print(f"Found {len(exercises)} exercises for lesson ID {lesson_id}")
     for exercise in exercises:
         await _export_exercise_data(exercise, file)
 
@@ -44,8 +45,9 @@ async def _export_module_data(module: dict, file):
     file.write("type: module\n")
     file.write(module_yaml)
     file.write("---\n")
-    sql = "SELECT * FROM course_simple.lesson WHERE module_id = %s"
+    sql = "SELECT * FROM course_simple.lesson WHERE module_id = %s order by weight"
     lessons = await get_query_results(sql, (module_id,))
+    print(f"Found {len(lessons)} lessons for module ID {module_id}")
     for lesson in lessons:
         await _export_lesson_data(lesson, file)
 async def _export_course_data(course: dict, file):
@@ -55,16 +57,13 @@ async def _export_course_data(course: dict, file):
     file.write("type: course\n")
     file.write(course_yaml)
     file.write("---\n")
-    sql = "SELECT * FROM course_simple.module WHERE course_id = %s"
+    sql = "SELECT * FROM course_simple.module WHERE course_id = %s order by weight"
     modules = await get_query_results(sql, (course_id,))
     print(f"Found {len(modules)} modules for course ID {course_id}")
     for module in modules:
         print(f"Exporting module: {module}")
         await _export_module_data(module, file)
     
-
-
-
 
 async def export_course_from_db(course_id: int, target_file: str):
     # Fetch course data from the database

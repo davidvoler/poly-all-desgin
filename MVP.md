@@ -33,7 +33,7 @@
   - valid yaml sections 
   - single file for course 
   - course in order 
-- [] export from db to yaml - should skip some fields  
+- [v] export from db to yaml - should skip some fields  
 
 
 ### Branch step-11-mvp-phase-4-create-with-ai
