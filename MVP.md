@@ -26,8 +26,15 @@
 
 ### Branch step-11-mvp-phase-3-formats
 - [v] Simplify format creation - move the fields into a separate file - create a map of fields 
-- [] Simplify import 
-- [] Export - save as import 
+- [v] Simplify import 
+- [v] Export - save as import 
+- [v] export db->yaml 
+- Changes
+  - valid yaml sections 
+  - single file for course 
+  - course in order 
+- [] export from db to yaml - should skip some fields  
+
 
 ### Branch step-11-mvp-phase-4-create-with-ai
 - [] Research MCP - How it can be used and how - Does it apply to polyglots case - do we need an MCP server
