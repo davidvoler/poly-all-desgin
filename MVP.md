@@ -34,6 +34,20 @@
   - single file for course 
   - course in order 
 - [v] export from db to yaml - should skip some fields  
+- [v] find a solution or course and course version
+
+
+### Branch step-11-mvp-phase-3.1-full-editing-process
+Now it is time for some tedious work - that not all of it can be automatic or done with claude  
+
+- [] flutten routes/modeuls on server side  
+- [] create a course - verify that is is saved to the current user and current school
+- [] verify that you that courses are created with current user_id/school_id
+
+
+#### optional
+- [] consider renaming schema course_simple to course
+- [] simplify and edit state in course 
 
 
 ### Branch step-11-mvp-phase-4-create-with-ai

@@ -188,5 +188,23 @@ CREATE TABLE user_data.preference (
 );
 DROP TABLE IF EXISTS user_data.preference;
 
--- DONE
 alter table course_simple.course add column school_id int8 default 1;
+
+alter table course_simple.course add column active_revision int8 default 0;
+
+create table course_simple.course_revision (
+	revision_id serial4 primary key,
+	course_id int8 NOT NULL,
+	revision_number int4 default 1 ,
+	title varchar(255) NOT NULL,
+	user_id varchar(100) NULL,
+	school_id int8 DEFAULT 1 NULL,
+	description text NULL,
+	"level" int2 DEFAULT 0 NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	lesson_count int2 DEFAULT 0 NULL,
+	metadata jsonb NULL
+);
+
+-- DONE
