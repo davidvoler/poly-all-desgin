@@ -107,7 +107,10 @@ def load_course_from_file(file_path):
     return parse_elements(elements)
     
 
-
+def course_from_file(file_path):
+    elements = load_course_from_file(file_path)
+    course = elements_to_course(elements)
+    return course
 
 if __name__ == "__main__":
     file_path = "/Users/davidle/dev/tutorial/poly-all-desgin/content/example_course2.yaml"

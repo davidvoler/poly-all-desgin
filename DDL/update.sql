@@ -189,3 +189,4 @@ CREATE TABLE user_data.preference (
 DROP TABLE IF EXISTS user_data.preference;
 
 -- DONE
+alter table course_simple.course add column school_id int8 default 1;
