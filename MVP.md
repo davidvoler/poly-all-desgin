@@ -43,11 +43,29 @@ Now it is time for some tedious work - that not all of it can be automatic or do
 - [v] flutten routes/modeuls on server side
 ^ not exactly flat as we do have a sub folder edit in models routes and utils
 - [v] create new  routes. models and utils for edit 
-- [] create the scenario in a readme - so we do not implement every possible option  
+- [v] create the scenario in a readme - so we do not implement every possible option  
+
+
+## mvp-phase-3.1.1-full-editor
+We will currently skip this options as it is a lot of work. 
+
+## mvp-phase-3.1.2-import-export
+This is for now the chosen option 
+We currently skip revision
+- [] make a list of the needed endpoint
+get /edit/course/ - list of courses I can view in editor
+post /edit/course/course_id - change course elements - like title. description, publish, un-publish
+post /edit/course/import - import a course  
+post /edit/course/export - export s course 
+post /edit/course/delete - export s course 
+get /edit/module/course_id - show a list of modules per course 
+get /edit/lesson/course_id/module_id - show a list of modules
+get /edit/lesson/course_id/module_id/lesson_id - show lessons details
 
 
 - [] create a course - verify that is is saved to the current user and current school
 - [] verify that you that courses are created with current user_id/school_id
+## mvp-phase-3.1.3-partial 
 
 
 #### optional
