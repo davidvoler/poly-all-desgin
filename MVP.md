@@ -40,7 +40,12 @@
 ### Branch step-11-mvp-phase-3.1-full-editing-process
 Now it is time for some tedious work - that not all of it can be automatic or done with claude  
 
-- [] flutten routes/modeuls on server side  
+- [v] flutten routes/modeuls on server side
+^ not exactly flat as we do have a sub folder edit in models routes and utils
+- [v] create new  routes. models and utils for edit 
+- [] create the scenario in a readme - so we do not implement every possible option  
+
+
 - [] create a course - verify that is is saved to the current user and current school
 - [] verify that you that courses are created with current user_id/school_id
 
