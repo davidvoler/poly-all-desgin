@@ -303,10 +303,10 @@ class AuthApi {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/auth/get_or_create_user',
       data: {
-        if (idToken != null) 'id_token': idToken,
-        if (email != null) 'email': email,
-        if (name != null) 'name': name,
-        if (sub != null) 'sub': sub,
+        'id_token': ?idToken,
+        'email': ?email,
+        'name': ?name,
+        'sub': ?sub,
       },
       options: Options(
         // Make sure web sends/receives the HttpOnly cookie.
