@@ -16,14 +16,19 @@ from routers import (
     achievement, 
     auth_new,
 )
-from school.routes import school as school_routes, users as school_users 
-from editor.routes import (
-    upload_course,
-    export_course,
-    editor_courses,
-    review as editor_review,
-    lesson as editor_lesson,
+from routers.edit import  (
+    edit_course,
+    course_import,
+    course_export,
 )
+
+from school.routes import school as school_routes, users as school_users 
+# from editor.routes import (
+#     upload_course,
+#     editor_courses,
+#     review as editor_review,
+#     lesson as editor_lesson,
+# )
 enable_docs =  bool(os.environ.get("ENABLE_DOCS", ""))
 app = FastAPI(
     docs_url="/docs" if enable_docs else None, 
@@ -114,21 +119,13 @@ app.include_router(school_routes.router,
 app.include_router(school_users.router,
     prefix="/api/v1/school_users",
     tags=["school_users"])
-
-
-# --- Course editor (dashboard-side, not the public app) -----------------------
-app.include_router(upload_course.router,
-    prefix="/api/v1/editor/upload",
-    tags=["editor_upload"])
-app.include_router(export_course.router,
-    prefix="/api/v1/editor/export",
-    tags=["editor_export"])
-app.include_router(editor_courses.router,
-    prefix="/api/v1/editor/courses",
-    tags=["editor_courses"])
-app.include_router(editor_review.router,
-    prefix="/api/v1/editor/review",
-    tags=["editor_review"])
-app.include_router(editor_lesson.router,
-    prefix="/api/v1/editor/lesson",
-    tags=["editor_lesson"])
+#-- new editor routes for course import/export
+app.include_router(edit_course.router,
+    prefix="/api/v1/edit/course",
+    tags=["edit_course"])   
+app.include_router(course_import.router,
+    prefix="/api/v1/edit/course/import",
+    tags=["import_course"])
+app.include_router(course_export.router,
+    prefix="/api/v1/edit/course/export",
+    tags=["export_course"]) 

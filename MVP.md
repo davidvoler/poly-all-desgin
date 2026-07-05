@@ -54,15 +54,12 @@ This is for now the chosen option
 We currently skip revision
 - [v] make a list of the needed endpoint
 get /edit/courses - list of courses I can view in editor
-
 get /edit/course/course_id - change course elements - like title. description, publish, un-publish
 post /edit/course/course_id - change course elements - like title. description, publish, un-publish
+delete /edit/course/delete -  delete course 
+
 post /edit/course/import - import a course  
-post /edit/course/export - export s course 
-post /edit/course/delete - export s course 
-get /edit/module/course_id - show a list of modules per course 
-get /edit/lesson/course_id/module_id - show a list of modules
-get /edit/lesson/course_id/module_id/lesson_id - show lessons details
+post /edit/course/export - export a course 
 
 
 - [] create a course - verify that is is saved to the current user and current school

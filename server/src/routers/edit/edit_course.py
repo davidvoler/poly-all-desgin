@@ -44,3 +44,14 @@ async def create_course(course: Course, school_user: SchoolUser  = Depends(curre
         return None
     return course
     
+@router.delete("/course/{course_id}")
+async def delete_course(course_id:int, school_user: SchoolUser  = Depends(current_school_user)):
+    #delete a course
+    sql = """DELETE FROM course_simple.course 
+    WHERE course_id = %s and user_id = %s and school_id = %s"""
+    try:
+        results = await get_query_results(sql, (course_id, school_user.user_id, school_user.school_id))
+    except Exception as e:
+        print(f"Error deleting course: {e}")
+        return {"success": False, "message": str(e)}
+    return {"success": True, "message": f"Course {course_id} deleted successfully"}

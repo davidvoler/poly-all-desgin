@@ -1,6 +1,5 @@
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
-from server.src.editor.routes.upload_course import _write_document_tree
 from utils.auth_deps import current_school_user
 from models.auth import SchoolUser
 from models.edit.course import CourseImport

@@ -8,8 +8,11 @@ class Course(BaseModel):
     to_lang: str | None = ''
     tags: list[str] | None = []
     metadata: dict | None = {}
-
-
+    published: bool | None = False
 
 class CourseImport(BaseModel):
     document: str
+
+
+class CourseExport(BaseModel):
+    course_id: int
