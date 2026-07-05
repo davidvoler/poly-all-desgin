@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
 import '../theme.dart';
+import '../widgets/ai_prompt_controls.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
 import '../widgets/terms_gate.dart';
@@ -14,34 +15,16 @@ import '../widgets/terms_gate.dart';
 /// prompt, run it in any LLM, then upload the result on the Courses page.
 /// Phase 2 (not built): a backend `/editor/ai/generate` that runs the LLM
 /// and enrichment server-side. See CREATE_COURSE_WITH_AI.md.
+///
+/// See also create_course_steps_page.dart — the step-by-step variant
+/// (words first, then module by module) that shares the exercise-type
+/// catalogue and form controls from widgets/ai_prompt_controls.dart.
 class CreateCoursePage extends ConsumerStatefulWidget {
   const CreateCoursePage({super.key});
 
   @override
   ConsumerState<CreateCoursePage> createState() => _CreateCoursePageState();
 }
-
-/// A supported exercise type and how it maps onto the import format. Keys
-/// match `exercise_type` in content/example_course.yaml exactly.
-class _ExerciseType {
-  final String key;
-  final String label;
-  final String hint;
-  const _ExerciseType(this.key, this.label, this.hint);
-}
-
-const List<_ExerciseType> _exerciseTypes = [
-  _ExerciseType('single_choice', 'Single choice',
-      'One correct option, the rest distractors.'),
-  _ExerciseType('multiple_choice', 'Multiple choice',
-      'More than one correct option in the same question.'),
-  _ExerciseType('description', 'Description',
-      'A free-text note or context — no question or answer.'),
-  _ExerciseType('annotated_sentence', 'Annotated sentence',
-      'A sentence with per-word annotations (meaning/notes).'),
-  _ExerciseType('words_in_sentence', 'Words in sentence',
-      'Pick the words that do (and don\'t) appear in the sentence.'),
-];
 
 class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   final _title = TextEditingController(text: 'Japanese for Hebrew Speakers');
@@ -130,68 +113,18 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
     return l == 'ja' || l == 'japanese' || l.contains('日本');
   }
 
-  /// Per-type YAML snippet shown in the prompt, matching the exact shape
-  /// content/example_course.yaml uses (and utils/course_import.py parses).
-  String _typeExample(String key) {
-    switch (key) {
-      case 'single_choice':
-        return '''type: exercise
-exercise_type: single_choice
-sentence: <sentence in ${_language.text.trim()}>
-options:
-- text: <correct answer in ${_studentLanguage.text.trim()}>
-  correct: true
-- text: <distractor>
-- text: <distractor>
-hint: <optional short hint>
-weight: <order within the lesson>''';
-      case 'multiple_choice':
-        return '''type: exercise
-exercise_type: multiple_choice
-sentence: <question or sentence in ${_language.text.trim()}>
-options:
-- text: <correct option>
-  correct: true
-- text: <correct option>
-  correct: true
-- text: <distractor>
-weight: <order within the lesson>''';
-      case 'description':
-        return '''type: exercise
-exercise_type: description
-description: <free-text note or context — no sentence or options>
-weight: <order within the lesson>''';
-      case 'annotated_sentence':
-        return '''type: exercise
-exercise_type: annotated_sentence
-sentence: <sentence in ${_language.text.trim()}>
-annotations:
-  - word: <a word from the sentence>
-    annotation: <its meaning or a short note>
-description: <optional short note>
-weight: <order within the lesson>''';
-      case 'words_in_sentence':
-        return '''type: exercise
-exercise_type: words_in_sentence
-sentence: <sentence in ${_language.text.trim()}>
-correct_options:
-  - <word that appears in the sentence>
-incorrect_options:
-  - <word that does not appear in the sentence>
-weight: <order within the lesson>''';
-      default:
-        return '';
-    }
-  }
-
   /// Assemble the LLM prompt from the current form state. Embeds the
   /// content/example_course.yaml shape so the model returns text the
   /// import endpoint (POST /api/v1/edit/course/import/) can parse as-is.
   String _buildPrompt() {
     final selected =
-        _exerciseTypes.where((t) => _types.contains(t.key)).toList();
-    final examples = (selected.isEmpty ? _exerciseTypes : selected)
-        .map((t) => _typeExample(t.key))
+        kExerciseTypes.where((t) => _types.contains(t.key)).toList();
+    final examples = (selected.isEmpty ? kExerciseTypes : selected)
+        .map((t) => exerciseTypeExample(
+              t.key,
+              lang: _language.text.trim(),
+              studentLang: _studentLanguage.text.trim(),
+            ))
         .join('\n---\n');
 
     final enrich = <String>[
@@ -327,9 +260,9 @@ class _FormColumn extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _GroupLabel('Basics'),
+              const GroupLabel('Basics'),
               const SizedBox(height: 12),
-              _CourseField(
+              CourseField(
                 controller: state._title,
                 label: 'Course title',
                 onChanged: rebuild,
@@ -338,7 +271,7 @@ class _FormColumn extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _CourseField(
+                    child: CourseField(
                       controller: state._language,
                       label: 'Teaches (language)',
                       hint: 'Japanese or ja',
@@ -347,7 +280,7 @@ class _FormColumn extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _CourseField(
+                    child: CourseField(
                       controller: state._studentLanguage,
                       label: 'Student speaks',
                       hint: 'Hebrew or he',
@@ -357,7 +290,7 @@ class _FormColumn extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              _CourseField(
+              CourseField(
                 controller: state._topic,
                 label: 'Topic / focus',
                 hint: 'e.g. travel, greetings, business',
@@ -366,7 +299,7 @@ class _FormColumn extends StatelessWidget {
               const SizedBox(height: 16),
               Text('LEVEL', style: DashText.sectionLabel(size: 10)),
               const SizedBox(height: 6),
-              _Segment(
+              Segment(
                 options: _CreateCoursePageState._levels,
                 selected: state._level,
                 onSelect: (v) => state.apply(() => state._level = v),
@@ -380,9 +313,9 @@ class _FormColumn extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _GroupLabel('Structure'),
+              const GroupLabel('Structure'),
               const SizedBox(height: 12),
-              _Stepper(
+              NumberStepper(
                 label: 'Modules',
                 value: state._modules,
                 min: 1,
@@ -390,7 +323,7 @@ class _FormColumn extends StatelessWidget {
                 onChanged: (v) => state.apply(() => state._modules = v),
               ),
               const SizedBox(height: 10),
-              _Stepper(
+              NumberStepper(
                 label: 'Lessons / module',
                 value: state._lessonsPerModule,
                 min: 1,
@@ -399,7 +332,7 @@ class _FormColumn extends StatelessWidget {
                     state.apply(() => state._lessonsPerModule = v),
               ),
               const SizedBox(height: 10),
-              _Stepper(
+              NumberStepper(
                 label: 'Exercises / lesson',
                 value: state._exercisesPerLesson,
                 min: 1,
@@ -408,7 +341,7 @@ class _FormColumn extends StatelessWidget {
                     state.apply(() => state._exercisesPerLesson = v),
               ),
               const SizedBox(height: 10),
-              _Stepper(
+              NumberStepper(
                 label: 'Min words / sentence',
                 value: state._minWordsPerSentence,
                 min: 1,
@@ -417,7 +350,7 @@ class _FormColumn extends StatelessWidget {
                     state.apply(() => state._minWordsPerSentence = v),
               ),
               const SizedBox(height: 10),
-              _Stepper(
+              NumberStepper(
                 label: 'Max words / sentence',
                 value: state._maxWordsPerSentence,
                 min: state._minWordsPerSentence,
@@ -459,14 +392,14 @@ class _FormColumn extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _GroupLabel('Exercise mix'),
+              const GroupLabel('Exercise mix'),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final t in _exerciseTypes)
-                    _TypeChip(
+                  for (final t in kExerciseTypes)
+                    TypeChip(
                       type: t,
                       selected: state._types.contains(t.key),
                       onTap: () => state.apply(() {
@@ -486,15 +419,15 @@ class _FormColumn extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _GroupLabel('Enrichment'),
+              const GroupLabel('Enrichment'),
               const SizedBox(height: 6),
-              _SwitchRow(
+              SwitchRow(
                 title: 'Generate audio',
                 subtitle: 'Synthesise a recording per sentence (Azure / Google).',
                 value: state._audio,
                 onChanged: (v) => state.apply(() => state._audio = v),
               ),
-              _SwitchRow(
+              SwitchRow(
                 title: 'Generate Japanese ruby',
                 subtitle: state._isJapanese
                     ? 'Add furigana after import (backend utility).'
@@ -513,7 +446,7 @@ class _FormColumn extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _GroupLabel('Additional instructions'),
+              const GroupLabel('Additional instructions'),
               const SizedBox(height: 6),
               Text(
                 'Optional — folded into the prompt as-is (tone, topics to '
@@ -573,7 +506,7 @@ class _PromptColumn extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: _GroupLabel('AI prompt')),
+              const Expanded(child: GroupLabel('AI prompt')),
               GhostButton(
                 label: 'Copy',
                 leading: Icons.copy_all_outlined,
@@ -768,305 +701,3 @@ class _PasteImport extends StatelessWidget {
   }
 }
 
-// ── Small form widgets ──────────────────────────────────────────────────
-
-class _GroupLabel extends StatelessWidget {
-  final String text;
-  const _GroupLabel(this.text);
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-          letterSpacing: -0.2,
-        ),
-      );
-}
-
-class _CourseField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String? hint;
-  final VoidCallback onChanged;
-  const _CourseField({
-    required this.controller,
-    required this.label,
-    required this.onChanged,
-    this.hint,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label.toUpperCase(), style: DashText.sectionLabel(size: 10)),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          style: const TextStyle(fontSize: 13, color: Colors.white),
-          // Rebuild the page (and the live prompt) on every keystroke.
-          onChanged: (_) => onChanged(),
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: hint,
-            hintStyle: TextStyle(fontSize: 13, color: DashColors.w(0.35)),
-            filled: true,
-            fillColor: DashColors.w(0.04),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(
-              borderRadius: DashRadii.input,
-              borderSide: BorderSide(color: DashColors.w(0.14)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: DashRadii.input,
-              borderSide: BorderSide(color: DashColors.w(0.14)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: DashRadii.input,
-              borderSide:
-                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  final List<String> options;
-  final String selected;
-  final ValueChanged<String> onSelect;
-  const _Segment({
-    required this.options,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final o in options) ...[
-          if (o != options.first) const SizedBox(width: 8),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => onSelect(o),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: o == selected
-                      ? DashColors.brand.withValues(alpha: 0.30)
-                      : DashColors.w(0.06),
-                  borderRadius: DashRadii.pill,
-                  border: Border.all(
-                    color: o == selected
-                        ? DashColors.brand
-                        : DashColors.w(0.16),
-                  ),
-                ),
-                child: Text(
-                  o,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white
-                        .withValues(alpha: o == selected ? 1 : 0.75),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _Stepper extends StatelessWidget {
-  final String label;
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int> onChanged;
-  const _Stepper({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        _RoundStep(
-          icon: Icons.remove,
-          onTap: value > min ? () => onChanged(value - 1) : null,
-        ),
-        SizedBox(
-          width: 36,
-          child: Text(
-            '$value',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        _RoundStep(
-          icon: Icons.add,
-          onTap: value < max ? () => onChanged(value + 1) : null,
-        ),
-      ],
-    );
-  }
-}
-
-class _RoundStep extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  const _RoundStep({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return Material(
-      color: DashColors.w(enabled ? 0.10 : 0.04),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Container(
-          width: 30,
-          height: 30,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: DashColors.w(0.16)),
-          ),
-          child: Icon(icon,
-              size: 16,
-              color: Colors.white.withValues(alpha: enabled ? 1 : 0.30)),
-        ),
-      ),
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  final _ExerciseType type;
-  final bool selected;
-  final VoidCallback? onTap;
-  const _TypeChip({required this.type, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: selected
-            ? DashColors.brand.withValues(alpha: 0.28)
-            : DashColors.w(disabled ? 0.03 : 0.06),
-        borderRadius: DashRadii.chip,
-        border: Border.all(
-          color: selected ? DashColors.brand : DashColors.w(0.16),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            selected ? Icons.check_circle : Icons.add_circle_outline,
-            size: 15,
-            color: disabled
-                ? DashColors.w(0.30)
-                : (selected ? DashColors.brand : DashColors.w(0.55)),
-          ),
-          const SizedBox(width: 7),
-          Text(
-            type.label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: disabled ? 0.40 : 1),
-            ),
-          ),
-        ],
-      ),
-    );
-    return Tooltip(
-      message: type.hint,
-      child: disabled ? chip : GestureDetector(onTap: onTap, child: chip),
-    );
-  }
-}
-
-class _SwitchRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-  const _SwitchRow({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onChanged != null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: enabled ? 1 : 0.5),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: DashColors.brand,
-          ),
-        ],
-      ),
-    );
-  }
-}

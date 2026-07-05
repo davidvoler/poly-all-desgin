@@ -74,20 +74,34 @@ async def _insert_module(module: dict, course_id: int):
         
 
 
+def _coerce_level(level) -> int | None:
+    """`course_simple.course.level` is a smallint, but course documents
+    commonly carry a CEFR string (A1..C1) or a word (beginner) here — only
+    keep it when it's actually numeric, otherwise store NULL rather than
+    let the INSERT fail."""
+    if isinstance(level, bool):
+        return None
+    if isinstance(level, int):
+        return level
+    if isinstance(level, str) and level.strip().isdigit():
+        return int(level.strip())
+    return None
+
+
 async def _insert_course(course: dict, users_id: int, school_id: int):
     sql = """
         INSERT INTO course_simple.course (title, description, lang, to_lang, user_id, school_id,
-        level, metadata 
+        level, metadata
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING course_id
     """
-    values = (course.get('title'), 
-              course.get('description'), 
-              course.get('lang'), 
-              course.get('to_lang'), 
-              users_id, school_id, 
-              course.get('level'), 
+    values = (course.get('title'),
+              course.get('description'),
+              course.get('lang'),
+              course.get('to_lang'),
+              users_id, school_id,
+              _coerce_level(course.get('level')),
               json.dumps(course.get('metadata', {})))
     result = await get_query_results(sql, values)
     if not result or len(result) == 0:

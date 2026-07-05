@@ -81,15 +81,15 @@ post /edit/course/export - export a course
 
 - [v] Verify that prompt code is correct with the new update. 
 - [v] Verify that  prompt generator is dynamic
-- [] Add the new format: content/example_course.yaml
-- [] Add all current question types
-  - [] single_choice
-  - [] multiple_choice
-  - [] description
-  - [] annotated_sentence
-  - [] words_in_sentence
-- [] Add words limits (min.max) words in sentences for each module 
-- [] Add free text section to the generation - so user can add here own comments to the prompt. 
+- [v] Add the new format: content/example_course.yaml
+- [v] Add all current question types
+  - [v] single_choice
+  - [v] multiple_choice
+  - [v] description
+  - [v] annotated_sentence
+  - [v] words_in_sentence
+- [v] Add words limits (min.max) words in sentences for each module 
+- [v] Add free text section to the generation - so user can add here own comments to the prompt. 
 
 #### Build in steps 
 - [] Suggest to do it in 2 steps 
@@ -99,6 +99,25 @@ post /edit/course/export - export a course
 - [] Names - Suggest a a combination of 70% native names and 30% common names 
 
 #### Phase - build on movie subtitles 
+
+We have the following endpoint on the server side
+
+api/v1/edit/youtube/info/{video_id}
+in which we get info an a video id
+
+api/v1/edit/youtube/download_subtitle
+in which we ask the server to download the subtitles in a given language, break it to lines with start and length,break into sentences and list unique words 
+
+With that we can go to AI and ask to generate a module/lesson on this video
+We can also do it in steps - so if movie is 60 minutes we can break it into 5 minutes steps and have the 30 steps. 
+
+
+- [] we are currently implementing the solution only for youtube movies 
+- [] first step would be to download the subtitles 
+- [] the movie should have subtitles in the language the course is teaching. 
+- []  if the youtube film does not have subtitles for the learned language - we can not continue - and we ask the user to select another movie 
+- []  after we have downloaded the movies 
+
 
 
 #### Phase - build on existing text 

@@ -7,6 +7,7 @@ import 'config/app_config.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/create_course_page.dart';
+import 'pages/create_course_steps_page.dart';
 import 'pages/create_school_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
@@ -101,6 +102,8 @@ class DashboardApp extends StatelessWidget {
         // Create with AI is always reachable for any signed-in user; the
         // page gates content authoring behind the terms when unsigned.
         '/create-course': (_) => const _Guarded(child: CreateCoursePage()),
+        '/create-course-steps': (_) =>
+            const _Guarded(child: CreateCourseStepsPage()),
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
         '/editors': (_) => const _Guarded(

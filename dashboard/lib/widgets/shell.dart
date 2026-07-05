@@ -44,6 +44,12 @@ const List<NavItem> kNavItems = [
       label: 'Create with AI',
       icon: Icons.auto_awesome_outlined,
       route: '/create-course'),
+  // Step-by-step variant: plan vocabulary first, then author module by
+  // module — see MVP.md's "Build in steps" checklist.
+  NavItem(
+      label: 'Create with AI (steps)',
+      icon: Icons.auto_awesome_motion_outlined,
+      route: '/create-course-steps'),
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),
