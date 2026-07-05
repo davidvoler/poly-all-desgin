@@ -1,4 +1,8 @@
+import 'dart:convert' show Utf8Decoder;
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
@@ -10,22 +14,15 @@ import '../widgets/data_table.dart';
 import '../widgets/search_field.dart';
 import '../widgets/shell.dart';
 
-/// The server no longer has a zip-import endpoint (course editing was
-/// simplified to publish/unpublish + single-document import/export, see
-/// server/EDITOR.md) — upload entry points stay visible but disabled
-/// until a zip-import route exists again.
-const String kZipUploadDisabledMessage =
-    "Zip import isn't available yet — use Create with AI.";
-
 class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The course list is shown to everyone. Creating new content still
-    // requires accepting the editor Terms & Conditions first: when the
-    // server reports permissions['signed_terms'] == true we show a notice
-    // pointing to where the terms can be accepted.
+    // The course list is shown to everyone. Uploading new content, though,
+    // requires accepting the editor Terms & Conditions first: when the server
+    // reports permissions['signed_terms'] == true we disable the upload CTAs
+    // and show a notice pointing to where the terms can be accepted.
     final needsTerms = ref.watch(meProvider).value?.needsTerms ?? false;
     return DashboardShell(
       title: 'Courses',
@@ -36,17 +33,24 @@ class CoursesPage extends ConsumerWidget {
           leading: Icons.auto_awesome_outlined,
           onTap: () => Navigator.pushNamed(context, '/create-course'),
         ),
-        Tooltip(
-          message: kZipUploadDisabledMessage,
-          child: Opacity(
-            opacity: 0.5,
-            child: PrimaryButton(
-              label: 'Upload course',
-              leading: Icons.file_upload_outlined,
-              onTap: null,
+        if (needsTerms)
+          Tooltip(
+            message: 'Accept the editor terms to upload courses',
+            child: Opacity(
+              opacity: 0.5,
+              child: PrimaryButton(
+                label: 'Upload course',
+                leading: Icons.file_upload_outlined,
+                onTap: null,
+              ),
             ),
+          )
+        else
+          PrimaryButton(
+            label: 'Upload course',
+            leading: Icons.file_upload_outlined,
+            onTap: () => _pickAndUploadYaml(context, ref),
           ),
-        ),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -55,7 +59,10 @@ class CoursesPage extends ConsumerWidget {
             const _TermsNotice(),
             const SizedBox(height: 14),
           ],
-          const _Dropzone(),
+          _Dropzone(
+            onBrowse:
+                needsTerms ? null : () => _pickAndUploadYaml(context, ref),
+          ),
           const SizedBox(height: 18),
           const _CoursesPanel(),
         ],
@@ -103,11 +110,97 @@ class _TermsNotice extends StatelessWidget {
   }
 }
 
+/// Reads a picked file's bytes as UTF-8 text and posts it to
+/// POST /api/v1/edit/course/import/ as-is — the server now expects a
+/// single YAML document (`type: course/module/lesson/exercise` sections
+/// separated by `---`, the same shape a course export produces), not a
+/// zip archive. Shared by the topbar CTA and the dropzone.
+Future<void> _pickAndUploadYaml(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+
+  // FileType.custom + allowedExtensions relies on the OS/browser
+  // recognizing the extension as a registered file type — macOS in
+  // particular often just hides files with unrecognized extensions
+  // (like .yaml) from the native picker instead of merely disabling
+  // them. Pick from all files instead and validate the extension here.
+  final result = await FilePicker.platform.pickFiles(
+    dialogTitle: 'Pick a course .yaml or .txt file',
+    type: FileType.any,
+    withData: true,
+  );
+  if (result == null || result.files.isEmpty) return;
+  final picked = result.files.first;
+  final ext = picked.extension?.toLowerCase();
+  if (ext != 'yaml' && ext != 'yml' && ext != 'txt') {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+            '${picked.name}: expected a .yaml, .yml, or .txt file'),
+      ),
+    );
+    return;
+  }
+  final bytes = picked.bytes;
+  if (bytes == null) return;
+
+  String document;
+  try {
+    document = const Utf8Decoder().convert(bytes);
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text('${picked.name} is not valid UTF-8 text: $e')),
+    );
+    return;
+  }
+
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text('Uploading ${picked.name}…'),
+      duration: const Duration(seconds: 60),
+    ),
+  );
+  try {
+    final courseId = await ref
+        .read(dashboardApiProvider)
+        .importCourseText(document: document);
+    ref.invalidate(editorCoursesProvider);
+    ref.invalidate(activityProvider);
+    ref.invalidate(schoolStatsProvider);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(courseId == null
+              ? 'Upload succeeded'
+              : 'Uploaded — created course #$courseId'),
+        ),
+      );
+  } catch (e, st) {
+    // Log the full error + stack to the console (flutter run terminal /
+    // browser DevTools) so a transient SnackBar isn't the only record.
+    debugPrint('Upload failed: $e\n$st');
+    final message = 'Upload failed: $e';
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          // SelectableText so the error can be highlighted; the Copy
+          // action puts the whole message on the clipboard in one tap.
+          content: SelectableText(message),
+          duration: const Duration(days: 1),
+          action: SnackBarAction(
+            label: 'Copy',
+            onPressed: () => Clipboard.setData(ClipboardData(text: message)),
+          ),
+        ),
+      );
+  }
+}
+
 class _Dropzone extends StatelessWidget {
-  /// The zip-import endpoint no longer exists server-side — this stays
-  /// as a visible placeholder (see [kZipUploadDisabledMessage]) until a
-  /// zip-import route comes back.
-  const _Dropzone();
+  /// Null disables the dropzone's Browse action (e.g. terms not yet accepted).
+  final VoidCallback? onBrowse;
+  const _Dropzone({required this.onBrowse});
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +230,7 @@ class _Dropzone extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Drag a course folder or .zip here',
+            'Drag a course .yaml or .txt file here',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -148,8 +241,8 @@ class _Dropzone extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 540),
             child: Text(
-              'Folder layout: course.txt at the top, then module<n>/lesson<n>/exercises.txt. '
-              'A working example lives at content/example_course.',
+              'A single YAML document: type: course/module/lesson/exercise '
+              'sections separated by "---" — the same shape Export produces.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
             ),
@@ -159,15 +252,12 @@ class _Dropzone extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Tooltip(
-                message: kZipUploadDisabledMessage,
-                child: const Opacity(
-                  opacity: 0.5,
-                  child: PrimaryButton(
-                    label: 'Browse files',
-                    leading: Icons.file_upload_outlined,
-                    onTap: null,
-                  ),
+              Opacity(
+                opacity: onBrowse == null ? 0.5 : 1,
+                child: PrimaryButton(
+                  label: 'Browse files',
+                  leading: Icons.file_upload_outlined,
+                  onTap: onBrowse,
                 ),
               ),
               const SizedBox(width: 8),
@@ -493,7 +583,8 @@ class _FormatHelpDialog extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Full spec: content/example_course/README.md.',
+                'A single YAML file — the same shape produced by exporting a '
+                'course from the Courses row menu.',
                 style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
               ),
               const SizedBox(height: 14),
@@ -502,65 +593,50 @@ class _FormatHelpDialog extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _section('Folder layout'),
-                      const _CodeBlock('''my-course/
-├── course.txt
-├── module1/
-│   ├── module.txt
-│   ├── lesson1/
-│   │   ├── lesson.txt
-│   │   └── exercises.txt
-│   └── lesson2/
-│       └── …
-└── module2/
-    └── …'''),
+                      _section('Shape'),
+                      _hint(
+                        'One or more sections separated by "---". Each '
+                        'section is plain YAML starting with a "type" key: '
+                        'course, module, lesson, or exercise — nested in '
+                        'that order.',
+                      ),
                       const SizedBox(height: 14),
-                      _section('course.txt'),
-                      const _CodeBlock('''name: Italian for English Speakers
+                      _section('Example'),
+                      const _CodeBlock('''type: course
+title: Italian for English Speakers
 description: Essential grammar + vocabulary.
-language: Italian
-student_languages: English'''),
-                      const SizedBox(height: 6),
-                      _hint(
-                        'language / student_languages accept ISO codes (it, en) '
-                        'or English names (Italian, English).',
-                      ),
-                      const SizedBox(height: 14),
-                      _section('module.txt / lesson.txt'),
-                      const _CodeBlock('''module: Introduction to Italian
-lesson: Greeting sentences'''),
-                      const SizedBox(height: 6),
-                      _hint(
-                        'Numeric suffix in the folder name (module01, '
-                        'lesson02) controls order.',
-                      ),
-                      const SizedBox(height: 14),
-                      _section('exercises.txt'),
-                      const _CodeBlock('''---
-Buona sera
-[+] Good evening
-[-] Good morning
-[-] How are you
---- Explanation
-In Italian the vowels often blend together.
+lang: it
+to_lang: en
 ---
-Buonanotte
-[-] Good evening
-[+] Good night'''),
+type: module
+title: Introduction to Italian
+description: Basics
+weight: 1
+---
+type: lesson
+title: Greetings
+description: Common greeting phrases
+weight: 1
+---
+type: exercise
+exercise_type: multiple_choice
+sentence: Buona sera
+options:
+  - Good evening
+  - Good morning
+weight: 1'''),
                       const SizedBox(height: 6),
                       _hint(
-                        '--- separates exercises. First non-blank line = the '
-                        'prompt. [+] = correct option, [-] = distractor. '
-                        '"--- Explanation" opens a free-text note (ends at '
-                        'the next ---).',
+                        'lang / to_lang are ISO codes. weight controls '
+                        'ordering within the parent. A course needs at '
+                        'least one module/lesson/exercise chain to import.',
                       ),
                       const SizedBox(height: 14),
                       _section('Round-trip'),
                       _hint(
                         'Export any course from the Courses row menu to get a '
-                        'course.yaml with this same content — handy for '
-                        'reviewing or backing up a course outside the '
-                        'dashboard.',
+                        'course.yaml with this same content — edit it '
+                        'locally, then upload it back here.',
                       ),
                     ],
                   ),
