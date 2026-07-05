@@ -61,11 +61,14 @@ delete /edit/course/delete -  delete course
 post /edit/course/import - import a course  
 post /edit/course/export - export a course 
 
+- [v] import course
+- [v] export course
 
-- [] create a course - verify that is is saved to the current user and current school
-- [] verify that you that courses are created with current user_id/school_id
+
+
+- [v] create a course - verify that is is saved to the current user and current school
+- [v] verify that you that courses are created with current user_id/school_id
 ## mvp-phase-3.1.3-partial 
-
 
 #### optional
 - [] consider renaming schema course_simple to course
@@ -73,6 +76,24 @@ post /edit/course/export - export a course
 
 
 ### Branch step-11-mvp-phase-4-create-with-ai
+
+
+#### Phase 1 prompt generation 
+- [v] Verify that prompt code is correct with the new update. 
+- [v] Verify that  prompt generator is dynamic
+- [] Add the new format 
+- [] Add all current question types 
+- [] Suggest to do it in 2 steps - first words selection than the actual module and course 
+- [] Maybe we can do it also module by module
+- [] Add words limits (min.max) for each module 
+- [] Add free text
+
+#### Phase 2 - the complete process 
+- [] Should we try with gemini api/claude api/others? 
+
+
+
+
 - [] Research MCP - How it can be used and how - Does it apply to polyglots case - do we need an MCP server
 - [] Implement the Dashboard create with AI - with or without MCP 
 

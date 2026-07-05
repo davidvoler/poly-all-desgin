@@ -607,6 +607,8 @@ title: Italian for English Speakers
 description: Essential grammar + vocabulary.
 lang: it
 to_lang: en
+level: 0
+status: draft
 ---
 type: module
 title: Introduction to Italian
@@ -623,7 +625,9 @@ exercise_type: multiple_choice
 sentence: Buona sera
 options:
   - Good evening
+    correct: true
   - Good morning
+  - Good night
 weight: 1'''),
                       const SizedBox(height: 6),
                       _hint(
