@@ -10,7 +10,7 @@ import '../widgets/terms_gate.dart';
 
 /// "Create with AI" — collects the shape of a course an editor wants and
 /// assembles a ready-to-run LLM prompt that targets our import format (see
-/// content/example_course/README.md). Phase 1 (this page): build + copy the
+/// content/example_course.yaml). Phase 1 (this page): build + copy the
 /// prompt, run it in any LLM, then upload the result on the Courses page.
 /// Phase 2 (not built): a backend `/editor/ai/generate` that runs the LLM
 /// and enrichment server-side. See CREATE_COURSE_WITH_AI.md.
@@ -21,31 +21,26 @@ class CreateCoursePage extends ConsumerStatefulWidget {
   ConsumerState<CreateCoursePage> createState() => _CreateCoursePageState();
 }
 
-/// A supported exercise type and how it maps onto the import format. Types
-/// the importer can't express yet are [supported] = false (shown, disabled).
+/// A supported exercise type and how it maps onto the import format. Keys
+/// match `exercise_type` in content/example_course.yaml exactly.
 class _ExerciseType {
   final String key;
   final String label;
   final String hint;
-  final bool supported;
-  const _ExerciseType(this.key, this.label, this.hint, {this.supported = true});
+  const _ExerciseType(this.key, this.label, this.hint);
 }
 
 const List<_ExerciseType> _exerciseTypes = [
-  _ExerciseType('single', 'Single option',
-      'One correct translation, the rest distractors.'),
-  _ExerciseType('multiple', 'Multiple correct',
-      'Several correct options in one question.'),
-  _ExerciseType('identify', 'Identify words',
-      'Pick the words that appear in the sentence.'),
-  _ExerciseType('explanation', 'Explanations',
-      'A short note shown after answering.'),
-  _ExerciseType('match', 'Word match',
-      'Format extension needed — not importable yet.',
-      supported: false),
-  _ExerciseType('alphabet', 'Learn alphabet',
-      'New exercise type needed — not importable yet.',
-      supported: false),
+  _ExerciseType('single_choice', 'Single choice',
+      'One correct option, the rest distractors.'),
+  _ExerciseType('multiple_choice', 'Multiple choice',
+      'More than one correct option in the same question.'),
+  _ExerciseType('description', 'Description',
+      'A free-text note or context — no question or answer.'),
+  _ExerciseType('annotated_sentence', 'Annotated sentence',
+      'A sentence with per-word annotations (meaning/notes).'),
+  _ExerciseType('words_in_sentence', 'Words in sentence',
+      'Pick the words that do (and don\'t) appear in the sentence.'),
 ];
 
 class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
@@ -60,11 +55,23 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   int _lessonsPerModule = 5;
   int _exercisesPerLesson = 8;
 
-  // Selected exercise-type keys (supported ones only).
-  final Set<String> _types = {'single', 'multiple', 'identify', 'explanation'};
+  // Sentence length guidance, passed to the LLM per module.
+  int _minWordsPerSentence = 3;
+  int _maxWordsPerSentence = 10;
+
+  // Selected exercise-type keys.
+  final Set<String> _types = {
+    'single_choice',
+    'multiple_choice',
+    'annotated_sentence',
+    'words_in_sentence',
+  };
 
   bool _audio = false;
   bool _ruby = false;
+
+  // Free-text instructions folded into the prompt as-is.
+  final _extraInstructions = TextEditingController();
 
   // Paste-and-import: the LLM output and the in-flight import state.
   final _pasted = TextEditingController();
@@ -79,12 +86,13 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
     _language.dispose();
     _studentLanguage.dispose();
     _topic.dispose();
+    _extraInstructions.dispose();
     _pasted.dispose();
     super.dispose();
   }
 
-  /// Import the pasted `=== path ===` document via the server text-import
-  /// endpoint, then jump to the new course's detail page.
+  /// Import the pasted YAML document via the server text-import endpoint,
+  /// then jump to the new course's detail page.
   Future<void> _importPasted() async {
     final doc = _pasted.text.trim();
     if (doc.isEmpty || _importing) return;
@@ -122,37 +130,80 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
     return l == 'ja' || l == 'japanese' || l.contains('日本');
   }
 
-  /// Assemble the LLM prompt from the current form state. Embeds a compact
-  /// version of the import-format spec so the model returns importable text.
+  /// Per-type YAML snippet shown in the prompt, matching the exact shape
+  /// content/example_course.yaml uses (and utils/course_import.py parses).
+  String _typeExample(String key) {
+    switch (key) {
+      case 'single_choice':
+        return '''type: exercise
+exercise_type: single_choice
+sentence: <sentence in ${_language.text.trim()}>
+options:
+- text: <correct answer in ${_studentLanguage.text.trim()}>
+  correct: true
+- text: <distractor>
+- text: <distractor>
+hint: <optional short hint>
+weight: <order within the lesson>''';
+      case 'multiple_choice':
+        return '''type: exercise
+exercise_type: multiple_choice
+sentence: <question or sentence in ${_language.text.trim()}>
+options:
+- text: <correct option>
+  correct: true
+- text: <correct option>
+  correct: true
+- text: <distractor>
+weight: <order within the lesson>''';
+      case 'description':
+        return '''type: exercise
+exercise_type: description
+description: <free-text note or context — no sentence or options>
+weight: <order within the lesson>''';
+      case 'annotated_sentence':
+        return '''type: exercise
+exercise_type: annotated_sentence
+sentence: <sentence in ${_language.text.trim()}>
+annotations:
+  - word: <a word from the sentence>
+    annotation: <its meaning or a short note>
+description: <optional short note>
+weight: <order within the lesson>''';
+      case 'words_in_sentence':
+        return '''type: exercise
+exercise_type: words_in_sentence
+sentence: <sentence in ${_language.text.trim()}>
+correct_options:
+  - <word that appears in the sentence>
+incorrect_options:
+  - <word that does not appear in the sentence>
+weight: <order within the lesson>''';
+      default:
+        return '';
+    }
+  }
+
+  /// Assemble the LLM prompt from the current form state. Embeds the
+  /// content/example_course.yaml shape so the model returns text the
+  /// import endpoint (POST /api/v1/edit/course/import/) can parse as-is.
   String _buildPrompt() {
-    final selected = _exerciseTypes
-        .where((t) => t.supported && _types.contains(t.key))
-        .toList();
-    final typeLines = selected.isEmpty
-        ? '- single option (one [+], rest [-])'
-        : selected.map((t) {
-            switch (t.key) {
-              case 'single':
-                return '- single option: one [+] correct, the rest [-] distractors';
-              case 'multiple':
-                return '- multiple correct: more than one [+] line';
-              case 'identify':
-                return '- identify words: options are candidate words; [+] for words that appear in the sentence';
-              case 'explanation':
-                return '- explanations: add a "--- Explanation" note after some exercises';
-              default:
-                return '- ${t.label}';
-            }
-          }).join('\n');
+    final selected =
+        _exerciseTypes.where((t) => _types.contains(t.key)).toList();
+    final examples = (selected.isEmpty ? _exerciseTypes : selected)
+        .map((t) => _typeExample(t.key))
+        .join('\n---\n');
 
     final enrich = <String>[
       if (_audio)
-        'Audio will be generated separately by the platform — do not include audio.',
+        'Audio will be generated separately by the platform — do not include audio fields.',
       if (_ruby && _isJapanese)
         'Japanese furigana (ruby) is added by the platform after import — write plain Japanese only.',
     ].join(' ');
 
-    return '''You are an expert language-course author. Write a complete course for our import format.
+    final extra = _extraInstructions.text.trim();
+
+    return '''You are an expert language-course author. Write a complete course as a single YAML document for our import format.
 
 Course to create:
 - Title: ${_title.text.trim()}
@@ -161,40 +212,41 @@ Course to create:
 - CEFR level: $_level
 - Focus: ${_topic.text.trim()}
 - Size: $_modules modules, $_lessonsPerModule lessons per module, ~$_exercisesPerLesson exercises per lesson.
+- Sentence length: every exercise sentence should be $_minWordsPerSentence to $_maxWordsPerSentence words long, in every module.
+${enrich.isEmpty ? '' : '- $enrich\n'}${extra.isEmpty ? '' : '\nAdditional instructions from the editor:\n$extra\n'}
+OUTPUT FORMAT — return ONE YAML document, no markdown fences, no commentary.
+It is a flat sequence of sections separated by a line containing only "---".
+Each section starts with a "type" key: course, module, lesson, or exercise.
+Nesting is implied by ORDER, not indentation: every module/lesson/exercise
+section belongs to the most recent section of the next-higher type above it
+— so a module's lessons (and their exercises) must all appear, in order,
+before the next module section starts.
+
+type: course
+title: <course title>
+description: <one-line blurb>
+lang: ${_language.text.trim()}
+to_lang: ${_studentLanguage.text.trim()}
+level: $_level
+---
+type: module
+title: <module 1 title>
+weight: 1
+---
+type: lesson
+title: <lesson 1 title>
+weight: 1
+---
+$examples
 
 Exercise types to use (vary them across lessons):
-$typeLines
-${enrich.isEmpty ? '' : '\n$enrich\n'}
-OUTPUT FORMAT — return ONE plain-text document with a header line before each
-file, exactly like this (no markdown, no commentary):
-
-=== course.txt ===
-name: <course title>
-description: <one-line blurb>
-language: ${_language.text.trim()}
-student_languages: ${_studentLanguage.text.trim()}
-
-=== module1/module.txt ===
-module: <module title>
-
-=== module1/lesson1/lesson.txt ===
-lesson: <lesson title>
-
-=== module1/lesson1/exercises.txt ===
----
-<prompt sentence in ${_language.text.trim()}>
-[+] <correct answer in ${_studentLanguage.text.trim()}>
-[-] <distractor>
-[-] <distractor>
---- Explanation
-<optional short note>
+${selected.isEmpty ? '- any of the types shown above' : selected.map((t) => '- ${t.key}: ${t.hint}').join('\n')}
 
 Rules:
-- Separate exercises with a line containing only ---.
-- The first non-blank line of each block is the prompt sentence.
-- Every exercise needs at least one [+]. Distractors are plausible but wrong.
-- Number folders module1..module$_modules and lesson1..lesson$_lessonsPerModule to control order.
-- Keep it natural and level-appropriate; avoid duplicate sentences.''';
+- Every module needs at least one lesson; every lesson needs at least one exercise.
+- weight controls order within the parent (module order, lesson order, exercise order) — number sequentially from 1.
+- Keep it natural and level-appropriate; avoid duplicate sentences.
+- Produce $_modules modules, $_lessonsPerModule lessons per module, and ~$_exercisesPerLesson exercises per lesson.''';
   }
 
   void _copyPrompt() {
@@ -355,6 +407,24 @@ class _FormColumn extends StatelessWidget {
                 onChanged: (v) =>
                     state.apply(() => state._exercisesPerLesson = v),
               ),
+              const SizedBox(height: 10),
+              _Stepper(
+                label: 'Min words / sentence',
+                value: state._minWordsPerSentence,
+                min: 1,
+                max: state._maxWordsPerSentence,
+                onChanged: (v) =>
+                    state.apply(() => state._minWordsPerSentence = v),
+              ),
+              const SizedBox(height: 10),
+              _Stepper(
+                label: 'Max words / sentence',
+                value: state._maxWordsPerSentence,
+                min: state._minWordsPerSentence,
+                max: 40,
+                onChanged: (v) =>
+                    state.apply(() => state._maxWordsPerSentence = v),
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -398,14 +468,12 @@ class _FormColumn extends StatelessWidget {
                   for (final t in _exerciseTypes)
                     _TypeChip(
                       type: t,
-                      selected: t.supported && state._types.contains(t.key),
-                      onTap: !t.supported
-                          ? null
-                          : () => state.apply(() {
-                                if (!state._types.add(t.key)) {
-                                  state._types.remove(t.key);
-                                }
-                              }),
+                      selected: state._types.contains(t.key),
+                      onTap: () => state.apply(() {
+                        if (!state._types.add(t.key)) {
+                          state._types.remove(t.key);
+                        }
+                      }),
                     ),
                 ],
               ),
@@ -435,6 +503,53 @@ class _FormColumn extends StatelessWidget {
                 onChanged: state._isJapanese
                     ? (v) => state.apply(() => state._ruby = v)
                     : null,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _GroupLabel('Additional instructions'),
+              const SizedBox(height: 6),
+              Text(
+                'Optional — folded into the prompt as-is (tone, topics to '
+                'avoid, specific vocabulary, etc.).',
+                style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: state._extraInstructions,
+                minLines: 2,
+                maxLines: 6,
+                style: const TextStyle(fontSize: 13, color: Colors.white),
+                onChanged: (_) => rebuild(),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText:
+                      'e.g. focus on restaurant vocabulary, avoid slang…',
+                  hintStyle: TextStyle(fontSize: 13, color: DashColors.w(0.35)),
+                  filled: true,
+                  fillColor: DashColors.w(0.04),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: DashRadii.input,
+                    borderSide: BorderSide(color: DashColors.w(0.14)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: DashRadii.input,
+                    borderSide: BorderSide(color: DashColors.w(0.14)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: DashRadii.input,
+                    borderSide: BorderSide(
+                        color: DashColors.brand.withValues(alpha: 0.55)),
+                  ),
+                ),
               ),
             ],
           ),
@@ -574,8 +689,8 @@ class _CostEstimate extends StatelessWidget {
   }
 }
 
-/// Paste the LLM's `=== path ===` output and import it straight into the
-/// catalogue (server text-import endpoint), skipping the zip round-trip.
+/// Paste the LLM's YAML output and import it straight into the catalogue
+/// via the server text-import endpoint.
 class _PasteImport extends StatelessWidget {
   final _CreateCoursePageState state;
   const _PasteImport({required this.state});
@@ -614,7 +729,7 @@ class _PasteImport extends StatelessWidget {
             style: const TextStyle(
                 fontSize: 12, fontFamily: 'monospace', color: Colors.white),
             decoration: InputDecoration(
-              hintText: '=== course.txt ===\nname: …',
+              hintText: 'type: course\ntitle: …',
               hintStyle: TextStyle(fontSize: 12, color: DashColors.w(0.30)),
               filled: true,
               fillColor: Colors.black.withValues(alpha: 0.28),

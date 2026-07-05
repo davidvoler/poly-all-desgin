@@ -74,21 +74,38 @@ post /edit/course/export - export a course
 - [] consider renaming schema course_simple to course
 - [] simplify and edit state in course 
 
-
 ### Branch step-11-mvp-phase-4-create-with-ai
 
 
 #### Phase 1 prompt generation 
+
 - [v] Verify that prompt code is correct with the new update. 
 - [v] Verify that  prompt generator is dynamic
-- [] Add the new format 
-- [] Add all current question types 
-- [] Suggest to do it in 2 steps - first words selection than the actual module and course 
-- [] Maybe we can do it also module by module
-- [] Add words limits (min.max) for each module 
-- [] Add free text
+- [] Add the new format: content/example_course.yaml
+- [] Add all current question types
+  - [] single_choice
+  - [] multiple_choice
+  - [] description
+  - [] annotated_sentence
+  - [] words_in_sentence
+- [] Add words limits (min.max) words in sentences for each module 
+- [] Add free text section to the generation - so user can add here own comments to the prompt. 
 
-#### Phase 2 - the complete process 
+#### Build in steps 
+- [] Suggest to do it in 2 steps 
+- [] first words selection than the actual module and course 
+- [] preview 
+- [] modules by modules
+- [] Names - Suggest a a combination of 70% native names and 30% common names 
+
+#### Phase - build on movie subtitles 
+
+
+#### Phase - build on existing text 
+
+
+
+#### Phase - the complete process 
 - [] Should we try with gemini api/claude api/others? 
 
 

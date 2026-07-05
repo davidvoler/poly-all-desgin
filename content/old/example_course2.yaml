@@ -1,6 +1,6 @@
 ---
 type: course
-title: Example Course
+title: 
 description: This is an example course to demonstrate the structure of a course YAML file.
 lang: en
 to_lang: es
