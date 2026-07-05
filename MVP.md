@@ -53,7 +53,9 @@ We will currently skip this options as it is a lot of work.
 This is for now the chosen option 
 We currently skip revision
 - [v] make a list of the needed endpoint
-get /edit/course/ - list of courses I can view in editor
+get /edit/courses - list of courses I can view in editor
+
+get /edit/course/course_id - change course elements - like title. description, publish, un-publish
 post /edit/course/course_id - change course elements - like title. description, publish, un-publish
 post /edit/course/import - import a course  
 post /edit/course/export - export s course 
