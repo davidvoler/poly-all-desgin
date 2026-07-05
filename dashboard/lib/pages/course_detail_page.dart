@@ -4,15 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../util/download.dart';
 import '../widgets/common.dart';
-import '../widgets/lesson_editor_dialog.dart';
 import '../widgets/shell.dart';
 
-/// Drill-in view for a single course. Loads in pages so a large course
-/// renders fast: the course head + a lightweight module list come first
-/// (no lessons), and each module fetches its own lessons on demand when
-/// expanded. This replaces the old single `/detail` round-trip that pulled
-/// every lesson up front.
+/// Drill-in view for a single course. Course editing was simplified
+/// server-side to title/description/publish-unpublish only (see
+/// server/EDITOR.md "option 2") — this is a flat metadata form, not a
+/// module/lesson tree (there's no server endpoint left to back one).
 class CourseDetailPage extends ConsumerWidget {
   const CourseDetailPage({super.key});
 
@@ -21,7 +20,6 @@ class CourseDetailPage extends ConsumerWidget {
     final arg = ModalRoute.of(context)?.settings.arguments;
     final courseId = arg is int ? arg : 0;
     final headAsync = ref.watch(courseHeadProvider(courseId));
-    final modulesAsync = ref.watch(courseModulesProvider(courseId));
     return DashboardShell(
       title: headAsync.value?.title.isNotEmpty == true
           ? headAsync.value!.title
@@ -61,107 +59,163 @@ class CourseDetailPage extends ConsumerWidget {
               ),
             );
           }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _CourseHeader(course: course),
-              const SizedBox(height: 22),
-              const HeadRow(label: 'Modules'),
-              modulesAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 28),
-                  child: Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    ),
-                  ),
-                ),
-                error: (e, _) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 28),
-                  child: Center(
-                    child: Text(
-                      'Could not load modules\n$e',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: DashColors.w(0.70)),
-                    ),
-                  ),
-                ),
-                data: (modules) {
-                  if (modules.isEmpty) return _empty();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final m in modules) ...[
-                        _ModuleCard(courseId: courseId, module: m),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                  );
-                },
-              ),
-            ],
-          );
+          return _CourseEditForm(course: course);
         },
-      ),
-    );
-  }
-
-  Widget _empty() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 28),
-      alignment: Alignment.center,
-      child: Text(
-        'No modules yet — re-upload a course archive to populate this.',
-        style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
       ),
     );
   }
 }
 
-class _CourseHeader extends StatelessWidget {
+class _CourseEditForm extends ConsumerStatefulWidget {
   final EditorCourse course;
-  const _CourseHeader({required this.course});
+  const _CourseEditForm({required this.course});
 
-  StatusPill _statusPill() {
-    switch (course.status) {
-      case CourseStatusWire.draft:
-        return const StatusPill(
-            label: 'Draft', kind: PillKind.muted, swatch: true);
-      case CourseStatusWire.review:
-        return const StatusPill(
-            label: 'In review', kind: PillKind.draft, swatch: true);
-      case CourseStatusWire.published:
-        return const StatusPill(
-            label: 'Published', kind: PillKind.active, swatch: true);
-      case CourseStatusWire.archived:
-        return const StatusPill(
-            label: 'Archived', kind: PillKind.error, swatch: true);
-      case CourseStatusWire.unknown:
-        return const StatusPill(
-            label: 'Unknown', kind: PillKind.muted, swatch: true);
+  @override
+  ConsumerState<_CourseEditForm> createState() => _CourseEditFormState();
+}
+
+class _CourseEditFormState extends ConsumerState<_CourseEditForm> {
+  late final _title = TextEditingController(text: widget.course.title);
+  late final _description =
+      TextEditingController(text: widget.course.description);
+  late bool _published = widget.course.published;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+    try {
+      await ref.read(dashboardApiProvider).updateCourse(
+            widget.course.copyWith(
+              title: _title.text.trim(),
+              description: _description.text.trim(),
+              published: _published,
+            ),
+          );
+      ref.invalidate(courseHeadProvider(widget.course.courseId));
+      ref.invalidate(editorCoursesProvider);
+      messenger.showSnackBar(const SnackBar(content: Text('Saved')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
-  StatusPill _accessPill() {
-    switch (course.access) {
-      case CourseAccessWire.public:
-        return const StatusPill(
-            label: 'Public', kind: PillKind.public, leading: Icons.public);
-      case CourseAccessWire.members:
-        return const StatusPill(
-            label: 'Members',
-            kind: PillKind.members,
-            leading: Icons.lock_outline);
-      case CourseAccessWire.unknown:
-        return const StatusPill(label: '—', kind: PillKind.muted);
+  Future<void> _export() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(
+      content: Text('Exporting ${widget.course.title}…'),
+      duration: const Duration(seconds: 30),
+    ));
+    try {
+      final bytes = await ref
+          .read(dashboardApiProvider)
+          .exportCourse(widget.course.courseId);
+      final filename = 'course_${widget.course.courseId}.yaml';
+      final saved = await saveBytes(filename: filename, bytes: bytes);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content:
+              Text(saved == null ? 'Export cancelled' : 'Saved $filename'),
+        ));
+    } catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: DashColors.darkBg,
+        title:
+            const Text('Delete course?', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'This permanently deletes "${widget.course.title}". '
+          'This cannot be undone.',
+          style: TextStyle(color: DashColors.w(0.70)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Delete', style: TextStyle(color: DashColors.red400)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await ref
+          .read(dashboardApiProvider)
+          .deleteCourse(widget.course.courseId);
+      ref.invalidate(editorCoursesProvider);
+      navigator.pushReplacementNamed('/courses');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Could not delete: $e')));
+    }
+  }
+
+  StatusPill _publishedPill(bool published) => published
+      ? const StatusPill(
+          label: 'Published', kind: PillKind.active, swatch: true)
+      : const StatusPill(label: 'Draft', kind: PillKind.muted, swatch: true);
+
+  Widget _field(String label, TextEditingController controller,
+      {int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: DashText.sectionLabel(size: 10)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 13, color: Colors.white),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: DashColors.w(0.04),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide:
+                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final course = widget.course;
     return GlassCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -171,39 +225,55 @@ class _CourseHeader extends StatelessWidget {
             spacing: 10,
             runSpacing: 8,
             children: [
-              _statusPill(),
-              _accessPill(),
-              _Counter(label: 'Modules', value: '${course.moduleCount}'),
-              _Counter(label: 'Lessons', value: '${course.lessonCount}'),
-              _Counter(label: 'Students', value: '${course.studentCount}'),
+              _publishedPill(_published),
+              StatusPill(
+                label:
+                    '${course.lang.toUpperCase()} → ${course.toLang.toUpperCase()}',
+                kind: PillKind.neutral,
+              ),
             ],
           ),
+          const SizedBox(height: 18),
+          _field('TITLE', _title),
           const SizedBox(height: 14),
-          Text(
-            course.title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: -0.22,
-            ),
-          ),
-          if (course.description.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              course.description,
-              style: TextStyle(fontSize: 13, color: DashColors.w(0.70)),
-            ),
-          ],
-          const SizedBox(height: 6),
-          Text(
-            '${course.lang.toUpperCase()} → ${course.toLang.toUpperCase()} · updated ${course.updatedHuman}',
-            style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
+          _field('DESCRIPTION', _description, maxLines: 4),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Text('PUBLISHED', style: DashText.sectionLabel(size: 10)),
+              const Spacer(),
+              Switch(
+                value: _published,
+                onChanged: (v) => setState(() => _published = v),
+              ),
+            ],
           ),
           if (!course.meta.isEmpty) ...[
             const SizedBox(height: 14),
             _VariantMeta(meta: course.meta),
           ],
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              PrimaryButton(
+                label: _saving ? 'Saving…' : 'Save',
+                leading: Icons.save_outlined,
+                onTap: _saving ? null : _save,
+              ),
+              const SizedBox(width: 10),
+              GhostButton(
+                label: 'Export',
+                leading: Icons.download,
+                onTap: _export,
+              ),
+              const Spacer(),
+              GhostButton(
+                label: 'Delete',
+                leading: Icons.delete_outline,
+                onTap: _delete,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -300,236 +370,5 @@ class _VariantChip extends StatelessWidget {
     final tip = d.tooltip;
     if (tip == null || tip.isEmpty) return chip;
     return Tooltip(message: tip, child: chip);
-  }
-}
-
-class _Counter extends StatelessWidget {
-  final String label;
-  final String value;
-  const _Counter({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: DashColors.w(0.06),
-        borderRadius: DashRadii.pill,
-        border: Border.all(color: DashColors.w(0.14)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.0,
-              color: DashColors.w(0.55),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Collapsible module — header always visible, lessons fetched and revealed
-/// on first expand (lazy). Starts collapsed so opening a large course never
-/// loads every module's lessons at once.
-class _ModuleCard extends ConsumerStatefulWidget {
-  final int courseId;
-  final EditorModuleSummary module;
-  const _ModuleCard({required this.courseId, required this.module});
-
-  @override
-  ConsumerState<_ModuleCard> createState() => _ModuleCardState();
-}
-
-class _ModuleCardState extends ConsumerState<_ModuleCard> {
-  bool _open = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final m = widget.module;
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: () => setState(() => _open = !_open),
-            borderRadius: DashRadii.card,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Row(
-                children: [
-                  Icon(
-                    _open ? Icons.expand_more : Icons.chevron_right,
-                    size: 18,
-                    color: DashColors.w(0.55),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          m.title.isNotEmpty
-                              ? m.title
-                              : 'Module ${m.moduleId}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        if (m.description.isNotEmpty)
-                          Text(
-                            m.description,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: DashColors.w(0.55),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${m.lessonCount} lessons',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: DashColors.w(0.55),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_open) ...[
-            Divider(color: DashColors.w(0.08), height: 1),
-            _LazyLessons(courseId: widget.courseId, moduleId: m.moduleId),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Loads + renders a module's lessons on demand. Only built once its parent
-/// module card is expanded, so the fetch is deferred until needed.
-class _LazyLessons extends ConsumerWidget {
-  final int courseId;
-  final int moduleId;
-  const _LazyLessons({required this.courseId, required this.moduleId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(
-        moduleLessonsProvider((courseId: courseId, moduleId: moduleId)));
-    return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 18),
-        child: Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child:
-                CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-          ),
-        ),
-      ),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.fromLTRB(40, 12, 16, 12),
-        child: Text(
-          'Could not load lessons — $e',
-          style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
-        ),
-      ),
-      data: (lessons) {
-        if (lessons.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(40, 12, 16, 12),
-            child: Text(
-              'No lessons in this module.',
-              style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
-            ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [for (final l in lessons) _LessonRow(lesson: l)],
-        );
-      },
-    );
-  }
-}
-
-class _LessonRow extends StatelessWidget {
-  final EditorLessonRemote lesson;
-  const _LessonRow({required this.lesson});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => showDialog<void>(
-        context: context,
-        builder: (_) => LessonEditorDialog(lessonId: lesson.lessonId),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(40, 10, 16, 10),
-        child: Row(
-          children: [
-            Icon(Icons.menu_book_outlined,
-                size: 14, color: DashColors.w(0.55)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lesson.title.isNotEmpty
-                        ? lesson.title
-                        : 'Lesson ${lesson.lessonId}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (lesson.words.isNotEmpty)
-                    Text(
-                      lesson.words.take(6).join(' · '),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: DashColors.w(0.55),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            Text(
-              '${lesson.exerciseCount} ex.',
-              style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.chevron_right,
-                size: 14, color: DashColors.w(0.35)),
-          ],
-        ),
-      ),
-    );
   }
 }

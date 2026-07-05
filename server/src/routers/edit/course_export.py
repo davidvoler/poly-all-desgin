@@ -26,7 +26,7 @@ async def download_course_text(payload: CourseExport,
                              school_user: SchoolUser  = Depends(current_school_user)):
     sql = """SELECT *
     FROM course_simple.course
-    WHERE course_id = %s and user_id = %s and school_id = %s
+    WHERE course_id = %s and user_id = %s::text and school_id = %s
     """
     results = await get_query_results(sql, (payload.course_id, school_user.user_id, school_user.school_id))
     if not results:

@@ -95,10 +95,11 @@ async def _insert_course(course: dict, users_id: int, school_id: int):
     course_id =  result[0]['course_id']
     for m in course.get('modules', []):
         module_id = await _insert_module(m, course_id)
+    return course_id
 
 
 
 async def course_to_db(file_path:str, users_id: int, school_id: int):
     course = course_from_file(file_path)
-    await _insert_course(course, users_id, school_id)
+    return await _insert_course(course, users_id, school_id)
     

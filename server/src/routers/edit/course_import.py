@@ -12,16 +12,15 @@ TEMP_FOLDER = "../content/temp"
 router = APIRouter()
 
 def _write_course_file(document: str) -> str:
+    # course_to_db()/course_from_file() open() this as a single YAML
+    # document (`type: course/module/lesson/exercise` sections separated
+    # by `---`) — the same shape export_course_from_db() writes, so
+    # export → import round-trips.
     Path(TEMP_FOLDER).mkdir(parents=True, exist_ok=True)
     dest = Path(tempfile.mkdtemp(prefix="course_txt_", dir=TEMP_FOLDER))
-    course_root = dest / "course"
-    course_root.mkdir(parents=True, exist_ok=True)
-    if not _write_document_tree(document, course_root):
-        raise HTTPException(
-            status_code=400,
-            detail="Document has no '=== course.txt ===' section",
-        )
-    return str(course_root)
+    file_path = dest / "course.yaml"
+    file_path.write_text(document, encoding="utf-8")
+    return str(file_path)
 
 
 @router.post("/")

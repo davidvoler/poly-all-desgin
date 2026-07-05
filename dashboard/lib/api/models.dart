@@ -154,48 +154,19 @@ class LanguageSummary {
       );
 }
 
-enum CourseStatusWire { draft, review, published, archived, unknown }
-
-CourseStatusWire _statusFromWire(String? s) {
-  switch (s) {
-    case 'draft':
-      return CourseStatusWire.draft;
-    case 'review':
-      return CourseStatusWire.review;
-    case 'published':
-      return CourseStatusWire.published;
-    case 'archived':
-      return CourseStatusWire.archived;
-    default:
-      return CourseStatusWire.unknown;
-  }
-}
-
-enum CourseAccessWire { public, members, unknown }
-
-CourseAccessWire _accessFromWire(String? s) {
-  switch (s) {
-    case 'public':
-      return CourseAccessWire.public;
-    case 'members':
-      return CourseAccessWire.members;
-    default:
-      return CourseAccessWire.unknown;
-  }
-}
-
+/// Course editing was simplified server-side to publish/unpublish only
+/// (see server/EDITOR.md option 2) — the DB still has a 4-value
+/// `status` column, but `models.edit.course.Course` collapses it to a
+/// single `published` bool, so the dashboard follows suit.
 class EditorCourse {
   final int courseId;
   final String title;
   final String description;
   final String lang;
   final String toLang;
-  final CourseStatusWire status;
-  final CourseAccessWire access;
-  final int lessonCount;
-  final int moduleCount;
-  final int studentCount;
-  final String updatedHuman;
+  final bool published;
+  final List<String> tags;
+  final Map<String, dynamic> metadata;
   final CourseMeta meta;
 
   const EditorCourse({
@@ -204,34 +175,58 @@ class EditorCourse {
     required this.description,
     required this.lang,
     required this.toLang,
-    required this.status,
-    required this.access,
-    required this.lessonCount,
-    required this.moduleCount,
-    required this.studentCount,
-    required this.updatedHuman,
+    required this.published,
+    this.tags = const [],
+    this.metadata = const {},
     this.meta = CourseMeta.empty,
   });
 
   factory EditorCourse.fromJson(Map<String, dynamic> j) {
-    // The server returns an ISO timestamp; we render it client-side
-    // since the design uses relative strings.
-    final raw = j['updated_at'] as String?;
+    final rawMeta =
+        (j['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
     return EditorCourse(
       courseId: j['course_id'] as int,
       title: (j['title'] as String?) ?? '',
       description: (j['description'] as String?) ?? '',
       lang: (j['lang'] as String?) ?? '',
       toLang: (j['to_lang'] as String?) ?? '',
-      status: _statusFromWire(j['status'] as String?),
-      access: _accessFromWire(j['access'] as String?),
-      lessonCount: (j['lesson_count'] as int?) ?? 0,
-      moduleCount: (j['module_count'] as int?) ?? 0,
-      studentCount: (j['student_count'] as int?) ?? 0,
-      updatedHuman: _humanizeIso(raw),
-      meta: CourseMeta.fromJson(j['metadata']),
+      published: (j['published'] as bool?) ?? false,
+      tags: ((j['tags'] as List?) ?? const []).cast<String>(),
+      metadata: rawMeta,
+      meta: CourseMeta.fromJson(rawMeta),
     );
   }
+
+  /// Round-trips `tags`/`metadata` unchanged — the edit form only
+  /// touches title/description/published, but POST /course rewrites
+  /// every column, so omitting them here would silently wipe them.
+  Map<String, dynamic> toJson() => {
+        'course_id': courseId,
+        'title': title,
+        'description': description,
+        'lang': lang,
+        'to_lang': toLang,
+        'tags': tags,
+        'metadata': metadata,
+        'published': published,
+      };
+
+  EditorCourse copyWith({
+    String? title,
+    String? description,
+    bool? published,
+  }) =>
+      EditorCourse(
+        courseId: courseId,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        lang: lang,
+        toLang: toLang,
+        published: published ?? this.published,
+        tags: tags,
+        metadata: metadata,
+        meta: meta,
+      );
 }
 
 /// Mirrors the server's `_humanize` helper for the client side — used
@@ -248,117 +243,6 @@ String _humanizeIso(String? iso) {
   if (delta.inDays < 28) return '${delta.inDays} days ago';
   if (delta.inDays < 365) return '${delta.inDays ~/ 7} weeks ago';
   return '${delta.inDays ~/ 365} years ago';
-}
-
-/// Full lesson + exercise list as returned by
-/// GET /api/v1/editor/lesson/{id}. Exercises are kept as a list of
-/// loosely-typed maps because the schema includes optional fields
-/// the dashboard editor doesn't have to fully understand to render.
-class LessonDetailRemote {
-  final int lessonId;
-  final int courseId;
-  final int moduleId;
-  final String title;
-  final String description;
-  final List<String> words;
-  final List<Map<String, dynamic>> exercises;
-
-  const LessonDetailRemote({
-    required this.lessonId,
-    required this.courseId,
-    required this.moduleId,
-    required this.title,
-    required this.description,
-    required this.words,
-    required this.exercises,
-  });
-
-  factory LessonDetailRemote.fromJson(Map<String, dynamic> j) =>
-      LessonDetailRemote(
-        lessonId: j['lesson_id'] as int,
-        courseId: j['course_id'] as int,
-        moduleId: j['module_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        words: ((j['words'] as List?) ?? const []).cast<String>(),
-        exercises: ((j['exercises'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>(),
-      );
-}
-
-class EditorLessonRemote {
-  final int lessonId;
-  final String title;
-  final String description;
-  final List<String> words;
-  final int exerciseCount;
-  const EditorLessonRemote({
-    required this.lessonId,
-    required this.title,
-    required this.description,
-    required this.words,
-    required this.exerciseCount,
-  });
-  factory EditorLessonRemote.fromJson(Map<String, dynamic> j) =>
-      EditorLessonRemote(
-        lessonId: j['lesson_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        words: ((j['words'] as List?) ?? const []).cast<String>(),
-        exerciseCount: (j['exercise_count'] as int?) ?? 0,
-      );
-}
-
-class EditorModuleRemote {
-  final int moduleId;
-  final String title;
-  final String description;
-  final int weight;
-  final List<EditorLessonRemote> lessons;
-  const EditorModuleRemote({
-    required this.moduleId,
-    required this.title,
-    required this.description,
-    required this.weight,
-    required this.lessons,
-  });
-  factory EditorModuleRemote.fromJson(Map<String, dynamic> j) =>
-      EditorModuleRemote(
-        moduleId: j['module_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        weight: (j['weight'] as int?) ?? 0,
-        lessons: ((j['lessons'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>()
-            .map(EditorLessonRemote.fromJson)
-            .toList(),
-      );
-}
-
-/// Lightweight module row for the paginated course-detail page — carries the
-/// per-module lesson count but no nested lessons (those are fetched on demand
-/// when the module is expanded). Mirrors the server's EditorModuleSummary.
-class EditorModuleSummary {
-  final int moduleId;
-  final String title;
-  final String description;
-  final int weight;
-  final int lessonCount;
-  const EditorModuleSummary({
-    required this.moduleId,
-    required this.title,
-    required this.description,
-    required this.weight,
-    required this.lessonCount,
-  });
-  factory EditorModuleSummary.fromJson(Map<String, dynamic> j) =>
-      EditorModuleSummary(
-        moduleId: j['module_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        weight: (j['weight'] as int?) ?? 0,
-        lessonCount: (j['lesson_count'] as int?) ?? 0,
-      );
 }
 
 /// One course-metadata variant descriptor (a reading or sentence-alt the
@@ -408,58 +292,6 @@ class CourseMeta {
       sentenceAlt: parse(raw['sentence_alt']),
     );
   }
-}
-
-class EditorCourseDetail {
-  final int courseId;
-  final String title;
-  final String description;
-  final String lang;
-  final String toLang;
-  final CourseStatusWire status;
-  final CourseAccessWire access;
-  final int lessonCount;
-  final int moduleCount;
-  final int studentCount;
-  final String updatedHuman;
-  final CourseMeta meta;
-  final List<EditorModuleRemote> modules;
-
-  const EditorCourseDetail({
-    required this.courseId,
-    required this.title,
-    required this.description,
-    required this.lang,
-    required this.toLang,
-    required this.status,
-    required this.access,
-    required this.lessonCount,
-    required this.moduleCount,
-    required this.studentCount,
-    required this.updatedHuman,
-    this.meta = CourseMeta.empty,
-    required this.modules,
-  });
-
-  factory EditorCourseDetail.fromJson(Map<String, dynamic> j) =>
-      EditorCourseDetail(
-        courseId: j['course_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        lang: (j['lang'] as String?) ?? '',
-        toLang: (j['to_lang'] as String?) ?? '',
-        status: _statusFromWire(j['status'] as String?),
-        access: _accessFromWire(j['access'] as String?),
-        meta: CourseMeta.fromJson(j['metadata']),
-        lessonCount: (j['lesson_count'] as int?) ?? 0,
-        moduleCount: (j['module_count'] as int?) ?? 0,
-        studentCount: (j['student_count'] as int?) ?? 0,
-        updatedHuman: _humanizeIso(j['updated_at'] as String?),
-        modules: ((j['modules'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>()
-            .map(EditorModuleRemote.fromJson)
-            .toList(),
-      );
 }
 
 /// Role enum in lockstep with `school.school_users.role` on the

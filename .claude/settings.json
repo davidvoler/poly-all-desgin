@@ -13,7 +13,9 @@
       "Bash(python server/src/experiments/translit_phonetic.py)",
       "Bash(pip show *)",
       "Bash(python server/src/experiments/translit_camel.py)",
-      "Bash(python -c \"from camel_tools.disambig.mle import MLEDisambiguator; d = MLEDisambiguator.pretrained\\(\\); r = d.disambiguate\\(['ذهب', 'الولد']\\); print\\(r[0].analyses[0].analysis.get\\('diac'\\)\\)\")"
+      "Bash(python -c \"from camel_tools.disambig.mle import MLEDisambiguator; d = MLEDisambiguator.pretrained\\(\\); r = d.disambiguate\\(['ذهب', 'الولد']\\); print\\(r[0].analyses[0].analysis.get\\('diac'\\)\\)\")",
+      "Skill(run)",
+      "Skill(run:*)"
     ],
     "additionalDirectories": [
       "/Users/davidle/dev/tutorial/poly-all-desgin"
