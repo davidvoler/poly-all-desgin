@@ -19,6 +19,8 @@ class YoutubeInfo(BaseModel):
 class SubtitlesDownloadRequest(BaseModel):
     video_id: str
     lang: str
+    number_of_parts: int | None = 10
+    # min_parts_seconds: int | None = 120
 
 
 class SubtitleInfo(BaseModel):
@@ -29,3 +31,12 @@ class SubtitleInfo(BaseModel):
     sentences: list[str] | None = []
     words: list[str] | None = []
     
+
+class YoutubeParts(BaseModel):
+    video_id: str
+    part_id: int 
+    start_seconds: float
+    end_seconds: float
+    subs: list[SubtitleLine] | None = []
+    words: list[str] | None = []
+    sentences: list[str] | None = []

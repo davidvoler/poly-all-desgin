@@ -21,6 +21,7 @@ def youtube_to_srt(video_id: str, lang: str):
 
 def youtube_subs(video_id: str, lang: str) -> list:
     ts = ytt_api.fetch(video_id, languages=[lang])
+    video_seconds = 0
     subs = []
     for t in ts:
         subs.append({
@@ -28,8 +29,10 @@ def youtube_subs(video_id: str, lang: str) -> list:
             "duration": t.duration,
             "text": t.text
         })
-    return subs
+        video_seconds = max(video_seconds, t.start + t.duration)
+    return subs, video_seconds
 
 if __name__ == "__main__":
-    subs = youtube_subs('1LV0pU2U_hg', 'el')
+    subs, video_seconds = youtube_subs('1LV0pU2U_hg', 'el')
     print(subs)
+    print(f"Video duration: {int(video_seconds/60)}:{int(video_seconds%60)} minutes")

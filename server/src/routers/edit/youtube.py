@@ -23,7 +23,7 @@ async def import_course(video_id: str,
 @router.post("/download_subtitle/", response_model=SubtitleInfo)
 async def import_course(download_request: SubtitlesDownloadRequest, school_user: SchoolUser  = Depends(current_school_user)):
     # TODO: Implement logic to download subtitles and create a course import
-    subs = youtube_subs(download_request.video_id, download_request.lang)
+    subs, video_seconds = youtube_subs(download_request.video_id, download_request.lang)
     return SubtitleInfo(video_id=download_request.video_id, 
                         title="Sample Video",
                         video_lang=download_request.lang, 
