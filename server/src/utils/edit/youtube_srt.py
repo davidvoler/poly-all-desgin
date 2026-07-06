@@ -35,7 +35,7 @@ def youtube_subs(video_id: str, lang: str) -> list:
     return subs, video_seconds
 
 
-def subs_parts(video_id: str, subs: list[dict], video_seconds: int, number_of_parts: int = 10) -> list[list[dict]]:
+def subs_parts(video_id: str, subs: list[dict], video_seconds: int, number_of_parts: int = 10) -> list[YoutubeParts]:
     """
     Split the subtitles into parts based on the number of parts and minimum part duration.
     """
@@ -59,6 +59,17 @@ def subs_parts(video_id: str, subs: list[dict], video_seconds: int, number_of_pa
             )
             current_part += 1
             current_subs = [s]
+    if len(current_subs) > 0:
+        parts.append(
+            YoutubeParts(
+            video_id=video_id,
+            part_id=current_part+1,
+            start_seconds=current_subs[0]['start'] if current_subs else 0,
+            end_seconds=current_subs[-1]['start'] + current_subs[-1]['duration'] if current_subs else 0,
+            subs=current_subs,
+            words=[],
+            sentences=[])
+        )
     return parts
 
 if __name__ == "__main__":
