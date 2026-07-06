@@ -5,9 +5,9 @@ from youtube_transcript_api._transcripts import FetchedTranscriptSnippet
 BASE_FOLDER = '../data/content/srt'
 ytt_api = YouTubeTranscriptApi()
 
-def youtube_to_srt(video_id: str, lang: str):
+def youtube_to_srt(video_id: str, lang: str, base_folder: str = BASE_FOLDER) -> str:
     ts = ytt_api.fetch(video_id, languages=[lang])
-    srt_file = f"{BASE_FOLDER}/{video_id}_{lang}.srt"
+    srt_file = f"{base_folder}/{video_id}_{lang}.srt"
     i = 1
     with open(srt_file, 'w') as f:
         for t in ts:
@@ -31,5 +31,4 @@ def youtube_subs(video_id: str, lang: str) -> list:
     return subs
 
 if __name__ == "__main__":
-    subs = youtube_subs('1LV0pU2U_hg', 'el')
-    print(subs)
+    youtube_to_srt('1LV0pU2U_hg', 'el')

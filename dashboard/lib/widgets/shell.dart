@@ -50,6 +50,12 @@ const List<NavItem> kNavItems = [
       label: 'Create with AI (steps)',
       icon: Icons.auto_awesome_motion_outlined,
       route: '/create-course-steps'),
+  // Paste a movie/show's .srt file and build a course from its dialogue —
+  // see MVP.md's "build on movie subtitles" phase.
+  NavItem(
+      label: 'Create from subtitles',
+      icon: Icons.subtitles_outlined,
+      route: '/create-from-subtitles'),
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),
