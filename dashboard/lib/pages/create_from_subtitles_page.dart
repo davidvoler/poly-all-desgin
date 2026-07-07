@@ -323,7 +323,7 @@ class _SourceForm extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: CourseField(
+                    child: LanguageField(
                       controller: state._language,
                       label: 'Teaches (language)',
                       hint: 'Japanese or ja',
@@ -332,7 +332,7 @@ class _SourceForm extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: CourseField(
+                    child: LanguageField(
                       controller: state._studentLanguage,
                       label: 'Student speaks',
                       hint: 'Hebrew or he',

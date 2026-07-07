@@ -27,7 +27,7 @@ class CreateCoursePage extends ConsumerStatefulWidget {
 }
 
 class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
-  final _title = TextEditingController(text: 'Japanese for Hebrew Speakers');
+  final _title = TextEditingController();
   final _language = TextEditingController(text: 'Japanese');
   final _studentLanguage = TextEditingController(text: 'Hebrew');
   final _topic = TextEditingController(
@@ -271,7 +271,7 @@ class _FormColumn extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: CourseField(
+                    child: LanguageField(
                       controller: state._language,
                       label: 'Teaches (language)',
                       hint: 'Japanese or ja',
@@ -280,7 +280,7 @@ class _FormColumn extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: CourseField(
+                    child: LanguageField(
                       controller: state._studentLanguage,
                       label: 'Student speaks',
                       hint: 'Hebrew or he',

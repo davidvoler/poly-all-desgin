@@ -88,6 +88,120 @@ weight: <order within the lesson>''';
   }
 }
 
+/// Common language names offered in the [LanguageField] dropdown. This is
+/// a list of suggestions, not a whitelist — course creation does not limit
+/// which languages an editor can use (see TASKS.md), so the field still
+/// accepts any typed value, matching or not.
+const List<String> kLanguageSuggestions = [
+  'Arabic',
+  'Chinese (Mandarin)',
+  'Czech',
+  'Danish',
+  'Dutch',
+  'English',
+  'Finnish',
+  'French',
+  'German',
+  'Greek',
+  'Hebrew',
+  'Hindi',
+  'Hungarian',
+  'Indonesian',
+  'Italian',
+  'Japanese',
+  'Korean',
+  'Norwegian',
+  'Polish',
+  'Portuguese',
+  'Romanian',
+  'Russian',
+  'Spanish',
+  'Swedish',
+  'Thai',
+  'Turkish',
+  'Ukrainian',
+  'Vietnamese',
+];
+
+/// A language picker: a dropdown of [kLanguageSuggestions] backed by a
+/// plain text field, so an editor can either pick a common language or
+/// type any other name/code the platform doesn't enumerate.
+class LanguageField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final VoidCallback onChanged;
+  const LanguageField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.onChanged,
+    this.hint,
+  });
+
+  @override
+  State<LanguageField> createState() => _LanguageFieldState();
+}
+
+class _LanguageFieldState extends State<LanguageField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(widget.onChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(widget.onChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: DashRadii.input,
+      borderSide: BorderSide(color: DashColors.w(0.14)),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.label.toUpperCase(), style: DashText.sectionLabel(size: 10)),
+        const SizedBox(height: 6),
+        DropdownMenu<String>(
+          controller: widget.controller,
+          expandedInsets: EdgeInsets.zero,
+          enableFilter: true,
+          requestFocusOnTap: true,
+          hintText: widget.hint,
+          textStyle: const TextStyle(fontSize: 13, color: Colors.white),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(DashColors.darkBg),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            isDense: true,
+            hintStyle: TextStyle(fontSize: 13, color: DashColors.w(0.35)),
+            filled: true,
+            fillColor: DashColors.w(0.04),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: border,
+            enabledBorder: border,
+            focusedBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide:
+                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+            ),
+          ),
+          dropdownMenuEntries: [
+            for (final l in kLanguageSuggestions)
+              DropdownMenuEntry(value: l, label: l),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class GroupLabel extends StatelessWidget {
   final String text;
   const GroupLabel(this.text, {super.key});
