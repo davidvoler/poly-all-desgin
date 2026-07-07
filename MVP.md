@@ -112,13 +112,27 @@ With that we can go to AI and ask to generate a module/lesson on this video
 We can also do it in steps - so if movie is 60 minutes we can break it into 5 minutes steps and have the 30 steps. 
 
 
-- [] we are currently implementing the solution only for youtube movies 
-- [] first step would be to download the subtitles 
-- [] the movie should have subtitles in the language the course is teaching. 
+- [v] we are currently implementing the solution only for youtube movies 
+- [v] first step would be to download the subtitles 
+- [v] the movie should have subtitles in the language the course is teaching. 
 - []  if the youtube film does not have subtitles for the learned language - we can not continue - and we ask the user to select another movie 
 - []  after we have downloaded the movies 
 
 
+
+#### Phase Testing the Prompt
+
+- We are generating a prompt - and it look like the right time to start to test it.
+- [] First step - inspect the prompt and improve it 
+- [] Try it with different AI
+- []  
+
+
+#### Phase - Preview 
+
+- [] how do we implement preview?
+  - [] in the student page 
+  - [] in the dashboard
 
 #### Phase - build on existing text 
 
