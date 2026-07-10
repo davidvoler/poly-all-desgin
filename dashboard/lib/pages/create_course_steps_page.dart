@@ -72,6 +72,7 @@ class _CreateCourseStepsPageState
   int _modules = 4;
   int _lessonsPerModule = 5;
   int _exercisesPerLesson = 8;
+  int _sentencesPerWord = 4;
   int _minWordsPerSentence = 3;
   int _maxWordsPerSentence = 10;
   final Set<String> _types = {
@@ -219,7 +220,8 @@ Repeat for all $_modules modules, numbered in order. Keep words/phrases relevant
 
 Course: ${_title.text.trim()} (${_language.text.trim()} for ${_studentLanguage.text.trim()} speakers, level $_level, focus: ${_topic.text.trim()}).
 This is module ${index + 1} of ${_parsedWords!.length}: "${module.title}".
-Vocabulary to build exercises around (use these naturally across the lessons): ${module.words.join(', ')}
+Vocabulary to build exercises around: ${module.words.join(', ')}
+- Use each vocabulary word in at least $_sentencesPerWord different example sentences, spread across the module's exercises.
 - $_lessonsPerModule lessons, ~$_exercisesPerLesson exercises per lesson.
 - Sentence length: every exercise sentence should be $_minWordsPerSentence to $_maxWordsPerSentence words long.
 ${enrich.isEmpty ? '' : '- $enrich\n'}${extra.isEmpty ? '' : '\nAdditional instructions from the editor:\n$extra\n'}
@@ -465,6 +467,15 @@ class _WordsForm extends StatelessWidget {
                 min: 5,
                 max: 60,
                 onChanged: (v) => state.apply(() => state._wordsPerModule = v),
+              ),
+              const SizedBox(height: 10),
+              NumberStepper(
+                label: 'Sentences / word',
+                value: state._sentencesPerWord,
+                min: 1,
+                max: 5,
+                onChanged: (v) =>
+                    state.apply(() => state._sentencesPerWord = v),
               ),
               const SizedBox(height: 6),
               SwitchRow(

@@ -37,6 +37,7 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   int _modules = 4;
   int _lessonsPerModule = 5;
   int _exercisesPerLesson = 8;
+  int _sentencesPerWord = 2;
 
   // Sentence length guidance, passed to the LLM per module.
   int _minWordsPerSentence = 3;
@@ -146,6 +147,7 @@ Course to create:
 - Focus: ${_topic.text.trim()}
 - Size: $_modules modules, $_lessonsPerModule lessons per module, ~$_exercisesPerLesson exercises per lesson.
 - Sentence length: every exercise sentence should be $_minWordsPerSentence to $_maxWordsPerSentence words long, in every module.
+- Vocabulary: introduce each new vocabulary word or phrase in at least $_sentencesPerWord different example sentences, spread across the course.
 ${enrich.isEmpty ? '' : '- $enrich\n'}${extra.isEmpty ? '' : '\nAdditional instructions from the editor:\n$extra\n'}
 OUTPUT FORMAT — return ONE YAML document, no markdown fences, no commentary.
 It is a flat sequence of sections separated by a line containing only "---".
@@ -339,6 +341,15 @@ class _FormColumn extends StatelessWidget {
                 max: 30,
                 onChanged: (v) =>
                     state.apply(() => state._exercisesPerLesson = v),
+              ),
+              const SizedBox(height: 10),
+              NumberStepper(
+                label: 'Sentences / word',
+                value: state._sentencesPerWord,
+                min: 1,
+                max: 5,
+                onChanged: (v) =>
+                    state.apply(() => state._sentencesPerWord = v),
               ),
               const SizedBox(height: 10),
               NumberStepper(

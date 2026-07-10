@@ -63,9 +63,6 @@ post /edit/course/export - export a course
 
 - [v] import course
 - [v] export course
-
-
-
 - [v] create a course - verify that is is saved to the current user and current school
 - [v] verify that you that courses are created with current user_id/school_id
 ## mvp-phase-3.1.3-partial 
@@ -123,9 +120,18 @@ We can also do it in steps - so if movie is 60 minutes we can break it into 5 mi
 #### Phase Testing the Prompt
 
 - We are generating a prompt - and it look like the right time to start to test it.
-- [] First step - inspect the prompt and improve it 
-- [] Try it with different AI
+- [v] First step - inspect the prompt and improve it 
+- [v] Try it with different AI
+  - [v] try with Claude 
 - []  
+
+#### Claude 
+##### Create a course with a single prompt 
+- The course is quite short 
+- The hints are not great 
+- Sometime there is only correct options 
+- Format is sometime correct - sometime incorrect
+
 
 
 #### Phase - Preview 

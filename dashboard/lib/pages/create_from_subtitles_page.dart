@@ -83,6 +83,7 @@ class _CreateFromSubtitlesPageState
   // Generation controls.
   int _maxLines = 150;
   int _linesPerLesson = 12;
+  int _sentencesPerWord = 2;
   final Set<String> _types = {
     'single_choice',
     'multiple_choice',
@@ -207,6 +208,7 @@ Course to create:
 - For students who speak: ${_studentLanguage.text.trim()}
 - CEFR level: $_level
 - Group every ~$_linesPerLesson consecutive dialogue lines into one lesson, in the order given.
+- Vocabulary: reuse each new vocabulary word or phrase introduced from the dialogue in at least $_sentencesPerWord different example sentences, spread across the course.
 ${enrich.isEmpty ? '' : '- $enrich\n'}${extra.isEmpty ? '' : '\nAdditional instructions from the editor:\n$extra\n'}
 Dialogue lines to use (translate each into ${_studentLanguage.text.trim()} as needed; skip lines that don't make good exercises rather than forcing them):$truncationNote
 $excerpt
@@ -460,6 +462,15 @@ class _SourceForm extends StatelessWidget {
                 min: 3,
                 max: 40,
                 onChanged: (v) => state.apply(() => state._linesPerLesson = v),
+              ),
+              const SizedBox(height: 10),
+              NumberStepper(
+                label: 'Sentences / word',
+                value: state._sentencesPerWord,
+                min: 1,
+                max: 5,
+                onChanged: (v) =>
+                    state.apply(() => state._sentencesPerWord = v),
               ),
               const SizedBox(height: 12),
               Wrap(
