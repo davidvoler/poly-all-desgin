@@ -59,7 +59,6 @@ post /edit/course/course_id - change course elements - like title. description, 
 delete /edit/course/delete -  delete course 
 post /edit/course/import - import a course  
 post /edit/course/export - export a course 
-
 - [v] import course
 - [v] export course
 - [v] create a course - verify that is is saved to the current user and current school
@@ -142,20 +141,62 @@ Lets describe the work needed to be done with subtitles
 - cut the srt into separate sentences, or phrases - can be done with or without ai
 - choose difficult words  (can also be done without ai) - (without AI is simpler)
 - Translate - we can do it with AI or with google translate - or alternative 
-- Generate Questions of the type we have described - 
+- Generate Questions of the type we have described - Would be done in a better way with Python
 - select wrong answers - maybe AI will do it in a better way 
 
 What would be done best with AI:
 - Generate sentences with a given word
-- 
+- Translate to student languages? 
+
+#### Generate with AI Phase 2 
+
+- We need to break it into small steps 
+  - module step 
+  - lesson step
+- We need that the import would support the smaller steps 
+- We have to define what is done with AI and what is done with the backend
+- We have to be more specific with the AI and give it exact commands
+
+
+##### Generate from SRT
+- [] list of end points 
+- [] tasks break the youtube movie into separate section 
+- [] break the text into parts, sentences and phrases 
+- [] select the difficult words in sentences - using zipf algo - with limits on minimum
+More likely done with AI
+- [] Generate more sentences on a give word
+Translation 
+- [] translate words and sentences - if possible with context 
+Voice 
+- [] generate voice for the parts
+
+
+
+What do we do on the backend with subtitles 
+- break it into section (60, 120,300 seconds each)
+- break the text into sentences 
+- break the text into phrases (currently using comma but later we can do it with Spacy)
+- select words - (using zipf min - max )
+Exercise creation
+- parts and sentences that are shorter than 12 words - single choice
+- identify words in the video itself - when played - limit words per line 1/2  
+- annotated text for long sentences/parts - also up to 22 words 
+- some identify words in sentence when in the short sentences 
+The results of such a process can be 
+1. the raw data that we have generated - not creating the exercises yet. 
+2. also create the exercises 
+
+
+
+
+
+
 
 #### Phase - Preview 
-
 Thinking of a demo the preview is super important
 - [] how do we implement preview?
   - [] in the student page 
   - [] in the dashboard
-
 #### Phase - build on existing text 
 
 
@@ -184,8 +225,13 @@ Summary
 - [v] Create the terms and conditions
 
 
-### Demo steps 
+### Learn with youtube 
+- [] show the youtube movies 
+- [] show question before a section
+- [] show section after a section
+- [] identify words while the section playing 
 
+### Demo steps 
 - Create with AI
   - create based on a youtube text 
   - create in iterative steps - maybe lessons 
