@@ -23,11 +23,16 @@ class CreateFromSubtitlesPage extends ConsumerStatefulWidget {
       _CreateFromSubtitlesPageState();
 }
 
-/// One dialogue line extracted from an .srt block (text only — timestamps
-/// and block indices aren't useful to the LLM prompt).
+/// One dialogue line extracted from an .srt block, plus its timing (start
+/// and end, in seconds) — carried through to the prompt so the LLM can
+/// stamp lessons/exercises with the start_second/end_second of the
+/// dialogue they're built from. Null when the timing line couldn't be
+/// parsed (malformed input); the prompt falls back to "?" for that line.
 class SrtLine {
   final String text;
-  const SrtLine(this.text);
+  final double? startSeconds;
+  final double? endSeconds;
+  const SrtLine(this.text, {this.startSeconds, this.endSeconds});
 }
 
 bool _isJunkCaption(String s) {
@@ -38,10 +43,34 @@ bool _isJunkCaption(String s) {
       (t.startsWith('(') && t.endsWith(')'));
 }
 
-/// Parses a .srt file's dialogue text, dropping block indices, timing
-/// lines, sound-effect captions, and immediate consecutive duplicates
-/// (common in karaoke-style caption tracks). Multi-line dialogue within a
-/// single subtitle block is joined with a space.
+/// Parses one side of a "-->" timing line into seconds. Accepts standard
+/// .srt timecodes ("00:02:16,612" or "00:02:16.612") as well as the plain
+/// decimal-seconds format some transcript tools emit ("16.612"). Returns
+/// null if it doesn't look like either.
+double? _parseSrtTimestamp(String raw) {
+  final s = raw.trim();
+  if (s.isEmpty) return null;
+  if (!s.contains(':')) return double.tryParse(s.replaceAll(',', '.'));
+  final parts = s.split(':');
+  if (parts.length < 2) return null;
+  final lastSeconds = double.tryParse(parts.removeLast().replaceAll(',', '.'));
+  if (lastSeconds == null) return null;
+  var total = lastSeconds;
+  var multiplier = 60.0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+    final v = double.tryParse(parts[i]);
+    if (v == null) return null;
+    total += v * multiplier;
+    multiplier *= 60;
+  }
+  return total;
+}
+
+/// Parses a .srt file's dialogue text, dropping block indices, sound-effect
+/// captions, and immediate consecutive duplicates (common in karaoke-style
+/// caption tracks). Multi-line dialogue within a single subtitle block is
+/// joined with a space; the block's timing line (if present) is kept as
+/// each line's start/end seconds.
 List<SrtLine> parseSrt(String raw) {
   final blocks = raw.split(RegExp(r'\n\s*\n'));
   final lines = <SrtLine>[];
@@ -55,13 +84,20 @@ List<SrtLine> parseSrt(String raw) {
     if (blockLines.isEmpty) continue;
     var start = 0;
     if (RegExp(r'^\d+$').hasMatch(blockLines[start])) start++;
+    double? startSeconds;
+    double? endSeconds;
     if (start < blockLines.length && blockLines[start].contains('-->')) {
+      final timing = blockLines[start].split('-->');
+      if (timing.length == 2) {
+        startSeconds = _parseSrtTimestamp(timing[0]);
+        endSeconds = _parseSrtTimestamp(timing[1]);
+      }
       start++;
     }
     if (start >= blockLines.length) continue;
     final text = blockLines.sublist(start).join(' ').trim();
     if (_isJunkCaption(text) || text == prev) continue;
-    lines.add(SrtLine(text));
+    lines.add(SrtLine(text, startSeconds: startSeconds, endSeconds: endSeconds));
     prev = text;
   }
   return lines;
@@ -81,7 +117,6 @@ class _CreateFromSubtitlesPageState
   String? _parseError;
 
   // Generation controls.
-  int _maxLines = 150;
   int _linesPerLesson = 12;
   int _sentencesPerWord = 2;
   final Set<String> _types = {
@@ -113,6 +148,17 @@ class _CreateFromSubtitlesPageState
   }
 
   void apply(VoidCallback fn) => setState(fn);
+
+  /// Lessons the prompt will ask the LLM to produce — all parsed dialogue
+  /// lines, grouped [_linesPerLesson] at a time. Stated explicitly in the
+  /// prompt so the LLM produces the same fixed count of "type: lesson"
+  /// sections the other Create-with-AI pages ask for, instead of inferring
+  /// it from a "group every ~N lines" hint alone.
+  int get _lessonCount {
+    final used = _parsedLines?.length ?? 0;
+    if (used == 0) return 0;
+    return (used + _linesPerLesson - 1) ~/ _linesPerLesson;
+  }
 
   bool get _isJapanese {
     final l = _language.text.trim().toLowerCase();
@@ -168,27 +214,30 @@ class _CreateFromSubtitlesPageState
     }
   }
 
-  /// Assemble the LLM prompt: course settings + the capped subtitle
-  /// excerpt + the same exercise-type/output-format spec the other
-  /// Create-with-AI pages embed.
+  /// Assemble the LLM prompt: course settings + the full subtitle excerpt
+  /// + the same exercise-type/output-format spec the other Create-with-AI
+  /// pages embed.
   String _buildPrompt() {
-    final lines = _parsedLines ?? const <SrtLine>[];
-    final used = lines.take(_maxLines).toList();
+    final used = _parsedLines ?? const <SrtLine>[];
+    String fmtSec(double? v) => v == null ? '?' : v.toStringAsFixed(2);
     final excerpt = [
-      for (var i = 0; i < used.length; i++) '${i + 1}. ${used[i].text}',
+      for (var i = 0; i < used.length; i++)
+        '${i + 1}. [${fmtSec(used[i].startSeconds)}-${fmtSec(used[i].endSeconds)}] ${used[i].text}',
     ].join('\n');
-    final truncationNote = lines.length > used.length
-        ? '\n(Showing the first ${used.length} of ${lines.length} lines.)'
-        : '';
 
     final selected =
         kExerciseTypes.where((t) => _types.contains(t.key)).toList();
+    // Same per-type field examples the other Create-with-AI pages show,
+    // plus start_second/end_second — meaningful here (and only here)
+    // because these prompts carry real .srt timestamps per dialogue line.
     final examples = (selected.isEmpty ? kExerciseTypes : selected)
-        .map((t) => exerciseTypeExample(
+        .map((t) => '${exerciseTypeExample(
               t.key,
               lang: _language.text.trim(),
               studentLang: _studentLanguage.text.trim(),
-            ))
+            )}\n'
+            'start_second: <start time of the underlying dialogue line(s), in seconds>\n'
+            'end_second: <end time of the underlying dialogue line(s), in seconds>')
         .join('\n---\n');
 
     final enrich = <String>[
@@ -207,10 +256,15 @@ Course to create:
 - Teaches: ${_language.text.trim()}
 - For students who speak: ${_studentLanguage.text.trim()}
 - CEFR level: $_level
-- Group every ~$_linesPerLesson consecutive dialogue lines into one lesson, in the order given.
-- Vocabulary: reuse each new vocabulary word or phrase introduced from the dialogue in at least $_sentencesPerWord different example sentences, spread across the course.
+- Produce exactly $_lessonCount lessons in the module, each covering ~$_linesPerLesson consecutive dialogue lines, in the order given.
+- Vocabulary: from the dialogue lines, pick out the less common words or phrases (skip basic/high-frequency vocabulary) — these are the course's key vocabulary.
+- For each key vocabulary word, include one quiz exercise (single_choice or multiple_choice) testing its meaning, plus at least $_sentencesPerWord other example sentences using it elsewhere in the course.
+- Generate exercises from the existing dialogue lines rather than inventing unrelated sentences.
+- Long dialogue lines may be simplified and shortened for an exercise sentence, as long as the meaning and key vocabulary are preserved.
+- For sentences that contain difficult words, use the annotated_sentence exercise type and annotate those words (meaning/short note) instead of a plain single_choice/multiple_choice exercise.
+- Every lesson and exercise section must include start_second and end_second (seconds) taken from the timestamps shown on the dialogue lines below.
 ${enrich.isEmpty ? '' : '- $enrich\n'}${extra.isEmpty ? '' : '\nAdditional instructions from the editor:\n$extra\n'}
-Dialogue lines to use (translate each into ${_studentLanguage.text.trim()} as needed; skip lines that don't make good exercises rather than forcing them):$truncationNote
+Dialogue lines to use, each prefixed with its "[start-end]" timing in seconds (translate each into ${_studentLanguage.text.trim()} as needed; skip lines that don't make good exercises rather than forcing them):
 $excerpt
 
 OUTPUT FORMAT — return ONE YAML document, no markdown fences, no commentary.
@@ -235,6 +289,8 @@ weight: 1
 type: lesson
 title: <lesson 1 title>
 weight: 1
+start_second: <start time of this lesson's first dialogue line, in seconds>
+end_second: <end time of this lesson's last dialogue line, in seconds>
 ---
 $examples
 
@@ -244,8 +300,11 @@ ${selected.isEmpty ? '- any of the types shown above' : selected.map((t) => '- $
 Rules:
 - Every lesson needs at least one exercise.
 - weight controls order within the parent — number sequentially from 1.
-- Use the dialogue lines as the exercise sentences (translated), in order; keep it natural and level-appropriate.
-- One module only, named after the source.''';
+- Use the dialogue lines as the basis for exercise sentences (translated), in order; simplify or shorten long ones, and keep it natural and level-appropriate.
+- One module only, named after the source.
+- Produce exactly $_lessonCount lesson sections in that module, weight 1 to $_lessonCount, in dialogue order.
+- Each key vocabulary word's meaning quiz is a single_choice or multiple_choice exercise (see the format above) whose sentence field asks for the word's meaning and whose options are candidate meanings, one correct.
+- A lesson's start_second is its first dialogue line's start time and end_second is its last dialogue line's end time. An exercise's start_second/end_second match the dialogue line(s) it was built from; for an invented vocabulary-quiz or extra example sentence, use the start_second/end_second of the dialogue line containing that word.''';
   }
 
   void _copyPrompt() {
@@ -373,6 +432,12 @@ class _SourceForm extends StatelessWidget {
                 maxLines: 10,
                 style: const TextStyle(
                     fontSize: 12, fontFamily: 'monospace', color: Colors.white),
+                // Parse as soon as text lands (paste or keystroke) so the
+                // prompt preview on the right updates live — matching the
+                // other Create-with-AI pages, instead of leaving the prompt
+                // panel on its placeholder until "Parse subtitles" is
+                // clicked separately.
+                onChanged: (_) => state._parseSubtitles(),
                 decoration: InputDecoration(
                   hintText: '1\n00:02:16,612 --> 00:02:19,376\nDialogue line…',
                   hintStyle: TextStyle(fontSize: 12, color: DashColors.w(0.30)),
@@ -449,14 +514,6 @@ class _SourceForm extends StatelessWidget {
               const GroupLabel('Generation'),
               const SizedBox(height: 12),
               NumberStepper(
-                label: 'Max lines to use',
-                value: state._maxLines,
-                min: 10,
-                max: 500,
-                onChanged: (v) => state.apply(() => state._maxLines = v),
-              ),
-              const SizedBox(height: 10),
-              NumberStepper(
                 label: 'Lines / lesson',
                 value: state._linesPerLesson,
                 min: 3,
@@ -471,6 +528,33 @@ class _SourceForm extends StatelessWidget {
                 max: 5,
                 onChanged: (v) =>
                     state.apply(() => state._sentencesPerWord = v),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: DashColors.brand.withValues(alpha: 0.10),
+                  borderRadius: DashRadii.input,
+                  border: Border.all(
+                      color: DashColors.brand.withValues(alpha: 0.30)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.functions, size: 16, color: DashColors.w(0.75)),
+                    const SizedBox(width: 8),
+                    Text(
+                      state._lessonCount == 0
+                          ? 'Parse subtitles to see the lesson count'
+                          : '≈ ${state._lessonCount} lessons total',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Wrap(

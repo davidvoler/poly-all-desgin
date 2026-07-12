@@ -57,7 +57,6 @@ get /edit/courses - list of courses I can view in editor
 get /edit/course/course_id - change course elements - like title. description, publish, un-publish
 post /edit/course/course_id - change course elements - like title. description, publish, un-publish
 delete /edit/course/delete -  delete course 
-
 post /edit/course/import - import a course  
 post /edit/course/export - export a course 
 
@@ -70,7 +69,6 @@ post /edit/course/export - export a course
 #### optional
 - [] consider renaming schema course_simple to course
 - [] simplify and edit state in course 
-
 ### Branch step-11-mvp-phase-4-create-with-ai
 
 
@@ -116,7 +114,6 @@ We can also do it in steps - so if movie is 60 minutes we can break it into 5 mi
 - []  after we have downloaded the movies 
 
 
-
 #### Phase Testing the Prompt
 
 - We are generating a prompt - and it look like the right time to start to test it.
@@ -132,10 +129,29 @@ We can also do it in steps - so if movie is 60 minutes we can break it into 5 mi
 - Sometime there is only correct options 
 - Format is sometime correct - sometime incorrect
 
+##### Create from subtitles 
+Seems like the task is misunderstood - the prompt is probably wrong 
+We probably to define the task in a better way 
+- instead of creating sentences and translation - claude creates understand sentences from the content
+maybe the problem was that we have chosen the level of the course 
+Maybe we need to describe specifically that we need 
+- word and translation
+- sentences and translation
 
+Lets describe the work needed to be done with subtitles 
+- cut the srt into separate sentences, or phrases - can be done with or without ai
+- choose difficult words  (can also be done without ai) - (without AI is simpler)
+- Translate - we can do it with AI or with google translate - or alternative 
+- Generate Questions of the type we have described - 
+- select wrong answers - maybe AI will do it in a better way 
+
+What would be done best with AI:
+- Generate sentences with a given word
+- 
 
 #### Phase - Preview 
 
+Thinking of a demo the preview is super important
 - [] how do we implement preview?
   - [] in the student page 
   - [] in the dashboard
@@ -146,10 +162,6 @@ We can also do it in steps - so if movie is 60 minutes we can break it into 5 mi
 
 #### Phase - the complete process 
 - [] Should we try with gemini api/claude api/others? 
-
-
-
-
 - [] Research MCP - How it can be used and how - Does it apply to polyglots case - do we need an MCP server
 - [] Implement the Dashboard create with AI - with or without MCP 
 
@@ -170,3 +182,15 @@ Summary
 *** Final touches ***
 - [] Add link in the home page to create content?
 - [v] Create the terms and conditions
+
+
+### Demo steps 
+
+- Create with AI
+  - create based on a youtube text 
+  - create in iterative steps - maybe lessons 
+- Show the course created - do some small edits  
+- Preview the course - maybe still in the dashboard 
+- Publish
+- Show it in the student app
+
