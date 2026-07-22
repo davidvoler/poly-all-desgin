@@ -170,8 +170,6 @@ Translation
 Voice 
 - [] generate voice for the parts
 
-
-
 What do we do on the backend with subtitles 
 - break it into section (60, 120,300 seconds each)
 - break the text into sentences 
@@ -185,10 +183,6 @@ Exercise creation
 The results of such a process can be 
 1. the raw data that we have generated - not creating the exercises yet. 
 2. also create the exercises 
-
-
-
-
 
 
 
@@ -239,4 +233,3 @@ Summary
 - Preview the course - maybe still in the dashboard 
 - Publish
 - Show it in the student app
-
