@@ -205,3 +205,46 @@ hint
 
 try with different models. 
 
+
+
+### Payment & Billing
+
+I can see 2 options 
+- Bring your own key - simplified billing 
+- Manage course creation for customers including create with AI and bill customers for course creation 
+
+#### Bring your own key - BYOK
+
+That's a clean architecture — three moving parts to get right early.
+
+Key management: clients enter their own Claude/Gemini key once, you encrypt it at rest (not in a log-visible column), and store it per client per provider. Never round-trip the raw key to the frontend after initial entry — just show "connected" plus a masked suffix and a revoke/rotate action. Since it's BYOK, you're not liable for their spend, but you are liable for leaking their key.
+
+Provider abstraction: build a thin adapter interface (generateCourse(prompt, key) -> {content, usage}) with one implementation per provider. This matters because Claude and Gemini don't return usage the same way — Claude gives you input_tokens / output_tokens (plus cache read/write tokens if you use prompt caching) directly on the message response; Gemini gives you usageMetadata.promptTokenCount / candidatesTokenCount / totalTokenCount. Normalize both into one internal shape (provider, model, input_tokens, output_tokens, total_tokens, timestamp, client_id, maybe course_id) so your reporting layer never has to know which provider a call came from.
+
+Usage logging/reporting: every call writes one row to a usage table in that normalized shape. Reporting is then just aggregation — sum by client, by provider, by day/month, whatever cut you want. Since clients bring their own key, you're not computing cost (they see that on their own Anthropic/Google billing dashboard) — you're just giving them a transparency view of consumption per agent, which also doubles as your own signal for which provider gets used more.
+
+One thing worth deciding early: do you want per-course usage (so a client can see "this course cost X tokens to generate") or just rolling totals per period? The per-course version is barely more work if you tag the log row with a course_id at write time, and it's a much better selling point.
+
+#### Manage Agent calls per customers
+Customers will have to buy credits in advance 
+I will have to manage the costs - also block users when we are close to the limit 
+I will have to develop a better understanding of the way to work and bill with agents 
+
+
+### PRos and cons for each option
+Both are viable; the tradeoff is mostly friction vs. financial/legal exposure.
+
+#### BYOK (client uses their own key)**
+
+Pros: no billing/payments infrastructure to build, no capital risk (you're never floating API costs), simpler compliance since you're not reselling model access or holding customer funds, and it appeals to technical/enterprise clients who may already have volume pricing with Anthropic or Google.
+
+Cons: real onboarding friction — non-technical course creators often don't know how to generate an API key or set up billing on the provider's console. You inherit support tickets that aren't really your bug ("my key stopped working," "I hit a rate limit"). You capture no usage-based revenue, only whatever you charge for the software itself. And a client can quietly use a free-tier/rate-limited key, which makes *your* product look slow or broken.
+
+#### You hold the keys and bill customers (subscription or prepaid credits)
+
+Pros: zero friction — signup to first course generation is instant, which matters a lot for non-technical buyers (most course-creator audiences). You can mark up usage for real margin, not just a software fee. You control model/version choice and get pooled volume, so better rate limits and consistent quality. Prepaid credits are a proven, easy-to-understand pricing unit for this kind of product.
+
+Cons: you're now a mini payments company — metering, invoicing, refunds, possibly sales tax/VAT on prepaid balances depending on jurisdiction. You carry the financial risk if a bug causes runaway API calls, or if a customer chargebacks after burning credits. Rate limits are shared across all customers, so you need per-customer quota enforcement or one heavy user throttles everyone. And worth checking directly: Anthropic's and Google's usage policies have requirements around reselling model access to end users — you may need to review their commercial/reseller terms before billing customers for usage on top of your own key, rather than assuming it's fine.
+
+A common middle path: prepaid credits by default (low friction, you capture margin), with BYOK as an option for power users or agencies who want to bypass your markup and use their own volume pricing. That also caps your worst-case exposure since heavy users can opt out of your cost pool entirely.
+

@@ -233,3 +233,34 @@ Summary
 - Preview the course - maybe still in the dashboard 
 - Publish
 - Show it in the student app
+
+
+#### - After vacation and some thoughts 
+
+Claude created a lot of question style exercise 
+What are fruits of the following list
+
+We should tell the AI only sentences and translation. 
+
+When we look at length of sentences most of them are too long for an exercise 
+We can ask AI to shorten the sentences - Or we can use the breakable sentences 
+
+
+#### - Demo oriented 
+
+If I want to demo the app I should have the full process visibility
+- Use AI to create course - End to End 
+- Use API to create course and count tokens 
+- Show the course Online   
+
+What do I need to get to this point?
+
+- BYOK - this will be the option for the demo
+- You tube based learning - We need to add it to the student app.
+- 
+
+#### Full account management 
+- Use API key and pass - Store somewhere secured 
+- Reporting on token usage per key - for each action
+- Accounts ? 
+
