@@ -256,11 +256,80 @@ If I want to demo the app I should have the full process visibility
 What do I need to get to this point?
 
 - BYOK - this will be the option for the demo
-- You tube based learning - We need to add it to the student app.
-- 
+- You tube based learning - We need to add it to the student app. - optional
+- Use internal data to create courses?
+
 
 #### Full account management 
 - Use API key and pass - Store somewhere secured 
 - Reporting on token usage per key - for each action
 - Accounts ? 
+
+
+#### Create with AI - Round 2 
+
+So far I have a skeleton for creating content with AI
+- It it only produces commands for AI on how to create the content
+- The commands are not detailed enough as AI generates Questions instead of sentences and translation
+- We need to create module by module or even lesson by lesson
+- It would be great to have an integrated process from AI directly to preview and save. 
+
+
+- [] Improve Instruction for AI - so it generates only sentences and translation - multiple meaning should be rare - or skipped in learning stage 
+- [] Plan the lesson by lesson/ module by module UI/UX
+- [] Plan the by words process - select words and use them in sentences 
+- [] Implement the above plan
+- [] Implement word selecting stages 
+- [] BYOK - implement with this locally not on server 
+
+
+##### Youtube learning 
+Learn with youtube is great - especially for learners with higher level
+What are the tasks that required implement learning with youtube 
+
+- [] Plan the UI/UX
+  - [] Show video
+  - [] Show question 
+  - [] Show video with identify words - so we should have space for the video and word selection area
+- [] implement the AI for creating a lesson based on a video
+
+
+##### Planning UI Create course step by step
+
+- [] Create course - initial page 
+- [] Select words - optional we can select words lesson by lesson
+- [] create module page 
+- [] Create lesson page 
+    - [] words so far
+    - [] Words for lesson
+    - [] generate sentences 
+    - [] generate exercises 
+    - [] preview lesson - add/remove/edit exercise
+    - [] preview as a student
+- [] List lesson in module 
+- [] List Modules in course 
+
+We have the following pages
+
+#### Using TMUX with Claude Code
+
+1. I have a lot of tasks and idea - usually the ideas are faster the development 
+2. On the other hand - I can not really parallel tasks - As they I may want to test some of the concepts first and see how they work 
+3. We can think of Claude Code with TMUX when
+  a. The concept is clear 
+  b. We have a set of small tasks
+
+#### High Level Tasks
+1. Cleanup 
+  a. Replace course_simple with course 
+  b. Remove fields that are not used
+  c. Remove remove older files 
+  d. DDL last version only  
+2. UI/UX + The process for creating course with AI
+  a. How does the initial UI/UX looks like  - From a single chat - to a complicated forms 
+  b. What are the processes that we have to do (Agents, google translate, Azure text to speech, Internal logic)
+3. Adding learn with Youtube
+  a. Adding the UI/UX
+  b. Adding the data structure (lesson,exercise)
+
 
