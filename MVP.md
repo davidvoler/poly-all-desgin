@@ -403,7 +403,7 @@ SEL.
                    [UI/Prompt]
                    free text - I want to create a Japanese course for hebrew speakers
                    -- Should use AI to understand the free text -- 
-                   
+
                 [CostsEvaluator]
               [EnrichmentLayer] 
             [Cache] [ExternalModel] 
@@ -452,3 +452,14 @@ What is the effort needed for each of the following
 
 
 
+#### POC
+We can start with the following process
+1. Create the UI for creating course with AI - New page 
+2. Do the steps described above - 
+  - create the course 
+  - generate prompts
+  - enrich prompts 
+  - save to db 
+  - simulate AI - Actually get from current data 
+  - create a lesson
+  - show the lesson - in edit mode and preview mode  
