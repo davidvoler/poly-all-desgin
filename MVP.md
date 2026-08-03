@@ -295,7 +295,6 @@ What are the tasks that required implement learning with youtube
 
 
 ##### Planning UI Create course step by step
-
 - [] Create course - initial page 
 - [] Select words - optional we can select words lesson by lesson
 - [] create module page 
@@ -309,6 +308,8 @@ What are the tasks that required implement learning with youtube
 - [] List lesson in module 
 - [] List Modules in course 
 
+Can all this be translated to a an Agent interface?
+
 We have the following pages
 
 #### Using TMUX with Claude Code
@@ -320,16 +321,134 @@ We have the following pages
   b. We have a set of small tasks
 
 #### High Level Tasks
-1. Cleanup 
+1. Cleanup - Priority 1
   a. Replace course_simple with course 
   b. Remove fields that are not used
   c. Remove remove older files 
   d. DDL last version only  
-2. UI/UX + The process for creating course with AI
+2. UI/UX + The process for creating course with AI - Priority 4
   a. How does the initial UI/UX looks like  - From a single chat - to a complicated forms 
   b. What are the processes that we have to do (Agents, google translate, Azure text to speech, Internal logic)
-3. Adding learn with Youtube
+3. Adding learn with Youtube - Priority 3
   a. Adding the UI/UX
   b. Adding the data structure (lesson,exercise)
+4. Connect to real AI Agent - Currently BYOK Priority 4
+  a. Create a key for for Gemini and learn how to use it 
+  b. Add to the code where and how to save the key
+
+
+##### Create with AI UI/UX
+1. A chat window - response might require options and selection 
+2. Form page with more specific selection 
+3. A combination of the above - enable both
+
+##### The AI processes under the hood 
+1. Generate sentences from words 
+2. Translate
+3. Extract rare or difficult words 
+4. Text to speech
+5. Reuse - Should we have a databases of sentences already created 
+6. Save new sentences and words in a table 
+
+
+
+H. = human
+M. = Machine
+MI. Machine Implementation
+SEL = Lets the user select from options  
+
+The process 
+H. Create for me a course that teaches Japanese for Hebrew speakers 
+M. Select Level
+H. Complete beginners 
+M. Leta's create an example lesson, We can start with the following words
+SEL.
+  [] - WORD1
+  [] - WORD1
+  [] - WORD1
+  [] - WORD1
+  Add Word
+H. Selects the words, Or adds his own words 
+SEL. Here are the sentences
+  [] - Sentences 1 
+  [] - Sentences 1 
+  [] - Sentences 1 
+  [] - Sentences 1 
+  [] - Sentences 1 
+  Add sentences 
+H. Select the sentences or removes un used sentences 
+M. Here is the the first lesson
+  - The lesson with types 
+  - Link to view lesson as a student
+M. Would you like me to create next lesson
+SEL. 
+  [] - Create next lesson
+  [] - Create the first module 
+
+
+#### The Generate Process - Components  
+
+- [UI/Prompt] 
+- [EnrichmentLayer] - Add instruction to the model format/tasks/Sentences length /etc
+- [Cache] - Get words and sentences from cache
+- [ExternalModel] - Generate sentences for words/Translation?
+- [Translation] - Google Translate, model 
+- [TextToSpeech] Azure text2speech, google text2speech
+- [GenExercise] From sentences 
+- [SelectWords] - We can use zipf - or tatoeba - or combined words 
+- [InternalLogic] - Rank words, break sentence words, etc
+- [CostsEvaluator] - Estimated costs, Actual costs. 
+
+
+                   [UI/Prompt]
+                   free text - I want to create a Japanese course for hebrew speakers
+                   -- Should use AI to understand the free text -- 
+                   
+                [CostsEvaluator]
+              [EnrichmentLayer] 
+            [Cache] [ExternalModel] 
+            [InternalLogic]
+            [Translation]  [TextToSpeech]
+            [GenExercise] 
+
+When working with this structure 
+We can really simplify the model task - it is only about generating sentences 
+However we could allow the model to do more work - but it seems that breaking tasks 
+- generate question
+- create sentences from model
+- add sentence description 
+
+
+
+- This is an example when we want to use multiple choice - When a single lesson can have multiple translation 
+- Also when theses translation are quite similar and we want to show that there is no differences 
+I want a flower
+花が欲しいです。
+Hana ga hoshīdesu.
+
+I want flowers
+花が欲しいです。
+Hana ga hoshīdesu.
+
+
+#### Reuse content 
+
+- Do we want to reuse ? If I payed for Agent - do I want to share it with others
+- If we have the school concept - probably reuse is solved 
+- We can define that in the public school - reuse is mandatory 
+- How can we avoid that when I create a course with the save requirement like someone else - I would not get the same words and sentences 
+- Maybe adding a randomization would help - in multiple processes 
+- Maybe we can give a discount if you are willing to share your sentences with other. 
+
+
+#### Potential Alpha Users 
+- Show it to others
+  - Tali - Bat Doda
+  - Yishai Mor 
+- Open it on the web to limit use. 
+- Look for more potential users 
+What is the effort needed for each of the following 
+
+
 
 
