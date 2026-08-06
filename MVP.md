@@ -463,3 +463,64 @@ We can start with the following process
   - simulate AI - Actually get from current data 
   - create a lesson
   - show the lesson - in edit mode and preview mode  
+
+##### Full POC Scenarios
+
+- UI Parts 
+   - Create Course - With Text or selection 
+   - Select words per course 
+   - Create Module
+   - Create Lesson
+   - Preview Lesson
+   - Edit lesson manually
+
+
+Scharios 
+  - Start a new course 
+  - Continue from where you left the course last 
+  - Create modules manually / Split into modules later 
+  - Reorder lessons
+  - move lessons from module to module 
+
+Create Lesson Scenario
+  - Select words from a list 
+  - Create words manually
+  - No Words - teaching structure of sentences or anything else
+
+
+Create Lesson with Youtube
+  - Select video
+  - Start/End - default full video
+  - Select section length (5 minutes, 2 minutes)
+
+#### Forms and Pages 
+  - Course page - list of modules/lessons tree view - drag and drop, Prompt
+  - Lesson Preview 
+  - Lesson Edit
+  - Create with Youtube - maybe it is the same page - only new elements in the page 
+
+
+#### Backend frontend interactions 
+
+Frontend requests 
+- Create a course 
+- Create example sentences 
+- Create exercises
+
+
+
+Backend 
+- Save request - for auditing and improvements 
+- Find Sentences for words 
+- Save sentences created in sentences table 
+- Get sentences from cache
+- Break long text into sentences, phrases  
+- Find difficult words
+
+
+#### Question before implementation
+- Do we create the course/lessons in a separate schema or save it in draft mode
+a. use current - draft mode 
+- Do we define a new content schema - or used the current one with improvement 
+a. user existing after improvement
+- 
