@@ -10,6 +10,7 @@ import 'pages/create_course_page.dart';
 import 'pages/create_course_steps_page.dart';
 import 'pages/create_from_subtitles_page.dart';
 import 'pages/create_school_page.dart';
+import 'pages/course_ai_poc_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
 import 'pages/login_page.dart';
@@ -107,6 +108,7 @@ class DashboardApp extends StatelessWidget {
             const _Guarded(child: CreateCourseStepsPage()),
         '/create-from-subtitles': (_) =>
             const _Guarded(child: CreateFromSubtitlesPage()),
+        '/course-ai-poc': (_) => const _Guarded(child: CourseAiPocPage()),
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
         '/editors': (_) => const _Guarded(

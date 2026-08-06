@@ -56,6 +56,12 @@ const List<NavItem> kNavItems = [
       label: 'Create from subtitles',
       icon: Icons.subtitles_outlined,
       route: '/create-from-subtitles'),
+  // Stripped-down proof-of-concept for the "Create with AI" idea — just
+  // course name + languages + the resulting prompt. See TASKS.md.
+  NavItem(
+      label: 'Course AI POC',
+      icon: Icons.science_outlined,
+      route: '/course-ai-poc'),
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),
