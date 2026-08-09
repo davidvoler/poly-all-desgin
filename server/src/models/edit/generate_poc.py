@@ -5,6 +5,8 @@ class PromptType(str, Enum):
     CREATE_LESSON = "create_lesson"
     GET_WORDS = "get_words"
     CREATE_COURSE = "create_course"
+    CREATE_MODULES = "create_modules"
+
 
 class Prompt(BaseModel):
     provider: str|None = None
