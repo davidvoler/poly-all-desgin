@@ -43,7 +43,8 @@ class GenerateCourseWordsListRequest(BaseModel):
 class PromptResponseOption(BaseModel):
     title: str | None = ''
     text: str | None = ''
-    action: str | None = ''
+    prompt_type: PromptType
+
     
 class PromptResponse(BaseModel):
     prompt_type: PromptType | None = None
@@ -53,6 +54,7 @@ class PromptResponse(BaseModel):
     options: list[PromptResponseOption] | None = []
     content: dict|None = {}
     response: str | None = ''
+    course
     
 
 
