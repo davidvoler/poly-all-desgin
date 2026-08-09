@@ -18,7 +18,7 @@ router = APIRouter()
 
 async def create_course(lang, to_lang, user_id, school_id, title, description) -> int:
     # Implement the logic for creating a course here
-    sql = f"""INSERT INTO courses (lang, to_lang, user_id, school_id, title, description, status) 
+    sql = f"""INSERT INTO course_simple.course (lang, to_lang, user_id, school_id, title, description, status) 
     VALUES (%s, %s, %s, %s, %s, %s, %s)
     RETURNING id"""
     params = (lang, to_lang, user_id, school_id, title, description, 'draft')

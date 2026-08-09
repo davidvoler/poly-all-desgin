@@ -49,4 +49,10 @@ The idea that language should be thought while introducing little difficulty eac
 
 
 
+#### End2End front end and backend 
 
+- [] When we create a course the first time call /generate_course
+- [] We get back the text and 2 options 
+    - [] create words 
+    - [] Create leson
+- [] We can click on each and get the results 
