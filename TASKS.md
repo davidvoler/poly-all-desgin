@@ -51,8 +51,17 @@ The idea that language should be thought while introducing little difficulty eac
 
 #### End2End front end and backend 
 
-- [] When we create a course the first time call /generate_course
-- [] We get back the text and 2 options 
-    - [] create words 
-    - [] Create leson
-- [] We can click on each and get the results 
+- [x] When we create a course the first time call /generate_course
+- [x] We get back the text and 2 options 
+    - [x] create words 
+    - [x] Create leson
+- [x] We can click on each and get the results 
+
+#### The process of creating a course 
+
+cleanup 
+- [x] remove '14 streak' and search icon from the top left of Course AI POC 
+- [x] One we have created the course 
+    - [x] the title should be the course title
+    - [x] We should keep in the state course_id, lang, to_lang and send them with any new prompt 
+    - [x] next prompts should not be create course but only create lesson 

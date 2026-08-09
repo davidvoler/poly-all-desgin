@@ -27,17 +27,21 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
   final _studentLanguage = TextEditingController(text: 'Hebrew');
   final _prompt = TextEditingController();
 
-  // /generate_course call state — [_course] holds the created course's
-  // prompt/options once it comes back.
+  // The created course — set once by /generate_course and kept for the
+  // rest of the session. Its course_id/lang/to_lang back every later
+  // lesson/words call instead of the (now-locked) form fields, and its
+  // title/options never change after creation.
   bool _submitting = false;
   String? _submitError;
   PromptResponse? _course;
 
-  // Follow-up option call state — [_optionLoading] is the prompt_type of
-  // whichever option button is in flight, so only that button spinners.
+  // Latest result shown below the course card — from a follow-up prompt
+  // or one of the quick-option buttons. [_optionLoading] is the
+  // prompt_type of whichever option button is in flight, so only that
+  // button spinners (the main prompt box uses [_submitting] instead).
   PromptType? _optionLoading;
-  String? _optionError;
-  PromptResponse? _optionResult;
+  String? _lastError;
+  PromptResponse? _lastResult;
 
   @override
   void dispose() {
@@ -50,27 +54,48 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
 
   void _rebuild() => setState(() {});
 
+  /// Before a course exists, submits the Basics form to /generate_course.
+  /// Once [_course] is set, every later submit reuses its course_id/lang/
+  /// to_lang and calls /generate_lesson instead — the prompt box never
+  /// re-creates the course.
   Future<void> _submit() async {
     if (_submitting) return;
+    final course = _course;
     setState(() {
       _submitting = true;
       _submitError = null;
-      _course = null;
-      _optionResult = null;
-      _optionError = null;
+      _lastError = null;
     });
     try {
-      final result = await ref.read(dashboardApiProvider).generateCourse(
-            lang: _language.text.trim(),
-            toLang: _studentLanguage.text.trim(),
-            title: _title.text.trim(),
-            prompt: _prompt.text.trim(),
-          );
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _course = result;
-      });
+      final api = ref.read(dashboardApiProvider);
+      if (course == null) {
+        final result = await api.generateCourse(
+          lang: _language.text.trim(),
+          toLang: _studentLanguage.text.trim(),
+          title: _title.text.trim(),
+          prompt: _prompt.text.trim(),
+        );
+        if (!mounted) return;
+        setState(() {
+          _submitting = false;
+          _course = result;
+          _title.text = result.title; // reflect the server-confirmed title
+          _prompt.clear();
+        });
+      } else {
+        final result = await api.generateLesson(
+          courseId: course.courseId!,
+          lang: course.lang,
+          toLang: course.toLang,
+          prompt: _prompt.text.trim(),
+        );
+        if (!mounted) return;
+        setState(() {
+          _submitting = false;
+          _lastResult = result;
+          _prompt.clear();
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -81,12 +106,13 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
   }
 
   Future<void> _runOption(PromptResponseOption option) async {
-    final courseId = _course?.courseId;
-    if (_optionLoading != null || courseId == null) return;
+    final course = _course;
+    if (_optionLoading != null || course?.courseId == null) return;
+    final courseId = course!.courseId!;
     setState(() {
       _optionLoading = option.promptType;
-      _optionError = null;
-      _optionResult = null;
+      _lastError = null;
+      _lastResult = null;
     });
     try {
       final api = ref.read(dashboardApiProvider);
@@ -94,19 +120,19 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
           ? await api.generateWordsList(courseId: courseId)
           : await api.generateLesson(
               courseId: courseId,
-              lang: _course?.lang,
-              toLang: _course?.toLang,
+              lang: course.lang,
+              toLang: course.toLang,
             );
       if (!mounted) return;
       setState(() {
         _optionLoading = null;
-        _optionResult = result;
+        _lastResult = result;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _optionLoading = null;
-        _optionError = '$e';
+        _lastError = '$e';
       });
     }
   }
@@ -116,9 +142,13 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
     final me = ref.watch(currentUserProvider);
     final username =
         me?.name.isNotEmpty == true ? me!.name : MockData.me.name;
+    final course = _course;
     return DashboardShell(
-      title: 'Course AI POC',
+      title: course != null && course.title.isNotEmpty
+          ? course.title
+          : 'Course AI POC',
       activeRoute: '/course-ai-poc',
+      showTopbarDefaults: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -127,72 +157,93 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const GroupLabel('Basics'),
-                const SizedBox(height: 12),
-                CourseField(
-                  controller: _title,
-                  label: 'Course title',
-                  hint: 'e.g. Japanese for Hebrew Speakers',
-                  onChanged: _rebuild,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: LanguageField(
-                        controller: _language,
-                        label: 'Learning language',
-                        hint: 'Japanese or ja',
-                        onChanged: _rebuild,
+                if (course == null) ...[
+                  const GroupLabel('Basics'),
+                  const SizedBox(height: 12),
+                  CourseField(
+                    controller: _title,
+                    label: 'Course title',
+                    hint: 'e.g. Japanese for Hebrew Speakers',
+                    onChanged: _rebuild,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LanguageField(
+                          controller: _language,
+                          label: 'Learning language',
+                          hint: 'Japanese or ja',
+                          onChanged: _rebuild,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: LanguageField(
-                        controller: _studentLanguage,
-                        label: 'Student language',
-                        hint: 'Hebrew or he',
-                        onChanged: _rebuild,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: LanguageField(
+                          controller: _studentLanguage,
+                          label: 'Student language',
+                          hint: 'Hebrew or he',
+                          onChanged: _rebuild,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ] else ...[
+                  // The course is locked in once created — title/lang/
+                  // to_lang stay exactly as the server confirmed them and
+                  // back every later call instead of editable fields.
+                  const GroupLabel('Course'),
+                  const SizedBox(height: 8),
+                  Text(course.title, style: DashText.h2),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${course.lang ?? '—'} → ${course.toLang ?? '—'}',
+                    style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 _PromptField(
                   controller: _prompt,
-                  greeting: "Hi $username, let's start creating a course",
+                  greeting: course == null
+                      ? "Hi $username, let's start creating a course"
+                      : "What's next for '${course.title}'?",
                   onChanged: _rebuild,
                 ),
                 if (_submitError != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Could not create the course — $_submitError',
+                    course == null
+                        ? 'Could not create the course — $_submitError'
+                        : 'Could not create the lesson — $_submitError',
                     style: const TextStyle(fontSize: 12, color: DashColors.red400),
                   ),
                 ],
                 const SizedBox(height: 14),
                 PrimaryButton(
-                  label: _submitting ? 'Creating…' : 'Create course',
+                  label: _submitting
+                      ? (course == null ? 'Creating…' : 'Sending…')
+                      : (course == null ? 'Create course' : 'Create lesson'),
                   leading: Icons.auto_awesome_outlined,
                   onTap: _submitting ? null : _submit,
                 ),
               ],
             ),
           ),
-          if (_course != null) ...[
+          if (course != null) ...[
             const SizedBox(height: 16),
             GlassCard(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_course!.prompt, style: DashText.h2),
-                  if (_course!.options.isNotEmpty) ...[
+                  Text(course.prompt, style: DashText.h2),
+                  if (course.options.isNotEmpty) ...[
                     const SizedBox(height: 14),
                     Wrap(
                       spacing: 10,
                       runSpacing: 10,
-                      children: _course!.options
+                      children: course.options
                           .map((o) => GhostButton(
                                 label: _optionLoading == o.promptType
                                     ? '${o.title}…'
@@ -207,14 +258,14 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
                           .toList(),
                     ),
                   ],
-                  if (_optionError != null) ...[
+                  if (_lastError != null) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'That failed — $_optionError',
+                      'That failed — $_lastError',
                       style: const TextStyle(fontSize: 12, color: DashColors.red400),
                     ),
                   ],
-                  if (_optionResult != null) ...[
+                  if (_lastResult != null) ...[
                     const SizedBox(height: 14),
                     Container(
                       padding: const EdgeInsets.all(14),
@@ -224,9 +275,9 @@ class _CourseAiPocPageState extends ConsumerState<CourseAiPocPage> {
                         border: Border.all(color: DashColors.w(0.14)),
                       ),
                       child: Text(
-                        _optionResult!.response.isNotEmpty
-                            ? _optionResult!.response
-                            : _optionResult!.prompt,
+                        _lastResult!.response.isNotEmpty
+                            ? _lastResult!.response
+                            : _lastResult!.prompt,
                         style: const TextStyle(fontSize: 13, color: Colors.white),
                       ),
                     ),

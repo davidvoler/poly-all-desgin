@@ -20,14 +20,14 @@ async def create_course(lang, to_lang, user_id, school_id, title, description) -
     # Implement the logic for creating a course here
     sql = f"""INSERT INTO course_simple.course (lang, to_lang, user_id, school_id, title, description, status) 
     VALUES (%s, %s, %s, %s, %s, %s, %s)
-    RETURNING id"""
+    RETURNING course_id"""
     params = (lang, to_lang, user_id, school_id, title, description, 'draft')
     result = await get_query_results(sql, params)
-    return result[0]['id'] if result else 0
+    return result[0]['course_id'] if result else 0
 
 
 def create_title(lang: str | None, to_lang: str | None, user: str | None) -> str:
-    return f"Course {lang or 'Unknown'} {to_lang or 'Unknown'} by {user or 'Unknown'}"
+    return f"Course {lang or 'Unknown'} to  {to_lang or 'Unknown'} speakers "
 
 @router.post("/", response_model=PromptResponse)
 def generate_poc(request: Prompt):
@@ -50,7 +50,7 @@ async def generate_course(request: GenerateCourseRequest, school_user: SchoolUse
     Generate a new course based on the provided request.
     """
     if not request.title:
-        request.title = create_title(request.lang, request.to_lang, school_user.username)
+        request.title = create_title(request.lang, request.to_lang, school_user.school_name)
     if not request.description:
         # Handle missing description
         request.description = "No description provided."
@@ -94,11 +94,13 @@ async def generate_lesson(request: GenerateLessonRequest, school_user: SchoolUse
     show for the "Create Lesson" option.
     """
     title = request.title or "Greetings"
+    context = f' ("{request.prompt}")' if request.prompt else ""
+    message = f"Lesson '{title}' generated for course {request.course_id}{context}."
     return PromptResponse(
         prompt_type=PromptType.CREATE_LESSON,
-        prompt=f"Lesson '{title}' generated for course {request.course_id}.",
+        prompt=message,
         title=title,
-        response=f"Lesson '{title}' generated for course {request.course_id}.",
+        response=message,
         course_id=request.course_id,
         lang=request.lang,
         to_lang=request.to_lang,

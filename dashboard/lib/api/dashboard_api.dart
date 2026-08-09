@@ -303,6 +303,7 @@ class DashboardApi {
     required int courseId,
     String? lang,
     String? toLang,
+    String? prompt,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/generate_poc/generate_lesson',
@@ -310,6 +311,7 @@ class DashboardApi {
         'course_id': courseId,
         'lang': lang,
         'to_lang': toLang,
+        'prompt': prompt,
       },
     );
     return PromptResponse.fromJson(res.data ?? const {});

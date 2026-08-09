@@ -96,6 +96,10 @@ class DashboardShell extends StatelessWidget {
   /// to the right of the streak chip.
   final List<Widget> topbarTrailing;
 
+  /// Whether to fall back to the streak chip + search icon when
+  /// [topbarTrailing] is empty. Set false to hide them entirely.
+  final bool showTopbarDefaults;
+
   /// Page body.
   final Widget child;
 
@@ -106,6 +110,7 @@ class DashboardShell extends StatelessWidget {
     required this.child,
     this.overline,
     this.topbarTrailing = const [],
+    this.showTopbarDefaults = true,
   });
 
   @override
@@ -125,6 +130,7 @@ class DashboardShell extends StatelessWidget {
                     title: title,
                     overline: overline,
                     trailing: topbarTrailing,
+                    showDefaults: showTopbarDefaults,
                   ),
                   Expanded(
                     child: SingleChildScrollView(
@@ -388,10 +394,12 @@ class _Topbar extends ConsumerWidget {
   final String title;
   final String? overline;
   final List<Widget> trailing;
+  final bool showDefaults;
   const _Topbar({
     required this.title,
     required this.overline,
     required this.trailing,
+    required this.showDefaults,
   });
 
   @override
@@ -439,7 +447,7 @@ class _Topbar extends ConsumerWidget {
                 w,
                 const SizedBox(width: 10),
               ],
-              if (trailing.isEmpty) ...[
+              if (trailing.isEmpty && showDefaults) ...[
                 StreakChip(days: streakDays),
                 const SizedBox(width: 10),
                 const DashIconButton(icon: Icons.search, tooltip: 'Search'),
