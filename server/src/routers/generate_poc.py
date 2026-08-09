@@ -1,16 +1,33 @@
-from models.edit.generate_poc import *
+
 from models.edit.course import Course
 from models.auth import  SchoolUser
 from fastapi import APIRouter, Depends
-from server.src.utils.auth_deps import current_school_user
-
+from utils.auth_deps import current_school_user
+from utils.db import get_query_results
+from models.edit.generate_poc import (
+    Prompt,
+    PromptResponse,
+    PromptResponseOption,
+    GenerateCourseRequest,
+    GenerateLessonRequest,
+    GenerateCourseWordsListRequest,
+    PromptType 
+)
 router = APIRouter()
 
 
-async def create_course():
+async def create_course(lang, to_lang, user_id, school_id, title, description) -> int:
     # Implement the logic for creating a course here
-    return PromptResponse()
+    sql = f"""INSERT INTO courses (lang, to_lang, user_id, school_id, title, description, status) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    RETURNING id"""
+    params = (lang, to_lang, user_id, school_id, title, description, 'draft')
+    result = await get_query_results(sql, params)
+    return result[0]['id'] if result else 0
 
+
+def create_title(lang: str | None, to_lang: str | None, user: str | None) -> str:
+    return f"Course {lang or 'Unknown'} {to_lang or 'Unknown'} by {user or 'Unknown'}"
 
 @router.post("/", response_model=PromptResponse)
 def generate_poc(request: Prompt):
@@ -28,18 +45,45 @@ def generate_poc(request: Prompt):
 
 
 @router.post("/generate_course", response_model=PromptResponse)
-def generate_course(request: GenerateCourseRequest, school_user: SchoolUser = Depends(current_school_user)):
+async def generate_course(request: GenerateCourseRequest, school_user: SchoolUser = Depends(current_school_user)):
     """
     Generate a new course based on the provided request.
     """
     if not request.title:
-        # Handle missing title
-        request.title = "Untitled Course"
+        request.title = create_title(request.lang, request.to_lang, school_user.username)
     if not request.description:
         # Handle missing description
         request.description = "No description provided."
-    
-    return PromptResponse()
+    course_id = await create_course(
+        request.lang,
+        request.to_lang,
+        school_user.id,
+        school_user.school_id,
+        request.title,
+        request.description
+    )  # Call the function to create a course and get its ID
+
+    prompt_options = [
+        PromptResponseOption(
+            title="Create Lesson",
+            text="Create a new lesson for this course.",
+            prompt_type=PromptType.CREATE_LESSON),
+        PromptResponseOption(
+            title="Get Words List",
+            text="Retrieve a list of words for this course.",
+            prompt_type=PromptType.GET_WORDS)   
+    ]
+    return PromptResponse(
+        options=prompt_options,
+        prompt_type=PromptType.CREATE_COURSE,
+        prompt=f"Course '{request.title}' created successfully.",
+        title=request.title,
+        description=request.description,
+        course_id=course_id, 
+        to_lang=request.to_lang,
+        lang=request.lang,
+
+        )
 
 
 @router.post("/generate_lesson", response_model=PromptResponse)

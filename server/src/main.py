@@ -15,6 +15,7 @@ from routers import (
     practice,
     achievement, 
     auth_new,
+    generate_poc
 )
 from routers.edit import  (
     edit_course,
@@ -129,3 +130,7 @@ app.include_router(course_import.router,
 app.include_router(course_export.router,
     prefix="/api/v1/edit/course/export",
     tags=["export_course"]) 
+
+app.include_router(generate_poc.router,
+    prefix="/api/v1/generate_poc",
+    tags=["generate_poc"])  

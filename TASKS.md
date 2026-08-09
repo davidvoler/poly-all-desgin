@@ -43,5 +43,10 @@ The idea that language should be thought while introducing little difficulty eac
 
 
 #### Tasks
-- [] create the backend model for response that include options 
-- [] Create the default options 
+- [x] create the backend model for response that include options 
+- [x] Create the default options 
+- [x] Create initial router code
+
+
+
+

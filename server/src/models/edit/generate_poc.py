@@ -12,8 +12,10 @@ class Prompt(BaseModel):
     provider: str|None = None
     model: str|None = None
     lang: str|None = None
+    course_id: int|None = None
+    module_id: int|None = None
     to_lang: str|None = None
-    prompt: str
+    prompt: str|None = None
     prompt_type: PromptType|None = None 
     extra_data: dict|None = None
     token_estimate: int|None = None
@@ -52,9 +54,11 @@ class PromptResponse(BaseModel):
     title: str | None = ''
     description: str | None = ''
     options: list[PromptResponseOption] | None = []
-    content: dict|None = {}
     response: str | None = ''
-    course
-    
+    course_id: int | None = None
+    lang: str | None = None
+    to_lang: str | None = None
+    actual_cost: float | None = 0.0
+    actual_tokens: int | None = 0
 
 
