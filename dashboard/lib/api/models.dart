@@ -446,4 +446,86 @@ class StudentRowRemote {
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
   }
+
+  // --- Course AI POC (mirrors server/src/models/edit/generate_poc.py) ----
+}
+
+/// Mirrors the server's `PromptType` enum.
+enum PromptType { createLesson, getWords, createCourse, createModules }
+
+String promptTypeToWire(PromptType t) => switch (t) {
+      PromptType.createLesson => 'create_lesson',
+      PromptType.getWords => 'get_words',
+      PromptType.createCourse => 'create_course',
+      PromptType.createModules => 'create_modules',
+    };
+
+PromptType promptTypeFromWire(String? wire) => switch (wire) {
+      'create_lesson' => PromptType.createLesson,
+      'get_words' => PromptType.getWords,
+      'create_modules' => PromptType.createModules,
+      _ => PromptType.createCourse,
+    };
+
+/// Mirrors `PromptResponseOption` — one of the "what next" choices offered
+/// after a generate_poc call (e.g. "Create Lesson", "Get Words List").
+class PromptResponseOption {
+  final String title;
+  final String text;
+  final PromptType promptType;
+
+  const PromptResponseOption({
+    required this.title,
+    required this.text,
+    required this.promptType,
+  });
+
+  factory PromptResponseOption.fromJson(Map<String, dynamic> j) =>
+      PromptResponseOption(
+        title: (j['title'] as String?) ?? '',
+        text: (j['text'] as String?) ?? '',
+        promptType: promptTypeFromWire(j['prompt_type'] as String?),
+      );
+}
+
+/// Mirrors `PromptResponse` — the result of any /api/v1/generate_poc/* call.
+class PromptResponse {
+  final PromptType? promptType;
+  final String prompt;
+  final String title;
+  final String description;
+  final List<PromptResponseOption> options;
+  final String response;
+  final int? courseId;
+  final String? lang;
+  final String? toLang;
+
+  const PromptResponse({
+    this.promptType,
+    this.prompt = '',
+    this.title = '',
+    this.description = '',
+    this.options = const [],
+    this.response = '',
+    this.courseId,
+    this.lang,
+    this.toLang,
+  });
+
+  factory PromptResponse.fromJson(Map<String, dynamic> j) => PromptResponse(
+        promptType: j['prompt_type'] != null
+            ? promptTypeFromWire(j['prompt_type'] as String?)
+            : null,
+        prompt: (j['prompt'] as String?) ?? '',
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        options: ((j['options'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(PromptResponseOption.fromJson)
+            .toList(),
+        response: (j['response'] as String?) ?? '',
+        courseId: j['course_id'] as int?,
+        lang: j['lang'] as String?,
+        toLang: j['to_lang'] as String?,
+      );
 }

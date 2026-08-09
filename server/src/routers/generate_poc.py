@@ -57,7 +57,7 @@ async def generate_course(request: GenerateCourseRequest, school_user: SchoolUse
     course_id = await create_course(
         request.lang,
         request.to_lang,
-        school_user.id,
+        school_user.user_id,
         school_user.school_id,
         request.title,
         request.description
@@ -87,12 +87,34 @@ async def generate_course(request: GenerateCourseRequest, school_user: SchoolUse
 
 
 @router.post("/generate_lesson", response_model=PromptResponse)
-def generate_lesson(request: GenerateLessonRequest):
-    # Implement the logic for generating lesson here
-    return PromptResponse()
+async def generate_lesson(request: GenerateLessonRequest, school_user: SchoolUser = Depends(current_school_user)):
+    """
+    Generate a new lesson for an existing course. POC stub: no AI call or DB
+    write yet, just echoes back a result so the front end has something to
+    show for the "Create Lesson" option.
+    """
+    title = request.title or "Greetings"
+    return PromptResponse(
+        prompt_type=PromptType.CREATE_LESSON,
+        prompt=f"Lesson '{title}' generated for course {request.course_id}.",
+        title=title,
+        response=f"Lesson '{title}' generated for course {request.course_id}.",
+        course_id=request.course_id,
+        lang=request.lang,
+        to_lang=request.to_lang,
+    )
 
 
 @router.post("/generate_words_list", response_model=PromptResponse)
-def generate_words_list(request: GenerateCourseWordsListRequest):
-    # Implement the logic for generating words list here
-    return PromptResponse()
+async def generate_words_list(request: GenerateCourseWordsListRequest, school_user: SchoolUser = Depends(current_school_user)):
+    """
+    Generate a starter word list for a course. POC stub: no AI call or DB
+    write yet, just echoes back a result so the front end has something to
+    show for the "Get Words List" option.
+    """
+    return PromptResponse(
+        prompt_type=PromptType.GET_WORDS,
+        prompt=f"Word list generated for course {request.course_id}.",
+        response=f"Word list generated for course {request.course_id}.",
+        course_id=request.course_id,
+    )

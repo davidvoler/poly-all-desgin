@@ -273,6 +273,60 @@ class DashboardApi {
     await _dio.delete<dynamic>('/api/v1/edit/course/course/$courseId');
   }
 
+  // --- Course AI POC (see pages/course_ai_poc_page.dart) ------------
+
+  /// Create a course from the AI POC form. Returns the created course id
+  /// plus the "what next" options (Create Lesson / Get Words List).
+  Future<PromptResponse> generateCourse({
+    required String lang,
+    required String toLang,
+    String? title,
+    String? description,
+    String? prompt,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_course',
+      data: {
+        'lang': lang,
+        'to_lang': toLang,
+        'title': title,
+        'description': description,
+        'prompt': prompt,
+      },
+    );
+    return PromptResponse.fromJson(res.data ?? const {});
+  }
+
+  /// Generate a lesson for an existing course — one of the follow-up
+  /// options offered by [generateCourse].
+  Future<PromptResponse> generateLesson({
+    required int courseId,
+    String? lang,
+    String? toLang,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_lesson',
+      data: {
+        'course_id': courseId,
+        'lang': lang,
+        'to_lang': toLang,
+      },
+    );
+    return PromptResponse.fromJson(res.data ?? const {});
+  }
+
+  /// Generate a starter word list for an existing course — the other
+  /// follow-up option offered by [generateCourse].
+  Future<PromptResponse> generateWordsList({
+    required int courseId,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_words_list',
+      data: {'course_id': courseId},
+    );
+    return PromptResponse.fromJson(res.data ?? const {});
+  }
+
   // --- Reads --------------------------------------------------------
   //
   // The school profile / stats / activity / languages / students / plans /
