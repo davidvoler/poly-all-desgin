@@ -30,6 +30,7 @@
     chatScroll: document.getElementById('chatScroll'),
     chatForm: document.getElementById('chatForm'),
     chatText: document.getElementById('chatText'),
+    quickNewModule: document.getElementById('quickNewModule'),
     workTabs: document.getElementById('workTabs'),
     workScroll: document.getElementById('workScroll'),
   };
@@ -228,6 +229,15 @@
   }
 
   function doNewLesson(newModule) {
+    if (!course.words.length) {
+      appendUser(newModule ? 'Start a new module' : 'Select words for a new lesson');
+      simulateThinking(() => {
+        appendAssistant("There's no word bank yet — let's create one first, then I can help you pick words for it.", {
+          actions: [{ id: 'create_words', label: 'Create word list' }],
+        });
+      });
+      return;
+    }
     let mod = course.modules[course.modules.length - 1];
     if (newModule || !mod) {
       mod = { id: nextId('mod'), title: `Module ${course.modules.length + 1}` };
@@ -356,6 +366,9 @@
   el.chatText.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); el.chatForm.requestSubmit(); }
   });
+  // Always-available shortcut — the same "Start a new module" action also
+  // offered contextually once a lesson is ready, but reachable any time.
+  el.quickNewModule.addEventListener('click', () => doNewLesson(true));
 
   // ---------------------------------------------------------------
   // Right pane: Words / Lessons / Edit Course / Preview tabs

@@ -354,8 +354,12 @@ body.course-page { display: flex; flex-direction: column; height: 100vh; }
 .picker-row.used { opacity: 0.5; }
 .picker-foot { font-size: 11px; color: var(--w-55); margin-top: 2px; }
 
+.chat-quick {
+  padding: 10px 22px 0;
+  display: flex;
+}
 .chat-input {
-  padding: 14px 22px 20px;
+  padding: 10px 22px 20px;
   border-top: 1px solid var(--w-08);
   display: flex; gap: 10px; align-items: flex-end;
 }
