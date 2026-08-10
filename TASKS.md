@@ -271,3 +271,42 @@ already established in the codebase):
       0.0/0, nothing calls an LLM yet); the running per-course total shown in the
       chat header stays a client-side sum, no new endpoint needed
 
+
+
+#### API Manual planning 
+
+- We always use POST with a request
+- We should test permission on each call - User can edit this course? User can use AI? etc. 
+- We do not use path parameters  /write/{course_id}/best - As we always use post and pass course_id, lesson_id in the request
+
+
+
+Utilities
+- permissions (course editing, using AI, AI Limit etc)
+
+endpoints
+
+No AI
+- /edit/create/course - create course 
+- /edit/course/state - got back to last state - show the prompt history
+- /edit/course/words/update - updates the list of words - by user by adding and removing
+
+- /edit/module/create - creates a new module - this becomes the current module 
+
+AI
+- /generate/prompt - general prompt that we should use AI to understand
+With or without AI
+- words : we always see the next words to use
+- /edit/course/words/suggest - suggests an initial words per course
+
+- /edit/lesson/gen -{words} -  generate a full lesson - from words 
+- /edit/lesson/sentences - {words} -  generate a full lesson
+- /edit/lesson/exercises - {sentences} -  generate a full lesson
+
+
+
+
+
+
+
+
