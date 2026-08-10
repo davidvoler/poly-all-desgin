@@ -141,7 +141,4 @@ The lessons in edit/preview mode
 - exercises 
 Preview mode 
 - What we have is not bad - it is a long list of exercises - where you can participate 
-- Full - preview - exercise after exercise - exactly like in the students will see it 
-
-
-###
+- Full - preview - exercise after exercise - exactly like in the students will see 

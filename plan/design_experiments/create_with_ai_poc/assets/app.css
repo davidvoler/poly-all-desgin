@@ -255,7 +255,7 @@ body {
    =================================================================== */
 .workshell {
   display: grid;
-  grid-template-columns: minmax(360px, 40%) 1fr;
+  grid-template-columns: 1fr minmax(360px, 40%);
   height: 100vh;
 }
 /* Grid items default to min-height:auto, which lets their intrinsic
@@ -263,26 +263,8 @@ body {
    triggering each column's own overflow-y:auto. Pin them to the row. */
 .workshell > * { min-height: 0; }
 
-/* --- Left pane: workspace (words / lessons / edit / preview) --- */
-.leftpane {
-  display: flex; flex-direction: column;
-  background: rgba(255,255,255,0.04);
-  border-right: 1px solid var(--w-08);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-}
-.leftpane .back {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; font-weight: 700;
-  color: var(--w-70);
-  text-decoration: none;
-  padding: 16px 18px 0;
-}
-.leftpane .back:hover { color: #fff; }
-.leftpane .back svg { width: 14px; height: 14px; stroke-width: 2; }
-
-/* --- Right: chat --- */
-.chat-col { display: flex; flex-direction: column; min-width: 0; }
+/* --- Left: chat --- */
+.chat-col { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--w-08); }
 .chat-head {
   padding: 16px 22px;
   border-bottom: 1px solid var(--w-08);
@@ -368,7 +350,23 @@ body {
 .chat-send:disabled { opacity: 0.4; cursor: default; }
 .chat-send svg { width: 16px; height: 16px; }
 
-/* --- Left pane tabs: Words / Lessons / Edit / Preview --- */
+/* --- Right pane: workspace (words / lessons / edit / preview) --- */
+.leftpane {
+  display: flex; flex-direction: column;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.leftpane .back {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700;
+  color: var(--w-70);
+  text-decoration: none;
+  padding: 16px 18px 0;
+}
+.leftpane .back:hover { color: #fff; }
+.leftpane .back svg { width: 14px; height: 14px; stroke-width: 2; }
+
 .work-tabs {
   display: flex; gap: 4px;
   padding: 14px 18px 0;
