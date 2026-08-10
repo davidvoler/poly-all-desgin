@@ -8,11 +8,25 @@
     window.history.replaceState({}, '', url);
   }
 
+  // Migrate courses saved before modules/usage existed.
+  if (!course.modules) course.modules = [];
+  if (!course.usage) course.usage = { tokens: 0, cost: 0 };
+  if (course.lessons.length && course.modules.length === 0) {
+    const mod = { id: nextId('mod'), title: 'Module 1' };
+    course.modules.push(mod);
+    course.lessons.forEach((l) => { l.moduleId = mod.id; });
+    CourseStore.save(course);
+  }
+
   let activeTab = course.workTab || 'words';
+  // Sentence rows default to read-only text with an edit-pencil toggle;
+  // this tracks which ones are mid-edit. UI-only, not persisted.
+  const editingSentences = new Set();
 
   const el = {
     chatTitle: document.getElementById('chatCourseTitle'),
     chatSub: document.getElementById('chatCourseSub'),
+    chatUsage: document.getElementById('chatUsage'),
     chatScroll: document.getElementById('chatScroll'),
     chatForm: document.getElementById('chatForm'),
     chatText: document.getElementById('chatText'),
@@ -26,6 +40,32 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  /** ids of every word already selected into at least one lesson. */
+  function usedWordIds() {
+    const s = new Set();
+    course.lessons.forEach((l) => l.wordIds.forEach((id) => s.add(id)));
+    return s;
+  }
+
+  function courseStats() {
+    return {
+      words: course.words.length,
+      modules: course.modules.length,
+      lessons: course.lessons.length,
+      ready: course.lessons.filter((l) => l.status === 'ready').length,
+      exercises: course.lessons.reduce((n, l) => n + l.exercises.length, 0),
+    };
+  }
+
+  /** Roll a generation call's fake usage into the course total and return
+   * it so the triggering chat message can show its own line too. */
+  function addUsage(unitCount) {
+    const u = mockUsage(unitCount);
+    course.usage.tokens += u.tokens;
+    course.usage.cost += u.cost;
+    return u;
+  }
+
   // ---------------------------------------------------------------
   // Chat
   // ---------------------------------------------------------------
@@ -34,12 +74,16 @@
     const to = langInfo(course.toLang);
     el.chatTitle.textContent = `${from.flag} ${course.title}`;
     el.chatSub.textContent = `${from.name} → ${to.name} · Level ${course.level}`;
+    el.chatUsage.textContent = course.usage.tokens
+      ? `≈${course.usage.tokens.toLocaleString()} tokens · $${course.usage.cost.toFixed(4)}`
+      : '';
   }
 
   function pushMessage(msg) {
     course.chat.push(Object.assign({ id: nextId('m') }, msg));
     save();
     renderChat();
+    renderChatHeader();
   }
 
   function appendUser(text) { pushMessage({ role: 'user', text }); }
@@ -68,9 +112,13 @@
     const avatar = isUser ? 'You' : 'AI';
     let inner = `<div class="bubble">${escapeHtml(msg.text)}</div>`;
 
+    if (msg.usage) {
+      inner += `<div class="msg-note">≈${msg.usage.tokens.toLocaleString()} tokens · $${msg.usage.cost.toFixed(4)}</div>`;
+    }
+
     if (msg.actions && msg.actions.length) {
       inner += `<div class="msg-actions">${msg.actions
-        .map((a) => `<button class="btn btn-ghost btn-sm" data-action="${a.id}" data-lesson="${a.lessonId || ''}">${escapeHtml(a.label)}</button>`)
+        .map((a) => `<button class="btn btn-ghost btn-sm" data-action="${a.id}" data-lesson="${a.lessonId || ''}" ${a.newModule ? 'data-newmodule="1"' : ''}>${escapeHtml(a.label)}</button>`)
         .join('')}</div>`;
     }
 
@@ -89,7 +137,7 @@
     const rows = p.items
       .map(
         (it) => `
-        <label class="picker-row">
+        <label class="picker-row ${it.used ? 'used' : ''}">
           <input type="checkbox" data-picker-item="${it.id}" ${it.checked ? 'checked' : ''} />
           <span class="w">${escapeHtml(it.label)}</span>
           <span class="g">${escapeHtml(it.sub || '')}</span>
@@ -120,7 +168,7 @@
 
   function wireChatInteractions() {
     el.chatScroll.querySelectorAll('button[data-action]').forEach((btn) => {
-      btn.addEventListener('click', () => handleAction(btn.dataset.action, btn.dataset.lesson || null));
+      btn.addEventListener('click', () => handleAction(btn.dataset.action, btn.dataset.lesson || null, btn.dataset.newmodule === '1'));
     });
     el.chatScroll.querySelectorAll('button[data-confirm-picker]').forEach((btn) => {
       btn.addEventListener('click', () => confirmPicker(btn.dataset.confirmPicker));
@@ -132,7 +180,7 @@
     if (!msg || !msg.picker) return;
     const container = el.chatScroll.querySelector(`[data-picker-message="${messageId}"]`);
     const selectedIds = Array.from(container.querySelectorAll('input[data-picker-item]:checked')).map((i) => i.dataset.pickerItem);
-    const { kind, lessonId, confirmAction, items } = msg.picker;
+    const { kind, lessonId, items } = msg.picker;
 
     msg.frozenPicker = { items: items.map((it) => ({ ...it, checked: selectedIds.includes(it.id) })) };
     delete msg.picker;
@@ -147,9 +195,9 @@
   // quick-action buttons) can trigger. There's no real backend here:
   // each branch calls the mock generators in store.js directly.
   // ---------------------------------------------------------------
-  function handleAction(actionId, lessonId) {
+  function handleAction(actionId, lessonId, newModule) {
     if (actionId === 'create_words') return doCreateWords();
-    if (actionId === 'new_lesson') return doNewLesson();
+    if (actionId === 'new_lesson') return doNewLesson(newModule);
     if (actionId === 'create_sentences') return doCreateSentences(lessonId);
     if (actionId === 'create_exercises_direct') return doCreateExercisesDirect(lessonId);
     if (actionId === 'preview_course') return doPreview();
@@ -168,7 +216,9 @@
         });
         return;
       }
+      const usage = addUsage(words.length);
       appendAssistant(`Generated ${words.length} starter words (${course.words.length} total). Review them in the Words tab, then let's build a lesson.`, {
+        usage,
         actions: [
           { id: 'new_lesson', label: `Select words for Lesson ${course.lessons.length + 1}` },
           { id: 'create_words', label: 'Add more words' },
@@ -177,16 +227,31 @@
     });
   }
 
-  function doNewLesson() {
+  function doNewLesson(newModule) {
+    let mod = course.modules[course.modules.length - 1];
+    if (newModule || !mod) {
+      mod = { id: nextId('mod'), title: `Module ${course.modules.length + 1}` };
+      course.modules.push(mod);
+    }
     const n = course.lessons.length + 1;
-    const lesson = { id: nextId('l'), title: `Lesson ${n}`, status: 'draft', wordIds: [], sentences: [], exercises: [] };
+    const lesson = { id: nextId('l'), moduleId: mod.id, title: `Lesson ${n}`, status: 'draft', wordIds: [], sentences: [], exercises: [] };
     course.lessons.push(lesson);
     save();
     renderWork();
-    appendUser(`Select words for ${lesson.title}`);
+    appendUser(`Select words for ${lesson.title}${newModule ? ` (${mod.title})` : ''}`);
     simulateThinking(() => {
-      const items = course.words.map((w, i) => ({ id: w.id, label: w.w, sub: w.gloss, checked: i < Math.min(6, course.words.length) }));
-      appendAssistant(`Pick the words for ${lesson.title} — I've pre-selected a few beginner-friendly ones.`, {
+      // Words not yet used in any lesson come first and are pre-checked —
+      // "next" words to teach, per the picker's own word-usage tracking.
+      const used = usedWordIds();
+      const ordered = course.words.slice().sort((a, b) => Number(used.has(a.id)) - Number(used.has(b.id)));
+      let uncheckedSoFar = 0;
+      const items = ordered.map((w) => {
+        const isUsed = used.has(w.id);
+        const checked = !isUsed && uncheckedSoFar < 6;
+        if (checked) uncheckedSoFar++;
+        return { id: w.id, label: w.w, sub: isUsed ? `${w.gloss} · used` : w.gloss, used: isUsed, checked };
+      });
+      appendAssistant(`Pick the words for ${lesson.title} in ${mod.title} — I've pre-selected the next unused ones.`, {
         picker: { kind: 'words', lessonId: lesson.id, items, confirmLabel: 'Confirm selection', confirmAction: 'confirm_words' },
       });
     });
@@ -224,6 +289,14 @@
     });
   }
 
+  function nextStepActions() {
+    return [
+      { id: 'preview_course', label: 'Preview course' },
+      { id: 'new_lesson', label: `Start Lesson ${course.lessons.length + 1}` },
+      { id: 'new_lesson', label: 'Start a new module', newModule: true },
+    ];
+  }
+
   function doCreateExercisesDirect(lessonId) {
     appendUser('Create exercises directly');
     simulateThinking(() => {
@@ -236,11 +309,10 @@
       lesson.status = 'ready';
       save();
       renderWork();
+      const usage = addUsage(sentences.length + exercises.length);
       appendAssistant(`Done — I drafted sentences and exercises for ${lesson.title} in one go. It's ready. Check the Lessons tab to review or edit, or preview it.`, {
-        actions: [
-          { id: 'preview_course', label: 'Preview course' },
-          { id: 'new_lesson', label: `Start Lesson ${course.lessons.length + 1}` },
-        ],
+        usage,
+        actions: nextStepActions(),
       });
     });
   }
@@ -258,18 +330,17 @@
       lesson.status = 'ready';
       save();
       renderWork();
+      const usage = addUsage(lesson.exercises.length);
       appendAssistant(`${lesson.title} is ready 🎉 Review it in the Lessons tab, or switch to Preview to see the student view.`, {
-        actions: [
-          { id: 'preview_course', label: 'Preview course' },
-          { id: 'new_lesson', label: `Start Lesson ${course.lessons.length + 1}` },
-        ],
+        usage,
+        actions: nextStepActions(),
       });
     });
   }
 
   function doPreview() {
     setActiveTab('preview');
-    appendAssistant("Here's what students will see. Switch back to Edit anytime using the tabs on the left.");
+    appendAssistant("Here's what students will see. Switch back to editing anytime using the tabs on the right.");
   }
 
   el.chatForm.addEventListener('submit', (e) => {
@@ -287,7 +358,7 @@
   });
 
   // ---------------------------------------------------------------
-  // Left pane: Words / Lessons / Edit / Preview tabs
+  // Right pane: Words / Lessons / Edit Course / Preview tabs
   // ---------------------------------------------------------------
   function setActiveTab(tab) {
     activeTab = tab;
@@ -316,11 +387,16 @@
     if (!course.words.length) {
       return `<div class="work-empty">No words yet — ask the AI to create a word list in the chat.</div>`;
     }
+    const used = usedWordIds();
+    const usedCount = course.words.filter((w) => used.has(w.id)).length;
     const chips = course.words
-      .map((w) => `<span class="chip"><span class="w">${escapeHtml(w.w)}</span><span class="g">${escapeHtml(w.gloss)}</span><button data-remove-word="${w.id}" title="Remove">×</button></span>`)
+      .map((w) => {
+        const isUsed = used.has(w.id);
+        return `<span class="chip ${isUsed ? 'used' : ''}" ${isUsed ? 'title="Already used in a lesson"' : ''}>${isUsed ? '<span class="used-mark">✓</span>' : ''}<span class="w">${escapeHtml(w.w)}</span><span class="g">${escapeHtml(w.gloss)}</span><button data-remove-word="${w.id}" title="Remove">×</button></span>`;
+      })
       .join('');
     return `
-      <p class="subhead">Course word bank (${course.words.length})</p>
+      <p class="subhead">Course word bank (${course.words.length}) · ${usedCount} used</p>
       <div class="chips">${chips}</div>
       <p class="subhead" style="margin-top:18px;">Add a word manually</p>
       <div class="add-inline">
@@ -329,68 +405,99 @@
       </div>`;
   }
 
+  function renderSentenceRow(lesson, s) {
+    if (editingSentences.has(s.id)) {
+      return `
+        <div class="edit-row">
+          <input type="text" value="${escapeHtml(s.text)}" data-sentence="${lesson.id}:${s.id}" autofocus />
+          <button class="del" data-save-sentence="${lesson.id}:${s.id}" title="Done">✓</button>
+          <button class="del" data-del-sentence="${lesson.id}:${s.id}" title="Delete">×</button>
+        </div>`;
+    }
+    return `
+      <div class="edit-row view">
+        <span class="sentence-text">${escapeHtml(s.text)}</span>
+        <button class="del" data-edit-sentence="${lesson.id}:${s.id}" title="Edit">✎</button>
+        <button class="del" data-del-sentence="${lesson.id}:${s.id}" title="Delete">×</button>
+      </div>`;
+  }
+
+  function renderLessonBlock(lesson, isCurrent) {
+    const words = course.words.filter((w) => lesson.wordIds.includes(w.id));
+    const wordChips = words
+      .map((w) => `<span class="chip"><span class="w">${escapeHtml(w.w)}</span><button data-remove-lesson-word="${lesson.id}:${w.id}" title="Remove">×</button></span>`)
+      .join('') || '<span class="picker-foot">No words selected.</span>';
+
+    const sentenceRows = lesson.sentences.map((s) => renderSentenceRow(lesson, s)).join('') || '<span class="picker-foot">No sentences yet.</span>';
+
+    const exerciseCards = lesson.exercises
+      .map((ex) => `
+        <div class="exercise-card">
+          <div class="kind">${escapeHtml(ex.type.replace(/_/g, ' '))}</div>
+          <input type="text" value="${escapeHtml(ex.prompt)}" placeholder="Question / prompt" data-ex-prompt="${lesson.id}:${ex.id}" />
+          <div class="exercise-opts">
+            ${ex.options
+              .map(
+                (opt, i) => `
+                <div class="exercise-opt">
+                  <input type="radio" name="answer-${ex.id}" data-ex-answer="${lesson.id}:${ex.id}:${i}" ${opt && opt === ex.answer ? 'checked' : ''} />
+                  <input type="text" value="${escapeHtml(opt)}" placeholder="Option ${i + 1}" data-ex-option="${lesson.id}:${ex.id}:${i}" />
+                </div>`
+              )
+              .join('')}
+          </div>
+          <div class="exercise-foot">
+            <button class="del" data-del-exercise="${lesson.id}:${ex.id}" title="Delete">×</button>
+          </div>
+        </div>`)
+      .join('');
+
+    return `
+      <details class="lesson-block" ${isCurrent ? 'open' : ''}>
+        <summary>
+          <span class="t">${escapeHtml(lesson.title)}</span>
+          <span class="pill ${lesson.status === 'ready' ? 'active' : 'draft'}"><span class="swatch"></span>${lesson.status}</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="lesson-body">
+          <div>
+            <p class="subhead">Words</p>
+            <div class="chips">${wordChips}</div>
+          </div>
+          <div>
+            <p class="subhead">Sentences</p>
+            <div style="display:flex; flex-direction:column; gap:6px;">${sentenceRows}</div>
+          </div>
+          <div>
+            <p class="subhead">Exercises</p>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${exerciseCards}
+              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;" data-add-exercise="${lesson.id}">+ Add exercise</button>
+            </div>
+          </div>
+        </div>
+      </details>`;
+  }
+
   function renderLessonsTab() {
     if (!course.lessons.length) {
       return `<div class="work-empty">No lessons yet — select words for a lesson in the chat to start one.</div>`;
     }
-    return course.lessons
-      .map((lesson) => {
-        const words = course.words.filter((w) => lesson.wordIds.includes(w.id));
-        const wordChips = words
-          .map((w) => `<span class="chip"><span class="w">${escapeHtml(w.w)}</span><button data-remove-lesson-word="${lesson.id}:${w.id}" title="Remove">×</button></span>`)
-          .join('') || '<span class="picker-foot">No words selected.</span>';
-
-        const sentenceRows = lesson.sentences
-          .map((s) => `
-            <div class="edit-row">
-              <input type="text" value="${escapeHtml(s.text)}" data-sentence="${lesson.id}:${s.id}" />
-              <button class="del" data-del-sentence="${lesson.id}:${s.id}" title="Delete">×</button>
-            </div>`)
-          .join('') || '<span class="picker-foot">No sentences yet.</span>';
-
-        const exerciseCards = lesson.exercises
-          .map((ex) => `
-            <div class="exercise-card">
-              <div class="kind">${escapeHtml(ex.type.replace(/_/g, ' '))}</div>
-              <input type="text" value="${escapeHtml(ex.prompt)}" data-ex-prompt="${lesson.id}:${ex.id}" />
-              <div class="exercise-opts">
-                ${ex.options
-                  .map(
-                    (opt, i) => `
-                    <div class="exercise-opt">
-                      <input type="radio" name="answer-${ex.id}" data-ex-answer="${lesson.id}:${ex.id}:${i}" ${opt === ex.answer ? 'checked' : ''} />
-                      <input type="text" value="${escapeHtml(opt)}" data-ex-option="${lesson.id}:${ex.id}:${i}" />
-                    </div>`
-                  )
-                  .join('')}
-              </div>
-              <div class="exercise-foot">
-                <button class="del" data-del-exercise="${lesson.id}:${ex.id}" title="Delete">×</button>
-              </div>
-            </div>`)
-          .join('') || '<span class="picker-foot">No exercises yet.</span>';
-
+    const currentLesson = course.lessons[course.lessons.length - 1];
+    return course.modules
+      .map((mod) => {
+        const lessonsInMod = course.lessons.filter((l) => l.moduleId === mod.id);
+        if (!lessonsInMod.length) return '';
+        const isCurrentModule = lessonsInMod.some((l) => l.id === currentLesson.id);
+        const blocks = lessonsInMod.map((lesson) => renderLessonBlock(lesson, lesson.id === currentLesson.id)).join('');
         return `
-          <details class="lesson-block" open>
+          <details class="module-block" ${isCurrentModule ? 'open' : ''}>
             <summary>
-              <span class="t">${escapeHtml(lesson.title)}</span>
-              <span class="pill ${lesson.status === 'ready' ? 'active' : 'draft'}"><span class="swatch"></span>${lesson.status}</span>
+              <span class="t">${escapeHtml(mod.title)}</span>
+              <span class="picker-foot" style="margin:0;">${lessonsInMod.length} lesson${lessonsInMod.length === 1 ? '' : 's'}</span>
               <span class="chev">›</span>
             </summary>
-            <div class="lesson-body">
-              <div>
-                <p class="subhead">Words</p>
-                <div class="chips">${wordChips}</div>
-              </div>
-              <div>
-                <p class="subhead">Sentences</p>
-                <div style="display:flex; flex-direction:column; gap:6px;">${sentenceRows}</div>
-              </div>
-              <div>
-                <p class="subhead">Exercises</p>
-                <div style="display:flex; flex-direction:column; gap:8px;">${exerciseCards}</div>
-              </div>
-            </div>
+            <div class="module-body">${blocks}</div>
           </details>`;
       })
       .join('');
@@ -398,8 +505,16 @@
 
   function renderEditTab() {
     const langOptions = LANG_SUGGESTIONS.map((l) => `<option value="${l}">`).join('');
+    const stats = courseStats();
     return `
-      <p class="subhead">Course settings</p>
+      <p class="subhead">Course stats</p>
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="v">${stats.words}</div><div class="l">Words</div></div>
+        <div class="mini-stat"><div class="v">${stats.modules}</div><div class="l">Modules</div></div>
+        <div class="mini-stat"><div class="v">${stats.lessons}</div><div class="l">Lessons · ${stats.ready} ready</div></div>
+        <div class="mini-stat"><div class="v">${stats.exercises}</div><div class="l">Exercises</div></div>
+      </div>
+      <p class="subhead" style="margin-top:20px;">Course settings</p>
       <div style="display:grid; gap:14px; max-width:420px;">
         <div class="field">
           <label for="editTitle">Course title</label>
@@ -497,12 +612,29 @@
       });
     });
 
+    el.workScroll.querySelectorAll('[data-edit-sentence]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const [, sentenceId] = btn.dataset.editSentence.split(':');
+        editingSentences.add(sentenceId);
+        renderWork();
+        const input = el.workScroll.querySelector(`input[data-sentence="${btn.dataset.editSentence}"]`);
+        if (input) { input.focus(); input.select(); }
+      });
+    });
+    el.workScroll.querySelectorAll('[data-save-sentence]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const [, sentenceId] = btn.dataset.saveSentence.split(':');
+        editingSentences.delete(sentenceId);
+        renderWork();
+      });
+    });
     el.workScroll.querySelectorAll('[data-sentence]').forEach((input) => {
       input.addEventListener('change', () => {
         const [lessonId, sentenceId] = input.dataset.sentence.split(':');
         const s = findLesson(lessonId).sentences.find((s) => s.id === sentenceId);
         if (s) { s.text = input.value; save(); }
       });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
     });
     el.workScroll.querySelectorAll('[data-del-sentence]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -510,11 +642,20 @@
         const lesson = findLesson(lessonId);
         lesson.sentences = lesson.sentences.filter((s) => s.id !== sentenceId);
         lesson.exercises = lesson.exercises.filter((e) => e.sentenceId !== sentenceId);
+        editingSentences.delete(sentenceId);
         save();
         renderWork();
       });
     });
 
+    el.workScroll.querySelectorAll('[data-add-exercise]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const lesson = findLesson(btn.dataset.addExercise);
+        lesson.exercises.push({ id: nextId('e'), sentenceId: null, type: 'single_choice', prompt: '', options: ['', '', ''], answer: null });
+        save();
+        renderWork();
+      });
+    });
     el.workScroll.querySelectorAll('[data-ex-prompt]').forEach((input) => {
       input.addEventListener('change', () => {
         const [lessonId, exId] = input.dataset.exPrompt.split(':');

@@ -138,6 +138,15 @@ function generateExercises(sentences, words) {
   });
 }
 
+/** Fake token/cost usage for a generation call, roughly scaled by how much
+ * content came back — stands in for the real PromptResponse's
+ * actual_tokens/actual_cost fields. */
+function mockUsage(unitCount) {
+  const tokens = Math.round(80 + unitCount * 35 + Math.random() * 40);
+  const cost = tokens * 0.0000025;
+  return { tokens, cost };
+}
+
 // --- Persistence -----------------------------------------------------
 
 const STORE_KEY = 'poc_create_with_ai_courses_v1';
@@ -160,6 +169,18 @@ function seedDemoCourses() {
   const c1Words = generateWords('Japanese', [], 8);
   const c1Sentences = generateSentences(c1Words.slice(0, 6));
   const c1Exercises = generateExercises(c1Sentences, c1Words);
+  const c1Module = { id: nextId('mod'), title: 'Module 1' };
+  const c1Lesson = {
+    id: nextId('l'),
+    moduleId: c1Module.id,
+    title: 'Lesson 1 — Greetings',
+    status: 'ready',
+    wordIds: c1Words.slice(0, 6).map((w) => w.id),
+    sentences: c1Sentences,
+    exercises: c1Exercises,
+  };
+  const c1WordsUsage = mockUsage(c1Words.length);
+  const c1LessonUsage = mockUsage(c1Sentences.length + c1Exercises.length);
   const course1 = {
     id: nextId('c'),
     title: 'Japanese for Hebrew Speakers',
@@ -170,23 +191,19 @@ function seedDemoCourses() {
     updatedAt: now - 1000 * 60 * 60 * 2,
     workTab: 'words',
     words: c1Words,
-    lessons: [
-      {
-        id: nextId('l'),
-        title: 'Lesson 1 — Greetings',
-        status: 'ready',
-        wordIds: c1Words.slice(0, 6).map((w) => w.id),
-        sentences: c1Sentences,
-        exercises: c1Exercises,
-      },
-    ],
+    modules: [c1Module],
+    lessons: [c1Lesson],
+    usage: {
+      tokens: c1WordsUsage.tokens + c1LessonUsage.tokens,
+      cost: c1WordsUsage.cost + c1LessonUsage.cost,
+    },
     chat: [
       { id: nextId('m'), role: 'assistant', text: "Course 'Japanese for Hebrew Speakers' created — Japanese → Hebrew, level A1. Let's start with a word list." },
       { id: nextId('m'), role: 'user', text: 'Create word list' },
-      { id: nextId('m'), role: 'assistant', text: `Generated ${c1Words.length} starter words. Review them in the Words tab, then pick some for Lesson 1.` },
+      { id: nextId('m'), role: 'assistant', text: `Generated ${c1Words.length} starter words. Review them in the Words tab, then pick some for Lesson 1.`, usage: c1WordsUsage },
       { id: nextId('m'), role: 'user', text: 'Select words for Lesson 1' },
       { id: nextId('m'), role: 'user', text: 'Confirmed 6 words' },
-      { id: nextId('m'), role: 'assistant', text: 'Locked in 6 words for Lesson 1. I drafted example sentences and exercises for all of them — Lesson 1 is ready. Switch to Preview to see the student view.' },
+      { id: nextId('m'), role: 'assistant', text: 'Locked in 6 words for Lesson 1. I drafted example sentences and exercises for all of them — Lesson 1 is ready. Switch to Preview to see the student view.', usage: c1LessonUsage },
     ],
   };
 
@@ -200,7 +217,9 @@ function seedDemoCourses() {
     updatedAt: now - 1000 * 60 * 30,
     workTab: 'words',
     words: [],
+    modules: [],
     lessons: [],
+    usage: { tokens: 0, cost: 0 },
     chat: [
       { id: nextId('m'), role: 'assistant', text: "Course 'Spanish for English Speakers' created — Spanish → English, level A1. Let's start with a word list.", actions: [{ id: 'create_words', label: 'Create word list' }] },
     ],
@@ -240,7 +259,9 @@ const CourseStore = {
       updatedAt: Date.now(),
       workTab: 'words',
       words: [],
+      modules: [],
       lessons: [],
+      usage: { tokens: 0, cost: 0 },
       chat: [
         {
           id: nextId('m'),

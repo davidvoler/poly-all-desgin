@@ -153,3 +153,7 @@ Preview mode
 7. show current lesson/module - while other modules could be closed (view only the title)
 8. We can see words that we hve already used 
 9. We can see the next words when selecting a lesson
+
+
+More fixes 
+1. move 'my courses' to the top left 

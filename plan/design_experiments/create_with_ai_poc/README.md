@@ -20,16 +20,34 @@ with a free-text box as a secondary way to steer it.
   the task).
 - **`course.html`** — the course workspace, once a course exists. Two panes:
   - **Left (40% width)** — a "← My courses" link back to the list, and four
-    tabs: **Words** (word bank chips, add/remove), **Lessons** (per-lesson
-    words, editable sentences, editable exercises — prompt/options/correct
-    answer, all inline), **Edit** (course-level settings: title, learning
-    language, student language, level), and **Preview** (a read-only
-    student-facing render of the course).
+    tabs:
+    - **Words** — the course's word bank as chips (add/remove manually).
+      Words already picked into a lesson show a ✓ and dim, so you can see
+      what's already been used at a glance.
+    - **Lessons** — grouped under **modules** (see below). Only the module
+      and lesson currently being worked on expand; everything else
+      collapses to its title + status pill. Sentences default to read-only
+      with a pencil-icon edit toggle; exercises are fully editable
+      (prompt/options/correct answer) and can also be added manually via
+      "+ Add exercise", not just AI-generated.
+    - **Edit Course** — course-level stats (words / modules / lessons /
+      exercises) plus the settings form (title, learning language, student
+      language, level).
+    - **Preview** — a read-only student-facing render of the course.
   - **Right** — the chat. The assistant drives the flow with action
     buttons (Create word list → Select words for a lesson → Create
     sentences *or* jump straight to exercises → …), each one a mocked
-    stand-in for a `/generate_poc/*` call. A "Preview course" action jumps
-    the left pane straight to the Preview tab.
+    stand-in for a `/generate_poc/*` call, tagged with a fake token/cost
+    usage line (mirrors `PromptResponse.actual_tokens`/`actual_cost`) — a
+    running total sits in the chat header. A "Preview course" action jumps
+    the left pane straight to the Preview tab; a "Start a new module"
+    action is how a course grows past one module.
+
+Lessons belong to **modules** (`course.modules`, each holding an ordered
+`lessonIds`-style grouping via `lesson.moduleId`). The word picker shown
+when starting a lesson sorts not-yet-used words first and pre-checks them
+("next words to teach"); words already used elsewhere are still selectable
+but shown dimmed and unchecked.
 
 ## What's fake
 
