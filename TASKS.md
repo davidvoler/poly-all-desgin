@@ -142,3 +142,14 @@ The lessons in edit/preview mode
 Preview mode 
 - What we have is not bad - it is a long list of exercises - where you can participate 
 - Full - preview - exercise after exercise - exactly like in the students will see 
+--done up to this line--
+#### More small fixes before moving to implement with flutter 
+1. Add costs/tokens to the chat area
+2. Rename edit with course 
+3. Ddd to course more data like number of lessons, modules etc
+4. Think how we can add modules 
+5. Add the possibility to create exercise manually 
+6. add the options to edit elements in a sentences - maybe an edit button
+7. show current lesson/module - while other modules could be closed (view only the title)
+8. We can see words that we hve already used 
+9. We can see the next words when selecting a lesson
