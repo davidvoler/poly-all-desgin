@@ -144,8 +144,8 @@ Preview mode
 - Full - preview - exercise after exercise - exactly like in the students will see 
 --done up to this line--
 #### More small fixes before moving to implement with flutter 
-1. Add costs/tokens to the chat area
-2. Rename edit with course 
+1. Add costs/tokens to the chat area 
+2. Rename edit tab with 'edit course' 
 3. Ddd to course more data like number of lessons, modules etc
 4. Think how we can add modules 
 5. Add the possibility to create exercise manually 
