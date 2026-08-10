@@ -18,17 +18,18 @@ with a free-text box as a secondary way to steer it.
   copilot, with a progress summary, plus a bare-bones create form (learning
   language, student language, level, optional title — **no prompt**, per
   the task).
-- **`course.html`** — the course workspace, once a course exists:
-  - **Left rail** — switch between your other in-progress courses without
-    losing state, and toggle **Edit / Preview** mode.
-  - **Center** — the chat. The assistant drives the flow with action
+- **`course.html`** — the course workspace, once a course exists. Two panes:
+  - **Left (40% width)** — a "← My courses" link back to the list, and four
+    tabs: **Words** (word bank chips, add/remove), **Lessons** (per-lesson
+    words, editable sentences, editable exercises — prompt/options/correct
+    answer, all inline), **Edit** (course-level settings: title, learning
+    language, student language, level), and **Preview** (a read-only
+    student-facing render of the course).
+  - **Right** — the chat. The assistant drives the flow with action
     buttons (Create word list → Select words for a lesson → Create
     sentences *or* jump straight to exercises → …), each one a mocked
-    stand-in for a `/generate_poc/*` call.
-  - **Right** — the workspace. In **Edit** mode: the word bank (chips,
-    add/remove) and a Lessons tab (per-lesson words, editable sentences,
-    editable exercises — prompt/options/correct answer, all inline). In
-    **Preview** mode: a read-only student-facing render of the course.
+    stand-in for a `/generate_poc/*` call. A "Preview course" action jumps
+    the left pane straight to the Preview tab.
 
 ## What's fake
 
@@ -54,8 +55,10 @@ python3 -m http.server 8080
 - Real AI generation, or any network call.
 - Free-text chat steering — the input box exists (and is on the state
   machine's roadmap) but doesn't change what gets generated yet.
-- Course-level settings beyond lang/to_lang/level/title, and any
-  student-facing app chrome — this is the editor/copilot side only.
+- A course switcher inside `course.html` — deliberately dropped in favor of
+  the "← My courses" link; switching courses means going back to the list.
+- Any student-facing app chrome beyond the Preview tab — this is the
+  editor/copilot side only.
 
 When this direction is approved, the next step is wiring the chat's
 action buttons to the real `/api/v1/generate_poc/*` endpoints (see

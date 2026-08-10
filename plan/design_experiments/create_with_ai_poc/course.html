@@ -9,27 +9,22 @@
 <body class="bg">
   <div class="workshell">
 
-    <!-- Left rail: course context switcher -->
-    <aside class="rail">
+    <!-- Left pane: workspace (words / lessons / edit / preview) -->
+    <aside class="leftpane">
       <a href="index.html" class="back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         My courses
       </a>
-      <div id="railList" style="display:flex; flex-direction:column; gap:8px;"></div>
-      <a href="index.html" class="rail-newcourse">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        New course
-      </a>
-      <div class="rail-mode">
-        <div class="section-label" style="margin-bottom:8px;">View</div>
-        <div class="mode-toggle" id="modeToggle">
-          <button data-mode="edit" class="on">Edit</button>
-          <button data-mode="preview">Preview</button>
-        </div>
+      <div class="work-tabs" id="workTabs">
+        <button data-tab="words" class="on">Words</button>
+        <button data-tab="lessons">Lessons</button>
+        <button data-tab="edit">Edit</button>
+        <button data-tab="preview">Preview</button>
       </div>
+      <div class="work-scroll" id="workScroll"></div>
     </aside>
 
-    <!-- Center: purpose-built chat -->
+    <!-- Right: purpose-built chat -->
     <section class="chat-col">
       <div class="chat-head">
         <div>
@@ -44,15 +39,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </button>
       </form>
-    </section>
-
-    <!-- Right: workspace (edit / preview) -->
-    <section class="work-col">
-      <div class="work-tabs" id="workTabs">
-        <button data-tab="words" class="on">Words</button>
-        <button data-tab="lessons">Lessons</button>
-      </div>
-      <div class="work-scroll" id="workScroll"></div>
     </section>
 
   </div>

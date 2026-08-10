@@ -168,7 +168,7 @@ function seedDemoCourses() {
     level: 'A1',
     createdAt: now - 1000 * 60 * 60 * 24 * 3,
     updatedAt: now - 1000 * 60 * 60 * 2,
-    mode: 'edit',
+    workTab: 'words',
     words: c1Words,
     lessons: [
       {
@@ -198,7 +198,7 @@ function seedDemoCourses() {
     level: 'A1',
     createdAt: now - 1000 * 60 * 60 * 24,
     updatedAt: now - 1000 * 60 * 30,
-    mode: 'edit',
+    workTab: 'words',
     words: [],
     lessons: [],
     chat: [
@@ -238,7 +238,7 @@ const CourseStore = {
       level: level || 'A1',
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      mode: 'edit',
+      workTab: 'words',
       words: [],
       lessons: [],
       chat: [

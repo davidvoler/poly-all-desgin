@@ -8,11 +8,9 @@
     window.history.replaceState({}, '', url);
   }
 
-  let activeTab = 'words';
+  let activeTab = course.workTab || 'words';
 
   const el = {
-    railList: document.getElementById('railList'),
-    modeToggle: document.getElementById('modeToggle'),
     chatTitle: document.getElementById('chatCourseTitle'),
     chatSub: document.getElementById('chatCourseSub'),
     chatScroll: document.getElementById('chatScroll'),
@@ -27,31 +25,6 @@
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-
-  // ---------------------------------------------------------------
-  // Rail: course switcher + edit/preview mode
-  // ---------------------------------------------------------------
-  function renderRail() {
-    const courses = CourseStore.all().slice().sort((a, b) => b.updatedAt - a.updatedAt);
-    el.railList.innerHTML = courses
-      .map((c) => `
-        <a class="rail-course ${c.id === course.id ? 'on' : ''}" href="course.html?course=${encodeURIComponent(c.id)}">
-          <div class="t">${escapeHtml(c.title)}</div>
-          <div class="p">${escapeHtml(CourseStore.progressLabel(c))}</div>
-        </a>`)
-      .join('');
-
-    el.modeToggle.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mode === course.mode));
-  }
-
-  el.modeToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-mode]');
-    if (!btn) return;
-    course.mode = btn.dataset.mode;
-    save();
-    renderRail();
-    renderWork();
-  });
 
   // ---------------------------------------------------------------
   // Chat
@@ -262,7 +235,6 @@
       lesson.exercises = exercises;
       lesson.status = 'ready';
       save();
-      renderRail();
       renderWork();
       appendAssistant(`Done — I drafted sentences and exercises for ${lesson.title} in one go. It's ready. Check the Lessons tab to review or edit, or preview it.`, {
         actions: [
@@ -285,7 +257,6 @@
       lesson.exercises = generateExercises(chosen, words);
       lesson.status = 'ready';
       save();
-      renderRail();
       renderWork();
       appendAssistant(`${lesson.title} is ready 🎉 Review it in the Lessons tab, or switch to Preview to see the student view.`, {
         actions: [
@@ -297,11 +268,8 @@
   }
 
   function doPreview() {
-    course.mode = 'preview';
-    save();
-    renderRail();
-    renderWork();
-    appendAssistant("Here's what students will see. Switch back to Edit anytime from the left rail.");
+    setActiveTab('preview');
+    appendAssistant("Here's what students will see. Switch back to Edit anytime using the tabs on the left.");
   }
 
   el.chatForm.addEventListener('submit', (e) => {
@@ -319,25 +287,28 @@
   });
 
   // ---------------------------------------------------------------
-  // Workspace: Edit mode (Words / Lessons tabs) + Preview mode
+  // Left pane: Words / Lessons / Edit / Preview tabs
   // ---------------------------------------------------------------
+  function setActiveTab(tab) {
+    activeTab = tab;
+    course.workTab = tab;
+    save();
+    renderWork();
+  }
+
   el.workTabs.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-tab]');
     if (!btn) return;
-    activeTab = btn.dataset.tab;
-    renderWork();
+    setActiveTab(btn.dataset.tab);
   });
 
   function renderWork() {
-    el.workTabs.style.display = course.mode === 'preview' ? 'none' : 'flex';
     el.workTabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.tab === activeTab));
-
     el.workScroll.scrollTop = 0;
-    if (course.mode === 'preview') {
-      el.workScroll.innerHTML = renderPreview();
-      return;
-    }
-    el.workScroll.innerHTML = activeTab === 'words' ? renderWordsTab() : renderLessonsTab();
+
+    if (activeTab === 'preview') { el.workScroll.innerHTML = renderPreview(); return; }
+    if (activeTab === 'edit') { el.workScroll.innerHTML = renderEditTab(); wireWorkInteractions(); return; }
+    el.workScroll.innerHTML = activeTab === 'lessons' ? renderLessonsTab() : renderWordsTab();
     wireWorkInteractions();
   }
 
@@ -425,6 +396,36 @@
       .join('');
   }
 
+  function renderEditTab() {
+    const langOptions = LANG_SUGGESTIONS.map((l) => `<option value="${l}">`).join('');
+    return `
+      <p class="subhead">Course settings</p>
+      <div style="display:grid; gap:14px; max-width:420px;">
+        <div class="field">
+          <label for="editTitle">Course title</label>
+          <input type="text" id="editTitle" value="${escapeHtml(course.title)}" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="editLang">Learning language</label>
+            <input type="text" id="editLang" list="editLangOptions" value="${escapeHtml(course.lang)}" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="editToLang">Student language</label>
+            <input type="text" id="editToLang" list="editLangOptions" value="${escapeHtml(course.toLang)}" autocomplete="off" />
+          </div>
+        </div>
+        <datalist id="editLangOptions">${langOptions}</datalist>
+        <div class="field">
+          <label>Level</label>
+          <div class="level-picker" id="editLevelPicker">
+            ${LEVELS.map((lvl) => `<label><input type="radio" name="editLevel" value="${lvl}" ${lvl === course.level ? 'checked' : ''} />${lvl}</label>`).join('')}
+          </div>
+        </div>
+        <p class="picker-foot">Changes save automatically. Note: editing the learning language doesn't regenerate words already on the course.</p>
+      </div>`;
+  }
+
   function renderPreview() {
     const from = langInfo(course.lang);
     const to = langInfo(course.toLang);
@@ -471,7 +472,6 @@
         course.lessons.forEach((l) => { l.wordIds = l.wordIds.filter((wid) => wid !== id); });
         save();
         renderWork();
-        renderRail();
       });
     });
 
@@ -485,7 +485,6 @@
         course.words.push({ id: nextId('w'), w: w || raw, gloss: gloss || '', sentence: '', sentenceGloss: '' });
         save();
         renderWork();
-        renderRail();
       });
     }
 
@@ -551,9 +550,43 @@
         renderWork();
       });
     });
+
+    const editTitle = el.workScroll.querySelector('#editTitle');
+    if (editTitle) {
+      editTitle.addEventListener('change', () => {
+        course.title = editTitle.value.trim() || course.title;
+        save();
+        renderChatHeader();
+      });
+    }
+    const editLang = el.workScroll.querySelector('#editLang');
+    if (editLang) {
+      editLang.addEventListener('change', () => {
+        course.lang = editLang.value.trim() || course.lang;
+        save();
+        renderChatHeader();
+      });
+    }
+    const editToLang = el.workScroll.querySelector('#editToLang');
+    if (editToLang) {
+      editToLang.addEventListener('change', () => {
+        course.toLang = editToLang.value.trim() || course.toLang;
+        save();
+        renderChatHeader();
+      });
+    }
+    const editLevelPicker = el.workScroll.querySelector('#editLevelPicker');
+    if (editLevelPicker) {
+      editLevelPicker.addEventListener('change', (e) => {
+        const radio = e.target.closest('input[name=editLevel]');
+        if (!radio) return;
+        course.level = radio.value;
+        save();
+        renderChatHeader();
+      });
+    }
   }
 
-  renderRail();
   renderChatHeader();
   renderChat();
   renderWork();

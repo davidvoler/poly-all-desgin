@@ -144,8 +144,4 @@ Preview mode
 - Full - preview - exercise after exercise - exactly like in the students will see it 
 
 
-#### Improvements to the POC
-1. We do not need the list of courses ion the left side - the link to "my courses" is great
-2. On the bottom left we have the view end or preview - lets move it to the to left pane 
-3. The left pane should have the size of 40% of the width of the pave 
-4. We should have the following tabs there - lessons, preview, edit,words
+###
