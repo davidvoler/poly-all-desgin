@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Course · Create with AI — Polyglots</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body class="bg">
+  <div class="workshell">
+
+    <!-- Left rail: course context switcher -->
+    <aside class="rail">
+      <a href="index.html" class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        My courses
+      </a>
+      <div id="railList" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <a href="index.html" class="rail-newcourse">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        New course
+      </a>
+      <div class="rail-mode">
+        <div class="section-label" style="margin-bottom:8px;">View</div>
+        <div class="mode-toggle" id="modeToggle">
+          <button data-mode="edit" class="on">Edit</button>
+          <button data-mode="preview">Preview</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center: purpose-built chat -->
+    <section class="chat-col">
+      <div class="chat-head">
+        <div>
+          <div class="t" id="chatCourseTitle">Course</div>
+          <div class="s" id="chatCourseSub">Language → Language · Level</div>
+        </div>
+      </div>
+      <div class="chat-scroll" id="chatScroll"></div>
+      <form class="chat-input" id="chatForm">
+        <textarea id="chatText" rows="1" placeholder="Tell the AI what you want, or use a button above…"></textarea>
+        <button class="chat-send" type="submit" id="chatSend" title="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- Right: workspace (edit / preview) -->
+    <section class="work-col">
+      <div class="work-tabs" id="workTabs">
+        <button data-tab="words" class="on">Words</button>
+        <button data-tab="lessons">Lessons</button>
+      </div>
+      <div class="work-scroll" id="workScroll"></div>
+    </section>
+
+  </div>
+
+  <script src="assets/store.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>My Courses · Create with AI — Polyglots</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body class="bg">
+
+  <header class="topbar-simple">
+    <div class="brand-mark">P</div>
+    <div class="brand-name">Polyglots · Create with AI</div>
+  </header>
+
+  <div class="page">
+    <div class="page-head">
+      <div>
+        <h1>My courses</h1>
+        <p>Courses you've been building with the AI copilot. Pick one up where you left off, or start a new one.</p>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:10px;">In progress</div>
+    <div class="course-grid" id="courseGrid">
+      <!-- course cards injected by app.js -->
+      <div class="new-course-card" id="newCourseCard">
+        <span class="plus">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+        New course
+      </div>
+    </div>
+  </div>
+
+  <!-- Create-course modal — lang / to-lang / level / title only, no prompt. -->
+  <div class="modal-backdrop" id="createModal" hidden>
+    <div class="glass modal">
+      <h2>Create a course</h2>
+      <p class="sub">Just the basics — the AI copilot will help with everything else once you're inside.</p>
+      <form class="form" id="createForm">
+        <div class="field-row">
+          <div class="field">
+            <label for="fLang">Learning language</label>
+            <input id="fLang" name="lang" list="langOptions" placeholder="Japanese" value="Japanese" autocomplete="off" required />
+          </div>
+          <div class="field">
+            <label for="fToLang">Student language</label>
+            <input id="fToLang" name="toLang" list="langOptions" placeholder="Hebrew" value="Hebrew" autocomplete="off" required />
+          </div>
+        </div>
+        <datalist id="langOptions"></datalist>
+
+        <div class="field">
+          <label>Level</label>
+          <div class="level-picker" id="levelPicker"></div>
+        </div>
+
+        <div class="field">
+          <label for="fTitle">Course title <span style="text-transform:none; font-weight:400;">(optional)</span></label>
+          <input id="fTitle" name="title" placeholder="e.g. Japanese for Hebrew Speakers" autocomplete="off" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelCreate">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="assets/store.js"></script>
+  <script src="assets/index.js"></script>
+</body>
+</html>

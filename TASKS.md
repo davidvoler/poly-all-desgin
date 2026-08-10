@@ -65,3 +65,87 @@ cleanup
     - [x] the title should be the course title
     - [x] We should keep in the state course_id, lang, to_lang and send them with any new prompt 
     - [x] next prompts should not be create course but only create lesson 
+
+
+#### Let's review the process 
+
+Lets compare to Gemini and and Claude
+
+Gemini 
+left had icon menu
+- New chat
+- Search chats
+- image 
+- Video
+- Library
+- recent - a list of recent Chats 
+
+The Chat window itself 
+
+Ask away, David
++ {icon} Ask Gemini     /select Model/mic icone
+
+
+
+
+
+What do we need?
+Course context - See all courses that I was working on 
+Create Course - should be simple - lang to lang level and title - for now no need for prompt to create a course
+Once course is created - we are in the course context
+We can switch courses and continue from were we left 
+We should have course in edit mode and in preview mode 
+We should be able to create list of words for the course 
+Select words for the next lesson
+Create sentences for lesson 
+Choose sentences for the lesson - or ask the backend to directly create exercises  
+Edit sentences 
+Edit exercises
+preview course 
+
+
+It is time for a UI/UX POC
+We can create the POC in HTML/JS only in the folder 
+plan/design_experiments/create_with_ai_poc
+The page should be designed with AI Chat in minf hourser in our case this is not a general ask me anything chat - but we have a certain perpose to create a course, review it, and direct the backend/AI to create what we expect. 
+
+
+
+
+
+#### We have the concept 
+The first version of the concept looks good - but we will have to do a few changes 
+
+The Good:
+- Like in any other AI Chat window I can follow my actions 
+- I have a list of courses and information about them (number of lessons, words,  etc)
+- I have the edit mode and the preview mode 
+- I can see list of words and list of sentences 
+- I have my courses page that leads to the course page 
+
+Improvements 
+ - When we are in the context of a course - we do not need to see the other courses. A link to my courses is enough - we need the entire space
+ - We should break the page in 2 
+    - Left side is the chat and the process 
+    - Right side the the models/lesson/exercises
+
+Words 
+- It could be that when we create a lesson we offer words for the next lesson 
+- We over a few and only 2 are selected - If we define 2 words per lessons 
+- User. can select other words from the list 
+
+
+The lessons in edit/preview mode  
+- lesson title 
+- words in lesson
+- exercises 
+Preview mode 
+- What we have is not bad - it is a long list of exercises - where you can participate 
+- Full - preview - exercise after exercise - exactly like in the students will see it 
+
+
+#### Improvements to the POC
+1. We do not need the list of courses ion the left side - the link to "my courses" is great
+2. On the bottom left we have the view end or preview - lets move it to the to left pane 
+3. The left pane should have the size of 40% of the width of the pave 
+4. We should have the following tabs there - lessons, preview, edit,words
