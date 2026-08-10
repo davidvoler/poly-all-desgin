@@ -157,3 +157,4 @@ Preview mode
 
 More fixes 
 1. move 'my courses' to the top left 
+2. "My Course" should be a bit bigger 

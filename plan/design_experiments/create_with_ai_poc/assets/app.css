@@ -291,13 +291,13 @@ body.course-page { display: flex; flex-direction: column; height: 100vh; }
 .chat-head .t { font-size: 13px; font-weight: 700; }
 .chat-head .s { font-size: 11px; color: var(--w-55); }
 .back {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 14px; font-weight: 700;
   color: var(--w-70);
   text-decoration: none;
 }
 .back:hover { color: #fff; }
-.back svg { width: 13px; height: 13px; stroke-width: 2; }
+.back svg { width: 16px; height: 16px; stroke-width: 2; }
 .chat-usage {
   margin-left: auto;
   font-size: 11px; color: var(--w-55);
