@@ -9,6 +9,7 @@ class Course(BaseModel):
     tags: list[str] | None = []
     metadata: dict | None = {}
     published: bool | None = False
+    level: str | None = ''
 
 class CourseImport(BaseModel):
     document: str

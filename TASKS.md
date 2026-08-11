@@ -283,7 +283,7 @@ already established in the codebase):
 
 Utilities
 - permissions (course editing, using AI, AI Limit etc)
-
+- calc costs , estimate costs 
 endpoints
 
 No AI
