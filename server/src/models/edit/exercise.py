@@ -17,3 +17,6 @@ class ExerciseEdit(BaseModel):
     ruby_text: list[str] | None = []
     annotations: list[str] | None = []
     weight: int | None = 0
+
+
+

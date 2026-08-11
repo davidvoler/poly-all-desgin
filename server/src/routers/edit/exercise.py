@@ -101,3 +101,22 @@ async def update_exercise(
         raise HTTPException(status_code=500, detail=str(e))
     return {"message": "Exercise updated successfully."}
 
+
+@router.delete("/exercise/{course_id}/{module_id}/{lesson_id}/{exercise_id}")
+async def delete_exercise(
+    course_id: int,
+    module_id: int,
+    lesson_id: int,
+    exercise_id: int,
+    school_user: SchoolUser = Depends(current_school_user_full)
+):
+    sql = """
+        DELETE FROM course_simple.exercise
+        WHERE course_id = %s AND module_id = %s AND lesson_id = %s AND exercise_id = %s
+    """
+    params = (course_id, module_id, lesson_id, exercise_id)
+    try:
+        await get_query_results(sql, params)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"message": "Exercise deleted successfully."}    
