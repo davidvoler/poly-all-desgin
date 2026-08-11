@@ -321,5 +321,44 @@ Maybe we want to add reviewed field for all elements - this is set to true when 
 It is good to have plain simple CRUD API for content elements - as we may reuse it - for imported courses, for gen with AI and manual creation of course. when applicable 
 
 
+##### Just before we bind frontEnd and backend 
+
+1. We need to create a table for prompts and results - so we can have the state of every prompt. 
+2. We need to plan the process again - with full options
+3. Meta Model is now free and supports ollama - we can use it for experiments 
+
+
+Process 
+Enter a course and start generating 
+We have the following options for generating data 
+
+- gen words 
+      - AI
+      - corpus - words that are common in a corpus 
+      - zipf - load words by how common they are in zipf db 
+- gen sentences 
+      - AI
+      - Corpus
+- Translate
+      - AI
+      - Google Translate
+      - Azure 
+- Gen Audio
+      - AI?
+      - Azure
+      - Google
+      - Others? 
+- Gen Exercise 
+      - Logic 80% single choice, 10% identify words, ...
+      - AI
+- Sentences Elements 
+      - Spacy
+      - AI
+
+
+- Option for prompts 
+      - Words source 
+      - Sentences source
+      - AI configuration
 
 
