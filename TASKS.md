@@ -369,3 +369,5 @@ Complex feature
 We can ask AI to create complex exercises 
 like explanation - or sentence annotation 
 This goes into the chat window 
+
+The initial code should try with AI as we do want to test how to work with it - especially now that we have the option of using the Meta model 
