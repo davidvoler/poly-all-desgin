@@ -307,6 +307,19 @@ With or without AI
 
 
 
+#### Initial implementation
+
+
+I have started implementing the full api 
+I have to think - when generating a lesson - Are we going to insert the exercises and than send them back to the user - so he can edit/delete/add 
+Or we send them to the users - and if he approves than we save to the DB
+
+Sounds like the first option in better - this way we can go back to where we left. 
+
+Maybe we want to add reviewed field for all elements - this is set to true when user has spend some time reviewing - or explicitly set reviewed button
+
+It is good to have plain simple CRUD API for content elements - as we may reuse it - for imported courses, for gen with AI and manual creation of course. when applicable 
+
 
 
 
