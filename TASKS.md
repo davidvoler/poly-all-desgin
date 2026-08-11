@@ -331,7 +331,6 @@ It is good to have plain simple CRUD API for content elements - as we may reuse 
 Process 
 Enter a course and start generating 
 We have the following options for generating data 
-
 - gen words 
       - AI
       - corpus - words that are common in a corpus 
@@ -355,10 +354,18 @@ We have the following options for generating data
       - Spacy
       - AI
 
-
 - Option for prompts 
       - Words source 
       - Sentences source
       - AI configuration
 
+We can think of a complex scenario where you want the data from corpus - but if sentences are missing you generate with ai
+Also - when data comes from corpus - you already have translation and voice
 
+Complex feature 
+- Link chat area with lesson  created by this chat 
+- like the name of the chat window can be: Creating Lesson 3
+
+We can ask AI to create complex exercises 
+like explanation - or sentence annotation 
+This goes into the chat window 
