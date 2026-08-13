@@ -398,9 +398,36 @@ When words are used in a course - stope offering them
 keep a list of course words with 
 
 ### Claude tasks 
-- Start using ollama 
-- choose models
+- [x] Start using ollama 
+- [x] choose models
 -
+
+#### Ollama provider (2026-08-13)
+
+`utils/ollama_client.py` — real (non-mocked) local inference via
+Ollama's HTTP API, reachable from the `server` container at
+`host.docker.internal:11434` (Docker Desktop's host alias on Mac/
+Windows; `extra_hosts: host-gateway` in docker-compose.yaml makes the
+same alias work on Linux). Override with `OLLAMA_BASE_URL` if Ollama
+runs elsewhere.
+
+- [x] `POST /api/v1/generate_poc/` (previously an unimplemented stub) —
+      the general "ask AI anything" prompt path
+      (`Prompt.prompt`/`.provider`/`.model` → `PromptResponse.response`),
+      gated on `current_ai_school_user` like every other AI endpoint.
+      `provider` defaults to (and currently only supports) `"ollama"`.
+- [x] `GET /api/v1/generate_poc/models` — `{"providers": {"ollama": [...]}}`
+      for a model picker.
+- [x] Models wired up: `muse-glimmer`, `gemma4`, `gpt-oss-20b` (tagged
+      `gpt-oss:20b` in `ollama list` — `OLLAMA_MODELS` maps the display
+      name to the real tag).
+- [x] Token usage (`actual_tokens`) comes from Ollama's real
+      `prompt_eval_count`/`eval_count`; `actual_cost` is always `0.0`
+      since local inference has no per-token billing.
+- Scope: only the raw prompt path is real now. `ai_course_content.py`
+  (word/sentence/exercise generation) is still curated mock content —
+  routing those through Ollama needs real prompt-engineering work
+  (structured output, retries) that's out of scope for this pass.
 
 #### Data model correction (2026-08-13)
 

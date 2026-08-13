@@ -6,6 +6,7 @@ from utils.auth_deps import current_ai_school_user
 from utils.db import get_query_results, run_query
 from utils.ai_course_ownership import assert_lesson_owned
 from utils.jsonb import coerce_json_list
+from utils.ollama_client import OLLAMA_MODELS, OllamaError, ollama_chat
 from utils.ai_course_content import (
     exercise_prompt_for_gloss,
     generate_exercise_options,
@@ -45,19 +46,43 @@ async def create_course(lang, to_lang, user_id, school_id, title, description, l
 def create_title(lang: str | None, to_lang: str | None, user: str | None) -> str:
     return f"Course {lang or 'Unknown'} to  {to_lang or 'Unknown'} speakers "
 
+@router.get("/models")
+async def list_models(school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Providers + models the "ask AI" chat can send a prompt to (see
+    TASKS.md "Claude tasks"). Ollama is the only provider so far — all
+    inference is local, so there's no cost associated with any of them."""
+    return {"providers": {"ollama": list(OLLAMA_MODELS)}}
+
+
 @router.post("/", response_model=PromptResponse)
-def generate_poc(request: Prompt):
-    # Implement the logic for generating POC here
-    if request.prompt_type == PromptType.CREATE_COURSE:
-        # Logic for creating a course
-        pass
-    elif request.prompt_type == PromptType.CREATE_LESSON:
-        # Logic for creating a lesson
-        pass
-    elif request.prompt_type == PromptType.GET_WORDS:
-        # Logic for getting words
-        pass
-    return PromptResponse()
+async def generate_poc(request: Prompt, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """General-purpose "ask AI anything" prompt (TASKS.md's
+    "/generate/prompt - general prompt that we should use AI to
+    understand"), backed by a real local model call — as opposed to
+    every other generate_poc endpoint below, which is still curated mock
+    content (see utils/ai_course_content.py)."""
+    if not request.prompt:
+        raise HTTPException(status_code=400, detail="prompt is required")
+    provider = request.provider or "ollama"
+    if provider != "ollama":
+        raise HTTPException(status_code=400, detail=f"Unknown provider '{provider}'")
+    if request.model and request.model not in OLLAMA_MODELS:
+        raise HTTPException(status_code=400, detail=f"Unknown model '{request.model}'. Available: {', '.join(OLLAMA_MODELS)}")
+    try:
+        result = await ollama_chat(request.prompt, model=request.model)
+    except OllamaError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    return PromptResponse(
+        prompt_type=request.prompt_type,
+        prompt=request.prompt,
+        response=result["text"],
+        course_id=request.course_id,
+        lang=request.lang,
+        to_lang=request.to_lang,
+        actual_tokens=result["prompt_tokens"] + result["response_tokens"],
+        actual_cost=0.0,
+    )
 
 
 @router.post("/generate_course", response_model=PromptResponse)
