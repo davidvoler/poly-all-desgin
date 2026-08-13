@@ -566,8 +566,10 @@ class PromptResponse {
 // plan/design_experiments/create_with_ai_poc/course.html).
 // ===========================================================================
 
+// Words aren't a database entity — just an ordered jsonb list on the
+// course row. There's no id; the word string itself is the identity,
+// same as course_simple.lesson.words.
 class AiCourseWord {
-  final int courseWordId;
   final String word;
   final String gloss;
   final String exampleSentence;
@@ -575,7 +577,6 @@ class AiCourseWord {
   final bool used;
 
   const AiCourseWord({
-    required this.courseWordId,
     required this.word,
     this.gloss = '',
     this.exampleSentence = '',
@@ -584,7 +585,6 @@ class AiCourseWord {
   });
 
   factory AiCourseWord.fromJson(Map<String, dynamic> j) => AiCourseWord(
-        courseWordId: j['course_word_id'] as int,
         word: (j['word'] as String?) ?? '',
         gloss: (j['gloss'] as String?) ?? '',
         exampleSentence: (j['example_sentence'] as String?) ?? '',
@@ -605,17 +605,26 @@ class AiModule {
       );
 }
 
+// Sentences ARE a database entity (course_simple.sentence), but nothing
+// links to them by foreign key — sentenceId is a deterministic hash of
+// "lang:text" the server computes, masked to a JS-safe 53 bits, and a
+// lesson just carries it inline as an address into its own sentences
+// list (course_simple.lesson.sentences jsonb), not a join.
 class AiLessonSentence {
-  final int lessonSentenceId;
-  final int lessonId;
+  final int sentenceId;
+  // Only set by the /edit/lesson/sentences/* responses, which echo back
+  // the lesson_id they were addressed with. Absent from GET .../full and
+  // the generate_poc responses (the server's LessonSentenceOut doesn't
+  // carry it) — callers there already know which lesson they're in.
+  final int? lessonId;
   final String? word;
   final String text;
   final String gloss;
   final bool chosen;
 
   const AiLessonSentence({
-    required this.lessonSentenceId,
-    required this.lessonId,
+    required this.sentenceId,
+    this.lessonId,
     this.word,
     required this.text,
     this.gloss = '',
@@ -623,8 +632,8 @@ class AiLessonSentence {
   });
 
   factory AiLessonSentence.fromJson(Map<String, dynamic> j) => AiLessonSentence(
-        lessonSentenceId: j['lesson_sentence_id'] as int,
-        lessonId: j['lesson_id'] as int,
+        sentenceId: j['sentence_id'] as int,
+        lessonId: j['lesson_id'] as int?,
         word: j['word'] as String?,
         text: (j['text'] as String?) ?? '',
         gloss: (j['gloss'] as String?) ?? '',

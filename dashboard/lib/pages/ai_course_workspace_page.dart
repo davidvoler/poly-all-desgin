@@ -166,10 +166,10 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     return all.isEmpty ? null : all.last;
   }
 
-  Set<int> get _usedWordIds {
+  Set<String> get _usedWords {
     final c = _course;
     if (c == null) return {};
-    return {for (final w in c.words) if (w.used) w.courseWordId};
+    return {for (final w in c.words) if (w.used) w.word};
   }
 
   // -------------------------------------------------------------------
@@ -294,14 +294,16 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       final lesson = await api.createAiLesson(courseId: widget.courseId, moduleId: moduleId, title: 'Lesson $n');
       await _reload();
 
-      final used = _usedWordIds;
-      final ordered = _course!.words.toList()..sort((a, b) => (used.contains(a.courseWordId) ? 1 : 0).compareTo(used.contains(b.courseWordId) ? 1 : 0));
+      final used = _usedWords;
+      final ordered = _course!.words.toList()..sort((a, b) => (used.contains(a.word) ? 1 : 0).compareTo(used.contains(b.word) ? 1 : 0));
       var uncheckedSoFar = 0;
+      // id is unused for word pickers — _confirmWords reads `label` (the
+      // word string itself) since words aren't a database entity.
       final items = ordered.map((w) {
-        final isUsed = used.contains(w.courseWordId);
+        final isUsed = used.contains(w.word);
         final checked = !isUsed && uncheckedSoFar < 6;
         if (checked) uncheckedSoFar++;
-        return _PickerItem(id: w.courseWordId, label: w.word, sub: isUsed ? '${w.gloss} · used' : w.gloss, used: isUsed, checked: checked);
+        return _PickerItem(id: w.word.hashCode, label: w.word, sub: isUsed ? '${w.gloss} · used' : w.gloss, used: isUsed, checked: checked);
       }).toList();
 
       _appendAssistant(
@@ -339,7 +341,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       final result = await api.generateAiSentences(lessonId);
       await _reload();
       final items = result.sentences
-          .map((s) => _PickerItem(id: s.lessonSentenceId, label: s.text, sub: s.gloss, checked: true))
+          .map((s) => _PickerItem(id: s.sentenceId, label: s.text, sub: s.gloss, checked: true))
           .toList();
       _appendAssistant(
         "Here are draft sentences. Uncheck any you don't want, then I'll turn the rest into exercises.",
@@ -854,8 +856,8 @@ class _WordsTabState extends ConsumerState<_WordsTab> {
     if (mounted) setState(() => _busy = false);
   }
 
-  Future<void> _remove(int id) async {
-    await ref.read(dashboardApiProvider).deleteAiWord(id);
+  Future<void> _remove(String word) async {
+    await ref.read(dashboardApiProvider).deleteAiWord(courseId: widget.course.courseId, word: word);
     await widget.onChanged();
   }
 
@@ -876,7 +878,7 @@ class _WordsTabState extends ConsumerState<_WordsTab> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: [for (final w in words) _WordChip(word: w, onRemove: () => _remove(w.courseWordId))],
+          children: [for (final w in words) _WordChip(word: w, onRemove: () => _remove(w.word))],
         ),
         const SizedBox(height: 18),
         Text('ADD A WORD MANUALLY', style: DashText.sectionLabel(size: 10)),
@@ -1124,15 +1126,16 @@ class _LessonBlockState extends State<_LessonBlock> {
                   for (final s in lesson.sentences)
                     _SentenceRow(
                       sentence: s,
-                      editing: widget.editingSentenceIds.contains(s.lessonSentenceId),
-                      onEdit: () => widget.onToggleEdit(s.lessonSentenceId, true),
+                      lessonId: lesson.lessonId,
+                      editing: widget.editingSentenceIds.contains(s.sentenceId),
+                      onEdit: () => widget.onToggleEdit(s.sentenceId, true),
                       onSaved: () async {
-                        widget.onToggleEdit(s.lessonSentenceId, false);
+                        widget.onToggleEdit(s.sentenceId, false);
                         await widget.onChanged();
                       },
                       onDelete: () async {
-                        await providerScopeApi(context).deleteAiSentence(s.lessonSentenceId);
-                        widget.onToggleEdit(s.lessonSentenceId, false);
+                        await providerScopeApi(context).deleteAiSentence(lessonId: lesson.lessonId, sentenceId: s.sentenceId);
+                        widget.onToggleEdit(s.sentenceId, false);
                         await widget.onChanged();
                       },
                     ),
@@ -1180,11 +1183,12 @@ class _MiniChip extends StatelessWidget {
 
 class _SentenceRow extends StatefulWidget {
   final AiLessonSentence sentence;
+  final int lessonId;
   final bool editing;
   final VoidCallback onEdit;
   final Future<void> Function() onSaved;
   final Future<void> Function() onDelete;
-  const _SentenceRow({required this.sentence, required this.editing, required this.onEdit, required this.onSaved, required this.onDelete});
+  const _SentenceRow({required this.sentence, required this.lessonId, required this.editing, required this.onEdit, required this.onSaved, required this.onDelete});
 
   @override
   State<_SentenceRow> createState() => _SentenceRowState();
@@ -1200,7 +1204,7 @@ class _SentenceRowState extends State<_SentenceRow> {
   }
 
   Future<void> _save() async {
-    await providerScopeApi(context).updateAiSentence(lessonSentenceId: widget.sentence.lessonSentenceId, text: _controller.text);
+    await providerScopeApi(context).updateAiSentence(lessonId: widget.lessonId, sentenceId: widget.sentence.sentenceId, text: _controller.text);
     await widget.onSaved();
   }
 

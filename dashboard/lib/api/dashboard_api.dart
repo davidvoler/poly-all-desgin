@@ -331,10 +331,11 @@ class DashboardApi {
     return AiCourseWord.fromJson(res.data ?? const {});
   }
 
-  Future<void> deleteAiWord(int courseWordId) async {
+  /// Words aren't a database entity — the word string is the identity.
+  Future<void> deleteAiWord({required int courseId, required String word}) async {
     await _dio.post<dynamic>(
       '/api/v1/edit/word/delete',
-      data: {'course_word_id': courseWordId},
+      data: {'course_id': courseId, 'word': word},
     );
   }
 
@@ -387,18 +388,21 @@ class DashboardApi {
     return (res.data ?? const []).cast<Map<String, dynamic>>().map(AiLessonSentence.fromJson).toList();
   }
 
-  Future<AiLessonSentence> updateAiSentence({required int lessonSentenceId, required String text}) async {
+  /// Sentences live on the lesson's own `sentences` list (no join table)
+  /// — [sentenceId] just addresses one entry in it, so [lessonId] is
+  /// required to know which lesson's list to patch.
+  Future<AiLessonSentence> updateAiSentence({required int lessonId, required int sentenceId, required String text}) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/edit/lesson/sentences/update',
-      data: {'lesson_sentence_id': lessonSentenceId, 'text': text},
+      data: {'lesson_id': lessonId, 'sentence_id': sentenceId, 'text': text},
     );
     return AiLessonSentence.fromJson(res.data ?? const {});
   }
 
-  Future<void> deleteAiSentence(int lessonSentenceId) async {
+  Future<void> deleteAiSentence({required int lessonId, required int sentenceId}) async {
     await _dio.post<dynamic>(
       '/api/v1/edit/lesson/sentences/delete',
-      data: {'lesson_sentence_id': lessonSentenceId},
+      data: {'lesson_id': lessonId, 'sentence_id': sentenceId},
     );
   }
 

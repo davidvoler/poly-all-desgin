@@ -384,9 +384,57 @@ Users review edit
 
 
 
--- Next Tasks 
 
 
-Implement get words 
+### Manual Tasks 
+- Implement get words  - do it manually, using zipf, using ollama
+- We should start using
+- Get words should be done for a single module 
+- When we want next words - We ask the model - here is our last model words - give us the next words 
+if we use zipf - we should keep the last words that we used and ask for the next chunk 
+the same when we use words from a corpus 
+
 When words are used in a course - stope offering them 
-keep a list of course words with -words that are used already and words that the user deleted
+keep a list of course words with 
+
+### Claude tasks 
+- Start using ollama 
+- choose models
+-
+
+#### Data model correction (2026-08-13)
+
+First backend pass modeled words and sentences as real DB entities
+(`course_word` table with a serial id, `lesson_word` join table,
+`lesson_sentence` table with a serial id). Review feedback: that's too
+much relational overhead for content that's really just per-course/
+per-lesson state. Reworked to:
+
+- [x] Words are NOT a database entity — no id, no table.
+      `course_simple.course.words` is a plain ordered jsonb list
+      (`[{word, gloss, example_sentence, example_gloss}, ...]`) —
+      generation order = frequency order, simplest/most common word
+      first. The word string is the identity, same as
+      `course_simple.lesson.words` (text[], unchanged from before).
+      `course_word`/`lesson_word` tables dropped.
+- [x] Sentences ARE a database entity — `course_simple.sentence`
+      (`sentence_id bigint pk, lang, text, gloss, created_at`) — but
+      nothing holds a foreign key to it. `sentence_id` is a
+      deterministic hash of `"lang:text"` (`sentence_id_for()` in
+      `utils/ai_course_content.py`, masked to 53 bits so it stays a
+      JS-safe integer through Flutter web's JSON), computed in app code
+      before insert. A lesson just carries an ordered jsonb list of its
+      own draft sentences (`course_simple.lesson.sentences`, mirroring
+      `.words`) — no join table (`lesson_sentence` dropped).
+- [x] Exercises keep their own copy of the prompt text
+      (`exercise.sentence`) and only carry `sentence_id` for reference —
+      editing an exercise never touches the sentence it came from, and
+      deleting a draft sentence never cascades to exercises already
+      built from it. No links to maintain in either direction, matching
+      the pre-existing (and never FK-enforced)
+      `exercise.sentence_id`/`to_sentence_id` columns.
+- [x] `course.level`: `smallint` → `varchar`. Store CEFR strings
+      (`"A1"`..`"C1"`) directly — no more int↔string mapping table
+      (`utils/level.py` deleted).
+
+See `plan/DDL/create_with_ai_v4.sql` for the migration. 
