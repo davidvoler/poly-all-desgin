@@ -175,98 +175,98 @@ already established in the codebase):
   query by `(user_id, school_id)` — same as every existing editor endpoint.
 
 #### Decisions needed before implementing
-- [ ] New table `course_simple.course_word` for the AI word bank? There's no
+- [x] New table `course_simple.course_word` for the AI word bank? There's no
       per-course word-bank table today — `module.words`/`lesson.words` are just
       `text[]` columns, and `draft.words(lang, word)` is a global (not per-course)
       dictionary with no gloss/example-sentence/used-state. Proposing:
       `course_word(course_word_id serial pk, course_id, word, gloss,
       example_sentence, example_gloss, created_at)`.
-- [ ] `generate_poc` endpoints aren't gated by the existing
+- [x] `generate_poc` endpoints aren't gated by the existing
       `permissions['create_with_ai']` flag (`utils/user_school_data.py`) — should
       the new/changed endpoints enforce it?
-- [ ] Sentence/exercise CRUD: nest under `/api/v1/edit/course/...`, or give
+- [x] Sentence/exercise CRUD: nest under `/api/v1/edit/course/...`, or give
       lesson/exercise their own routers (`/api/v1/edit/lesson/...`,
       `/api/v1/edit/exercise/...`)? Leaning toward one router per resource, since
       `edit_course.py` today is scoped only to courses.
-- [ ] `GenerateCourseRequest` has no `level` field even though `course.level`
+- [x] `GenerateCourseRequest` has no `level` field even though `course.level`
       already exists in the DB and the POC's create-course form requires it —
       needs adding (request model + `create_course()` insert).
 
 #### Course context ("My courses" list + create)
-- [ ] `GET /api/v1/edit/course/courses` — reuse as-is; response needs word/module/
+- [x] `GET /api/v1/edit/course/courses` — reuse as-is; response needs word/module/
       lesson counts added (extend `Course` with `word_count`/`module_count`/
       `lesson_count`/`ready_lesson_count`, or a `?with_stats=true` variant)
-- [ ] `POST /api/v1/generate_poc/generate_course` — reuse; add `level` (see
+- [x] `POST /api/v1/generate_poc/generate_course` — reuse; add `level` (see
       decisions above)
 
 #### Course workspace (load + Edit Course tab)
-- [ ] `GET /api/v1/edit/course/course/{course_id}/full` — new aggregate endpoint:
+- [x] `GET /api/v1/edit/course/course/{course_id}/full` — new aggregate endpoint:
       course meta + modules[] + lessons[] (each with words/sentences/exercises) +
       word bank, in one call, so the workspace doesn't need N+1 round-trips.
       Alternative: compose from the granular GETs below instead — pick one.
-- [ ] `POST /api/v1/edit/course/course` — reuse for title/lang/to_lang/level
+- [x] `POST /api/v1/edit/course/course` — reuse for title/lang/to_lang/level
       updates (Edit Course tab); add `level` to the `Course` model
 
 #### Words tab
-- [ ] `POST /api/v1/generate_poc/generate_words_list` — currently a stub; wire to
+- [x] `POST /api/v1/generate_poc/generate_words_list` — currently a stub; wire to
       actually generate N words and persist into `course_word`, returning the new
       rows + `actual_tokens`/`actual_cost`
-- [ ] `POST /api/v1/edit/course/{course_id}/words` — add a word manually
-- [ ] `DELETE /api/v1/edit/course/words/{course_word_id}` — remove a word (also
+- [x] `POST /api/v1/edit/course/{course_id}/words` — add a word manually
+- [x] `DELETE /api/v1/edit/course/words/{course_word_id}` — remove a word (also
       detach it from any lesson's word selection)
-- [ ] word "used" tracking — computed server-side (join `course_word` against
+- [x] word "used" tracking — computed server-side (join `course_word` against
       whatever links a word to a lesson, see lesson-word link decision below),
       returned as `used: bool` per word
 
 #### Modules
-- [ ] `POST /api/v1/edit/course/{course_id}/modules` — create a module (title
+- [x] `POST /api/v1/edit/course/{course_id}/modules` — create a module (title
       optional, server defaults to "Module N"); plain CRUD, not AI — the POC's
       "Start a new module" never calls an AI endpoint
-- [ ] modules fold into the `GET .../full` response — no separate list endpoint
+- [x] modules fold into the `GET .../full` response — no separate list endpoint
       needed unless we skip the aggregate route
 
 #### Lessons
-- [ ] `POST /api/v1/edit/course/modules/{module_id}/lessons` — create a lesson
+- [x] `POST /api/v1/edit/course/modules/{module_id}/lessons` — create a lesson
       draft (`status='draft'`)
-- [ ] `PATCH /api/v1/edit/course/lessons/{lesson_id}/words` — confirm word
+- [x] `PATCH /api/v1/edit/course/lessons/{lesson_id}/words` — confirm word
       selection, body `{word_ids: [...]}`; need to decide how word↔lesson links
       are stored (a `lesson_word` join table, or keep `lesson.words text[]` but
       store `course_word_id`s instead of raw strings)
-- [ ] `POST /api/v1/generate_poc/generate_sentences` — new; body `{lesson_id}`,
+- [x] `POST /api/v1/generate_poc/generate_sentences` — new; body `{lesson_id}`,
       generates + persists draft sentences for the lesson's selected words
       (`chosen=true` by default)
-- [ ] `PATCH /api/v1/edit/course/lessons/{lesson_id}/sentences` — confirm which
+- [x] `PATCH /api/v1/edit/course/lessons/{lesson_id}/sentences` — confirm which
       generated sentences to keep, body `{sentence_ids: [...chosen...]}`
-- [ ] `POST /api/v1/generate_poc/generate_exercises` — new; body `{lesson_id}`,
+- [x] `POST /api/v1/generate_poc/generate_exercises` — new; body `{lesson_id}`,
       generates + persists exercises from the lesson's chosen sentences, sets
       lesson `status='ready'`
-- [ ] `POST /api/v1/generate_poc/generate_lesson` — repurpose the existing stub
+- [x] `POST /api/v1/generate_poc/generate_lesson` — repurpose the existing stub
       for "Create exercises directly": given `{lesson_id}`, generate sentences
       AND exercises in one call, skipping the confirm-sentences step
-- [ ] sentences need real rows, not just `lesson.words text[]` — new table
+- [x] sentences need real rows, not just `lesson.words text[]` — new table
       `course_simple.lesson_sentence(lesson_sentence_id pk, lesson_id, text,
       gloss, chosen bool default true)`, since sentences need individual ids to
       edit/delete/toggle
-- [ ] `PATCH /api/v1/edit/course/sentences/{lesson_sentence_id}` — edit sentence
+- [x] `PATCH /api/v1/edit/course/sentences/{lesson_sentence_id}` — edit sentence
       text
-- [ ] `DELETE /api/v1/edit/course/sentences/{lesson_sentence_id}` — delete a
+- [x] `DELETE /api/v1/edit/course/sentences/{lesson_sentence_id}` — delete a
       sentence (cascade-delete any exercise built from it)
 
 #### Exercises
-- [ ] `POST /api/v1/edit/course/lessons/{lesson_id}/exercises` — add a blank
+- [x] `POST /api/v1/edit/course/lessons/{lesson_id}/exercises` — add a blank
       exercise manually
-- [ ] `PATCH /api/v1/edit/course/exercises/{exercise_id}` — edit prompt/options/
+- [x] `PATCH /api/v1/edit/course/exercises/{exercise_id}` — edit prompt/options/
       correct answer (maps onto the existing `exercise.options` jsonb +
       `sentence`/word columns — settle the exact jsonb shape against the existing
       exercise-type catalogue rather than inventing a new one)
-- [ ] `DELETE /api/v1/edit/course/exercises/{exercise_id}` — delete an exercise
+- [x] `DELETE /api/v1/edit/course/exercises/{exercise_id}` — delete an exercise
 
 #### Preview
-- [ ] no new endpoint — Preview tab just renders the same `GET .../full` response
+- [x] no new endpoint — Preview tab just renders the same `GET .../full` response
       read-only
 
 #### Usage / cost
-- [ ] every `generate_poc` response already carries `actual_tokens`/`actual_cost`
+- [x] every `generate_poc` response already carries `actual_tokens`/`actual_cost`
       — once a real LLM call lands, populate these for real (currently always
       0.0/0, nothing calls an LLM yet); the running per-course total shown in the
       chat header stays a client-side sum, no new endpoint needed
@@ -371,3 +371,22 @@ like explanation - or sentence annotation
 This goes into the chat window 
 
 The initial code should try with AI as we do want to test how to work with it - especially now that we have the option of using the Meta model 
+
+
+in case we do work with AI
+Here is the process 
+- AI, generate sentences 
+- Code/AI break words - rank words
+User review?
+- Code Generate exercises 
+Users review edit
+
+
+
+
+-- Next Tasks 
+
+
+Implement get words 
+When words are used in a course - stope offering them 
+keep a list of course words with -words that are used already and words that the user deleted

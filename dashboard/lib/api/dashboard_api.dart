@@ -273,60 +273,190 @@ class DashboardApi {
     await _dio.delete<dynamic>('/api/v1/edit/course/course/$courseId');
   }
 
-  // --- Course AI POC (see pages/course_ai_poc_page.dart) ------------
+  // --- Create-with-AI course workspace --------------------------------
+  //
+  // Flutter port of plan/design_experiments/create_with_ai_poc — see
+  // pages/ai_courses_page.dart (course list + create) and
+  // pages/ai_course_workspace_page.dart (chat + Words/Lessons/Edit
+  // Course/Preview tabs). Endpoints/shapes are documented in TASKS.md
+  // ("Planning the api").
 
-  /// Create a course from the AI POC form. Returns the created course id
-  /// plus the "what next" options (Create Lesson / Get Words List).
+  /// Create a course. Returns the created course id plus the "what next"
+  /// options (Create Lesson / Get Words List).
   Future<PromptResponse> generateCourse({
     required String lang,
     required String toLang,
+    required String level,
     String? title,
     String? description,
-    String? prompt,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/generate_poc/generate_course',
       data: {
         'lang': lang,
         'to_lang': toLang,
+        'level': level,
         'title': title,
         'description': description,
-        'prompt': prompt,
       },
     );
     return PromptResponse.fromJson(res.data ?? const {});
   }
 
-  /// Generate a lesson for an existing course — one of the follow-up
-  /// options offered by [generateCourse].
-  Future<PromptResponse> generateLesson({
-    required int courseId,
-    String? lang,
-    String? toLang,
-    String? prompt,
-  }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/generate_poc/generate_lesson',
-      data: {
-        'course_id': courseId,
-        'lang': lang,
-        'to_lang': toLang,
-        'prompt': prompt,
-      },
+  /// Everything the course workspace needs in one call — course meta,
+  /// word bank (with used-in-a-lesson flags), and every
+  /// module/lesson/sentence/exercise.
+  Future<AiCourseFull> fetchAiCourseFull(int courseId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/edit/course/course/$courseId/full',
     );
-    return PromptResponse.fromJson(res.data ?? const {});
+    return AiCourseFull.fromJson(res.data ?? const {});
   }
 
-  /// Generate a starter word list for an existing course — the other
-  /// follow-up option offered by [generateCourse].
-  Future<PromptResponse> generateWordsList({
-    required int courseId,
-  }) async {
+  /// Generate N new words into the course's word bank (skips words
+  /// already there).
+  Future<AiWordsResult> generateAiWords({required int courseId, int count = 12}) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/generate_poc/generate_words_list',
-      data: {'course_id': courseId},
+      data: {'course_id': courseId, 'count': count},
     );
-    return PromptResponse.fromJson(res.data ?? const {});
+    return AiWordsResult.fromJson(res.data ?? const {});
+  }
+
+  Future<AiCourseWord> addAiWord({required int courseId, required String word, String? gloss}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/word/',
+      data: {'course_id': courseId, 'word': word, 'gloss': gloss},
+    );
+    return AiCourseWord.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteAiWord(int courseWordId) async {
+    await _dio.post<dynamic>(
+      '/api/v1/edit/word/delete',
+      data: {'course_word_id': courseWordId},
+    );
+  }
+
+  /// Create a module — plain CRUD, not an AI call. Reuses the school's
+  /// existing module-create endpoint (ModuleEdit).
+  Future<AiModule> createAiModule({required int courseId, required String title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/module/',
+      data: {'course_id': courseId, 'title': title},
+    );
+    return AiModule.fromJson(res.data ?? const {});
+  }
+
+  /// Create a draft lesson within a module. Reuses the school's existing
+  /// lesson-create endpoint (LessonEdit).
+  Future<AiLesson> createAiLesson({required int courseId, required int moduleId, required String title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/lesson/',
+      data: {'course_id': courseId, 'module_id': moduleId, 'title': title},
+    );
+    return AiLesson.fromJson(res.data ?? const {});
+  }
+
+  /// Confirm which words (from the course word bank) are selected for a
+  /// lesson — replaces the lesson's whole `words` list.
+  Future<void> setAiLessonWords({required int lessonId, required List<String> words}) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/lesson/words',
+      data: {'lesson_id': lessonId, 'words': words},
+    );
+  }
+
+  /// Draft example sentences for a lesson's selected words — the
+  /// "Create sentences" path (as opposed to [generateAiLessonDirect],
+  /// which skips straight to exercises).
+  Future<AiSentencesResult> generateAiSentences(int lessonId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_sentences',
+      data: {'lesson_id': lessonId},
+    );
+    return AiSentencesResult.fromJson(res.data ?? const {});
+  }
+
+  /// Choose which generated draft sentences to keep for a lesson.
+  Future<List<AiLessonSentence>> confirmAiSentences({required int lessonId, required List<int> sentenceIds}) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/edit/lesson/sentences/confirm',
+      data: {'lesson_id': lessonId, 'sentence_ids': sentenceIds},
+    );
+    return (res.data ?? const []).cast<Map<String, dynamic>>().map(AiLessonSentence.fromJson).toList();
+  }
+
+  Future<AiLessonSentence> updateAiSentence({required int lessonSentenceId, required String text}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/lesson/sentences/update',
+      data: {'lesson_sentence_id': lessonSentenceId, 'text': text},
+    );
+    return AiLessonSentence.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteAiSentence(int lessonSentenceId) async {
+    await _dio.post<dynamic>(
+      '/api/v1/edit/lesson/sentences/delete',
+      data: {'lesson_sentence_id': lessonSentenceId},
+    );
+  }
+
+  /// Build exercises from a lesson's chosen (kept) sentences and mark it
+  /// ready — the "Create exercises" step after [generateAiSentences].
+  Future<AiExercisesResult> generateAiExercises(int lessonId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_exercises',
+      data: {'lesson_id': lessonId},
+    );
+    return AiExercisesResult.fromJson(res.data ?? const {});
+  }
+
+  /// "Create exercises directly" — generate sentences AND exercises for a
+  /// lesson's selected words in one call, skipping the confirm-sentences
+  /// step.
+  Future<AiLessonGenerateResult> generateAiLessonDirect({required int lessonId, String? title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_lesson',
+      data: {'lesson_id': lessonId, 'title': title},
+    );
+    return AiLessonGenerateResult.fromJson(res.data ?? const {});
+  }
+
+  /// Add a blank exercise manually. Reuses the school's existing
+  /// exercise-create endpoint (ExerciseEdit) — `exerciseId: 0` is a
+  /// required-but-unused placeholder for the not-yet-assigned id.
+  Future<AiExercise> createAiExercise({required int courseId, required int moduleId, required int lessonId}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/exercise/exercise',
+      data: {'exercise_id': 0, 'course_id': courseId, 'module_id': moduleId, 'lesson_id': lessonId},
+    );
+    return AiExercise.fromJson(res.data ?? const {});
+  }
+
+  Future<AiExercise> updateAiExercise({
+    required int exerciseId,
+    String? prompt,
+    List<String>? options,
+    String? answer,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/exercise/exercise/update',
+      data: {
+        'exercise_id': exerciseId,
+        if (prompt != null) 'prompt': prompt,
+        if (options != null) 'options': options,
+        if (answer != null) 'answer': answer,
+      },
+    );
+    return AiExercise.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteAiExercise(int exerciseId) async {
+    await _dio.post<dynamic>(
+      '/api/v1/edit/exercise/exercise/delete',
+      data: {'exercise_id': exerciseId},
+    );
   }
 
   // --- Reads --------------------------------------------------------

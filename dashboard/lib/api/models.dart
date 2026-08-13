@@ -168,6 +168,13 @@ class EditorCourse {
   final List<String> tags;
   final Map<String, dynamic> metadata;
   final CourseMeta meta;
+  // Only populated by GET /courses — the create_with_ai_poc "My courses"
+  // list card badges. Null everywhere else (GET/POST /course/{id}).
+  final String? level;
+  final int? wordCount;
+  final int? moduleCount;
+  final int? lessonCount;
+  final int? readyLessonCount;
 
   const EditorCourse({
     required this.courseId,
@@ -179,6 +186,11 @@ class EditorCourse {
     this.tags = const [],
     this.metadata = const {},
     this.meta = CourseMeta.empty,
+    this.level,
+    this.wordCount,
+    this.moduleCount,
+    this.lessonCount,
+    this.readyLessonCount,
   });
 
   factory EditorCourse.fromJson(Map<String, dynamic> j) {
@@ -194,6 +206,11 @@ class EditorCourse {
       tags: ((j['tags'] as List?) ?? const []).cast<String>(),
       metadata: rawMeta,
       meta: CourseMeta.fromJson(rawMeta),
+      level: j['level'] as String?,
+      wordCount: j['word_count'] as int?,
+      moduleCount: j['module_count'] as int?,
+      lessonCount: j['lesson_count'] as int?,
+      readyLessonCount: j['ready_lesson_count'] as int?,
     );
   }
 
@@ -209,23 +226,28 @@ class EditorCourse {
         'tags': tags,
         'metadata': metadata,
         'published': published,
+        'level': level,
       };
 
   EditorCourse copyWith({
     String? title,
     String? description,
     bool? published,
+    String? lang,
+    String? toLang,
+    String? level,
   }) =>
       EditorCourse(
         courseId: courseId,
         title: title ?? this.title,
         description: description ?? this.description,
-        lang: lang,
-        toLang: toLang,
+        lang: lang ?? this.lang,
+        toLang: toLang ?? this.toLang,
         published: published ?? this.published,
         tags: tags,
         metadata: metadata,
         meta: meta,
+        level: level ?? this.level,
       );
 }
 
@@ -499,6 +521,8 @@ class PromptResponse {
   final int? courseId;
   final String? lang;
   final String? toLang;
+  final int actualTokens;
+  final double actualCost;
 
   const PromptResponse({
     this.promptType,
@@ -510,6 +534,8 @@ class PromptResponse {
     this.courseId,
     this.lang,
     this.toLang,
+    this.actualTokens = 0,
+    this.actualCost = 0,
   });
 
   factory PromptResponse.fromJson(Map<String, dynamic> j) => PromptResponse(
@@ -527,5 +553,299 @@ class PromptResponse {
         courseId: j['course_id'] as int?,
         lang: j['lang'] as String?,
         toLang: j['to_lang'] as String?,
+        actualTokens: (j['actual_tokens'] as num?)?.toInt() ?? 0,
+        actualCost: (j['actual_cost'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+// ===========================================================================
+// Create-with-AI course workspace — mirrors server/src/models/edit/ai_course.py
+// (words / modules / lessons / sentences / exercises) and the aggregate
+// GET /api/v1/edit/course/course/{id}/full response. Backs
+// pages/ai_course_workspace_page.dart (a Flutter port of
+// plan/design_experiments/create_with_ai_poc/course.html).
+// ===========================================================================
+
+class AiCourseWord {
+  final int courseWordId;
+  final String word;
+  final String gloss;
+  final String exampleSentence;
+  final String exampleGloss;
+  final bool used;
+
+  const AiCourseWord({
+    required this.courseWordId,
+    required this.word,
+    this.gloss = '',
+    this.exampleSentence = '',
+    this.exampleGloss = '',
+    this.used = false,
+  });
+
+  factory AiCourseWord.fromJson(Map<String, dynamic> j) => AiCourseWord(
+        courseWordId: j['course_word_id'] as int,
+        word: (j['word'] as String?) ?? '',
+        gloss: (j['gloss'] as String?) ?? '',
+        exampleSentence: (j['example_sentence'] as String?) ?? '',
+        exampleGloss: (j['example_gloss'] as String?) ?? '',
+        used: (j['used'] as bool?) ?? false,
+      );
+}
+
+class AiModule {
+  final int moduleId;
+  final String title;
+
+  const AiModule({required this.moduleId, required this.title});
+
+  factory AiModule.fromJson(Map<String, dynamic> j) => AiModule(
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+      );
+}
+
+class AiLessonSentence {
+  final int lessonSentenceId;
+  final int lessonId;
+  final String? word;
+  final String text;
+  final String gloss;
+  final bool chosen;
+
+  const AiLessonSentence({
+    required this.lessonSentenceId,
+    required this.lessonId,
+    this.word,
+    required this.text,
+    this.gloss = '',
+    this.chosen = true,
+  });
+
+  factory AiLessonSentence.fromJson(Map<String, dynamic> j) => AiLessonSentence(
+        lessonSentenceId: j['lesson_sentence_id'] as int,
+        lessonId: j['lesson_id'] as int,
+        word: j['word'] as String?,
+        text: (j['text'] as String?) ?? '',
+        gloss: (j['gloss'] as String?) ?? '',
+        chosen: (j['chosen'] as bool?) ?? true,
+      );
+}
+
+class AiExercise {
+  final int exerciseId;
+  final int lessonId;
+  final int? sentenceId;
+  final String exerciseType;
+  final String prompt;
+  final List<String> options;
+  final String? answer;
+
+  const AiExercise({
+    required this.exerciseId,
+    required this.lessonId,
+    this.sentenceId,
+    this.exerciseType = 'single_choice',
+    this.prompt = '',
+    this.options = const [],
+    this.answer,
+  });
+
+  factory AiExercise.fromJson(Map<String, dynamic> j) => AiExercise(
+        exerciseId: j['exercise_id'] as int,
+        lessonId: j['lesson_id'] as int,
+        sentenceId: j['sentence_id'] as int?,
+        exerciseType: (j['exercise_type'] as String?) ?? 'single_choice',
+        prompt: (j['prompt'] as String?) ?? '',
+        options: ((j['options'] as List?) ?? const []).cast<String>(),
+        answer: j['answer'] as String?,
+      );
+}
+
+class AiLesson {
+  final int lessonId;
+  final int moduleId;
+  final int courseId;
+  final String title;
+  final String status; // 'draft' | 'ready'
+  final List<String> words;
+  final List<AiLessonSentence> sentences;
+  final List<AiExercise> exercises;
+
+  const AiLesson({
+    required this.lessonId,
+    required this.moduleId,
+    required this.courseId,
+    required this.title,
+    this.status = 'draft',
+    this.words = const [],
+    this.sentences = const [],
+    this.exercises = const [],
+  });
+
+  bool get isReady => status == 'ready';
+
+  factory AiLesson.fromJson(Map<String, dynamic> j) => AiLesson(
+        lessonId: j['lesson_id'] as int,
+        moduleId: j['module_id'] as int,
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        status: (j['status'] as String?) ?? 'draft',
+        words: ((j['words'] as List?) ?? const []).cast<String>(),
+        sentences: ((j['sentences'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLessonSentence.fromJson)
+            .toList(),
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExercise.fromJson)
+            .toList(),
+      );
+}
+
+class AiModuleFull {
+  final int moduleId;
+  final String title;
+  final List<AiLesson> lessons;
+
+  const AiModuleFull({
+    required this.moduleId,
+    required this.title,
+    this.lessons = const [],
+  });
+
+  factory AiModuleFull.fromJson(Map<String, dynamic> j) => AiModuleFull(
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        lessons: ((j['lessons'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLesson.fromJson)
+            .toList(),
+      );
+}
+
+class AiCourseFull {
+  final int courseId;
+  final String title;
+  final String description;
+  final String lang;
+  final String toLang;
+  final String level;
+  final List<AiCourseWord> words;
+  final List<AiModuleFull> modules;
+
+  const AiCourseFull({
+    required this.courseId,
+    required this.title,
+    this.description = '',
+    required this.lang,
+    required this.toLang,
+    required this.level,
+    this.words = const [],
+    this.modules = const [],
+  });
+
+  factory AiCourseFull.fromJson(Map<String, dynamic> j) => AiCourseFull(
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        lang: (j['lang'] as String?) ?? '',
+        toLang: (j['to_lang'] as String?) ?? '',
+        level: (j['level'] as String?) ?? 'A1',
+        words: ((j['words'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiCourseWord.fromJson)
+            .toList(),
+        modules: ((j['modules'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiModuleFull.fromJson)
+            .toList(),
+      );
+}
+
+/// Fake per-call token/cost usage, shared by every generate_poc response
+/// below — mirrors PromptResponse.actual_tokens/actual_cost.
+class AiUsage {
+  final int tokens;
+  final double cost;
+  const AiUsage({this.tokens = 0, this.cost = 0});
+
+  factory AiUsage.fromJson(Map<String, dynamic> j) => AiUsage(
+        tokens: (j['actual_tokens'] as num?)?.toInt() ?? 0,
+        cost: (j['actual_cost'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class AiWordsResult {
+  final String message;
+  final List<AiCourseWord> words;
+  final AiUsage usage;
+  const AiWordsResult({required this.message, required this.words, required this.usage});
+
+  factory AiWordsResult.fromJson(Map<String, dynamic> j) => AiWordsResult(
+        message: (j['response'] as String?) ?? '',
+        words: ((j['words'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiCourseWord.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+class AiSentencesResult {
+  final String message;
+  final List<AiLessonSentence> sentences;
+  final AiUsage usage;
+  const AiSentencesResult({required this.message, required this.sentences, required this.usage});
+
+  factory AiSentencesResult.fromJson(Map<String, dynamic> j) => AiSentencesResult(
+        message: (j['response'] as String?) ?? '',
+        sentences: ((j['sentences'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLessonSentence.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+class AiExercisesResult {
+  final String message;
+  final List<AiExercise> exercises;
+  final AiUsage usage;
+  const AiExercisesResult({required this.message, required this.exercises, required this.usage});
+
+  factory AiExercisesResult.fromJson(Map<String, dynamic> j) => AiExercisesResult(
+        message: (j['response'] as String?) ?? '',
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExercise.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+class AiLessonGenerateResult {
+  final String message;
+  final List<AiLessonSentence> sentences;
+  final List<AiExercise> exercises;
+  final AiUsage usage;
+  const AiLessonGenerateResult({
+    required this.message,
+    required this.sentences,
+    required this.exercises,
+    required this.usage,
+  });
+
+  factory AiLessonGenerateResult.fromJson(Map<String, dynamic> j) => AiLessonGenerateResult(
+        message: (j['response'] as String?) ?? '',
+        sentences: ((j['sentences'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLessonSentence.fromJson)
+            .toList(),
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExercise.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
       );
 }

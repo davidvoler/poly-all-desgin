@@ -147,3 +147,15 @@ async def current_school_user(request: Request) -> SchoolUser:
     routes don't have to change."""
     return await current_school_user_full(request)
 
+
+async def current_ai_school_user(request: Request) -> SchoolUser:
+    """Same as `current_school_user`, but 403s unless the resolved user has
+    the `create_with_ai` permission (active status + `ai_creator` role +
+    school payment status — see utils/user_school_data.py). Use this on
+    every Create-with-AI editor/generation endpoint instead of the plain
+    `current_school_user`."""
+    school_user = await current_school_user_full(request)
+    if not school_user.permissions.get("create_with_ai"):
+        raise HTTPException(status_code=403, detail="Create with AI is not enabled for this account")
+    return school_user
+

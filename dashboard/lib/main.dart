@@ -4,13 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api/dashboard_api.dart';
 import 'config/app_config.dart';
+import 'pages/ai_course_workspace_page.dart';
+import 'pages/ai_courses_page.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
 import 'pages/create_course_page.dart';
 import 'pages/create_course_steps_page.dart';
 import 'pages/create_from_subtitles_page.dart';
 import 'pages/create_school_page.dart';
-import 'pages/course_ai_poc_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
 import 'pages/login_page.dart';
@@ -108,7 +109,12 @@ class DashboardApp extends StatelessWidget {
             const _Guarded(child: CreateCourseStepsPage()),
         '/create-from-subtitles': (_) =>
             const _Guarded(child: CreateFromSubtitlesPage()),
-        '/course-ai-poc': (_) => const _Guarded(child: CourseAiPocPage()),
+        '/ai-courses': (_) => const _Guarded(child: AiCoursesPage()),
+        '/ai-course': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final courseId = args is int ? args : 0;
+          return _Guarded(child: AiCourseWorkspacePage(courseId: courseId));
+        },
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
         '/editors': (_) => const _Guarded(

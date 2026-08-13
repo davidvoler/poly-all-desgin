@@ -21,6 +21,10 @@ from routers.edit import  (
     edit_course,
     course_import,
     course_export,
+    word as edit_word,
+    module as edit_module,
+    lesson as edit_lesson,
+    exercise as edit_exercise,
 )
 
 from school.routes import school as school_routes, users as school_users 
@@ -129,7 +133,19 @@ app.include_router(course_import.router,
     tags=["import_course"])
 app.include_router(course_export.router,
     prefix="/api/v1/edit/course/export",
-    tags=["export_course"]) 
+    tags=["export_course"])
+app.include_router(edit_word.router,
+    prefix="/api/v1/edit/word",
+    tags=["edit_word"])
+app.include_router(edit_module.router,
+    prefix="/api/v1/edit/module",
+    tags=["edit_module"])
+app.include_router(edit_lesson.router,
+    prefix="/api/v1/edit/lesson",
+    tags=["edit_lesson"])
+app.include_router(edit_exercise.router,
+    prefix="/api/v1/edit/exercise",
+    tags=["edit_exercise"])
 
 app.include_router(generate_poc.router,
     prefix="/api/v1/generate_poc",

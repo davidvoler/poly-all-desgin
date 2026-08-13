@@ -56,12 +56,13 @@ const List<NavItem> kNavItems = [
       label: 'Create from subtitles',
       icon: Icons.subtitles_outlined,
       route: '/create-from-subtitles'),
-  // Stripped-down proof-of-concept for the "Create with AI" idea — just
-  // course name + languages + the resulting prompt. See TASKS.md.
+  // Chat-driven course-building copilot — course list + workspace (chat +
+  // Words/Lessons/Edit Course/Preview tabs). Flutter port of
+  // plan/design_experiments/create_with_ai_poc. See TASKS.md.
   NavItem(
-      label: 'Course AI POC',
+      label: 'Create with AI (Copilot)',
       icon: Icons.science_outlined,
-      route: '/course-ai-poc'),
+      route: '/ai-courses'),
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),

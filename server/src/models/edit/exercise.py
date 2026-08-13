@@ -17,6 +17,20 @@ class ExerciseEdit(BaseModel):
     ruby_text: list[str] | None = []
     annotations: list[str] | None = []
     weight: int | None = 0
+    answer: str | None = None
+    sentence_id: int | None = None
 
 
+# --- Create-with-AI copilot additions (see TASKS.md "Planning the api") --
+# All POST, ids passed in the body — no path parameters.
+
+class ExerciseUpdateRequest(BaseModel):
+    exercise_id: int
+    prompt: str | None = None  # maps onto exercise.sentence — see ExerciseOut
+    options: list[str] | None = None
+    answer: str | None = None
+
+
+class ExerciseDeleteRequest(BaseModel):
+    exercise_id: int
 
