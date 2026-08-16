@@ -10,7 +10,7 @@ from utils.ollama_client import OLLAMA_MODELS, OllamaError, ollama_chat
 from utils.ai_course_content import (
     exercise_prompt_for_gloss,
     generate_exercise_options,
-    generate_words,
+    # generate_words,
     mock_usage,
     sentence_for_word,
     sentence_id_for,
@@ -31,6 +31,9 @@ from models.edit.generate_poc import (
     GenerateExercisesResponse,
     PromptType
 )
+
+from utils.generate_poc import generate_words
+
 router = APIRouter()
 
 
@@ -137,7 +140,7 @@ async def generate_words_list(request: GenerateWordsRequest, school_user: School
     row, in generation order (simplest/most common word first).
     """
     course_rows = await get_query_results(
-        "SELECT lang, words FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",
+        "SELECT lang, to_lang, level, words FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",
         (request.course_id, school_user.user_id, school_user.school_id),
     )
     if not course_rows:
@@ -145,16 +148,20 @@ async def generate_words_list(request: GenerateWordsRequest, school_user: School
     lang = course_rows[0]["lang"]
     existing = coerce_json_list(course_rows[0].get("words"))
     existing_words = [w["word"] for w in existing]
+    to_lang = course_rows[0].get("to_lang") or ""
+    level = course_rows[0].get("level") or ""
+    
+    print(f"Generating words for course {request.course_id} with lang={lang}, to_lang={to_lang}, level={level}, existing_words={existing_words}")
+    generated = await generate_words(lang, to_lang, existing_words, level, "ai", "ollama", "gemma4", request.count or 12)
 
-    generated = generate_words(lang, existing_words, request.count or 12)
     new_words = [
-        {"word": w["word"], "gloss": w["gloss"], "example_sentence": w["sentence"], "example_gloss": w["sentence_gloss"]}
+        {"word": w, "gloss": w, "example_sentence": w, "example_gloss": w}
         for w in generated
     ]
-    await run_query(
-        "UPDATE course_simple.course SET words = %s WHERE course_id = %s",
-        (json.dumps(existing + new_words), request.course_id),
-    )
+    # await run_query(
+    #     "UPDATE course_simple.course SET words = %s WHERE course_id = %s",
+    #     (json.dumps(existing + new_words), request.course_id),
+    # )
 
     words = [CourseWord(**w, used=False) for w in new_words]
     tokens, cost = mock_usage(len(words))
