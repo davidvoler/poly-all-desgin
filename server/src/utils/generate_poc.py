@@ -76,6 +76,7 @@ async def generate_sentences(lang: str, to_lang: str, word: str, level: str, met
                 f"""
                 Create {num_sentences} sentences in {get_language_name(lang)} that are appropriate for a {level} learner
                 using the word '{word}'.
+                The maximum number of words per sentence should be {max_words}.
                 Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:
                 ["sentence1","sentence2"]
                 """
@@ -103,10 +104,11 @@ async def generate_translated_sentences(lang: str, to_lang: str, word: str, leve
         if provider == "ollama":
             prompt = (
                 f"""
-                Create {num_sentences} sentences in {get_language_name(lang)} that are appropriate for a {level} learner
-                using the word '{word}'.
+                Create {num_sentences} sentences in {get_language_name(lang)} that are appropriate for a {level} learner with the word '{word}' and translate them into {get_language_name(to_lang)}.
+                The sentences should be translated into {get_language_name(to_lang)} 
+                The maximum number of words per sentence should be {max_words}.
                 Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:
-                ["sentence1","sentence2"]
+                [{"{lang}": "sentence1", "{to_lang}": "translation1"}, {"{lang}": "sentence2", "{to_lang}": "translation2"}]
                 """
             )
             print(f"Prompt for Ollama: {prompt}")
@@ -144,34 +146,10 @@ async def generate_translations(lang: str, to_lang: str, word: str, level: str, 
         else:
             raise ValueError(f"Unsupported provider: {provider}")
 
-async def generate_exercises(lang: str, to_lang: str, words_so_far: list, level: str, method: str, provider: str, model: str, max_words: int) -> list[dict]:
-    """Generate a list of exercises for a given language and level using the specified method and provider.
-        method: ai, corpus
-        provider: openai, ollama
-        model: model name or identifier
-        max_words: maximum number of words per exercise
+
+
+
+def generate_exercises(sentences_translated:list, lang:str, to_lang:str) -> list[dict]:
+    """ TODO: find an implementation for this function
     """
-    if method == "ai":
-        if provider == "ollama":
-            prompt = (
-                f"""
-                Create a list of exercises in {get_language_name(lang)} that are appropriate for a {level} learner.
-                Each exercise should be based on the words provided: {words_so_far}.
-                Respond with ONLY a JSON array of objects, no prose, no markdown fences, in this exact shape:
-                [
-                    {{
-                        "exercise": "Exercise description",
-                        "words": ["word1", "word2"]
-                    }},
-                    ...
-                ]
-                """
-            )
-            print(f"Prompt for Ollama: {prompt}")
-            response = await get_ollama_response(prompt=prompt, model=model)
-            return json.loads(response)
-        elif provider == "corpus":
-            # Placeholder for OpenAI implementation
-            raise NotImplementedError("OpenAI generation is not implemented yet.")
-        else:
-            raise ValueError(f"Unsupported provider: {provider}")
+    return [{}]
