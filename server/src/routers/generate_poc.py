@@ -134,36 +134,21 @@ async def generate_course(request: GenerateCourseRequest, school_user: SchoolUse
 @router.post("/generate_words_list", response_model=GenerateWordsResponse)
 async def generate_words_list(request: GenerateWordsRequest, school_user: SchoolUser = Depends(current_ai_school_user)):
     """
-    Generate a starter word list for a course and append it to the
-    course's own ordered word list (course_simple.course.words). Words
-    aren't a database entity — just an ordered jsonb list on the course
-    row, in generation order (simplest/most common word first).
+    Generate a starter word list for a course. Just the words — no
+    glossary, no example sentences, and nothing persisted; the caller
+    decides what (if anything) to keep.
     """
     course_rows = await get_query_results(
-        "SELECT lang, to_lang, level, words FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",
+        "SELECT lang, to_lang, level FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",
         (request.course_id, school_user.user_id, school_user.school_id),
     )
     if not course_rows:
         raise HTTPException(status_code=404, detail="Course not found")
-    lang = course_rows[0]["lang"]
-    existing = coerce_json_list(course_rows[0].get("words"))
-    existing_words = [w["word"] for w in existing]
-    to_lang = course_rows[0].get("to_lang") or ""
-    level = course_rows[0].get("level") or ""
-    
-    print(f"Generating words for course {request.course_id} with lang={lang}, to_lang={to_lang}, level={level}, existing_words={existing_words}")
-    generated = await generate_words(lang, to_lang, existing_words, level, "ai", "ollama", "gemma4", request.count or 12)
+    lang, to_lang, level = course_rows[0]["lang"], course_rows[0]["to_lang"] or "", course_rows[0]["level"] or ""
 
-    new_words = [
-        {"word": w, "gloss": w, "example_sentence": w, "example_gloss": w}
-        for w in generated
-    ]
-    # await run_query(
-    #     "UPDATE course_simple.course SET words = %s WHERE course_id = %s",
-    #     (json.dumps(existing + new_words), request.course_id),
-    # )
+    generated = await generate_words(lang, to_lang, [], level, "ai", "ollama", "gemma4", request.count or 12)
+    words = [CourseWord(word=w) for w in generated]
 
-    words = [CourseWord(**w, used=False) for w in new_words]
     tokens, cost = mock_usage(len(words))
     message = f"Generated {len(words)} starter words for course {request.course_id}."
     return GenerateWordsResponse(
