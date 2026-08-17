@@ -465,3 +465,53 @@ per-lesson state. Reworked to:
       (`utils/level.py` deleted).
 
 See `plan/DDL/create_with_ai_v4.sql` for the migration. 
+
+
+### Manual Tasks 
+- [v]  write the create words with AI 
+- [v]  write the create sentences with AI 
+- [ ]  write the create exercises - use code from  create_exercise_* in scripts 
+
+
+- [] Write a design - what do we do in each stage 
+
+
+#### Create with AI - What do we do in each stage 
+- when creating a course we add some settings that should be sent with each request
+  - level
+  - type of questions 
+  - number of words per lesson - can be change in a module level - or in a specific lesson
+  - use ai - model etc 
+- Save chat messages 
+      - message 
+      - action
+      - results 
+      - message sent to chat 
+      - tokens 
+      - costs 
+- When creating a module as to select words 
+- When creating a lesson - save lesson
+- Mark used words as used - deselect them 
+
+
+
+The process in order 
+- create course 
+      - extra options/optional - with default 
+- Create module 
+      - create words and save in module 
+- Create Lesson 
+      - choose words 
+      - create sentences 
+      - create exercises 
+- Create Exercise 
+      - you can ask the create a specific exercise - for example explanation exercise - or something else 
+- Free chat - should be mapped to one of the above actions  
+
+
+
+
+
+
+
+
