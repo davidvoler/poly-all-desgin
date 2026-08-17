@@ -90,6 +90,35 @@ async def generate_sentences(lang: str, to_lang: str, word: str, level: str, met
             raise ValueError(f"Unsupported provider: {provider}")
 
 
+
+async def generate_translated_sentences(lang: str, to_lang: str, word: str, level: str, method: str, provider: str, model: str, max_words: int, num_sentences: int) -> list:
+    """Generate a list of sentences for a given language and level using the specified method and provider.
+        method: ai, corpus
+        provider: openai, ollama
+        model: model name or identifier
+        max_words: maximum number of words per sentence
+        num_sentences: number of sentences to generate
+    """
+    if method == "ai":
+        if provider == "ollama":
+            prompt = (
+                f"""
+                Create {num_sentences} sentences in {get_language_name(lang)} that are appropriate for a {level} learner
+                using the word '{word}'.
+                Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:
+                ["sentence1","sentence2"]
+                """
+            )
+            print(f"Prompt for Ollama: {prompt}")
+            response = await get_ollama_response(prompt=prompt, model=model)
+            return json.loads(response)
+        elif provider == "corpus":
+            # Placeholder for OpenAI implementation
+            raise NotImplementedError("OpenAI generation is not implemented yet.")
+        else:
+            raise ValueError(f"Unsupported provider: {provider}")
+
+
 async def generate_translations(lang: str, to_lang: str, word: str, level: str, method: str, provider: str, model: str, max_words: int) -> list:
     """Generate a list of translations for a given language and level using the specified method and provider.
         method: ai, corpus
