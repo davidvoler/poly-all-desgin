@@ -1,11 +1,20 @@
 from pydantic import BaseModel
+from enums import Enum
+class ExerciseType(str, Enum):
+    SINGLE_CHOICE = 'single_choice'
+    MULTIPLE_CHOICE = 'multiple_choice'
+    EXPLAIN = 'explain'
+    IDENTIFY_WORDS = 'identify_words'
+
+
+
 
 class ExerciseEdit(BaseModel):
     course_id: int| None = 0
     module_id: int| None = 0
     lesson_id: int| None = 0
     exercise_id: int
-    exercise_type: str | None = ''
+    exercise_type: ExerciseType | None = ExerciseType.SINGLE_CHOICE
     sentence: str | None = ''
     options: list[str] | None = []
     word1: str | None = ''
