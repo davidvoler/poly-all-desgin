@@ -470,10 +470,10 @@ See `plan/DDL/create_with_ai_v4.sql` for the migration.
 ### Manual Tasks 
 - [v]  write the create words with AI 
 - [v]  write the create sentences with AI 
-- [ ]  write the create exercises - use code from  create_exercise_* in scripts 
+- [v]  write the create exercises - use code from  create_exercise_* in scripts 
+Create exercise is quite simple all you need is the write a few fields 
 
-
-- [] Write a design - what do we do in each stage 
+- [v] Write a design - what do we do in each stage 
 
 
 #### Create with AI - What do we do in each stage 
@@ -508,10 +508,13 @@ The process in order
       - you can ask the create a specific exercise - for example explanation exercise - or something else 
 - Free chat - should be mapped to one of the above actions  
 
+After working on lessons I have some understanding 
+1. I need words so far identify_words exercise - I could take them from module or course
+2. I need a place to store sentences for using them as distactors - or wrong answers
 
-
-
-
+It is time now to bind everything together and get the process to work.
+Maybe it is also time to add options in the course so can change
+We have to define the options fields and pass them on any request.
 
 
 
