@@ -516,5 +516,6 @@ It is time now to bind everything together and get the process to work.
 Maybe it is also time to add options in the course so can change
 We have to define the options fields and pass them on any request.
 
-
+- [v] Generate options
+- []  
 

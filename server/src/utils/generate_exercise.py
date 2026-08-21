@@ -53,3 +53,26 @@ async def generate_exercise(lang, to_lang, sentence:str, translation:list[str], 
         wrong_words = await get_distractors_words(lang, to_lang, sentence, [], option_count=5)
         pass
 
+
+def gen_identify_words():
+    pass
+def gen_single_choice_exercise():
+    pass
+def gen_description_exercise():
+    pass
+def gen_multiple_choice_exercise():
+    pass
+def gen_reading_exercise():
+    pass
+
+
+
+def gen_exercise_by_type(lang, to_lang, sentence:str, translation:list[str], exercise_type: ExerciseType|None=None) -> ExerciseEdit:
+    if exercise_type is None:
+        exercise_type = ExerciseType.SINGLE_CHOICE  
+    if exercise_type == ExerciseType.SINGLE_CHOICE:
+        return ExerciseEdit(
+            exercise_type=exercise_type,
+            sentence=sentence,
+            options=translation,
+            answer=translation[0]
