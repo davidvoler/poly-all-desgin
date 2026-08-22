@@ -517,5 +517,33 @@ Maybe it is also time to add options in the course so can change
 We have to define the options fields and pass them on any request.
 
 - [v] Generate options
-- []  
+- [] Create a CLI for testing the generate API
+- [] Add the code for getting data from corpus
+- [] get course words 
 
+
+### Corpus
+- [] create corpus connection
+- [] get data from corpus 
+- [] get words from corpus  
+
+
+### Testing 
+- [] this of a way to create local test for reviewing the results 
+
+### UI
+- [] The tabs on the left - lesson is first - that preview and finally words
+- [] Show current module in the top
+#### Words 
+- [] Words are created for a module - We need to see a list of words in each module 
+- [] Show the words used in each module 
+- [] Show current module words 
+#### Exercises 
+- [] Allow creating a manual exercise 
+- [] Add exercise type 
+- [] Allow changing the exercise type
+
+### End2End
+#### Routers 
+- [] Follow the design so far and decide what each rout is doing 
+- [] Re
