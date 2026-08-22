@@ -132,8 +132,7 @@ async def generate_translated_sentence_distractors(lang: str, to_lang: str, word
 
     if method == "ai":
         if provider == "ollama":
-            prompt = (
-                f"""
+            prompt = f"""
                 Create {num_sentences} sentences in {get_language_name(lang)} that are appropriate for a {level} learner with the word '{word}' and translate them into {get_language_name(to_lang)}.
                 The sentences should be translated into {get_language_name(to_lang)} 
                 The maximum number of words per sentence should be {max_words}.
@@ -142,9 +141,9 @@ async def generate_translated_sentence_distractors(lang: str, to_lang: str, word
                 - somewhat similar to the correct translations.
                 - completely different from the correct translations.
                 Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:
-                [{"{lang}": "sentence1", "{to_lang}": "translation1", "distractors":["sentence1", "sentence2","sentence3"]},]
+                [{{"{lang}": "sentence1", "{to_lang}": "translation1", "distractors":["sentence1", "sentence2","sentence3"]}},]
                 """
-            )
+            
             print(f"Prompt for Ollama: {prompt}")
             response = await get_ollama_response(prompt=prompt, model=model)
             return json.loads(response)
