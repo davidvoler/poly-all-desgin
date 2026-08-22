@@ -24,7 +24,7 @@ import sys
 import time
 
 import utils.ollama_simple as ollama_simple
-from utils.generate_poc import (
+from utils.generate import (
     generate_words,
     generate_sentences,
     generate_translated_sentences,

@@ -17,6 +17,12 @@ from models.edit.exercise import ExerciseEdit,ExerciseType
 import random
 from utils.ollama_simple import get_ollama_response
 from utils.lang_utils import get_lang_name
+from utils.generate_corpus import (get_corpus_sentences, 
+                                   get_corpus_sentences_distractors, 
+                                   get_corpus_words)
+
+
+
 
 async def get_distractors(lang, to_lang, sentence, translation, option_count=3) -> list[str]:
     prompt = f"""You are a language learning assistant. You are given a sentence in {get_lang_name(lang)} and its translation in {get_lang_name(to_lang)}. 

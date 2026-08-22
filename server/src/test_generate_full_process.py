@@ -7,13 +7,10 @@ import time
 import random 
 
 import utils.ollama_simple as ollama_simple
-from utils.generate_poc import (
+from utils.generate import (
     generate_words,
     generate_sentences,
-    generate_translated_sentences,
     generate_translated_sentence_distractors,
-    generate_translations,
-    generate_exercises,
 )
 
 
