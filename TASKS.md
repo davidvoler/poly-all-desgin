@@ -547,3 +547,10 @@ We have to define the options fields and pass them on any request.
 #### Routers 
 - [] Follow the design so far and decide what each rout is doing 
 - [] Re
+
+
+#### Implementations issues 
+- [] find a way to get last word and further
+    OPTIONS: instead of asking for words again and again each time with the last words. 
+    we can ask for a list of words at once and then use them one by one.
+    this makes sense for ai and corpus methods.
