@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from enums import Enum
+from enum import Enum
 class ExerciseType(str, Enum):
     SINGLE_CHOICE = 'single_choice'
     MULTIPLE_CHOICE = 'multiple_choice'

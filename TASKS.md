@@ -554,3 +554,7 @@ We have to define the options fields and pass them on any request.
     OPTIONS: instead of asking for words again and again each time with the last words. 
     we can ask for a list of words at once and then use them one by one.
     this makes sense for ai and corpus methods.
+- [] The course words should look as follows 
+      word: "", used: number of times - or true false
+
+  

@@ -32,7 +32,7 @@ from models.edit.generate_poc import (
     PromptType
 )
 
-from utils.generate_poc import generate_words
+from utils.generate import generate_words
 
 router = APIRouter()
 

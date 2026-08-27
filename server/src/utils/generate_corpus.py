@@ -1,14 +1,8 @@
 from utils.db_content import get_query_results
 
-async def get_corpus_words(lang: str, to_lang: str, words_so_far: list, level: str, model: str, max_words: int) -> list:
 
-    """TODO: find a way to get last word and further 
-    last_word = words_so_far[-1] if words_so_far else None
-    if last_word:
-        where = f"AND word > '{last_word}'"
-    OPTIONS: instead of asking for words again and again each time with the last words. 
-    we can ask for a list of words at once and then use them one by one.
-    this makes sense for ai and corpus methods.
+async def get_corpus_words(lang: str, to_lang: str, words_so_far: list, level: str, model: str, max_words: int) -> list:
+    """Get full course words 
     """
     query = """
     select word from content_raw.words 
@@ -20,7 +14,6 @@ async def get_corpus_words(lang: str, to_lang: str, words_so_far: list, level: s
     or w_count4_5 >4 
     or w_count6_9 >3 
     or w_count10_20 >0)
-
     order by w_count1_3  desc, w_count4_5 desc, w_count6_9  desc, w_count10_20 desc 
     """
     return await get_query_results(query, (lang, to_lang, level, ','.join(words_so_far), max_words))
