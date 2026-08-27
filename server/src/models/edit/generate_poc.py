@@ -40,7 +40,7 @@ class GenerateLessonRequest(Prompt):
 class GenerateWordsRequest(Prompt):
     prompt_type: PromptType | None = PromptType.GET_WORDS
     course_id: int | None = None
-    count: int | None = 12
+    count: int | None = 300
 
 class GenerateSentencesRequest(Prompt):
     prompt_type: PromptType | None = PromptType.CREATE_LESSON

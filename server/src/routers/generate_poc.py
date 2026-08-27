@@ -148,7 +148,7 @@ async def generate_words_list(request: GenerateWordsRequest, school_user: School
 
     generated = await generate_words(lang, to_lang, [], level, "ai", "ollama", "gemma4", request.count or 12)
     words = [CourseWord(word=w) for w in generated]
-
+    
     tokens, cost = mock_usage(len(words))
     message = f"Generated {len(words)} starter words for course {request.course_id}."
     return GenerateWordsResponse(

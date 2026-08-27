@@ -7,15 +7,15 @@ _aerospike_client = None
 
 def get_pg_connection_string(user=None, password=None, db_name=None, host=None, port=None):
     if not user:
-        user = os.getenv("POSTGRES_USER", "polyglots")
+        user = os.getenv("POSTGRES_CONTENT_USER", "polyglots")
     if not password:
-        password = os.getenv("POSTGRES_PASSWORD", "polyglots")
+        password = os.getenv("POSTGRES_CONTENT_PASSWORD", "polyglots")
     if not db_name:
         db_name = os.getenv("POSTGRES_DB", "polyglots")  
     if not host:
-        host = os.getenv("POSTGRES_HOST", "localhost")  
+        host = os.getenv("POSTGRES_CONTENT_HOST", "localhost")  
     if not port:
-        port = os.getenv("POSTGRES_PORT", "5433")
+        port = os.getenv("POSTGRES_CONTENT_PORT", "5432")
     return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
 

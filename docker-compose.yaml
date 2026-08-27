@@ -43,6 +43,10 @@
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=polyglots
       - POSTGRES_PASSWORD=polyglots
+      - POSTGRES_CONTENT_PORT=5432
+      - POSTGRES_CONTENT_HOST=postgres_content
+      - POSTGRES_CONTENT_USER=polyglots
+      - POSTGRES_CONTENT_PASSWORD=polyglots
       # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
       # /api/v1/school_users/login_auth0 route verifies ID tokens
       # against the tenant JWKS; otherwise it returns 503 and the
