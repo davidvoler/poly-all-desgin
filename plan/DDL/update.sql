@@ -208,3 +208,7 @@ create table course_simple.course_revision (
 );
 
 -- DONE
+
+alter table content_raw.sentences add column word1 varchar(100) default '';
+alter table content_raw.sentences add column word2 varchar(100) default '';
+alter table content_raw.sentences add column word3 varchar(100) default '';

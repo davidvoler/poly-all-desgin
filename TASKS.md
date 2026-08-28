@@ -556,5 +556,8 @@ We have to define the options fields and pass them on any request.
     this makes sense for ai and corpus methods.
 - [] The course words should look as follows 
       word: "", used: number of times - or true false
+- [v] create simple usable tests easy to run and test for the different data sources
 
-  
+- [] content data is not full - we should do the following 
+  - [] add word1, word2, word3 to sentences - should be similar  
+  - [] consider copying from old data or break into words once again
