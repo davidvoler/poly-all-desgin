@@ -7,6 +7,9 @@ class ExerciseType(str, Enum):
     IDENTIFY_WORDS = 'identify_words'
 
 
+class Options(BaseModel):
+    text: str = ''
+    correct: bool = False
 
 
 class ExerciseEdit(BaseModel):
@@ -16,7 +19,7 @@ class ExerciseEdit(BaseModel):
     exercise_id: int
     exercise_type: ExerciseType | None = ExerciseType.SINGLE_CHOICE
     sentence: str | None = ''
-    options: list[str] | None = []
+    options: list[Options] | None = []
     word1: str | None = ''
     word2: str | None = ''
     word3: str | None = ''

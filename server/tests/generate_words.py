@@ -17,7 +17,10 @@ from utils.generate import (
     generate_sentences,
     generate_translated_sentence_distractors,
 )
-
+from utils.generate_exercise import (
+    generate_exercise,
+    generate_exercise_with_sentences,
+)
 
 
 
