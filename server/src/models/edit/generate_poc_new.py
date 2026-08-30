@@ -1,8 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
 
-from server.src.models.edit.generate_params import CorpusNames
-from server.src.routers.edit import word
 class ContentSource(str, Enum):
     AI = "ai"
     CORPUS = "corpus"

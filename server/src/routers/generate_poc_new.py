@@ -2,8 +2,7 @@ import json
 from datetime import datetime
 from urllib import request
 from models.auth import SchoolUser
-from server.src.editor.models import course
-from server.src.utils.auth_deps import current_ai_school_user
+from utils.auth_deps import current_ai_school_user
 from utils.generate import (
     generate_words, 
     generate_sentences,
@@ -29,35 +28,6 @@ from fastapi import APIRouter, Depends, HTTPException
 router = APIRouter()
 
 
-@router.post("/create_course", response_model=Course)
-async def create_course(request: Course, school_user: SchoolUser = Depends(current_ai_school_user)):
-    """
-    Creates a new course based on the provided request.
-    """
-    if not request.title:
-        now = datetime.now()
-        request.title = f"Course {request.lang or 'Unknown'} to {request.to_lang or 'Unknown'} school {school_user.school_name or 'Unknown'} speakers {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    
-    sql = f"""
-    INSERT INTO course_simple.course (lang, to_lang, user_id, school_id, title, description, status, level, metadata)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    RETURNING course_id
-    """
-    params = (
-        request.lang,
-        request.to_lang,
-        school_user.user_id,
-        school_user.school_id,
-        request.title,
-        request.description,
-        'draft',
-        request.level or '',
-        json.dumps({course.options.to_dict()}),
-    )
-    course_id = await get_query_results(sql, params)
-    course_id = course_id[0]['course_id'] if course_id else 0
-    course.course_id = course_id
-    return course
 
 async def _update_course(course:Course):
     """
@@ -90,6 +60,40 @@ async def _update_course(course:Course):
 
     result = await get_query_results(sql, params)
     return course
+
+async def _save_sentences(sentences:list):
+    pass 
+
+@router.post("/create_course", response_model=Course)
+async def create_course(request: Course, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """
+    Creates a new course based on the provided request.
+    """
+    if not request.title:
+        now = datetime.now()
+        request.title = f"Course {request.lang or 'Unknown'} to {request.to_lang or 'Unknown'} school {school_user.school_name or 'Unknown'} speakers {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    
+    sql = f"""
+    INSERT INTO course_simple.course (lang, to_lang, user_id, school_id, title, description, status, level, metadata)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    RETURNING course_id
+    """
+    params = (
+        request.lang,
+        request.to_lang,
+        school_user.user_id,
+        school_user.school_id,
+        request.title,
+        request.description,
+        'draft',
+        request.level or '',
+        json.dumps({course.options.to_dict()}),
+    )
+    course_id = await get_query_results(sql, params)
+    course_id = course_id[0]['course_id'] if course_id else 0
+    course.course_id = course_id
+    return course
+
 
 @router.post("/update_course", response_model=Course)
 async def update_course(course: Course, school_user: SchoolUser = Depends(current_ai_school_user)):

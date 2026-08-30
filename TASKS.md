@@ -563,6 +563,10 @@ We have to define the options fields and pass them on any request.
   - [] consider copying from old data or break into words once again
 
 
-### words for lesson 
-A simple words: used vs a record
- 
+### Implement the API manually 
+- [v] Course 
+- [v] Course options 
+- [v] Remove unused endpoint 
+- [] Use  the old edit where possible 
+- [] Test 
+- [] work with Agent to link with UI

@@ -6,7 +6,6 @@ from utils.auth_deps import current_ai_school_user
 from utils.db import get_query_results, run_query
 from utils.ai_course_ownership import assert_lesson_owned
 from utils.jsonb import coerce_json_list
-from utils.ollama_client import OLLAMA_MODELS, OllamaError, ollama_chat
 from utils.ai_course_content import (
     exercise_prompt_for_gloss,
     generate_exercise_options,

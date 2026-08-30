@@ -152,6 +152,8 @@ CREATE TABLE school.course_invitations (
 
 
 
+
+
 insert INTO school.schools (school_url, school_dashboard_url, name, plan, is_public, school_type,logo_url) VALUES
 ('localhost', 'localhost', 'local', 'free', true, 'public', 'polyglots_social_logo.png'),
 ('app.polyglots.social', 'dashboard.polyglots.social', 'polyglots.social', 'free', true, 'public', 'polyglots_social_logo.png'),
@@ -208,7 +210,32 @@ create table course_simple.course_revision (
 );
 
 -- DONE
-
-alter table content_raw.sentences add column word1 varchar(100) default '';
-alter table content_raw.sentences add column word2 varchar(100) default '';
-alter table content_raw.sentences add column word3 varchar(100) default '';
+CREATE TABLE content_raw.sentences1 (
+	lang varchar(12) NOT NULL,
+	corpus varchar(12) NOT NULL,
+	id int8 NOT NULL,
+	text varchar(300) NOT NULL,
+	gen bool DEFAULT false NULL,
+	"options" _varchar DEFAULT ARRAY[]::character varying[] NULL,
+	word1 varchar(100) default '',
+	word2 varchar(100) default '',
+	word3 varchar(100) default '',
+	word4 varchar(100) default '',
+	CONSTRAINT sentences1_pkey PRIMARY KEY (lang, id)
+);
+CREATE TABLE content_simple.course_sentences (
+	id_hash bigint NOT NULL,
+	lang varchar(12) NOT NULL,
+	provider varchar(100) NULL,
+	model varchar(100) NULL,
+	corpus varchar(12),
+	corpus_id varchar(20),
+	text varchar(300) NOT NULL,
+	gen bool DEFAULT false NULL,
+	"options" _varchar DEFAULT ARRAY[]::character varying[] NULL,
+	word1 varchar(100) default '',
+	word2 varchar(100) default '',
+	word3 varchar(100) default '',
+	word4 varchar(100) default '',
+	CONSTRAINT sentences_pkey PRIMARY KEY (lang, id_hash)
+);

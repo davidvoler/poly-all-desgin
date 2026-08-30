@@ -101,4 +101,4 @@ class Course(BaseModel):
     description: str | None = ''
     level: str | None = 'A1'
     words: list[CourseWord] | None = []
-    modules: list[Module] | None = []
+    # modules: list[Module] | None = []
