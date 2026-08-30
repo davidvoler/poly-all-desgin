@@ -67,7 +67,7 @@ async def generate_ai_translated_sentence_distractors(lang: str,
                 - somewhat similar to the correct translations.
                 - completely different from the correct translations.
                 Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:
-                [{{"{lang}": "sentence1", "{to_lang}": "translation1", "distractors":["sentence1", "sentence2","sentence3"]}},]
+                [{{"sentence": "sentence1", "translation": "translation1", "distractors":["sentence1", "sentence2","sentence3"]}},]
                 """
             
     print(f"Prompt for Ollama: {prompt}")

@@ -54,7 +54,7 @@ async def get_corpus_words(lang: str, to_lang: str, words_so_far: list, level: s
 
 async def get_corpus_sentences(lang: str, to_lang: str, word: str, level: str, model: str, max_words: int, num_sentences: int) -> list:
     sql = f"""
-    select lang.text as {lang}, sentences.text as {to_lang},
+    select lang.text as sentences, sentences.text as translation,
     sentences.options as distractors,
     lang.word1 as word1, lang.word2 as word2, lang.word3 as word3
     from content_raw.sentence_elements_simple2 lang

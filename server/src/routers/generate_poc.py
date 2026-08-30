@@ -92,6 +92,7 @@ async def generate_poc(request: Prompt, school_user: SchoolUser = Depends(curren
 async def generate_course(request: GenerateCourseRequest, school_user: SchoolUser = Depends(current_ai_school_user)):
     """
     Generate a new course based on the provided request.
+    TODO: I am not user is this endpoint is needed
     """
     if not request.title:
         request.title = create_title(request.lang, request.to_lang, school_user.school_name)
@@ -137,6 +138,10 @@ async def generate_words_list(request: GenerateWordsRequest, school_user: School
     Generate a starter word list for a course. Just the words — no
     glossary, no example sentences, and nothing persisted; the caller
     decides what (if anything) to keep.
+    TODO: 
+    1. Generate words per course 
+    2. Save the in course record [word:word, weight:weight, used:int]
+    3. Update the course record with the new words list.
     """
     course_rows = await get_query_results(
         "SELECT lang, to_lang, level FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",

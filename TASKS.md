@@ -561,3 +561,8 @@ We have to define the options fields and pass them on any request.
 - [] content data is not full - we should do the following 
   - [] add word1, word2, word3 to sentences - should be similar  
   - [] consider copying from old data or break into words once again
+
+
+### words for lesson 
+A simple words: used vs a record
+ 

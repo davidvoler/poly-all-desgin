@@ -1,3 +1,5 @@
+from modulefinder import Module
+
 from pydantic import BaseModel
 from enum import Enum
 
@@ -89,3 +91,14 @@ class GenerateLessonResponse(PromptResponse):
     sentences: list[LessonSentenceOut] = []
     exercises: list[ExerciseOut] = []
 
+
+
+class Course(BaseModel):
+    course_id: int | None = None
+    lang: str | None = None
+    to_lang: str | None = None
+    title: str | None = ''
+    description: str | None = ''
+    level: str | None = 'A1'
+    words: list[CourseWord] | None = []
+    modules: list[Module] | None = []
