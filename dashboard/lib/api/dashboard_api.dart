@@ -303,6 +303,33 @@ class DashboardApi {
     return PromptResponse.fromJson(res.data ?? const {});
   }
 
+  /// Create a course via generate_poc_new, persisting the generation
+  /// [options] (content source / provider / model / sentence + exercise
+  /// knobs) onto course_simple.course.metadata so every later
+  /// generate_poc_new call reads them back. Returns the created course id.
+  Future<int?> createAiCourse({
+    required String lang,
+    required String toLang,
+    required String level,
+    String? title,
+    String? description,
+    CourseOptions options = const CourseOptions(),
+  }) async {
+    final trimmedTitle = title?.trim();
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/create_course',
+      data: {
+        'lang': lang,
+        'to_lang': toLang,
+        'level': level,
+        'title': (trimmedTitle == null || trimmedTitle.isEmpty) ? null : trimmedTitle,
+        'description': description,
+        'metadata': options.toJson(),
+      },
+    );
+    return (res.data?['course_id'] as num?)?.toInt();
+  }
+
   /// Everything the course workspace needs in one call — course meta,
   /// word bank (with used-in-a-lesson flags), and every
   /// module/lesson/sentence/exercise.

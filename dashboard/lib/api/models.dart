@@ -858,3 +858,99 @@ class AiLessonGenerateResult {
         usage: AiUsage.fromJson(j),
       );
 }
+
+// ===========================================================================
+// Course generation options — mirrors server `CourseOption`
+// (server/src/models/edit/generate_poc_new.py). Stored on
+// course_simple.course.metadata at create time and sent back with every
+// generate_poc_new call. Defaults here must match the server defaults.
+// ===========================================================================
+
+const kContentSources = ['corpus', 'ai'];
+const kAiProviders = ['ollama', 'openai', 'claude'];
+const kAiModels = ['gemma4'];
+
+class CourseOptions {
+  final String contentSource; // corpus | ai
+  final String provider; // ollama | openai | claude
+  final String model; // gemma4
+  // sentence + exercise generation
+  final int maxSentencesWords;
+  final int minSentencesWords;
+  final double distractorSimilarity;
+  // exercise-type mix — relative weights, roughly summing to 1.0
+  final double singleChoice;
+  final double multipleChoice;
+  final double identifyWords;
+  final double description;
+
+  const CourseOptions({
+    this.contentSource = 'corpus',
+    this.provider = 'ollama',
+    this.model = 'gemma4',
+    this.maxSentencesWords = 4,
+    this.minSentencesWords = 1,
+    this.distractorSimilarity = 0.5,
+    this.singleChoice = 0.9,
+    this.multipleChoice = 0.1,
+    this.identifyWords = 0.1,
+    this.description = 0.0,
+  });
+
+  CourseOptions copyWith({
+    String? contentSource,
+    String? provider,
+    String? model,
+    int? maxSentencesWords,
+    int? minSentencesWords,
+    double? distractorSimilarity,
+    double? singleChoice,
+    double? multipleChoice,
+    double? identifyWords,
+    double? description,
+  }) =>
+      CourseOptions(
+        contentSource: contentSource ?? this.contentSource,
+        provider: provider ?? this.provider,
+        model: model ?? this.model,
+        maxSentencesWords: maxSentencesWords ?? this.maxSentencesWords,
+        minSentencesWords: minSentencesWords ?? this.minSentencesWords,
+        distractorSimilarity: distractorSimilarity ?? this.distractorSimilarity,
+        singleChoice: singleChoice ?? this.singleChoice,
+        multipleChoice: multipleChoice ?? this.multipleChoice,
+        identifyWords: identifyWords ?? this.identifyWords,
+        description: description ?? this.description,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'content_source': contentSource,
+        'provider': provider,
+        'model': model,
+        'max_sentences_words': maxSentencesWords,
+        'min_sentences_words': minSentencesWords,
+        'distractor_similarity': distractorSimilarity,
+        'single_choice': singleChoice,
+        'multiple_choice': multipleChoice,
+        'identify_words': identifyWords,
+        'description': description,
+      };
+
+  factory CourseOptions.fromJson(Map<String, dynamic> j) {
+    const d = CourseOptions();
+    double dbl(Object? v, double fallback) => (v as num?)?.toDouble() ?? fallback;
+    int integer(Object? v, int fallback) => (v as num?)?.toInt() ?? fallback;
+    return CourseOptions(
+      contentSource: (j['content_source'] as String?) ?? d.contentSource,
+      provider: (j['provider'] as String?) ?? d.provider,
+      model: (j['model'] as String?) ?? d.model,
+      maxSentencesWords: integer(j['max_sentences_words'], d.maxSentencesWords),
+      minSentencesWords: integer(j['min_sentences_words'], d.minSentencesWords),
+      distractorSimilarity:
+          dbl(j['distractor_similarity'], d.distractorSimilarity),
+      singleChoice: dbl(j['single_choice'], d.singleChoice),
+      multipleChoice: dbl(j['multiple_choice'], d.multipleChoice),
+      identifyWords: dbl(j['identify_words'], d.identifyWords),
+      description: dbl(j['description'], d.description),
+    );
+  }
+}
