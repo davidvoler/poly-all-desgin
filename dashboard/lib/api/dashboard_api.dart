@@ -319,8 +319,8 @@ class DashboardApi {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/generate_poc_new/create_course',
       data: {
-        'lang': lang,
-        'to_lang': toLang,
+        'lang': languageCode(lang),
+        'to_lang': languageCode(toLang),
         'level': level,
         'title': (trimmedTitle == null || trimmedTitle.isEmpty) ? null : trimmedTitle,
         'description': description,
@@ -357,8 +357,8 @@ class DashboardApi {
         'course_id': course.courseId,
         'title': course.title,
         'description': course.description,
-        'lang': course.lang,
-        'to_lang': course.toLang,
+        'lang': languageCode(course.lang),
+        'to_lang': languageCode(course.toLang),
         'level': course.level ?? '',
         'published': course.published,
         'metadata': course.metadata,

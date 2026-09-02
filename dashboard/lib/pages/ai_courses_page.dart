@@ -135,7 +135,7 @@ class _CourseCard extends StatelessWidget {
               Text(course.title,
                   style: DashText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
-              Text('${course.lang} → ${course.toLang}',
+              Text('${languageName(course.lang)} → ${languageName(course.toLang)}',
                   style: TextStyle(fontSize: 12, color: DashColors.w(0.55))),
               const SizedBox(height: 12),
               Wrap(
@@ -166,22 +166,22 @@ class _CourseCard extends StatelessWidget {
 }
 
 /// Learning-language flag emoji, purely decorative — falls back to a
-/// globe for anything not in the curated set (mirrors LANG_INFO in
-/// create_with_ai_poc/assets/store.js).
+/// globe for anything not in the curated set. Accepts an ISO code ("ar",
+/// how `Course.lang` is stored) or a display name ("Arabic").
 String flagFor(String lang) {
   const flags = {
-    'japanese': '🇯🇵',
-    'hebrew': '🇮🇱',
-    'spanish': '🇪🇸',
-    'french': '🇫🇷',
-    'italian': '🇮🇹',
-    'arabic': '🇸🇦',
-    'german': '🇩🇪',
-    'english': '🇬🇧',
-    'korean': '🇰🇷',
-    'portuguese': '🇵🇹',
+    'ja': '🇯🇵',
+    'he': '🇮🇱',
+    'es': '🇪🇸',
+    'fr': '🇫🇷',
+    'it': '🇮🇹',
+    'ar': '🇸🇦',
+    'de': '🇩🇪',
+    'en': '🇬🇧',
+    'ko': '🇰🇷',
+    'pt': '🇵🇹',
   };
-  return flags[lang.trim().toLowerCase()] ?? '🌐';
+  return flags[languageCode(lang)] ?? '🌐';
 }
 
 const kAiLanguageSuggestions = [

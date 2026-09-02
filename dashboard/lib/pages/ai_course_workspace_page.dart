@@ -138,7 +138,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     if (c.words.isEmpty) {
       _chat.add(_ChatMsg(
         isUser: false,
-        text: "Course '${c.title}' — ${c.lang} → ${c.toLang}, level ${c.level}. Let's start with a word list.",
+        text: "Course '${c.title}' — ${languageName(c.lang)} → ${languageName(c.toLang)}, level ${c.level}. Let's start with a word list.",
         actions: const [_ChatAction('create_words', 'Create word list')],
       ));
       return;
@@ -456,7 +456,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Text('${c.lang} → ${c.toLang} · Level ${c.level}',
+                child: Text('${languageName(c.lang)} → ${languageName(c.toLang)} · Level ${c.level}',
                     style: TextStyle(fontSize: 11, color: DashColors.w(0.55))),
               ),
               if (_sessionTokens > 0)
@@ -1384,8 +1384,10 @@ class _EditCourseTab extends ConsumerStatefulWidget {
 
 class _EditCourseTabState extends ConsumerState<_EditCourseTab> {
   late final _title = TextEditingController(text: widget.course.title);
-  late final _lang = TextEditingController(text: widget.course.lang);
-  late final _toLang = TextEditingController(text: widget.course.toLang);
+  // Course.lang / to_lang are stored as ISO codes ("ar"); the picker
+  // shows the display name and _save() converts back.
+  late final _lang = TextEditingController(text: languageName(widget.course.lang));
+  late final _toLang = TextEditingController(text: languageName(widget.course.toLang));
   late String _level = widget.course.level;
 
   // Generation options live in the course `metadata` jsonb (alongside any
@@ -1407,8 +1409,8 @@ class _EditCourseTabState extends ConsumerState<_EditCourseTab> {
     if (base == null) return;
     final updated = base.copyWith(
       title: _title.text.trim(),
-      lang: _lang.text.trim(),
-      toLang: _toLang.text.trim(),
+      lang: languageCode(_lang.text),
+      toLang: languageCode(_toLang.text),
       level: _level,
       metadata: _options.mergeInto(base.metadata),
     );
@@ -1510,7 +1512,7 @@ class _PreviewTab extends StatelessWidget {
         const SizedBox(height: 6),
         Text(course.title, style: DashText.h2),
         const SizedBox(height: 2),
-        Text('${course.lang} → ${course.toLang} · Level ${course.level} · ${course.words.length} words',
+        Text('${languageName(course.lang)} → ${languageName(course.toLang)} · Level ${course.level} · ${course.words.length} words',
             style: TextStyle(fontSize: 11, color: DashColors.w(0.55))),
         const SizedBox(height: 16),
         if (lessons.isEmpty)

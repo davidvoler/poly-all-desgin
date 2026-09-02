@@ -981,3 +981,63 @@ class CourseOptions {
     );
   }
 }
+
+// ===========================================================================
+// Language codes — `Course.lang` / `to_lang` are always stored/sent as a
+// short ISO 639-1 code ("ar"), never a display name ("Arabic"): the
+// backend corpus tables and AI prompts key off the code. The LanguageField
+// pickers show the name; convert with [languageCode] on the way out and
+// [languageName] on the way in.
+// ===========================================================================
+
+const Map<String, String> kLanguageNamesByCode = {
+  'ar': 'Arabic',
+  'zh': 'Chinese (Mandarin)',
+  'cs': 'Czech',
+  'da': 'Danish',
+  'nl': 'Dutch',
+  'en': 'English',
+  'fi': 'Finnish',
+  'fr': 'French',
+  'de': 'German',
+  'el': 'Greek',
+  'he': 'Hebrew',
+  'hi': 'Hindi',
+  'hu': 'Hungarian',
+  'id': 'Indonesian',
+  'it': 'Italian',
+  'ja': 'Japanese',
+  'ko': 'Korean',
+  'no': 'Norwegian',
+  'pl': 'Polish',
+  'pt': 'Portuguese',
+  'ro': 'Romanian',
+  'ru': 'Russian',
+  'es': 'Spanish',
+  'sv': 'Swedish',
+  'th': 'Thai',
+  'tr': 'Turkish',
+  'uk': 'Ukrainian',
+  'vi': 'Vietnamese',
+};
+
+final Map<String, String> _codeByLanguageName = {
+  for (final e in kLanguageNamesByCode.entries) e.value.toLowerCase(): e.key,
+  'chinese': 'zh',
+  'mandarin': 'zh',
+};
+
+/// Language name ("Arabic") or code ("AR") → ISO 639-1 code ("ar").
+/// Anything unrecognised passes through trimmed + lowercased.
+String languageCode(String input) {
+  final s = input.trim().toLowerCase();
+  if (s.isEmpty) return s;
+  return _codeByLanguageName[s] ?? s;
+}
+
+/// ISO 639-1 code ("ar") → display name ("Arabic"). Anything unrecognised
+/// (already a name, or an unknown code) is returned trimmed.
+String languageName(String codeOrName) {
+  final s = codeOrName.trim();
+  return kLanguageNamesByCode[s.toLowerCase()] ?? s;
+}
