@@ -151,7 +151,6 @@ async def update_course(course: Course, school_user: SchoolUser = Depends(curren
 @router.post("/generate_words_list", response_model=list[CourseWord])
 async def generate_words_list(
     course: Course,
-    count: int = 12,
     school_user: SchoolUser = Depends(current_ai_school_user),
 ):
     """Generate a words list for a course and append it to course.words,
@@ -167,7 +166,7 @@ async def generate_words_list(
         content_source=p["content_source"],
         provider=p["provider"],
         model=p["model"],
-        max_words=count,
+        max_words=300,
     )
     existing = {w.word for w in (course.words or [])}
     weight = max((w.weight for w in (course.words or [])), default=0)
