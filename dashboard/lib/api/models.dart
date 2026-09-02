@@ -236,6 +236,7 @@ class EditorCourse {
     String? lang,
     String? toLang,
     String? level,
+    Map<String, dynamic>? metadata,
   }) =>
       EditorCourse(
         courseId: courseId,
@@ -245,7 +246,7 @@ class EditorCourse {
         toLang: toLang ?? this.toLang,
         published: published ?? this.published,
         tags: tags,
-        metadata: metadata,
+        metadata: metadata ?? this.metadata,
         meta: meta,
         level: level ?? this.level,
       );
@@ -593,6 +594,26 @@ class AiCourseWord {
       );
 }
 
+/// Mirrors server `CourseWord` (models/edit/generate_poc_new.py) — the
+/// `{word, weight, used}` shape that `generate_poc_new/generate_words_list`
+/// returns and persists onto `course_simple.course.words`.
+class CourseWord {
+  final String word;
+  final int weight;
+  final int used;
+
+  const CourseWord({this.word = '', this.weight = 0, this.used = 0});
+
+  factory CourseWord.fromJson(Map<String, dynamic> j) => CourseWord(
+        word: (j['word'] as String?) ?? '',
+        weight: (j['weight'] as num?)?.toInt() ?? 0,
+        used: (j['used'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() =>
+      {'word': word, 'weight': weight, 'used': used};
+}
+
 class AiModule {
   final int moduleId;
   final String title;
@@ -934,6 +955,12 @@ class CourseOptions {
         'identify_words': identifyWords,
         'description': description,
       };
+
+  /// Merge these options onto an existing metadata map, leaving any
+  /// non-option keys (e.g. `ruby_text` / `sentence_alt` from an imported
+  /// course) untouched. The course `metadata` jsonb column holds both.
+  Map<String, dynamic> mergeInto(Map<String, dynamic> base) =>
+      {...base, ...toJson()};
 
   factory CourseOptions.fromJson(Map<String, dynamic> j) {
     const d = CourseOptions();

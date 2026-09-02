@@ -207,7 +207,6 @@ class _CreateAiCourseDialogState extends ConsumerState<_CreateAiCourseDialog> {
   // POST /api/v1/generate_poc_new/create_course. Seeded with the same
   // defaults as the server-side CourseOption.
   CourseOptions _options = const CourseOptions();
-  bool _showOptions = false;
 
   bool _submitting = false;
   String? _error;
@@ -247,10 +246,15 @@ class _CreateAiCourseDialogState extends ConsumerState<_CreateAiCourseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final viewport = MediaQuery.sizeOf(context);
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460, maxHeight: 640),
+        constraints: BoxConstraints(
+          maxWidth: 620,
+          maxHeight: viewport.height * 0.9,
+        ),
         child: GlassCard(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -307,12 +311,10 @@ class _CreateAiCourseDialogState extends ConsumerState<_CreateAiCourseDialog> {
                         onChanged: () => setState(() {}),
                       ),
                       const SizedBox(height: 6),
-                      _OptionsSection(
-                        expanded: _showOptions,
-                        onToggle: () =>
-                            setState(() => _showOptions = !_showOptions),
+                      CourseOptionsEditor(
                         options: _options,
                         onChanged: (o) => setState(() => _options = o),
+                        initiallyExpanded: true,
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 10),
@@ -343,183 +345,6 @@ class _CreateAiCourseDialogState extends ConsumerState<_CreateAiCourseDialog> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Collapsible "Generation options" block for the create-course dialog —
-/// the CourseOption fields (content source, AI provider/model, sentence
-/// length, distractor similarity, exercise-type mix) sent to
-/// generate_poc_new/create_course and stored on the course.
-class _OptionsSection extends StatelessWidget {
-  final bool expanded;
-  final VoidCallback onToggle;
-  final CourseOptions options;
-  final ValueChanged<CourseOptions> onChanged;
-
-  const _OptionsSection({
-    required this.expanded,
-    required this.onToggle,
-    required this.options,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: onToggle,
-          borderRadius: DashRadii.input,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Icon(
-                  expanded ? Icons.expand_less : Icons.expand_more,
-                  size: 18,
-                  color: DashColors.w(0.7),
-                ),
-                const SizedBox(width: 6),
-                Text('GENERATION OPTIONS',
-                    style: DashText.sectionLabel(size: 10)),
-              ],
-            ),
-          ),
-        ),
-        if (expanded) ...[
-          const SizedBox(height: 8),
-          Text('CONTENT SOURCE', style: DashText.sectionLabel(size: 10)),
-          const SizedBox(height: 6),
-          Segment(
-            options: kContentSources,
-            selected: options.contentSource,
-            onSelect: (v) => onChanged(options.copyWith(contentSource: v)),
-          ),
-          const SizedBox(height: 12),
-          Text('AI PROVIDER', style: DashText.sectionLabel(size: 10)),
-          const SizedBox(height: 6),
-          Segment(
-            options: kAiProviders,
-            selected: options.provider,
-            onSelect: (v) => onChanged(options.copyWith(provider: v)),
-          ),
-          const SizedBox(height: 12),
-          Text('MODEL', style: DashText.sectionLabel(size: 10)),
-          const SizedBox(height: 6),
-          Segment(
-            options: kAiModels,
-            selected: options.model,
-            onSelect: (v) => onChanged(options.copyWith(model: v)),
-          ),
-          const SizedBox(height: 14),
-          NumberStepper(
-            label: 'Min words / sentence',
-            value: options.minSentencesWords,
-            min: 1,
-            max: options.maxSentencesWords,
-            onChanged: (v) => onChanged(options.copyWith(minSentencesWords: v)),
-          ),
-          const SizedBox(height: 10),
-          NumberStepper(
-            label: 'Max words / sentence',
-            value: options.maxSentencesWords,
-            min: options.minSentencesWords,
-            max: 40,
-            onChanged: (v) => onChanged(options.copyWith(maxSentencesWords: v)),
-          ),
-          const SizedBox(height: 6),
-          _RatioSlider(
-            label: 'Distractor similarity',
-            value: options.distractorSimilarity,
-            onChanged: (v) =>
-                onChanged(options.copyWith(distractorSimilarity: v)),
-          ),
-          const SizedBox(height: 10),
-          Text('EXERCISE MIX', style: DashText.sectionLabel(size: 10)),
-          const SizedBox(height: 2),
-          _RatioSlider(
-            label: 'Single choice',
-            value: options.singleChoice,
-            onChanged: (v) => onChanged(options.copyWith(singleChoice: v)),
-          ),
-          _RatioSlider(
-            label: 'Multiple choice',
-            value: options.multipleChoice,
-            onChanged: (v) => onChanged(options.copyWith(multipleChoice: v)),
-          ),
-          _RatioSlider(
-            label: 'Identify words',
-            value: options.identifyWords,
-            onChanged: (v) => onChanged(options.copyWith(identifyWords: v)),
-          ),
-          _RatioSlider(
-            label: 'Description',
-            value: options.description,
-            onChanged: (v) => onChanged(options.copyWith(description: v)),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Label + 0.0–1.0 slider for a weight/ratio option.
-class _RatioSlider extends StatelessWidget {
-  final String label;
-  final double value;
-  final ValueChanged<double> onChanged;
-
-  const _RatioSlider({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 4,
-          child: Text(label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              )),
-        ),
-        Expanded(
-          flex: 5,
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 3,
-              activeTrackColor: DashColors.brand,
-              inactiveTrackColor: DashColors.w(0.16),
-              thumbColor: DashColors.brand,
-              overlayShape: SliderComponentShape.noOverlay,
-            ),
-            child: Slider(
-              value: value.clamp(0.0, 1.0),
-              onChanged: (v) => onChanged(double.parse(v.toStringAsFixed(2))),
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 34,
-          child: Text(
-            value.toStringAsFixed(2),
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

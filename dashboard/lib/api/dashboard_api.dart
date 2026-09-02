@@ -340,14 +340,42 @@ class DashboardApi {
     return AiCourseFull.fromJson(res.data ?? const {});
   }
 
-  /// Generate N new words into the course's word bank (skips words
-  /// already there).
-  Future<AiWordsResult> generateAiWords({required int courseId, int count = 12}) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/generate_poc/generate_words_list',
-      data: {'course_id': courseId, 'count': count},
+  /// Generate `count` new words for a course via generate_poc_new —
+  /// appends them to the course word list (skipping words already there),
+  /// persists, and returns the full updated list in `{word, weight, used}`
+  /// shape. The generation content-source / provider / model come from the
+  /// course's own options (`course.metadata`).
+  Future<List<CourseWord>> generateAiWords({
+    required EditorCourse course,
+    List<AiCourseWord> currentWords = const [],
+    int count = 12,
+  }) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/generate_poc_new/generate_words_list',
+      queryParameters: {'count': count},
+      data: {
+        'course_id': course.courseId,
+        'title': course.title,
+        'description': course.description,
+        'lang': course.lang,
+        'to_lang': course.toLang,
+        'level': course.level ?? '',
+        'published': course.published,
+        'metadata': course.metadata,
+        'words': [
+          for (var i = 0; i < currentWords.length; i++)
+            {
+              'word': currentWords[i].word,
+              'weight': i + 1,
+              'used': currentWords[i].used ? 1 : 0,
+            },
+        ],
+      },
     );
-    return AiWordsResult.fromJson(res.data ?? const {});
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(CourseWord.fromJson)
+        .toList();
   }
 
   Future<AiCourseWord> addAiWord({required int courseId, required String word, String? gloss}) async {

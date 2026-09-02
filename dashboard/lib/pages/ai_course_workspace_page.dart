@@ -237,13 +237,21 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
   }
 
   Future<void> _doCreateWords() async {
+    final editor = _editorCourse;
+    if (editor == null) return;
     final hadWords = _course!.words.isNotEmpty;
+    final beforeCount = _course!.words.length;
     _appendUser(hadWords ? 'Add more words' : 'Create word list');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final result = await api.generateAiWords(courseId: widget.courseId, count: 12);
+      final words = await api.generateAiWords(
+        course: editor,
+        currentWords: _course!.words,
+        count: 12,
+      );
       await _reload();
-      if (result.words.isEmpty) {
+      final added = words.length - beforeCount;
+      if (added <= 0) {
         _appendAssistant(
           "That's every word I've got for this language right now — try selecting words for a lesson instead.",
           actions: [_ChatAction('new_lesson', 'Select words for Lesson ${_lessonCount(_course!) + 1}')],
@@ -258,9 +266,8 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
         actions.add(const _ChatAction('new_lesson', 'Start a new module', newModule: true));
       }
       _appendAssistant(
-        'Generated ${result.words.length} starter words (${_course!.words.length} total). Review them in the Words tab, then build a lesson.',
+        'Generated $added new words (${words.length} total). Review them in the Words tab, then build a lesson.',
         actions: actions,
-        usage: result.usage,
       );
     });
   }
@@ -1381,6 +1388,12 @@ class _EditCourseTabState extends ConsumerState<_EditCourseTab> {
   late final _toLang = TextEditingController(text: widget.course.toLang);
   late String _level = widget.course.level;
 
+  // Generation options live in the course `metadata` jsonb (alongside any
+  // imported-course keys like ruby_text) — parse them out, fall back to
+  // the CourseOption defaults for anything missing.
+  late CourseOptions _options =
+      CourseOptions.fromJson(widget.editorCourse?.metadata ?? const {});
+
   @override
   void dispose() {
     _title.dispose();
@@ -1397,6 +1410,7 @@ class _EditCourseTabState extends ConsumerState<_EditCourseTab> {
       lang: _lang.text.trim(),
       toLang: _toLang.text.trim(),
       level: _level,
+      metadata: _options.mergeInto(base.metadata),
     );
     await ref.read(dashboardApiProvider).updateCourse(updated);
     await widget.onSaved();
@@ -1445,7 +1459,13 @@ class _EditCourseTabState extends ConsumerState<_EditCourseTab> {
         Text('LEVEL', style: DashText.sectionLabel(size: 10)),
         const SizedBox(height: 6),
         Segment(options: kAiLevels, selected: _level, onSelect: (v) => setState(() => _level = v)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
+        CourseOptionsEditor(
+          options: _options,
+          onChanged: (o) => setState(() => _options = o),
+          initiallyExpanded: true,
+        ),
+        const SizedBox(height: 16),
         Align(alignment: Alignment.centerLeft, child: PrimaryButton(label: 'Save changes', onTap: _save)),
       ],
     );

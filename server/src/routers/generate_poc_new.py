@@ -59,6 +59,20 @@ def _metadata_json(course: Course) -> str:
     return json.dumps((course.metadata or CourseOption()).model_dump())
 
 
+async def _persist_words(course: Course, school_user: SchoolUser):
+    """Write just the course word list — used by generate_words_list so a
+    partial Course body can't clobber title / level / metadata / status."""
+    sql = """
+    UPDATE course_simple.course
+    SET words = %s, updated_at = now()
+    WHERE course_id = %s AND user_id = %s::text AND school_id = %s
+    RETURNING course_id
+    """
+    return await get_query_results(
+        sql, (_words_json(course), course.course_id, school_user.user_id, school_user.school_id)
+    )
+
+
 async def _update_course(course: Course, school_user: SchoolUser):
     """Persist a course row (meta + options + word list), scoped to the
     signed-in user/school."""
@@ -134,7 +148,7 @@ async def update_course(course: Course, school_user: SchoolUser = Depends(curren
     return course
 
 
-@router.post("/generate_words_list", response_model=Course)
+@router.post("/generate_words_list", response_model=list[CourseWord])
 async def generate_words_list(
     course: Course,
     count: int = 12,
@@ -155,12 +169,15 @@ async def generate_words_list(
         model=p["model"],
         max_words=count,
     )
+    existing = {w.word for w in (course.words or [])}
     weight = max((w.weight for w in (course.words or [])), default=0)
     for w in words:
+        if w in existing:
+            continue
         weight += 1
         course.words.append(CourseWord(word=w, weight=weight, used=0))
-    await _update_course(course, school_user)
-    return course
+    await _persist_words(course, school_user)
+    return course.words
 
 
 @router.post("/sentences_for_word", response_model=list[Sentence])

@@ -95,7 +95,13 @@ async def get_course_full(course_id: int, school_user: SchoolUser = Depends(curr
         used_words.update(l.get("words") or [])
 
     course_words = coerce_json_list(course.get("words"))
-    words = [CourseWord(**w, used=w["word"] in used_words) for w in course_words]
+    # `used` is recomputed here from lesson membership, so drop any stored
+    # `used` key (the generate_poc_new word list persists CourseWord with
+    # its own word/weight/used shape) to avoid a duplicate-kwarg clash.
+    words = [
+        CourseWord(**{k: v for k, v in w.items() if k != "used"}, used=w["word"] in used_words)
+        for w in course_words
+    ]
 
     exercises_by_lesson: dict[int, list] = {}
     if lesson_ids:

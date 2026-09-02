@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../api/models.dart';
 import '../theme.dart';
 
 /// Shared building blocks for the "Create with AI" pages
@@ -506,6 +507,195 @@ class SwitchRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Editor for the course generation options (`CourseOptions` — mirrors the
+/// server `CourseOption` stored on `course_simple.course.metadata`):
+/// content source, AI provider/model, sentence length, distractor
+/// similarity and the exercise-type mix. Used by the create-course dialog
+/// (ai_courses_page.dart) and the workspace "Edit Course" tab
+/// (ai_course_workspace_page.dart). Collapsible; manages its own
+/// expand/collapse state.
+class CourseOptionsEditor extends StatefulWidget {
+  final CourseOptions options;
+  final ValueChanged<CourseOptions> onChanged;
+  final bool initiallyExpanded;
+  final String heading;
+
+  const CourseOptionsEditor({
+    super.key,
+    required this.options,
+    required this.onChanged,
+    this.initiallyExpanded = false,
+    this.heading = 'GENERATION OPTIONS',
+  });
+
+  @override
+  State<CourseOptionsEditor> createState() => _CourseOptionsEditorState();
+}
+
+class _CourseOptionsEditorState extends State<CourseOptionsEditor> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  CourseOptions get _o => widget.options;
+  void _set(CourseOptions next) => widget.onChanged(next);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: DashRadii.input,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: DashColors.w(0.7),
+                ),
+                const SizedBox(width: 6),
+                Text(widget.heading, style: DashText.sectionLabel(size: 10)),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          Text('CONTENT SOURCE', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 6),
+          Segment(
+            options: kContentSources,
+            selected: _o.contentSource,
+            onSelect: (v) => _set(_o.copyWith(contentSource: v)),
+          ),
+          const SizedBox(height: 12),
+          Text('AI PROVIDER', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 6),
+          Segment(
+            options: kAiProviders,
+            selected: _o.provider,
+            onSelect: (v) => _set(_o.copyWith(provider: v)),
+          ),
+          const SizedBox(height: 12),
+          Text('MODEL', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 6),
+          Segment(
+            options: kAiModels,
+            selected: _o.model,
+            onSelect: (v) => _set(_o.copyWith(model: v)),
+          ),
+          const SizedBox(height: 14),
+          NumberStepper(
+            label: 'Min words / sentence',
+            value: _o.minSentencesWords,
+            min: 1,
+            max: _o.maxSentencesWords,
+            onChanged: (v) => _set(_o.copyWith(minSentencesWords: v)),
+          ),
+          const SizedBox(height: 10),
+          NumberStepper(
+            label: 'Max words / sentence',
+            value: _o.maxSentencesWords,
+            min: _o.minSentencesWords,
+            max: 40,
+            onChanged: (v) => _set(_o.copyWith(maxSentencesWords: v)),
+          ),
+          const SizedBox(height: 6),
+          RatioSlider(
+            label: 'Distractor similarity',
+            value: _o.distractorSimilarity,
+            onChanged: (v) => _set(_o.copyWith(distractorSimilarity: v)),
+          ),
+          const SizedBox(height: 10),
+          Text('EXERCISE MIX', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 2),
+          RatioSlider(
+            label: 'Single choice',
+            value: _o.singleChoice,
+            onChanged: (v) => _set(_o.copyWith(singleChoice: v)),
+          ),
+          RatioSlider(
+            label: 'Multiple choice',
+            value: _o.multipleChoice,
+            onChanged: (v) => _set(_o.copyWith(multipleChoice: v)),
+          ),
+          RatioSlider(
+            label: 'Identify words',
+            value: _o.identifyWords,
+            onChanged: (v) => _set(_o.copyWith(identifyWords: v)),
+          ),
+          RatioSlider(
+            label: 'Description',
+            value: _o.description,
+            onChanged: (v) => _set(_o.copyWith(description: v)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Label + 0.0–1.0 slider for a weight/ratio option.
+class RatioSlider extends StatelessWidget {
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  const RatioSlider({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 4,
+          child: Text(label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              )),
+        ),
+        Expanded(
+          flex: 5,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3,
+              activeTrackColor: DashColors.brand,
+              inactiveTrackColor: DashColors.w(0.16),
+              thumbColor: DashColors.brand,
+              overlayShape: SliderComponentShape.noOverlay,
+            ),
+            child: Slider(
+              value: value.clamp(0.0, 1.0),
+              onChanged: (v) => onChanged(double.parse(v.toStringAsFixed(2))),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 34,
+          child: Text(
+            value.toStringAsFixed(2),
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
