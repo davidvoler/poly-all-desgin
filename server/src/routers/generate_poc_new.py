@@ -176,7 +176,7 @@ async def generate_words_list(
             continue
         weight += 1
         course.words.append(CourseWord(word=w, weight=weight, used=0))
-    await _persist_words(course, school_user)
+    await _update_course(course, school_user)
     return course.words
 
 
