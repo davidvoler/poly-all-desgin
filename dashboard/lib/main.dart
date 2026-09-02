@@ -110,6 +110,7 @@ class DashboardApp extends StatelessWidget {
         '/create-from-subtitles': (_) =>
             const _Guarded(child: CreateFromSubtitlesPage()),
         '/ai-courses': (_) => const _Guarded(child: AiCoursesPage()),
+        '/overview': (_) => const _Guarded(child: OverviewPage()),
         '/ai-course': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           final courseId = args is int ? args : 0;
@@ -140,7 +141,7 @@ class _AuthGate extends ConsumerWidget {
     if (auth is AuthRestoring) {
       return Container(decoration: kDashBackground);
     }
-    if (auth is AuthSignedIn) return const OverviewPage();
+    if (auth is AuthSignedIn) return const AiCoursesPage();
     return const LoginPage();
   }
 }

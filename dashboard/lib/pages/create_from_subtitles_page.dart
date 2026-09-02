@@ -316,7 +316,7 @@ Rules:
   Widget build(BuildContext context) {
     final needsTerms = ref.watch(meProvider).value?.needsTerms ?? false;
     return DashboardShell(
-      title: 'Create from subtitles',
+      title: 'Video Courses',
       activeRoute: '/create-from-subtitles',
       topbarTrailing: needsTerms
           ? const []

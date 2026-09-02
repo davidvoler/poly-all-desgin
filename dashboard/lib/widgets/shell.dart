@@ -30,39 +30,24 @@ class NavItem {
 }
 
 const List<NavItem> kNavItems = [
-  NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/'),
-  NavItem(label: 'Languages', icon: Icons.language, route: '/languages'),
-  // Courses list is open to everyone; uploading/editing is gated on the
-  // page itself (terms + role), not by hiding the section.
+  // Course list + workspace (chat + Words/Lessons/Edit Course/Preview
+  // tabs) — the default landing page. Flutter port of
+  // plan/design_experiments/create_with_ai_poc. See TASKS.md.
   NavItem(
       label: 'Courses',
       icon: Icons.menu_book_outlined,
-      route: '/courses'),
-  // Create with AI is always available — the page itself gates content
-  // authoring behind the editor Terms & Conditions when unsigned.
-  NavItem(
-      label: 'Create with AI',
-      icon: Icons.auto_awesome_outlined,
-      route: '/create-course'),
-  // Step-by-step variant: plan vocabulary first, then author module by
-  // module — see MVP.md's "Build in steps" checklist.
-  NavItem(
-      label: 'Create with AI (steps)',
-      icon: Icons.auto_awesome_motion_outlined,
-      route: '/create-course-steps'),
+      route: '/ai-courses'),
   // Paste a movie/show's .srt file and build a course from its dialogue —
   // see MVP.md's "build on movie subtitles" phase.
   NavItem(
-      label: 'Create from subtitles',
+      label: 'Video Courses',
       icon: Icons.subtitles_outlined,
       route: '/create-from-subtitles'),
-  // Chat-driven course-building copilot — course list + workspace (chat +
-  // Words/Lessons/Edit Course/Preview tabs). Flutter port of
-  // plan/design_experiments/create_with_ai_poc. See TASKS.md.
-  NavItem(
-      label: 'Create with AI (Copilot)',
-      icon: Icons.science_outlined,
-      route: '/ai-courses'),
+  NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/overview'),
+  NavItem(label: 'Languages', icon: Icons.language, route: '/languages'),
+  // Temporarily hidden while the dashboard nav is being reorganised — the
+  // pages/routes still exist (/courses, /create-course,
+  // /create-course-steps), they're just off the menu for now.
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
       adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),
