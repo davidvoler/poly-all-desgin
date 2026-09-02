@@ -10,6 +10,9 @@ class AiProvider(str, Enum):
     CLAUDE = "claude"
 class AiModel(str, Enum):
     GEMMA4 = "gemma4"
+    MUSE_GLIMMER = "muse-glimmer"
+    DEEPSEEK = "deepseek-r1:86"
+
 
 
 class CourseParams(BaseModel):
@@ -24,12 +27,14 @@ class CourseWord(BaseModel):
 
 
 class CourseOption(BaseModel):
-    coutent_source: ContentSource | None = ContentSource.CORPUS
+    content_source: ContentSource | None = ContentSource.CORPUS
+    provider: AiProvider | None = AiProvider.OLLAMA
     model: AiModel | None = AiModel.GEMMA4
     # sentence and exercise generate
     max_sentences_words: int | None = 4
     min_sentences_words: int | None = 1
     distractor_similarity: float | None = 0.5
+    # exercise-type mix — relative weights, roughly summing to 1.0
     single_choice: float | None = 0.9
     multiple_choice: float | None = 0.1
     identify_words: float | None = 0.1
@@ -37,7 +42,7 @@ class CourseOption(BaseModel):
 
 
 class Course(BaseModel):
-    course_id: int
+    course_id: int | None = None
     title: str | None = ''
     description: str | None = ''
     lang: str | None = ''
