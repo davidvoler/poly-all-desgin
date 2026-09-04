@@ -8,6 +8,7 @@ import 'pages/ai_course_workspace_page.dart';
 import 'pages/ai_courses_page.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
+import 'pages/create_ai_course_page.dart';
 import 'pages/create_course_page.dart';
 import 'pages/create_course_steps_page.dart';
 import 'pages/create_from_subtitles_page.dart';
@@ -110,6 +111,7 @@ class DashboardApp extends StatelessWidget {
         '/create-from-subtitles': (_) =>
             const _Guarded(child: CreateFromSubtitlesPage()),
         '/ai-courses': (_) => const _Guarded(child: AiCoursesPage()),
+        '/ai-course-new': (_) => const _Guarded(child: CreateAiCoursePage()),
         '/overview': (_) => const _Guarded(child: OverviewPage()),
         '/ai-course': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;

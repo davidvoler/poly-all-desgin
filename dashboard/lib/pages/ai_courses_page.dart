@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
-import '../widgets/ai_prompt_controls.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
 
@@ -50,7 +49,7 @@ class _AiCoursesPageState extends ConsumerState<AiCoursesPage> {
               PrimaryButton(
                 label: 'New course',
                 leading: Icons.add,
-                onTap: _openCreateDialog,
+                onTap: () => Navigator.pushNamed(context, '/ai-course-new'),
               ),
             ],
           ),
@@ -70,16 +69,6 @@ class _AiCoursesPageState extends ConsumerState<AiCoursesPage> {
         ],
       ),
     );
-  }
-
-  Future<void> _openCreateDialog() async {
-    final courseId = await showDialog<int>(
-      context: context,
-      builder: (_) => const _CreateAiCourseDialog(),
-    );
-    if (courseId == null || !mounted) return;
-    ref.invalidate(editorCoursesProvider);
-    Navigator.pushNamed(context, '/ai-course', arguments: courseId);
   }
 }
 
@@ -189,162 +178,3 @@ const kAiLanguageSuggestions = [
   'English', 'Korean', 'Portuguese',
 ];
 const kAiLevels = ['A1', 'A2', 'B1', 'B2', 'C1'];
-
-class _CreateAiCourseDialog extends ConsumerStatefulWidget {
-  const _CreateAiCourseDialog();
-
-  @override
-  ConsumerState<_CreateAiCourseDialog> createState() => _CreateAiCourseDialogState();
-}
-
-class _CreateAiCourseDialogState extends ConsumerState<_CreateAiCourseDialog> {
-  final _title = TextEditingController();
-  final _lang = TextEditingController(text: 'Japanese');
-  final _toLang = TextEditingController(text: 'Hebrew');
-  String _level = 'A1';
-
-  // Generation options — persisted onto course_simple.course.metadata by
-  // POST /api/v1/generate_poc_new/create_course. Seeded with the same
-  // defaults as the server-side CourseOption.
-  CourseOptions _options = const CourseOptions();
-
-  bool _submitting = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _title.dispose();
-    _lang.dispose();
-    _toLang.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (_submitting) return;
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-    try {
-      final courseId = await ref.read(dashboardApiProvider).createAiCourse(
-            lang: _lang.text.trim(),
-            toLang: _toLang.text.trim(),
-            level: _level,
-            title: _title.text.trim(),
-            options: _options,
-          );
-      if (!mounted) return;
-      Navigator.of(context).pop(courseId);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _error = '$e';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewport = MediaQuery.sizeOf(context);
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 620,
-          maxHeight: viewport.height * 0.9,
-        ),
-        child: GlassCard(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Create a course',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-              const SizedBox(height: 4),
-              Text(
-                "Just the basics — the AI copilot helps with everything else once you're inside.",
-                style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
-              ),
-              const SizedBox(height: 18),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: LanguageField(
-                              controller: _lang,
-                              label: 'Learning language',
-                              hint: 'Japanese',
-                              onChanged: () => setState(() {}),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: LanguageField(
-                              controller: _toLang,
-                              label: 'Student language',
-                              hint: 'Hebrew',
-                              onChanged: () => setState(() {}),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Text('LEVEL', style: DashText.sectionLabel(size: 10)),
-                      const SizedBox(height: 6),
-                      Segment(
-                        options: kAiLevels,
-                        selected: _level,
-                        onSelect: (v) => setState(() => _level = v),
-                      ),
-                      const SizedBox(height: 14),
-                      CourseField(
-                        controller: _title,
-                        label: 'Course title (optional)',
-                        hint: 'e.g. Japanese for Hebrew Speakers',
-                        onChanged: () => setState(() {}),
-                      ),
-                      const SizedBox(height: 6),
-                      CourseOptionsEditor(
-                        options: _options,
-                        onChanged: (o) => setState(() => _options = o),
-                        initiallyExpanded: true,
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 10),
-                        Text('Could not create the course — $_error',
-                            style: TextStyle(
-                                fontSize: 12, color: DashColors.red400)),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GhostButton(
-                    label: 'Cancel',
-                    onTap: _submitting ? null : () => Navigator.of(context).pop(),
-                  ),
-                  const SizedBox(width: 10),
-                  PrimaryButton(
-                    label: _submitting ? 'Creating…' : 'Create course',
-                    onTap: _submitting ? null : _submit,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
