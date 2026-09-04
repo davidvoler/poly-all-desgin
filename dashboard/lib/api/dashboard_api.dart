@@ -503,9 +503,9 @@ class DashboardApi {
       '/api/v1/edit/exercise/exercise/update',
       data: {
         'exercise_id': exerciseId,
-        if (prompt != null) 'prompt': prompt,
-        if (options != null) 'options': options,
-        if (answer != null) 'answer': answer,
+        'prompt': ?prompt,
+        'options': ?options,
+        'answer': ?answer,
       },
     );
     return AiExercise.fromJson(res.data ?? const {});
