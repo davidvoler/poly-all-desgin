@@ -34,10 +34,6 @@ async def process_data(
     item_id: int,
     context: Context = TaskiqDepends(),
 ) -> str:
-    # `context` must be injected via TaskiqDepends — a bare `context: Context`
-    # param makes taskiq treat it as a normal call arg it should pull from the
-    # message (which only carries `item_id`), so the worker raises
-    # "missing 1 required positional argument: 'context'".
     task_id = context.message.task_id
     print(f"Executing task {task_id} for item {item_id}")
     return task_id
@@ -54,11 +50,5 @@ async def lifespan(app: FastAPI):
         await broker.shutdown()
 
 
-# # MUST pass lifespan to FastAPI instance
-# app = FastAPI(lifespan=lifespan)
 
 
-# @app.post("/items/{item_id}")
-# async def trigger_task(item_id: int):
-#     task = await process_data.kiq(item_id)
-#     return {"task_id": task.task_id}

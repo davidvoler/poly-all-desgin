@@ -79,3 +79,10 @@ class Sentence(BaseModel):
     gloss: str | None = ''
     sentence_id: int | None = None
     chosen: bool | None = True
+
+
+
+class TaskStart(BaseModel):
+    task_id: str| None = None
+    task_type: str | None = None
+    status: str | None = None
