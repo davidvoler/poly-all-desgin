@@ -54,11 +54,11 @@ async def lifespan(app: FastAPI):
         await broker.shutdown()
 
 
-# MUST pass lifespan to FastAPI instance
-app = FastAPI(lifespan=lifespan)
+# # MUST pass lifespan to FastAPI instance
+# app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/items/{item_id}")
-async def trigger_task(item_id: int):
-    task = await process_data.kiq(item_id)
-    return {"task_id": task.task_id}
+# @app.post("/items/{item_id}")
+# async def trigger_task(item_id: int):
+#     task = await process_data.kiq(item_id)
+#     return {"task_id": task.task_id}

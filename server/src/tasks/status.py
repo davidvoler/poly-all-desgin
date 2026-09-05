@@ -16,7 +16,6 @@ async def get_task_status(task_id: str):
 
     # 2. Fetch the task outcome once execution completes
     task_result = await result_backend.get_result(task_id)
-    
     # 3. Handle errors thrown inside the worker
     if task_result.is_err:
         return {
@@ -24,7 +23,6 @@ async def get_task_status(task_id: str):
             "status": "FAILED",
             "error": str(task_result.error),
         }
-
     return {
         "task_id": task_id,
         "status": "SUCCESS",
