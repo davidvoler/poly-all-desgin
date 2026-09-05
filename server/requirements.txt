@@ -17,3 +17,5 @@ httpx
 youtube_transcript_api
 ollama
 pycountry
+taskiq
+taskiq-redis

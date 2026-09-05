@@ -37,12 +37,13 @@ from school.routes import school as school_routes, users as school_users
 # )
 enable_docs =  bool(os.environ.get("ENABLE_DOCS", ""))
 
-# from arq_worker import lifespan
+from tasks.broker import lifespan
+
 app = FastAPI(
     docs_url="/docs" if enable_docs else None, 
     redoc_url="/redoc" if enable_docs else None, 
     openapi_url="/openapi.json" if enable_docs else None,
-    # lifespan=lifespan,
+    lifespan=lifespan,
 )
 
 # CORS — credentialed requests (i.e. every /api/v1/auth/* call, which

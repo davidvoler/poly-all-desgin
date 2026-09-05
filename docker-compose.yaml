@@ -74,7 +74,26 @@
     depends_on:
       - postgres
 
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:8.2
+    ports:
+      - 6379:6379
 
+
+  broker:
+    container_name: broker
+    image: server:polyglots
+    command:
+      - taskiq 
+      - worker 
+      - tasks.broker:broker 
+      - -fsd
+    volumes:
+      - ./server/src:/app
+    depends_on:
+      - redis
 
   audio-server:
     container_name: audio-server
