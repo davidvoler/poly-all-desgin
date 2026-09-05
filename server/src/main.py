@@ -15,7 +15,7 @@ from routers import (
     practice,
     achievement, 
     auth_new,
-    generate_poc,
+    # generate_poc,
     generate_poc_new,
 )
 from routers.edit import  (
@@ -152,9 +152,9 @@ app.include_router(edit_exercise.router,
     prefix="/api/v1/edit/exercise",
     tags=["edit_exercise"])
 
-app.include_router(generate_poc.router,
-    prefix="/api/v1/generate_poc",
-    tags=["generate_poc"])
+# app.include_router(generate_poc.router,
+#     prefix="/api/v1/generate_poc",
+#     tags=["generate_poc"])
 
 app.include_router(generate_poc_new.router,
     prefix="/api/v1/generate_poc_new",
