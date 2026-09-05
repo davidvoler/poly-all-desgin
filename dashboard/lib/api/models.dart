@@ -897,6 +897,8 @@ class CourseOptions {
   final String provider; // ollama | openai | claude
   final String model; // gemma4
   // sentence + exercise generation
+  final int exercisesPerWord;
+  final int wordsPerLesson;
   final int maxSentencesWords;
   final int minSentencesWords;
   final double distractorSimilarity;
@@ -910,6 +912,8 @@ class CourseOptions {
     this.contentSource = 'corpus',
     this.provider = 'ollama',
     this.model = 'gemma4',
+    this.exercisesPerWord = 5,
+    this.wordsPerLesson = 2,
     this.maxSentencesWords = 4,
     this.minSentencesWords = 1,
     this.distractorSimilarity = 0.5,
@@ -923,6 +927,8 @@ class CourseOptions {
     String? contentSource,
     String? provider,
     String? model,
+    int? exercisesPerWord,
+    int? wordsPerLesson,
     int? maxSentencesWords,
     int? minSentencesWords,
     double? distractorSimilarity,
@@ -935,6 +941,8 @@ class CourseOptions {
         contentSource: contentSource ?? this.contentSource,
         provider: provider ?? this.provider,
         model: model ?? this.model,
+        exercisesPerWord: exercisesPerWord ?? this.exercisesPerWord,
+        wordsPerLesson: wordsPerLesson ?? this.wordsPerLesson,
         maxSentencesWords: maxSentencesWords ?? this.maxSentencesWords,
         minSentencesWords: minSentencesWords ?? this.minSentencesWords,
         distractorSimilarity: distractorSimilarity ?? this.distractorSimilarity,
@@ -948,6 +956,8 @@ class CourseOptions {
         'content_source': contentSource,
         'provider': provider,
         'model': model,
+        'exercises_per_word': exercisesPerWord,
+        'words_per_lesson': wordsPerLesson,
         'max_sentences_words': maxSentencesWords,
         'min_sentences_words': minSentencesWords,
         'distractor_similarity': distractorSimilarity,
@@ -971,6 +981,8 @@ class CourseOptions {
       contentSource: (j['content_source'] as String?) ?? d.contentSource,
       provider: (j['provider'] as String?) ?? d.provider,
       model: (j['model'] as String?) ?? d.model,
+      exercisesPerWord: integer(j['exercises_per_word'], d.exercisesPerWord),
+      wordsPerLesson: integer(j['words_per_lesson'], d.wordsPerLesson),
       maxSentencesWords: integer(j['max_sentences_words'], d.maxSentencesWords),
       minSentencesWords: integer(j['min_sentences_words'], d.minSentencesWords),
       distractorSimilarity:

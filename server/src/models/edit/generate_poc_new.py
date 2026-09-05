@@ -31,6 +31,8 @@ class CourseOption(BaseModel):
     provider: AiProvider | None = AiProvider.OLLAMA
     model: AiModel | None = AiModel.GEMMA4
     # sentence and exercise generate
+    exercises_per_word: int | None = 5
+    words_per_lesson: int | None = 2
     max_sentences_words: int | None = 4
     min_sentences_words: int | None = 1
     distractor_similarity: float | None = 0.5

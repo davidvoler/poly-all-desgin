@@ -592,6 +592,22 @@ class _CourseOptionsEditorState extends State<CourseOptionsEditor> {
           ),
           const SizedBox(height: 14),
           NumberStepper(
+            label: 'Words / lesson',
+            value: _o.wordsPerLesson,
+            min: 1,
+            max: 20,
+            onChanged: (v) => _set(_o.copyWith(wordsPerLesson: v)),
+          ),
+          const SizedBox(height: 10),
+          NumberStepper(
+            label: 'Exercises / word',
+            value: _o.exercisesPerWord,
+            min: 1,
+            max: 20,
+            onChanged: (v) => _set(_o.copyWith(exercisesPerWord: v)),
+          ),
+          const SizedBox(height: 10),
+          NumberStepper(
             label: 'Min words / sentence',
             value: _o.minSentencesWords,
             min: 1,
