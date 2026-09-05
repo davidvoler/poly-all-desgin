@@ -423,15 +423,46 @@ class DashboardApi {
     );
   }
 
-  /// Draft example sentences for a lesson's selected words — the
-  /// "Create sentences" path (as opposed to [generateAiLessonDirect],
-  /// which skips straight to exercises).
-  Future<AiSentencesResult> generateAiSentences(int lessonId) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/generate_poc/generate_sentences',
-      data: {'lesson_id': lessonId},
+  /// The `course` block for a generate_poc_new GenerateForWords request —
+  /// languages as ISO codes, options from `course.metadata`.
+  Map<String, dynamic> _genCourseBody(EditorCourse course) => {
+        'course_id': course.courseId,
+        'title': course.title,
+        'description': course.description,
+        'lang': languageCode(course.lang),
+        'to_lang': languageCode(course.toLang),
+        'level': course.level ?? '',
+        'published': course.published,
+        'metadata': course.metadata,
+      };
+
+  int _spreadCount(int words, int? override) =>
+      override ?? (words * 2).clamp(4, 24);
+
+  /// Draft example sentences for a lesson's [words] via
+  /// generate_poc_new/sentences_for_word — persisted onto the lesson
+  /// (`lesson_id`) so the Lessons/Preview tabs pick them up. The
+  /// "Create sentences" path (as opposed to [generateAiExercises], which
+  /// skips straight to exercises).
+  Future<List<AiLessonSentence>> generateAiSentences({
+    required EditorCourse course,
+    required int lessonId,
+    required List<String> words,
+    int? numElements,
+  }) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/generate_poc_new/sentences_for_word',
+      data: {
+        'course': _genCourseBody(course),
+        'words': words,
+        'num_elements': _spreadCount(words.length, numElements),
+        'lesson_id': lessonId,
+      },
     );
-    return AiSentencesResult.fromJson(res.data ?? const {});
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(AiLessonSentence.fromJson)
+        .toList();
   }
 
   /// Choose which generated draft sentences to keep for a lesson.
@@ -461,25 +492,30 @@ class DashboardApi {
     );
   }
 
-  /// Build exercises from a lesson's chosen (kept) sentences and mark it
-  /// ready — the "Create exercises" step after [generateAiSentences].
-  Future<AiExercisesResult> generateAiExercises(int lessonId) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/generate_poc/generate_exercises',
-      data: {'lesson_id': lessonId},
+  /// Generate single-choice exercises for a lesson's [words] via
+  /// generate_poc_new/exercise_for_word — inserted into
+  /// course_simple.exercise and the lesson marked ready. Backs both
+  /// "Create exercises" (after keeping sentences) and "Create exercises
+  /// directly".
+  Future<List<AiExercise>> generateAiExercises({
+    required EditorCourse course,
+    required int lessonId,
+    required List<String> words,
+    int? numElements,
+  }) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/generate_poc_new/exercise_for_word',
+      data: {
+        'course': _genCourseBody(course),
+        'words': words,
+        'num_elements': _spreadCount(words.length, numElements),
+        'lesson_id': lessonId,
+      },
     );
-    return AiExercisesResult.fromJson(res.data ?? const {});
-  }
-
-  /// "Create exercises directly" — generate sentences AND exercises for a
-  /// lesson's selected words in one call, skipping the confirm-sentences
-  /// step.
-  Future<AiLessonGenerateResult> generateAiLessonDirect({required int lessonId, String? title}) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/generate_poc/generate_lesson',
-      data: {'lesson_id': lessonId, 'title': title},
-    );
-    return AiLessonGenerateResult.fromJson(res.data ?? const {});
+    return (res.data ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(AiExercise.fromJson)
+        .toList();
   }
 
   /// Add a blank exercise manually. Reuses the school's existing

@@ -56,6 +56,10 @@ class GenerateForWords(BaseModel):
     course: Course
     words: list[str]
     num_elements: int = 12
+    # When set, generated sentences / exercises are also persisted onto
+    # this lesson (course_simple.lesson.sentences + course_simple.exercise)
+    # so the Lessons / Preview tabs pick them up.
+    lesson_id: int | None = None
 
 class Sentences(BaseModel):
     word: str
@@ -70,3 +74,6 @@ class Lesson(BaseModel):
 class Sentence(BaseModel):
     sentences: str
     word: str | None = ''
+    gloss: str | None = ''
+    sentence_id: int | None = None
+    chosen: bool | None = True

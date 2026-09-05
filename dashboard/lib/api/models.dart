@@ -653,10 +653,11 @@ class AiLessonSentence {
   });
 
   factory AiLessonSentence.fromJson(Map<String, dynamic> j) => AiLessonSentence(
-        sentenceId: j['sentence_id'] as int,
-        lessonId: j['lesson_id'] as int?,
+        sentenceId: (j['sentence_id'] as num?)?.toInt() ?? 0,
+        lessonId: (j['lesson_id'] as num?)?.toInt(),
         word: j['word'] as String?,
-        text: (j['text'] as String?) ?? '',
+        // generate_poc_new's Sentence model names the text field `sentences`.
+        text: (j['text'] as String?) ?? (j['sentences'] as String?) ?? '',
         gloss: (j['gloss'] as String?) ?? '',
         chosen: (j['chosen'] as bool?) ?? true,
       );

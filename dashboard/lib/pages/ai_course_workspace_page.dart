@@ -166,6 +166,18 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     return all.isEmpty ? null : all.last;
   }
 
+  AiLesson? _lessonById(int lessonId) {
+    for (final m in _course?.modules ?? const <AiModuleFull>[]) {
+      for (final l in m.lessons) {
+        if (l.lessonId == lessonId) return l;
+      }
+    }
+    return null;
+  }
+
+  List<String> _lessonWords(int lessonId) =>
+      _lessonById(lessonId)?.words ?? const [];
+
   Set<String> get _usedWords {
     final c = _course;
     if (c == null) return {};
@@ -342,18 +354,27 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
   }
 
   Future<void> _doCreateSentences(int lessonId) async {
+    final course = _editorCourse;
+    final words = _lessonWords(lessonId);
+    if (course == null || words.isEmpty) {
+      _appendAssistant("This lesson has no words selected yet — pick some first.");
+      return;
+    }
     _appendUser('Create sentences');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final result = await api.generateAiSentences(lessonId);
+      final sentences = await api.generateAiSentences(
+        course: course,
+        lessonId: lessonId,
+        words: words,
+      );
       await _reload();
-      final items = result.sentences
+      final items = sentences
           .map((s) => _PickerItem(id: s.sentenceId, label: s.text, sub: s.gloss, checked: true))
           .toList();
       _appendAssistant(
         "Here are draft sentences. Uncheck any you don't want, then I'll turn the rest into exercises.",
         picker: _Picker(kind: 'sentences', lessonId: lessonId, items: items, confirmLabel: 'Create exercises'),
-        usage: result.usage,
       );
     });
   }
@@ -365,26 +386,43 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
       await api.confirmAiSentences(lessonId: picker.lessonId, sentenceIds: selected);
-      final result = await api.generateAiExercises(picker.lessonId);
+      final course = _editorCourse;
+      final words = _lessonWords(picker.lessonId);
+      if (course != null && words.isNotEmpty) {
+        await api.generateAiExercises(
+          course: course,
+          lessonId: picker.lessonId,
+          words: words,
+        );
+      }
       await _reload();
       _appendAssistant(
         'This lesson is ready 🎉 Review it in the Lessons tab, or switch to Preview to see the student view.',
         actions: _nextStepActions(),
-        usage: result.usage,
       );
     });
   }
 
   Future<void> _doCreateExercisesDirect(int lessonId) async {
+    final course = _editorCourse;
+    final words = _lessonWords(lessonId);
+    if (course == null || words.isEmpty) {
+      _appendAssistant("This lesson has no words selected yet — pick some first.");
+      return;
+    }
     _appendUser('Create exercises directly');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final result = await api.generateAiLessonDirect(lessonId: lessonId);
+      final exercises = await api.generateAiExercises(
+        course: course,
+        lessonId: lessonId,
+        words: words,
+      );
       await _reload();
       _appendAssistant(
-        'Done — drafted sentences and exercises in one go. Check the Lessons tab to review or edit, or preview it.',
+        'Done — generated ${exercises.length} exercise${exercises.length == 1 ? '' : 's'}. '
+        'Check the Lessons tab to review or edit, or preview it.',
         actions: _nextStepActions(),
-        usage: result.usage,
       );
     });
   }

@@ -1,19 +1,19 @@
 import json
+import random
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from models.auth import SchoolUser
 from utils.auth_deps import current_ai_school_user
-from utils.db import get_query_results
+from utils.db import get_query_results, run_query
+from utils.jsonb import coerce_json_list
+from utils.ai_course_ownership import assert_lesson_owned
+from utils.ai_course_content import sentence_id_for
 from utils.generate import (
     generate_words,
     generate_sentences,
     generate_translated_sentence_distractors,
-)
-from utils.generate_exercise import (
-    gen_single_choice_exercise,
-    gen_identify_words,
 )
 
 from models.edit.generate_poc_new import (
@@ -21,12 +21,9 @@ from models.edit.generate_poc_new import (
     CourseOption,
     CourseWord,
     GenerateForWords,
-    Exercise,
-    Lesson,
     Sentence,
-    Sentences,
 )
-from models.edit.exercise import ExerciseEdit, ExerciseType, Options
+from models.edit.ai_course import ExerciseOut, exercise_from_row
 
 router = APIRouter()
 
@@ -180,22 +177,64 @@ async def generate_words_list(
     return course.words
 
 
+def _spread(total: int, count: int, i: int, produced: int) -> int:
+    """How many items to ask for on word `i` of `count`, so they add up
+    to `total` — the last word soaks up the remainder."""
+    per = max(1, total // max(1, count))
+    return (total - produced) if i == count - 1 else per
+
+
+async def _persist_lesson_sentences(lesson_id: int, lang: str, sentences: list[Sentence]) -> None:
+    """Append new sentences to course_simple.lesson.sentences (an ordered
+    jsonb list) and upsert each into the content-addressable
+    course_simple.sentence cache — mirrors routers/generate_poc.py."""
+    rows = await get_query_results(
+        "SELECT sentences FROM course_simple.lesson WHERE lesson_id = %s", (lesson_id,)
+    )
+    existing = coerce_json_list(rows[0].get("sentences")) if rows else []
+    have = {e.get("sentence_id") for e in existing}
+    for s in sentences:
+        if s.sentence_id in have:
+            continue
+        have.add(s.sentence_id)
+        existing.append(
+            {
+                "sentence_id": s.sentence_id,
+                "word": s.word,
+                "text": s.sentences,
+                "gloss": s.gloss or "",
+                "chosen": True,
+            }
+        )
+        await run_query(
+            """INSERT INTO course_simple.sentence (sentence_id, lang, text, gloss)
+            VALUES (%s, %s, %s, %s) ON CONFLICT (sentence_id) DO NOTHING""",
+            (s.sentence_id, lang, s.sentences, s.gloss or ""),
+        )
+    await run_query(
+        "UPDATE course_simple.lesson SET sentences = %s WHERE lesson_id = %s",
+        (json.dumps(existing), lesson_id),
+    )
+
+
 @router.post("/sentences_for_word", response_model=list[Sentence])
 async def sentences_for_word(generate: GenerateForWords, school_user: SchoolUser = Depends(current_ai_school_user)):
     """
-    Returns a list of sentences for the requested words, spreading
-    `num_elements` sentences across them.
+    Generate sentences for the requested words, spreading `num_elements`
+    across them. When `lesson_id` is set, the sentences are also saved
+    onto that lesson (course_simple.lesson.sentences).
     """
     course = generate.course
-    words = generate.words
+    words = generate.words or []
     p = _gen_params(course)
+    if generate.lesson_id:
+        await assert_lesson_owned(generate.lesson_id, school_user)
+
     results: list[Sentence] = []
-    per_word = max(1, generate.num_elements // max(1, len(words)))
     for i, w in enumerate(words):
-        if i == len(words) - 1:
-            num_sentences = generate.num_elements - len(results)
-        else:
-            num_sentences = per_word
+        num_sentences = _spread(generate.num_elements, len(words), i, len(results))
+        if num_sentences <= 0:
+            continue
         sentences = await generate_sentences(
             lang=course.lang,
             to_lang=course.to_lang,
@@ -207,26 +246,49 @@ async def sentences_for_word(generate: GenerateForWords, school_user: SchoolUser
             max_words=p["max_words"],
             num_sentences=num_sentences,
         )
-        results.extend([Sentence(sentences=s, word=w) for s in sentences])
+        for s in sentences:
+            # generate_sentences returns plain strings from the AI path and
+            # {sentences, translation, ...} row dicts from the corpus path.
+            text = s.get("sentences") if isinstance(s, dict) else s
+            gloss = s.get("translation", "") if isinstance(s, dict) else ""
+            if not text:
+                continue
+            results.append(
+                Sentence(
+                    sentences=text,
+                    word=w,
+                    gloss=gloss,
+                    sentence_id=sentence_id_for(course.lang or "", text),
+                    chosen=True,
+                )
+            )
+
+    if generate.lesson_id and results:
+        await _persist_lesson_sentences(generate.lesson_id, course.lang or "", results)
     return results
 
 
-@router.post("/exercise_for_word", response_model=list[ExerciseEdit])
+@router.post("/exercise_for_word", response_model=list[ExerciseOut])
 async def exercise_for_word(generate: GenerateForWords, school_user: SchoolUser = Depends(current_ai_school_user)):
     """
     Create single-choice exercises for the requested words, from
-    translated sentences + AI/corpus distractors.
+    translated sentences + AI/corpus distractors. When `lesson_id` is
+    set, the exercises are inserted into course_simple.exercise and the
+    lesson is marked ready.
     """
     course = generate.course
-    words = generate.words
+    words = generate.words or []
     p = _gen_params(course)
-    per_word = max(1, generate.num_elements // max(1, len(words)))
-    exercises: list[ExerciseEdit] = []
+
+    lesson = None
+    if generate.lesson_id:
+        lesson = await assert_lesson_owned(generate.lesson_id, school_user)
+
+    built: list[dict] = []  # {prompt, options: list[str], answer, exercise_type}
     for i, w in enumerate(words):
-        if i == len(words) - 1:
-            num_sentences = generate.num_elements - len(exercises)
-        else:
-            num_sentences = per_word
+        num_sentences = _spread(generate.num_elements, len(words), i, len(built))
+        if num_sentences <= 0:
+            continue
         rows = await generate_translated_sentence_distractors(
             lang=course.lang,
             to_lang=course.to_lang,
@@ -239,14 +301,59 @@ async def exercise_for_word(generate: GenerateForWords, school_user: SchoolUser 
             num_sentences=num_sentences,
         )
         for s in rows:
-            sentence = s.get("sentence") or s.get(course.lang)
-            translation = s.get("translation") or s.get(course.to_lang)
-            distractors = s.get("distractors") or []
-            exercises.append(
-                gen_single_choice_exercise(
-                    sentence=sentence,
-                    to_sentence=translation,
-                    options=distractors,
-                )
+            sentence = s.get("sentence") or s.get(course.lang) or ""
+            translation = s.get("translation") or s.get(course.to_lang) or ""
+            distractors = [d for d in (s.get("distractors") or []) if d and d != translation]
+            options = distractors + [translation]
+            random.shuffle(options)
+            built.append(
+                {
+                    "prompt": sentence,
+                    "options": options,
+                    "answer": translation,
+                    "exercise_type": "single_choice",
+                    "sentence_id": sentence_id_for(course.lang or "", sentence),
+                }
             )
-    return exercises
+
+    if not (lesson and generate.lesson_id):
+        # Not persisting — hand back a preview shape the client can render.
+        return [
+            ExerciseOut(
+                exercise_id=0,
+                lesson_id=generate.lesson_id or 0,
+                sentence_id=b["sentence_id"],
+                exercise_type=b["exercise_type"],
+                prompt=b["prompt"],
+                options=b["options"],
+                answer=b["answer"],
+            )
+            for b in built
+        ]
+
+    out: list[ExerciseOut] = []
+    for b in built:
+        rows = await get_query_results(
+            """INSERT INTO course_simple.exercise
+                (course_id, module_id, lesson_id, exercise_type, sentence, sentence_id, options, answer)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING exercise_id, lesson_id, sentence_id, exercise_type, sentence, options, answer""",
+            (
+                lesson["course_id"],
+                lesson["module_id"],
+                generate.lesson_id,
+                b["exercise_type"],
+                b["prompt"],
+                b["sentence_id"],
+                json.dumps(b["options"]),
+                b["answer"],
+            ),
+        )
+        out.append(exercise_from_row(rows[0]))
+
+    if out:
+        await run_query(
+            "UPDATE course_simple.lesson SET status = 'ready' WHERE lesson_id = %s",
+            (generate.lesson_id,),
+        )
+    return out

@@ -17,6 +17,7 @@ def gen_identify_words(sentence, words, distractors_words):
         options.append(Options(text=w, correct=False))
     random.shuffle(options)
     exercise = ExerciseEdit(
+        exercise_id=0,
         exercise_type=ExerciseType.IDENTIFY_WORDS,
         sentence=sentence,
         options=options
@@ -28,9 +29,11 @@ def gen_single_choice_exercise(sentence, to_sentence, options):
     e_options.append(Options(text=to_sentence, correct=True))
     random.shuffle(e_options)
     exercise = ExerciseEdit(
+        exercise_id=0,
         exercise_type=ExerciseType.SINGLE_CHOICE,
         sentence=sentence,
-        options=e_options
+        options=e_options,
+        answer=to_sentence,
     )
     return exercise
 def gen_description_exercise():
