@@ -340,18 +340,45 @@ class DashboardApi {
     return AiCourseFull.fromJson(res.data ?? const {});
   }
 
-  /// Generate `count` new words for a course via generate_poc_new —
-  /// appends them to the course word list (skipping words already there),
-  /// persists, and returns the full updated list in `{word, weight, used}`
-  /// shape. The generation content-source / provider / model come from the
-  /// course's own options (`course.metadata`).
-  Future<List<CourseWord>> generateAiWords({
+  /// generate_poc endpoints are async: they kick a worker job and return
+  /// `{task_id}`. Poll [awaitTask], then re-fetch the course.
+  static const _genPrefix = '/api/v1/generate_poc';
+
+  /// Poll one background job's status (`GET /api/v1/tasks/{id}`).
+  Future<TaskStatus> taskStatus(String taskId) async {
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/tasks/$taskId');
+    return TaskStatus.fromJson(res.data ?? const {});
+  }
+
+  /// Poll until a generate_poc job finishes. Returns normally on success;
+  /// throws if the job failed or the wait ran out.
+  Future<void> awaitTask(
+    String taskId, {
+    Duration interval = const Duration(seconds: 2),
+    Duration timeout = const Duration(minutes: 5),
+  }) async {
+    if (taskId.isEmpty) throw Exception('no task id returned');
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final s = await taskStatus(taskId);
+      if (s.failed) throw Exception(s.error ?? 'generation failed');
+      if (s.completed) return;
+      await Future<void>.delayed(interval);
+    }
+    throw Exception('generation is taking too long — check back in a minute');
+  }
+
+  /// Kick the words-generation job. Returns the `task_id` — poll
+  /// [awaitTask], then re-fetch the course (new words land on
+  /// `course_simple.course.words`, skipping ones already there).
+  /// Content-source / provider / model come from `course.metadata`.
+  Future<String> generateAiWords({
     required EditorCourse course,
     List<AiCourseWord> currentWords = const [],
     int count = 12,
   }) async {
-    final res = await _dio.post<List<dynamic>>(
-      '/api/v1/generate_poc_new/generate_words_list',
+    final res = await _dio.post<Map<String, dynamic>>(
+      '$_genPrefix/generate_words_list',
       queryParameters: {'count': count},
       data: {
         'course_id': course.courseId,
@@ -372,10 +399,7 @@ class DashboardApi {
         ],
       },
     );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(CourseWord.fromJson)
-        .toList();
+    return (res.data?['task_id'] as String?) ?? '';
   }
 
   Future<AiCourseWord> addAiWord({required int courseId, required String word, String? gloss}) async {
@@ -439,19 +463,18 @@ class DashboardApi {
   int _spreadCount(int words, int? override) =>
       override ?? (words * 2).clamp(4, 24);
 
-  /// Draft example sentences for a lesson's [words] via
-  /// generate_poc_new/sentences_for_word — persisted onto the lesson
-  /// (`lesson_id`) so the Lessons/Preview tabs pick them up. The
-  /// "Create sentences" path (as opposed to [generateAiExercises], which
-  /// skips straight to exercises).
-  Future<List<AiLessonSentence>> generateAiSentences({
+  /// Kick the sentence-generation job for a lesson's [words]. Returns the
+  /// `task_id` — poll [awaitTask], then re-fetch the course; the drafted
+  /// sentences land on `lesson.sentences`. The "Create sentences" path
+  /// (as opposed to [generateAiExercises], which skips to exercises).
+  Future<String> generateAiSentences({
     required EditorCourse course,
     required int lessonId,
     required List<String> words,
     int? numElements,
   }) async {
-    final res = await _dio.post<List<dynamic>>(
-      '/api/v1/generate_poc_new/sentences_for_word',
+    final res = await _dio.post<Map<String, dynamic>>(
+      '$_genPrefix/sentences_for_word',
       data: {
         'course': _genCourseBody(course),
         'words': words,
@@ -459,10 +482,7 @@ class DashboardApi {
         'lesson_id': lessonId,
       },
     );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(AiLessonSentence.fromJson)
-        .toList();
+    return (res.data?['task_id'] as String?) ?? '';
   }
 
   /// Choose which generated draft sentences to keep for a lesson.
@@ -492,19 +512,19 @@ class DashboardApi {
     );
   }
 
-  /// Generate single-choice exercises for a lesson's [words] via
-  /// generate_poc_new/exercise_for_word — inserted into
-  /// course_simple.exercise and the lesson marked ready. Backs both
+  /// Kick the exercise-generation job for a lesson's [words]. Returns the
+  /// `task_id` — poll [awaitTask], then re-fetch; exercises are inserted
+  /// into `course_simple.exercise` and the lesson marked ready. Backs both
   /// "Create exercises" (after keeping sentences) and "Create exercises
   /// directly".
-  Future<List<AiExercise>> generateAiExercises({
+  Future<String> generateAiExercises({
     required EditorCourse course,
     required int lessonId,
     required List<String> words,
     int? numElements,
   }) async {
-    final res = await _dio.post<List<dynamic>>(
-      '/api/v1/generate_poc_new/exercise_for_word',
+    final res = await _dio.post<Map<String, dynamic>>(
+      '$_genPrefix/exercise_for_word',
       data: {
         'course': _genCourseBody(course),
         'words': words,
@@ -512,10 +532,7 @@ class DashboardApi {
         'lesson_id': lessonId,
       },
     );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(AiExercise.fromJson)
-        .toList();
+    return (res.data?['task_id'] as String?) ?? '';
   }
 
   /// Add a blank exercise manually. Reuses the school's existing

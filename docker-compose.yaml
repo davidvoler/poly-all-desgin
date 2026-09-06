@@ -1,4 +1,25 @@
- services:
+# Shared by `server` (FastAPI) and `broker` (taskiq worker) — the worker
+# runs the generate_poc_new jobs, so it needs the same DB + Ollama access.
+x-server-env: &server-env
+  - POSTGRES_DB=polyglots
+  - POSTGRES_PORT=5432
+  - POSTGRES_HOST=postgres
+  - POSTGRES_USER=polyglots
+  - POSTGRES_PASSWORD=polyglots
+  - POSTGRES_CONTENT_PORT=5432
+  - POSTGRES_CONTENT_HOST=postgres_content
+  - POSTGRES_CONTENT_USER=polyglots
+  - POSTGRES_CONTENT_PASSWORD=polyglots
+  - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+  - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+  - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+  - ENABLE_DOCS=true
+  - COOKIE_SECURE=false
+  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  - REDIS_HOST=redis
+  - REDIS_PORT=6379
+
+services:
   postgres:
     container_name: postgres
     image: postgres:17.4
@@ -37,30 +58,7 @@
       - 8004:8004
     volumes:
       - ./server/src:/app
-    environment:
-      - POSTGRES_DB=polyglots
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=polyglots
-      - POSTGRES_PASSWORD=polyglots
-      - POSTGRES_CONTENT_PORT=5432
-      - POSTGRES_CONTENT_HOST=postgres_content
-      - POSTGRES_CONTENT_USER=polyglots
-      - POSTGRES_CONTENT_PASSWORD=polyglots
-      # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
-      # /api/v1/school_users/login_auth0 route verifies ID tokens
-      # against the tenant JWKS; otherwise it returns 503 and the
-      # dashboard falls back to the local password flow.
-      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
-      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
-      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
-      - ENABLE_DOCS=true
-      - COOKIE_SECURE=false
-      # Local LLM inference (see utils/ollama_client.py) — Ollama runs on
-      # the host, not in this compose file. host.docker.internal is
-      # Docker Desktop's built-in alias for the host on Mac/Windows; the
-      # extra_hosts entry below makes the same alias work on Linux too.
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command:
@@ -86,14 +84,20 @@
     container_name: broker
     image: server:polyglots
     command:
-      - taskiq 
-      - worker 
-      - tasks.broker:broker 
+      - taskiq
+      - worker
+      - tasks.broker:broker
+      # task modules to import so their @broker.task fns register on the worker
+      - routers.generate_poc_task
       - -fsd
     volumes:
       - ./server/src:/app
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - redis
+      - postgres
 
   audio-server:
     container_name: audio-server

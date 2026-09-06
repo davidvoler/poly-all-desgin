@@ -140,8 +140,8 @@ async def update_course(course: Course, school_user: SchoolUser = Depends(curren
 @broker.task
 async def _generate_words_list(
     course: Course,
-    count: int = 20,
-    school_user: SchoolUser = Depends(current_ai_school_user),
+    count: int,
+    school_user: SchoolUser,
     context: Context = TaskiqDepends(),
 ):
     """Generate a words list for a course and append it to course.words,
@@ -170,7 +170,7 @@ async def _generate_words_list(
     return course.words
 
 @router.post("/generate_words_list", response_model=TaskStart)
-async def _generate_words_list(
+async def generate_words_list(
     course: Course,
     count: int = 20,
     school_user: SchoolUser = Depends(current_ai_school_user),
@@ -226,7 +226,7 @@ async def _persist_lesson_sentences(lesson_id: int, lang: str, sentences: list[S
 
 @broker.task
 async def _sentences_for_word(generate: GenerateForWords, 
-                              school_user: SchoolUser = Depends(current_ai_school_user),
+                              school_user: SchoolUser,
                               context: Context = TaskiqDepends()):
     """
     Generate sentences for the requested words, spreading `num_elements`
@@ -290,7 +290,7 @@ async def sentences_for_word(generate: GenerateForWords, school_user: SchoolUser
 
 @broker.task
 async def _exercise_for_word(generate: GenerateForWords, 
-                             school_user: SchoolUser = Depends(current_ai_school_user),
+                             school_user: SchoolUser,
                              context: Context = TaskiqDepends()):
     """
     Create single-choice exercises for the requested words, from

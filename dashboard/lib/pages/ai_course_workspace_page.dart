@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
@@ -61,7 +63,15 @@ class _ChatMsg {
   final List<_ChatAction>? actions;
   final _Picker? picker;
   final AiUsage? usage;
-  _ChatMsg({required this.isUser, required this.text, this.actions, this.picker, this.usage});
+  final bool isError;
+  _ChatMsg({
+    required this.isUser,
+    required this.text,
+    this.actions,
+    this.picker,
+    this.usage,
+    this.isError = false,
+  });
 }
 
 class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
@@ -115,7 +125,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _loadError = '$e';
+        _loadError = _errorText(e);
       });
     }
   }
@@ -192,8 +202,10 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     _scrollChatToEnd();
   }
 
-  void _appendAssistant(String text, {List<_ChatAction>? actions, _Picker? picker, AiUsage? usage}) {
-    setState(() => _chat.add(_ChatMsg(isUser: false, text: text, actions: actions, picker: picker, usage: usage)));
+  void _appendAssistant(String text,
+      {List<_ChatAction>? actions, _Picker? picker, AiUsage? usage, bool isError = false}) {
+    setState(() => _chat.add(_ChatMsg(
+        isUser: false, text: text, actions: actions, picker: picker, usage: usage, isError: isError)));
     if (usage != null) {
       _sessionTokens += usage.tokens;
       _sessionCost += usage.cost;
@@ -212,12 +224,30 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     });
   }
 
+  /// Unwrap a caught error into something worth copying — a DioException's
+  /// server `detail` / status / URL rather than a stack-trace-shaped blob.
+  String _errorText(Object e) {
+    if (e is DioException) {
+      final code = e.response?.statusCode;
+      final data = e.response?.data;
+      final detail = data is Map ? (data['detail'] ?? data['error'] ?? data['message']) : null;
+      final where = e.requestOptions.uri.path;
+      final parts = [
+        if (code != null) 'HTTP $code',
+        if (detail != null) '$detail' else e.type.name,
+        where,
+      ];
+      return parts.join(' · ');
+    }
+    return e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+  }
+
   Future<void> _thinkThen(Future<void> Function() cb) async {
     setState(() => _thinking = true);
     try {
       await cb();
     } catch (e) {
-      _appendAssistant('Something went wrong — $e');
+      _appendAssistant('Something went wrong — ${_errorText(e)}', isError: true);
     } finally {
       if (mounted) setState(() => _thinking = false);
     }
@@ -256,13 +286,14 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     _appendUser(hadWords ? 'Add more words' : 'Create word list');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final words = await api.generateAiWords(
+      final taskId = await api.generateAiWords(
         course: editor,
         currentWords: _course!.words,
         count: 12,
       );
+      await api.awaitTask(taskId);
       await _reload();
-      final added = words.length - beforeCount;
+      final added = _course!.words.length - beforeCount;
       if (added <= 0) {
         _appendAssistant(
           "That's every word I've got for this language right now — try selecting words for a lesson instead.",
@@ -278,7 +309,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
         actions.add(const _ChatAction('new_lesson', 'Start a new module', newModule: true));
       }
       _appendAssistant(
-        'Generated $added new words (${words.length} total). Review them in the Words tab, then build a lesson.',
+        'Generated $added new words (${_course!.words.length} total). Review them in the Words tab, then build a lesson.',
         actions: actions,
       );
     });
@@ -363,15 +394,25 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     _appendUser('Create sentences');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final sentences = await api.generateAiSentences(
+      final taskId = await api.generateAiSentences(
         course: course,
         lessonId: lessonId,
         words: words,
       );
+      await api.awaitTask(taskId);
       await _reload();
+      // The job writes straight to lesson.sentences — read them back.
+      final sentences = _lessonById(lessonId)?.sentences ?? const <AiLessonSentence>[];
       final items = sentences
           .map((s) => _PickerItem(id: s.sentenceId, label: s.text, sub: s.gloss, checked: true))
           .toList();
+      if (items.isEmpty) {
+        _appendAssistant(
+          "I couldn't draft any sentences for those words — try different words, or 'Create exercises directly'.",
+          actions: [_ChatAction('create_exercises_direct', 'Create exercises directly', lessonId: lessonId)],
+        );
+        return;
+      }
       _appendAssistant(
         "Here are draft sentences. Uncheck any you don't want, then I'll turn the rest into exercises.",
         picker: _Picker(kind: 'sentences', lessonId: lessonId, items: items, confirmLabel: 'Create exercises'),
@@ -389,11 +430,12 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       final course = _editorCourse;
       final words = _lessonWords(picker.lessonId);
       if (course != null && words.isNotEmpty) {
-        await api.generateAiExercises(
+        final taskId = await api.generateAiExercises(
           course: course,
           lessonId: picker.lessonId,
           words: words,
         );
+        await api.awaitTask(taskId);
       }
       await _reload();
       _appendAssistant(
@@ -410,17 +452,20 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       _appendAssistant("This lesson has no words selected yet — pick some first.");
       return;
     }
+    final beforeExercises = _lessonById(lessonId)?.exercises.length ?? 0;
     _appendUser('Create exercises directly');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final exercises = await api.generateAiExercises(
+      final taskId = await api.generateAiExercises(
         course: course,
         lessonId: lessonId,
         words: words,
       );
+      await api.awaitTask(taskId);
       await _reload();
+      final added = (_lessonById(lessonId)?.exercises.length ?? 0) - beforeExercises;
       _appendAssistant(
-        'Done — generated ${exercises.length} exercise${exercises.length == 1 ? '' : 's'}. '
+        'Done — generated $added exercise${added == 1 ? '' : 's'}. '
         'Check the Lessons tab to review or edit, or preview it.',
         actions: _nextStepActions(),
       );
@@ -457,7 +502,22 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       return Scaffold(
         backgroundColor: DashColors.darkBg,
         body: Center(
-          child: Text('Could not load course — $_loadError', style: TextStyle(color: DashColors.red400)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SelectableText('Could not load course — ${_loadError ?? 'not found'}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: DashColors.red400)),
+                  const SizedBox(height: 10),
+                  _CopyButton(text: _loadError ?? 'Could not load course'),
+                ],
+              ),
+            ),
+          ),
         ),
       );
     }
@@ -755,8 +815,17 @@ class _MessageBubbleState extends State<_MessageBubble> {
     final bubble = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: msg.isUser ? DashColors.brand.withValues(alpha: 0.22) : DashColors.w(0.06),
-        border: Border.all(color: msg.isUser ? DashColors.brand.withValues(alpha: 0.4) : DashColors.w(0.14)),
+        color: msg.isError
+            ? DashColors.red400.withValues(alpha: 0.14)
+            : msg.isUser
+                ? DashColors.brand.withValues(alpha: 0.22)
+                : DashColors.w(0.06),
+        border: Border.all(
+            color: msg.isError
+                ? DashColors.red400.withValues(alpha: 0.5)
+                : msg.isUser
+                    ? DashColors.brand.withValues(alpha: 0.4)
+                    : DashColors.w(0.14)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(msg.isUser ? 14 : 4),
           topRight: Radius.circular(msg.isUser ? 4 : 14),
@@ -764,13 +833,20 @@ class _MessageBubbleState extends State<_MessageBubble> {
           bottomRight: const Radius.circular(14),
         ),
       ),
-      child: Text(msg.text, style: const TextStyle(fontSize: 13, color: Colors.white, height: 1.4)),
+      // SelectableText so any chat message — errors especially — can be
+      // selected and copied.
+      child: SelectableText(msg.text,
+          style: const TextStyle(fontSize: 13, color: Colors.white, height: 1.4)),
     );
 
     final body = Column(
       crossAxisAlignment: msg.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         bubble,
+        if (msg.isError) ...[
+          const SizedBox(height: 4),
+          _CopyButton(text: msg.text),
+        ],
         if (msg.usage != null) ...[
           const SizedBox(height: 3),
           Text('≈${msg.usage!.tokens} tokens · \$${msg.usage!.cost.toStringAsFixed(4)}',
@@ -801,6 +877,41 @@ class _MessageBubbleState extends State<_MessageBubble> {
       children: msg.isUser
           ? [Flexible(child: body), const SizedBox(width: 10), _Avatar(isUser: true)]
           : [_Avatar(isUser: false), const SizedBox(width: 10), Flexible(child: body)],
+    );
+  }
+}
+
+/// "Copy" affordance shown under an error bubble — the text is also
+/// selectable directly, this is just the one-tap path.
+class _CopyButton extends StatelessWidget {
+  final String text;
+  const _CopyButton({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: text));
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Error copied'),
+            duration: Duration(milliseconds: 1200),
+          ));
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.copy_all_outlined, size: 13, color: DashColors.w(0.6)),
+            const SizedBox(width: 4),
+            Text('Copy error',
+                style: TextStyle(fontSize: 11, color: DashColors.w(0.6))),
+          ],
+        ),
+      ),
     );
   }
 }

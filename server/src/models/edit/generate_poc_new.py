@@ -86,3 +86,6 @@ class TaskStart(BaseModel):
     task_id: str| None = None
     task_type: str | None = None
     status: str | None = None
+    error: str | None = None
+    completed: bool | None = False
+    

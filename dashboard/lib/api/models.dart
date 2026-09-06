@@ -1054,3 +1054,37 @@ String languageName(String codeOrName) {
   final s = codeOrName.trim();
   return kLanguageNamesByCode[s.toLowerCase()] ?? s;
 }
+
+// ===========================================================================
+// Background jobs — mirrors server `TaskStart`
+// (models/edit/generate_poc_new.py). The generate_poc endpoints kick a
+// worker job and return `{task_id}`; the client polls
+// GET /api/v1/tasks/{task_id} until `completed`, then re-fetches the course
+// (words / sentences / exercises are written straight to the DB — the job's
+// own return value is never read).
+// ===========================================================================
+class TaskStatus {
+  final String taskId;
+  final String? taskType;
+  final String status; // QUEUED | PENDING | SUCCESS | FAILED (case varies)
+  final String? error;
+  final bool completed;
+
+  const TaskStatus({
+    required this.taskId,
+    this.taskType,
+    this.status = 'PENDING',
+    this.error,
+    this.completed = false,
+  });
+
+  bool get failed => error != null || status.toUpperCase() == 'FAILED';
+
+  factory TaskStatus.fromJson(Map<String, dynamic> j) => TaskStatus(
+        taskId: (j['task_id'] as String?) ?? '',
+        taskType: j['task_type'] as String?,
+        status: (j['status'] as String?) ?? 'PENDING',
+        error: j['error'] as String?,
+        completed: (j['completed'] as bool?) ?? false,
+      );
+}

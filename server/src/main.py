@@ -27,7 +27,7 @@ from routers.edit import  (
     lesson as edit_lesson,
     exercise as edit_exercise,
 )
-
+from tasks import status
 from school.routes import school as school_routes, users as school_users 
 # from editor.routes import (
 #     upload_course,
@@ -159,3 +159,7 @@ app.include_router(generate_poc_task.router,
 app.include_router(generate_poc_new.router,
     prefix="/api/v1/generate_poc_new",
     tags=["generate_poc_new"])
+
+app.include_router(status.router,
+    prefix="/api/v1/tasks",
+    tags=["status"])
