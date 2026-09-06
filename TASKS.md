@@ -567,6 +567,25 @@ We have to define the options fields and pass them on any request.
 - [v] Course 
 - [v] Course options 
 - [v] Remove unused endpoint 
-- [] Use  the old edit where possible 
-- [] Test 
-- [] work with Agent to link with UI
+- [ ] Use  the old edit where possible 
+- [ ] Test 
+- [ ] work with Agent to link with UI
+
+### Tasks for working with AI
+- [v] use some async tasks - select the right platform
+- [v] implement polling on the client side
+- [v] show working animation
+
+- [] run multiple process at a same time 
+- [] maybe run a complete module at once 
+- [] 
+
+
+### Create course ready for using with arabic
+- [] UI/UX make it simple. 
+- [] Remove unused elements like sentence - 
+- [] show the words and maybe we will not need to change 
+- [] test a lot with corpus - is it is faster
+
+### Create course ready for demo
+- [] 
