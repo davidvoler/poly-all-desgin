@@ -95,6 +95,20 @@ class DashboardApp extends StatelessWidget {
       // Auth gate routes between login and the dashboard. Once signed
       // in, named routes navigate inside the dashboard normally.
       home: const _AuthGate(),
+      // "/ai-course/<id>" — the course workspace with its id in the URL so a
+      // browser refresh / bookmark / shared link reopens the same course
+      // (route `arguments` don't survive a page reload on web).
+      onGenerateRoute: (settings) {
+        final name = settings.name ?? '';
+        if (name.startsWith('/ai-course/')) {
+          final courseId = int.tryParse(name.substring('/ai-course/'.length)) ?? 0;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => _Guarded(child: AiCourseWorkspacePage(courseId: courseId)),
+          );
+        }
+        return null;
+      },
       routes: {
         // Onboarding wizard — intentionally NOT wrapped in _Guarded
         // since the whole point is to run before the user has any
@@ -113,6 +127,9 @@ class DashboardApp extends StatelessWidget {
         '/ai-courses': (_) => const _Guarded(child: AiCoursesPage()),
         '/ai-course-new': (_) => const _Guarded(child: CreateAiCoursePage()),
         '/overview': (_) => const _Guarded(child: OverviewPage()),
+        // NB: the id-bearing form "/ai-course/<id>" is handled in
+        // onGenerateRoute below so a browser refresh keeps working — this
+        // bare entry only covers the legacy `arguments: courseId` call.
         '/ai-course': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           final courseId = args is int ? args : 0;

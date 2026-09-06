@@ -69,8 +69,7 @@ class _CreateAiCoursePageState extends ConsumerState<CreateAiCoursePage> {
       if (!mounted) return;
       ref.invalidate(editorCoursesProvider);
       if (courseId != null) {
-        Navigator.pushReplacementNamed(context, '/ai-course',
-            arguments: courseId);
+        Navigator.pushReplacementNamed(context, '/ai-course/$courseId');
       } else {
         _leave();
       }

@@ -154,7 +154,7 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
             borderRadius: DashRadii.card,
             onTap: _busy
                 ? null
-                : () => Navigator.pushNamed(context, '/ai-course', arguments: course.courseId),
+                : () => Navigator.pushNamed(context, '/ai-course/${course.courseId}'),
             child: GlassCard(
               padding: const EdgeInsets.all(18),
               child: Opacity(
