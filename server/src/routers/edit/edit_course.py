@@ -3,7 +3,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from utils.auth_deps import current_school_user, current_school_user_full
-from utils.db import get_query_results
+from utils.db import get_query_results, run_query
 from utils.jsonb import coerce_json_list
 from models.auth import SchoolUser
 from models.edit.course import Course, CourseImport
@@ -164,13 +164,29 @@ async def create_course(course: Course, school_user: SchoolUser  = Depends(curre
     return course
 
 @router.delete("/course/{course_id}")
-async def delete_course(course_id:int, school_user: SchoolUser  = Depends(current_school_user)):
-    #delete a course
-    sql = """DELETE FROM course_simple.course
-    WHERE course_id = %s and user_id = %s::text and school_id = %s"""
+async def delete_course(course_id: int, school_user: SchoolUser = Depends(current_school_user)):
+    """Delete a course and everything under it — modules, lessons and
+    exercises (lesson.sentences is inline jsonb, so it goes with the
+    lesson row). There are no FK cascades in course_simple, so this walks
+    the tables child-first. course_simple.sentence is a content-addressable
+    cache shared across courses, so it's left alone."""
+    owned = await get_query_results(
+        "SELECT course_id FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",
+        (course_id, school_user.user_id, school_user.school_id),
+    )
+    if not owned:
+        raise HTTPException(status_code=404, detail="Course not found")
+
     try:
-        results = await get_query_results(sql, (course_id, school_user.user_id, school_user.school_id))
+        for table in ("exercise", "lesson", "module"):
+            await run_query(
+                f"DELETE FROM course_simple.{table} WHERE course_id = %s", (course_id,)
+            )
+        await run_query(
+            "DELETE FROM course_simple.course WHERE course_id = %s AND user_id = %s::text AND school_id = %s",
+            (course_id, school_user.user_id, school_user.school_id),
+        )
     except Exception as e:
-        print(f"Error deleting course: {e}")
-        return {"success": False, "message": str(e)}
-    return {"success": True, "message": f"Course {course_id} deleted successfully"}
+        print(f"Error deleting course {course_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"success": True, "message": f"Course {course_id} deleted"}

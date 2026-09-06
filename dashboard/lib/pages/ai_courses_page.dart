@@ -101,44 +101,111 @@ class _CourseGrid extends StatelessWidget {
   }
 }
 
-class _CourseCard extends StatelessWidget {
+class _CourseCard extends ConsumerStatefulWidget {
   final EditorCourse course;
   const _CourseCard({required this.course});
+
+  @override
+  ConsumerState<_CourseCard> createState() => _CourseCardState();
+}
+
+class _CourseCardState extends ConsumerState<_CourseCard> {
+  bool _busy = false;
+
+  EditorCourse get course => widget.course;
+
+  Future<void> _confirmDelete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => _DeleteCourseDialog(title: course.title),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(dashboardApiProvider).deleteCourse(course.courseId);
+      if (!mounted) return;
+      ref.invalidate(editorCoursesProvider);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('Deleted "${course.title}"'),
+          duration: const Duration(milliseconds: 1600),
+        ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('Could not delete — $e'),
+          backgroundColor: DashColors.red400,
+        ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final progress = _progressLabel(course);
     return SizedBox(
       width: 280,
-      child: InkWell(
-        borderRadius: DashRadii.card,
-        onTap: () => Navigator.pushNamed(context, '/ai-course', arguments: course.courseId),
-        child: GlassCard(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${flagFor(course.lang)}${flagFor(course.toLang)}',
-                  style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 10),
-              Text(course.title,
-                  style: DashText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 4),
-              Text('${languageName(course.lang)} → ${languageName(course.toLang)}',
-                  style: TextStyle(fontSize: 12, color: DashColors.w(0.55))),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  StatusPill(label: course.level ?? 'A1', kind: PillKind.white),
-                  Text(progress, style: TextStyle(fontSize: 11, color: DashColors.w(0.55))),
-                ],
+      child: Stack(
+        children: [
+          InkWell(
+            borderRadius: DashRadii.card,
+            onTap: _busy
+                ? null
+                : () => Navigator.pushNamed(context, '/ai-course', arguments: course.courseId),
+            child: GlassCard(
+              padding: const EdgeInsets.all(18),
+              child: Opacity(
+                opacity: _busy ? 0.4 : 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${flagFor(course.lang)}${flagFor(course.toLang)}',
+                        style: const TextStyle(fontSize: 22)),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 28),
+                      child: Text(course.title,
+                          style: DashText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('${languageName(course.lang)} → ${languageName(course.toLang)}',
+                        style: TextStyle(fontSize: 12, color: DashColors.w(0.55))),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        StatusPill(label: course.level ?? 'A1', kind: PillKind.white),
+                        Text(progress, style: TextStyle(fontSize: 11, color: DashColors.w(0.55))),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            top: 6,
+            right: 6,
+            child: _busy
+                ? const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: SizedBox(
+                        width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                : IconButton(
+                    tooltip: 'Delete course',
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.delete_outline, color: DashColors.w(0.5)),
+                    onPressed: _confirmDelete,
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -151,6 +218,51 @@ class _CourseCard extends StatelessWidget {
     final lessonWord = lessons == 1 ? 'lesson' : 'lessons';
     final readySuffix = ready > 0 ? ' ($ready ready)' : '';
     return '$words words · $lessons $lessonWord$readySuffix';
+  }
+}
+
+class _DeleteCourseDialog extends StatelessWidget {
+  final String title;
+  const _DeleteCourseDialog({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: GlassCard(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Delete course?',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
+              const SizedBox(height: 8),
+              Text(
+                '"$title" and all of its modules, lessons and exercises will be '
+                'permanently removed. This can\'t be undone.',
+                style: TextStyle(fontSize: 13, color: DashColors.w(0.65), height: 1.4),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GhostButton(label: 'Cancel', onTap: () => Navigator.pop(context, false)),
+                  const SizedBox(width: 10),
+                  PrimaryButton(
+                    label: 'Delete',
+                    leading: Icons.delete_outline,
+                    onTap: () => Navigator.pop(context, true),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

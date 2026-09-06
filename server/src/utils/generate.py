@@ -33,7 +33,13 @@ async def generate_sentences(lang: str, to_lang: str, word: str, level: str, con
         num_sentences: number of sentences to generate
     """
     if content_source == "ai":
-        return await generate_ai_sentences(lang, to_lang, word, level, provider, model, max_words, num_sentences)
+        return await generate_ai_sentences(lang=lang, 
+                                           to_lang=to_lang, word=word, 
+                                           level=level, 
+                                           provider=provider, 
+                                           model=model, 
+                                           max_words=max_words, 
+                                           num_sentences=num_sentences)
     elif content_source == "corpus":
         return await get_corpus_sentences(lang, to_lang, word, level, model, max_words, num_sentences)
     else:

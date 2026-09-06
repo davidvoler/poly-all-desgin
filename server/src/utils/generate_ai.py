@@ -19,7 +19,10 @@ async def generate_ai_words(lang: str, to_lang: str, words_so_far: list, level: 
 
 
 
-async def generate_ai_sentences(lang: str, to_lang: str, word: str, level: str, method: str, provider: str, model: str, max_words: int, num_sentences: int) -> list:
+async def generate_ai_sentences(lang: str, to_lang: str, 
+                                word: str, level: str, 
+                                provider: str, model: str, 
+                                max_words: int,num_sentences: int) -> list:
     """Generate a list of sentences for a given language and level using the specified method and provider.
         method: ai, corpus
         provider: openai, ollama

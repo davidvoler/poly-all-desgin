@@ -890,7 +890,7 @@ class AiLessonGenerateResult {
 
 const kContentSources = ['corpus', 'ai'];
 const kAiProviders = ['ollama', 'openai', 'claude'];
-const kAiModels = ['gemma4'];
+const kAiModels = ['gemma4', 'muse-glimmer', 'deepseek-r1:86'];
 
 class CourseOptions {
   final String contentSource; // corpus | ai

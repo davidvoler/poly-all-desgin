@@ -154,7 +154,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       return;
     }
     final actions = <_ChatAction>[
-      _ChatAction('new_lesson', 'Select words for Lesson ${_lessonCount(c) + 1}'),
+      _ChatAction('new_lesson', 'Start Lesson ${_lessonCount(c) + 1}'),
       const _ChatAction('create_words', 'Add more words'),
     ];
     if (c.modules.isNotEmpty) {
@@ -192,6 +192,31 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     final c = _course;
     if (c == null) return {};
     return {for (final w in c.words) if (w.used) w.word};
+  }
+
+  /// The course's generation options (course metadata jsonb) — we mainly
+  /// want `wordsPerLesson`, the default number of words a new lesson gets.
+  CourseOptions get _options =>
+      CourseOptions.fromJson(_editorCourse?.metadata ?? const {});
+
+  /// The next `wordsPerLesson` words that haven't been used in a lesson yet,
+  /// in word-bank order.
+  List<String> _nextUnusedWords() {
+    final used = _usedWords;
+    final out = <String>[];
+    for (final w in _course?.words ?? const <AiCourseWord>[]) {
+      if (used.contains(w.word)) continue;
+      out.add(w.word);
+      if (out.length >= _options.wordsPerLesson) break;
+    }
+    return out;
+  }
+
+  String _createExercisesLabel(int lessonId) {
+    final n = _lessonWords(lessonId).length;
+    return n > 0
+        ? 'Create exercises directly ($n word${n == 1 ? '' : 's'})'
+        : 'Create exercises directly';
   }
 
   // -------------------------------------------------------------------
@@ -265,6 +290,9 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       case 'new_lesson':
         await _doNewLesson(action.newModule);
         break;
+      case 'change_words':
+        await _doChangeWords(action.lessonId!);
+        break;
       case 'create_sentences':
         await _doCreateSentences(action.lessonId!);
         break;
@@ -296,13 +324,13 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       final added = _course!.words.length - beforeCount;
       if (added <= 0) {
         _appendAssistant(
-          "That's every word I've got for this language right now — try selecting words for a lesson instead.",
-          actions: [_ChatAction('new_lesson', 'Select words for Lesson ${_lessonCount(_course!) + 1}')],
+          "That's every word I've got for this language right now — try building a lesson instead.",
+          actions: [_ChatAction('new_lesson', 'Start Lesson ${_lessonCount(_course!) + 1}')],
         );
         return;
       }
       final actions = <_ChatAction>[
-        _ChatAction('new_lesson', 'Select words for Lesson ${_lessonCount(_course!) + 1}'),
+        _ChatAction('new_lesson', 'Start Lesson ${_lessonCount(_course!) + 1}'),
         const _ChatAction('create_words', 'Add more words'),
       ];
       if (_course!.modules.isNotEmpty) {
@@ -317,17 +345,17 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
 
   Future<void> _doNewLesson(bool newModule) async {
     if (_course!.words.isEmpty) {
-      _appendUser(newModule ? 'Start a new module' : 'Select words for a new lesson');
+      _appendUser(newModule ? 'Start a new module' : 'Start a new lesson');
       await _thinkThen(() async {
         _appendAssistant(
-          "There's no word bank yet — let's create one first, then I can help you pick words for it.",
+          "There's no word bank yet — let's create one first, then I can build a lesson from it.",
           actions: const [_ChatAction('create_words', 'Create word list')],
         );
       });
       return;
     }
     final n = _lessonCount(_course!) + 1;
-    _appendUser('Select words for Lesson $n${newModule ? ' (new module)' : ''}');
+    _appendUser('Start Lesson $n${newModule ? ' (new module)' : ''}');
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
       int moduleId;
@@ -344,21 +372,63 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       final lesson = await api.createAiLesson(courseId: widget.courseId, moduleId: moduleId, title: 'Lesson $n');
       await _reload();
 
+      // Auto-assign the next `wordsPerLesson` unused words — no manual
+      // picking needed unless the editor wants to change them.
+      final picked = _nextUnusedWords();
+      if (picked.isNotEmpty) {
+        await api.setAiLessonWords(lessonId: lesson.lessonId, words: picked);
+        await _reload();
+      }
+
+      if (picked.isEmpty) {
+        _appendAssistant(
+          'Lesson $n is ready in $moduleTitle, but every word is already used in another lesson. '
+          'Add more words, or change the selection.',
+          actions: [
+            const _ChatAction('create_words', 'Add more words'),
+            _ChatAction('change_words', 'Change words', lessonId: lesson.lessonId),
+          ],
+        );
+        return;
+      }
+
+      _appendAssistant(
+        'Lesson $n in $moduleTitle — I picked the next ${picked.length} unused '
+        'word${picked.length == 1 ? '' : 's'}: ${picked.join(', ')}.',
+        actions: [
+          _ChatAction('create_exercises_direct', _createExercisesLabel(lesson.lessonId), lessonId: lesson.lessonId),
+          _ChatAction('create_sentences', 'Create sentences', lessonId: lesson.lessonId),
+          _ChatAction('change_words', 'Change words', lessonId: lesson.lessonId),
+        ],
+      );
+    });
+  }
+
+  Future<void> _doChangeWords(int lessonId) async {
+    _appendUser('Change words');
+    await _thinkThen(() async {
       final used = _usedWords;
-      final ordered = _course!.words.toList()..sort((a, b) => (used.contains(a.word) ? 1 : 0).compareTo(used.contains(b.word) ? 1 : 0));
-      var uncheckedSoFar = 0;
+      final current = _lessonWords(lessonId).toSet();
+      final ordered = _course!.words.toList()
+        ..sort((a, b) => (used.contains(a.word) && !current.contains(a.word) ? 1 : 0)
+            .compareTo(used.contains(b.word) && !current.contains(b.word) ? 1 : 0));
       // id is unused for word pickers — _confirmWords reads `label` (the
       // word string itself) since words aren't a database entity.
       final items = ordered.map((w) {
-        final isUsed = used.contains(w.word);
-        final checked = !isUsed && uncheckedSoFar < 6;
-        if (checked) uncheckedSoFar++;
-        return _PickerItem(id: w.word.hashCode, label: w.word, sub: isUsed ? '${w.gloss} · used' : w.gloss, used: isUsed, checked: checked);
+        final inLesson = current.contains(w.word);
+        final usedElsewhere = used.contains(w.word) && !inLesson;
+        return _PickerItem(
+          id: w.word.hashCode,
+          label: w.word,
+          sub: usedElsewhere ? '${w.gloss} · used' : w.gloss,
+          used: usedElsewhere,
+          checked: inLesson,
+        );
       }).toList();
 
       _appendAssistant(
-        'Pick the words for Lesson $n in $moduleTitle — pre-selected the next unused ones.',
-        picker: _Picker(kind: 'words', lessonId: lesson.lessonId, items: items, confirmLabel: 'Confirm selection'),
+        'Adjust the words for this lesson, then confirm.',
+        picker: _Picker(kind: 'words', lessonId: lessonId, items: items, confirmLabel: 'Confirm selection'),
       );
     });
   }
@@ -377,8 +447,8 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       _appendAssistant(
         'Locked in ${selected.length} words. Want me to draft example sentences for them, or jump straight to exercises?',
         actions: [
+          _ChatAction('create_exercises_direct', _createExercisesLabel(picker.lessonId), lessonId: picker.lessonId),
           _ChatAction('create_sentences', 'Create sentences', lessonId: picker.lessonId),
-          _ChatAction('create_exercises_direct', 'Create exercises directly', lessonId: picker.lessonId),
         ],
       );
     });
@@ -409,7 +479,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       if (items.isEmpty) {
         _appendAssistant(
           "I couldn't draft any sentences for those words — try different words, or 'Create exercises directly'.",
-          actions: [_ChatAction('create_exercises_direct', 'Create exercises directly', lessonId: lessonId)],
+          actions: [_ChatAction('create_exercises_direct', _createExercisesLabel(lessonId), lessonId: lessonId)],
         );
         return;
       }
@@ -752,8 +822,26 @@ class _TabButton extends StatelessWidget {
 // ===========================================================================
 // Chat bubbles
 // ===========================================================================
-class _TypingBubble extends StatelessWidget {
+/// The "AI is working" bubble — three dots that keep bouncing in sequence
+/// for as long as the bubble is on screen (i.e. until the task finishes and
+/// it's removed from the list).
+class _TypingBubble extends StatefulWidget {
   const _TypingBubble();
+
+  @override
+  State<_TypingBubble> createState() => _TypingBubbleState();
+}
+
+class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -773,10 +861,26 @@ class _TypingBubble extends StatelessWidget {
             ),
           ),
           child: SizedBox(
-            width: 24,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(3, (_) => CircleAvatar(radius: 2.5, backgroundColor: DashColors.w(0.4))),
+            width: 30,
+            height: 10,
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (_, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(3, (i) {
+                  // Each dot leads the next by 1/6 of the cycle; a raised-cosine
+                  // pulse gives a smooth up-and-down bounce + fade.
+                  final phase = (_c.value - i * 0.16) % 1.0;
+                  final t = phase < 0.5 ? (1 - (phase * 4 - 1).abs()) : 0.0;
+                  return Transform.translate(
+                    offset: Offset(0, -3 * t),
+                    child: CircleAvatar(
+                      radius: 2.5,
+                      backgroundColor: DashColors.w(0.25 + 0.45 * t),
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
         ),
