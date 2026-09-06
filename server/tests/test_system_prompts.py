@@ -3,21 +3,19 @@ init_manual_tests()
 import asyncio
 
 from utils.generate_ai import (
-    generate_words,
-    generate_sentences,
-    generate_translated_sentence_distractors,
+    generate_ai_translated_sentence_distractors,
 )
 
 
 
 async def get_res():
-    res = await generate_translated_sentence_distractors(
+    res = await generate_ai_translated_sentence_distractors(
     lang="it",
     to_lang="en",
     word="casa",
     level="beginner",
     provider="ollama",
-    model="lamma3",
+    model="gemma4",
     max_words=10,
     num_sentences=3
     )

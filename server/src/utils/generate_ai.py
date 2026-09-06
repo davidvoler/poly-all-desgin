@@ -72,7 +72,7 @@ Maximum length: {max_words} words per sentence.
 Include 4 incorrect translations (distractors) per sentence: a mix of subtle errors and completely wrong options.
 Return ONLY valid data adhering to the required JSON schema.
 """.strip()
-    user_prompt = "Target word: '{word}'"
+    user_prompt = f"Target word: '{word}'"
     print(f"System prompt for Ollama: {system_prompt}")
     print(f"User prompt for Ollama: {user_prompt}")
     response = await get_ollama_response_system(system_prompt=system_prompt, user_prompt=user_prompt, model=model, response_model=QuizResponse)
