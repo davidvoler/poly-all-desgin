@@ -89,6 +89,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
   int _sessionTokens = 0;
   double _sessionCost = 0;
   final Set<int> _editingSentenceIds = {};
+  bool _generatingWords = false;
 
   @override
   void initState() {
@@ -148,8 +149,8 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     if (c.words.isEmpty) {
       _chat.add(_ChatMsg(
         isUser: false,
-        text: "Course '${c.title}' — ${languageName(c.lang)} → ${languageName(c.toLang)}, level ${c.level}. Let's start with a word list.",
-        actions: const [_ChatAction('create_words', 'Create word list')],
+        text: "Course '${c.title}' — ${languageName(c.lang)} → ${languageName(c.toLang)}, level ${c.level}. Start by building a word list in the Words tab.",
+        actions: const [_ChatAction('create_words', 'Go to Words tab')],
       ));
       return;
     }
@@ -267,6 +268,46 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     return e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
   }
 
+  /// Kick an AI word-list generation and wait for it. Lives on the page
+  /// (not the Words tab) so switching tabs mid-run doesn't abandon the
+  /// reload / result toast. Surfaces its own SnackBar; rethrows nothing.
+  Future<void> _generateWords(int count) async {
+    final editor = _editorCourse;
+    if (editor == null || _generatingWords) return;
+    final before = _course!.words.length;
+    setState(() => _generatingWords = true);
+    try {
+      final api = ref.read(dashboardApiProvider);
+      final taskId = await api.generateAiWords(
+        course: editor,
+        currentWords: _course!.words,
+        count: count,
+      );
+      await api.awaitTask(taskId);
+      await _reload();
+      if (!mounted) return;
+      final added = _course!.words.length - before;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(added > 0
+              ? 'Added $added word${added == 1 ? '' : 's'} (${_course!.words.length} total).'
+              : 'No new words — that may be all the corpus has for this language.'),
+          duration: const Duration(milliseconds: 1800),
+        ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('Could not generate words — ${_errorText(e)}'),
+          backgroundColor: DashColors.red400,
+        ));
+    } finally {
+      if (mounted) setState(() => _generatingWords = false);
+    }
+  }
+
   Future<void> _thinkThen(Future<void> Function() cb) async {
     setState(() => _thinking = true);
     try {
@@ -285,7 +326,11 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
   Future<void> _handleAction(_ChatAction action) async {
     switch (action.id) {
       case 'create_words':
-        await _doCreateWords();
+        setState(() => _tab = _Tab.words);
+        _appendAssistant(
+          "Open the Words tab (top-right) to generate an AI word list or add words by hand. "
+          "Come back here to build lessons once you have some.",
+        );
         break;
       case 'new_lesson':
         await _doNewLesson(action.newModule);
@@ -304,43 +349,6 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
         _appendAssistant("Here's what students will see. Switch back anytime using the tabs on the right.");
         break;
     }
-  }
-
-  Future<void> _doCreateWords() async {
-    final editor = _editorCourse;
-    if (editor == null) return;
-    final hadWords = _course!.words.isNotEmpty;
-    final beforeCount = _course!.words.length;
-    _appendUser(hadWords ? 'Add more words' : 'Create word list');
-    await _thinkThen(() async {
-      final api = ref.read(dashboardApiProvider);
-      final taskId = await api.generateAiWords(
-        course: editor,
-        currentWords: _course!.words,
-        count: 12,
-      );
-      await api.awaitTask(taskId);
-      await _reload();
-      final added = _course!.words.length - beforeCount;
-      if (added <= 0) {
-        _appendAssistant(
-          "That's every word I've got for this language right now — try building a lesson instead.",
-          actions: [_ChatAction('new_lesson', 'Start Lesson ${_lessonCount(_course!) + 1}')],
-        );
-        return;
-      }
-      final actions = <_ChatAction>[
-        _ChatAction('new_lesson', 'Start Lesson ${_lessonCount(_course!) + 1}'),
-        const _ChatAction('create_words', 'Add more words'),
-      ];
-      if (_course!.modules.isNotEmpty) {
-        actions.add(const _ChatAction('new_lesson', 'Start a new module', newModule: true));
-      }
-      _appendAssistant(
-        'Generated $added new words (${_course!.words.length} total). Review them in the Words tab, then build a lesson.',
-        actions: actions,
-      );
-    });
   }
 
   Future<void> _doNewLesson(bool newModule) async {
@@ -711,30 +719,41 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
             width: double.infinity,
             color: DashColors.w(0.06),
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 40),
-            child: SingleChildScrollView(
-              child: switch (_tab) {
-                _Tab.words => _WordsTab(course: c, onChanged: _reload),
-                _Tab.lessons => _LessonsTab(
-                    course: c,
-                    currentLessonId: _currentLesson?.lessonId,
-                    editingSentenceIds: _editingSentenceIds,
-                    onToggleEdit: (id, editing) => setState(() {
-                      if (editing) {
-                        _editingSentenceIds.add(id);
-                      } else {
-                        _editingSentenceIds.remove(id);
-                      }
-                    }),
-                    onChanged: _reload,
-                  ),
-                _Tab.edit => _EditCourseTab(
+            // The Words tab keeps its "generate" controls pinned and scrolls
+            // only the word bank, so it manages its own scroll view. The
+            // other tabs share one outer scroll view.
+            child: _tab == _Tab.words
+                ? _WordsTab(
                     course: c,
                     editorCourse: _editorCourse,
-                    onSaved: _reload,
+                    onChanged: _reload,
+                    onGenerate: _generateWords,
+                    generating: _generatingWords,
+                  )
+                : SingleChildScrollView(
+                    child: switch (_tab) {
+                      _Tab.lessons => _LessonsTab(
+                          course: c,
+                          currentLessonId: _currentLesson?.lessonId,
+                          editingSentenceIds: _editingSentenceIds,
+                          onToggleEdit: (id, editing) => setState(() {
+                            if (editing) {
+                              _editingSentenceIds.add(id);
+                            } else {
+                              _editingSentenceIds.remove(id);
+                            }
+                          }),
+                          onChanged: _reload,
+                        ),
+                      _Tab.edit => _EditCourseTab(
+                          course: c,
+                          editorCourse: _editorCourse,
+                          onSaved: _reload,
+                        ),
+                      _Tab.preview => _PreviewTab(course: c),
+                      _Tab.words => const SizedBox.shrink(),
+                    },
                   ),
-                _Tab.preview => _PreviewTab(course: c),
-              },
-            ),
           ),
         ),
       ],
@@ -1084,20 +1103,34 @@ class _PickerWidget extends StatelessWidget {
 // ===========================================================================
 class _WordsTab extends ConsumerStatefulWidget {
   final AiCourseFull course;
+  final EditorCourse? editorCourse;
   final Future<void> Function() onChanged;
-  const _WordsTab({required this.course, required this.onChanged});
+  final Future<void> Function(int count) onGenerate;
+  final bool generating;
+  const _WordsTab({
+    required this.course,
+    required this.editorCourse,
+    required this.onChanged,
+    required this.onGenerate,
+    required this.generating,
+  });
 
   @override
   ConsumerState<_WordsTab> createState() => _WordsTabState();
 }
 
+/// Default number of words to ask the AI for.
+const _kDefaultWordCount = 300;
+
 class _WordsTabState extends ConsumerState<_WordsTab> {
   final _word = TextEditingController();
+  final _count = TextEditingController(text: '$_kDefaultWordCount');
   bool _busy = false;
 
   @override
   void dispose() {
     _word.dispose();
+    _count.dispose();
     super.dispose();
   }
 
@@ -1121,49 +1154,115 @@ class _WordsTabState extends ConsumerState<_WordsTab> {
     await widget.onChanged();
   }
 
+  Future<void> _generate() async {
+    if (widget.editorCourse == null || widget.generating) return;
+    final count = int.tryParse(_count.text.trim()) ?? _kDefaultWordCount;
+    await widget.onGenerate(count);
+  }
+
   @override
   Widget build(BuildContext context) {
     final words = widget.course.words;
-    if (words.isEmpty) {
-      return Text('No words yet — ask the AI to create a word list in the chat.',
-          style: TextStyle(fontSize: 12, color: DashColors.w(0.55)));
-    }
     final usedCount = words.where((w) => w.used).length;
+    final generating = widget.generating;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('COURSE WORD BANK (${words.length}) · $usedCount USED',
-            style: DashText.sectionLabel(size: 10)),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [for (final w in words) _WordChip(word: w, onRemove: () => _remove(w.word))],
-        ),
-        const SizedBox(height: 18),
-        Text('ADD A WORD MANUALLY', style: DashText.sectionLabel(size: 10)),
+        // --- Pinned: AI word generation stays visible while the bank scrolls
+        Text('GENERATE WORD LIST WITH AI', style: DashText.sectionLabel(size: 10)),
         const SizedBox(height: 8),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(
+            SizedBox(
+              width: 76,
               child: TextField(
-                controller: _word,
+                controller: _count,
+                keyboardType: TextInputType.number,
+                enabled: !generating,
                 style: const TextStyle(fontSize: 12, color: Colors.white),
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: 'e.g. 猫 — cat',
-                  hintStyle: TextStyle(fontSize: 12, color: DashColors.w(0.35)),
+                  labelText: 'Words',
+                  labelStyle: TextStyle(fontSize: 11, color: DashColors.w(0.45)),
                   filled: true,
                   fillColor: DashColors.w(0.04),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
                   border: OutlineInputBorder(borderRadius: DashRadii.input, borderSide: BorderSide(color: DashColors.w(0.14))),
                   enabledBorder: OutlineInputBorder(borderRadius: DashRadii.input, borderSide: BorderSide(color: DashColors.w(0.14))),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            GhostButton(label: _busy ? '…' : 'Add', onTap: _busy ? null : _add),
+            GhostButton(
+              label: generating
+                  ? 'Generating…'
+                  : (words.isEmpty ? 'Generate word list' : 'Generate more words'),
+              onTap: (generating || widget.editorCourse == null) ? null : _generate,
+            ),
+            if (generating) ...[
+              const SizedBox(width: 10),
+              const SizedBox(
+                  width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+            ],
           ],
+        ),
+        if (widget.editorCourse == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('Course still loading…',
+                style: TextStyle(fontSize: 11, color: DashColors.w(0.45))),
+          ),
+        const SizedBox(height: 14),
+        Divider(height: 1, color: DashColors.w(0.10)),
+        const SizedBox(height: 14),
+        // --- Scrolls: the word bank + manual add
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (words.isEmpty)
+                  Text('No words yet — generate a list above, or add words by hand below.',
+                      style: TextStyle(fontSize: 12, color: DashColors.w(0.55)))
+                else ...[
+                  Text('COURSE WORD BANK (${words.length}) · $usedCount USED',
+                      style: DashText.sectionLabel(size: 10)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [for (final w in words) _WordChip(word: w, onRemove: () => _remove(w.word))],
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Text('ADD A WORD MANUALLY', style: DashText.sectionLabel(size: 10)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _word,
+                        style: const TextStyle(fontSize: 12, color: Colors.white),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: 'e.g. 猫 — cat',
+                          hintStyle: TextStyle(fontSize: 12, color: DashColors.w(0.35)),
+                          filled: true,
+                          fillColor: DashColors.w(0.04),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                          border: OutlineInputBorder(borderRadius: DashRadii.input, borderSide: BorderSide(color: DashColors.w(0.14))),
+                          enabledBorder: OutlineInputBorder(borderRadius: DashRadii.input, borderSide: BorderSide(color: DashColors.w(0.14))),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GhostButton(label: _busy ? '…' : 'Add', onTap: _busy ? null : _add),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
