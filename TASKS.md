@@ -576,16 +576,31 @@ We have to define the options fields and pass them on any request.
 - [v] implement polling on the client side
 - [v] show working animation
 
-- [] run multiple process at a same time 
-- [] maybe run a complete module at once 
-- [] 
 
 
-### Create course ready for using with arabic
-- [] UI/UX make it simple. 
-- [] Remove unused elements like sentence - 
-- [] show the words and maybe we will not need to change 
-- [] test a lot with corpus - is it is faster
+### UI/UX Chat page
+- UI/UX make it simple. 
+- Remove unused elements like sentence - 
+- show the words and maybe we will not need to change 
+- test a lot with corpus - is it is faster
 
-### Create course ready for demo
-- [] 
+- [v] remove preview course
+- [v] remove sentences
+
+- [v] Remove start lesson and than create Create exercise directly 
+- [v] Unite into a single button  create lesson for words
+- [v] remove create new module  
+- [] change number of exercise to 10
+
+### Batch create lesson
+
+How to implement it?
+I can this of the following options 
+1. start a module - with a list of words, number of words per lesson, 
+a. create multiple chat lines each for lesson and words
+b. scroll down to the latest
+c. call the server to run the implementation 
+d. animate the running tasks 
+e. show all completed when all are done 
+
+2. 
