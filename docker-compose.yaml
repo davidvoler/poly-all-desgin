@@ -90,6 +90,8 @@ services:
       # task modules to import so their @broker.task fns register on the worker
       - routers.generate_poc_task
       - -fsd
+      - --log-level 
+      - INFO
     volumes:
       - ./server/src:/app
     environment: *server-env

@@ -1,8 +1,12 @@
 import json
+import logging
 from utils.ollama_simple import get_ollama_response, get_ollama_response_system
 from utils.lang_utils import get_language_name
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
+
 
 # 1. Define the response schema using Pydantic
 class QuizItem(BaseModel):
@@ -22,7 +26,7 @@ async def generate_ai_words(lang: str, to_lang: str, words_so_far: list, level: 
            ["word1","word2"]
         """
     )
-    print(f"Prompt for Ollama: {prompt}")
+    logger.info(f"Prompt for Ollama: {prompt}")
     response = await get_ollama_response(prompt=prompt, model=model)
     return json.loads(response)
 
@@ -49,7 +53,7 @@ async def generate_ai_sentences(lang: str, to_lang: str,
         ["sentence1","sentence2"]
         """
     )
-    print(f"Prompt for Ollama: {prompt}")
+    logger.info(f"Prompt for Ollama: {prompt}")
     response = await get_ollama_response(prompt=prompt, model=model)
     return json.loads(response)
 
@@ -69,11 +73,13 @@ async def generate_ai_translated_sentence_distractors(lang: str,
 You are an expert language teacher creating quiz items.
 Create {num_sentences} sentences in {get_language_name(lang)} appropriate for a {level} learner with the provided target word and translate them into {get_language_name(to_lang)}.
 Maximum length: {max_words} words per sentence.
-Include 4 incorrect translations (distractors) per sentence: a mix of subtle errors and completely wrong options.
-Return ONLY valid data adhering to the required JSON schema.
+Include 4 incorrect translations in {get_language_name(to_lang)} (distractors) per sentence: a mix of subtle errors and completely wrong options.
+ Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:
+ [{{"sentence": "example sentence","translation": "example translation","distractors": ["wrong translation 1", "wrong translation 2", "wrong translation 3", "wrong translation 4"]}}]
 """.strip()
     user_prompt = f"Target word: '{word}'"
-    print(f"System prompt for Ollama: {system_prompt}")
-    print(f"User prompt for Ollama: {user_prompt}")
+    logger.info(f"System prompt for Ollama: {system_prompt}")
+    logger.info(f"User prompt for Ollama: {user_prompt}")
     response = await get_ollama_response_system(system_prompt=system_prompt, user_prompt=user_prompt, model=model, response_model=QuizResponse)
+    logger.info(f"Response from Ollama: {response}")
     return json.loads(response)

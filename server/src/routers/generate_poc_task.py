@@ -32,6 +32,10 @@ from models.edit.ai_course import ExerciseOut, exercise_from_row
 
 from tasks.broker import broker
 from taskiq import Context, TaskiqDepends
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 

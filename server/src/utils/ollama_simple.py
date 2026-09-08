@@ -29,7 +29,7 @@ async def get_ollama_response_system(system_prompt: str, user_prompt: str, model
             {"role": "user", "content": user_prompt}
 
         ],
-        format=response_model.model_json_schema(), # Enforces grammar-level JSON validation
+        # format=response_model.model_json_schema(), # Enforces grammar-level JSON validation
         options={"temperature": 0.2}
     )
     print(response["message"]["content"])

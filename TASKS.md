@@ -603,4 +603,30 @@ c. call the server to run the implementation
 d. animate the running tasks 
 e. show all completed when all are done 
 
-2. 
+2. A simple continue after each lesson even if last one was not completed 
+- you can skip a lesson
+a. We do not have to wait for long tasks to complete
+
+
+### Start using for arabic 
+Before we chose the best method for 
+
+For arabic I need 
+1. I need much higher level words 
+2. I may need to generate words with AI
+
+
+Problem with words 
+- when I am deleting a word it may come back when I run generate words again.
+      solutions
+      - keep words as deleted 
+
+
+
+### More UI improvements and ideas 
+- having the module on the tope - next to the paper trail - to left
+- Alternatively - have a top section with 
+      - Course options 
+            - 
+      - Module options 
+- Lesson numbers start with 1 for each module 

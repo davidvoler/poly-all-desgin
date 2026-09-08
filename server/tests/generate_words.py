@@ -17,18 +17,15 @@ from utils.generate import (
     generate_sentences,
     generate_translated_sentence_distractors,
 )
-from utils.generate_exercise import (
-    generate_exercise,
-    generate_exercise_with_sentences,
-)
+
 
 
 
 def _add_common_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--lang", default="ar")
-    p.add_argument("--to-lang", default="en")
-    p.add_argument("--level", default="a1")
-    p.add_argument("--method", default="corpus", choices=["ai", "zipf", "corpus"])
+    p.add_argument("--to-lang", default="he")
+    p.add_argument("--level", default="c2")
+    p.add_argument("--method", default="ai", choices=["ai", "zipf", "corpus"])
     p.add_argument("--provider", default="ollama", choices=["ollama", "openai", "corpus"])
     p.add_argument("--model", default="gemma4")
     p.add_argument("--max-words", type=int, default=20)
