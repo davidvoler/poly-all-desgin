@@ -58,6 +58,9 @@ services:
       - 8004:8004
     volumes:
       - ./server/src:/app
+      # pytest suite (server/tests) — run with:
+      #   docker compose exec -w /app/tests server python -m pytest -q
+      - ./server/tests:/app/tests
     environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -21,7 +21,12 @@ async def get_ollama_response(prompt: str, model: str = "lamma3", role="user") -
 
 
 
-async def get_ollama_response_system(system_prompt: str, user_prompt: str, model: str, response_model) -> str:
+async def get_ollama_response_system(system_prompt: str, user_prompt: str, model: str, response_model=None) -> str:
+    kwargs = {}
+    if response_model is not None:
+        # Grammar-constrained decoding to the model's JSON schema — keeps the
+        # shape valid even when the model would otherwise add prose/fences.
+        kwargs["format"] = response_model.model_json_schema()
     response = await ollama_client.chat(
         model=model,
         messages=[
@@ -29,8 +34,8 @@ async def get_ollama_response_system(system_prompt: str, user_prompt: str, model
             {"role": "user", "content": user_prompt}
 
         ],
-        # format=response_model.model_json_schema(), # Enforces grammar-level JSON validation
-        options={"temperature": 0.2}
+        options={"temperature": 0.1},
+        **kwargs,
     )
     print(response["message"]["content"])
     return response["message"]["content"]
