@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -36,6 +38,13 @@ class _ChatAction {
   final String label;
   final int? lessonId;
   const _ChatAction(this.id, this.label, {this.lessonId});
+}
+
+/// A lesson whose exercise-generation job is still running server-side.
+class _PendingLesson {
+  final int lessonId;
+  final String title;
+  const _PendingLesson({required this.lessonId, required this.title});
 }
 
 class _PickerItem {
@@ -80,6 +89,10 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
   _Tab _tab = _Tab.words;
   final List<_ChatMsg> _chat = [];
   bool _thinking = false;
+  // Lessons whose exercise-generation job is still running on the server.
+  // The chat stays interactive while these run, so a new lesson can be
+  // started before an earlier one finishes.
+  final List<_PendingLesson> _pending = [];
   final _chatScroll = ScrollController();
   final _chatText = TextEditingController();
 
@@ -228,6 +241,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
 
   void _appendAssistant(String text,
       {List<_ChatAction>? actions, _Picker? picker, AiUsage? usage, bool isError = false}) {
+    if (!mounted) return; // background pollers can land after dispose
     setState(() => _chat.add(_ChatMsg(
         isUser: false, text: text, actions: actions, picker: picker, usage: usage, isError: isError)));
     if (usage != null) {
@@ -346,9 +360,12 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     }
   }
 
-  /// One step: create the lesson, assign the next `wordsPerLesson` unused
-  /// words, and generate exercises for them — no intermediate buttons.
+  /// Create the lesson and assign the next `wordsPerLesson` unused words —
+  /// then kick exercise generation and return. The generation runs on the
+  /// server while the chat stays interactive, so the next lesson can be
+  /// started right away (its result lands in the chat when it's done).
   Future<void> _doNewLesson(bool newModule) async {
+    if (_thinking) return; // a lesson is already being set up
     if (_course!.words.isEmpty) {
       _appendUser(newModule ? 'Create lesson (new module)' : 'Create lesson for words');
       await _thinkThen(() async {
@@ -361,11 +378,14 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     }
     final n = _lessonCount(_course!) + 1;
     _appendUser('Create lesson for words${newModule ? ' (new module)' : ''}');
+
+    int? lessonId;
+    String moduleTitle = '';
+    List<String> picked = const [];
+
     await _thinkThen(() async {
       final api = ref.read(dashboardApiProvider);
-      final editor = _editorCourse;
       int moduleId;
-      String moduleTitle;
       if (newModule || _course!.modules.isEmpty) {
         final mod = await api.createAiModule(courseId: widget.courseId, title: 'Module ${_course!.modules.length + 1}');
         moduleId = mod.moduleId;
@@ -378,8 +398,10 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       final lesson = await api.createAiLesson(courseId: widget.courseId, moduleId: moduleId, title: 'Lesson $n');
       await _reload();
 
-      // Auto-assign the next `wordsPerLesson` unused words.
-      final picked = _nextUnusedWords();
+      // Auto-assign the next `wordsPerLesson` unused words — words already
+      // committed to earlier lessons (even ones still generating) are
+      // marked `used` server-side, so this never double-assigns.
+      picked = _nextUnusedWords();
       if (picked.isEmpty) {
         _appendAssistant(
           'Lesson $n is ready in $moduleTitle, but every word is already used in another lesson. '
@@ -389,26 +411,75 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       }
       await api.setAiLessonWords(lessonId: lesson.lessonId, words: picked);
       await _reload();
-
-      // …then straight to exercises in the same step.
-      if (editor != null) {
-        final taskId = await api.generateAiExercises(
-          course: editor,
-          lessonId: lesson.lessonId,
-          words: picked,
-          numElements: _exerciseTarget(picked.length),
-        );
-        await api.awaitTask(taskId);
-        await _reload();
-      }
-      final exCount = _lessonById(lesson.lessonId)?.exercises.length ?? 0;
-      _appendAssistant(
-        'Lesson $n in $moduleTitle — ${picked.length} word${picked.length == 1 ? '' : 's'} '
-        '(${picked.join(', ')}) and $exCount exercise${exCount == 1 ? '' : 's'}. '
-        'Review or tweak it in the Lessons tab.',
-        actions: _nextStepActions(),
-      );
+      lessonId = lesson.lessonId;
     });
+
+    if (lessonId != null && picked.isNotEmpty) {
+      await _startExerciseGeneration(
+        lessonId: lessonId!, title: 'Lesson $n', location: moduleTitle, words: picked);
+    }
+  }
+
+  /// Kick the exercise-generation job for a lesson and register it in
+  /// [_pending]; a background watcher reports back to the chat when it
+  /// finishes. Does not block — the caller (and the user) can move on.
+  Future<void> _startExerciseGeneration({
+    required int lessonId,
+    required String title,
+    required String location,
+    required List<String> words,
+  }) async {
+    final editor = _editorCourse;
+    if (editor == null) return;
+    final api = ref.read(dashboardApiProvider);
+    final before = _lessonById(lessonId)?.exercises.length ?? 0;
+
+    String taskId;
+    try {
+      taskId = await api.generateAiExercises(
+        course: editor,
+        lessonId: lessonId,
+        words: words,
+        numElements: _exerciseTarget(words.length),
+      );
+    } catch (e) {
+      _appendAssistant('Couldn\'t start exercises for $title — ${_errorText(e)}', isError: true);
+      return;
+    }
+
+    setState(() => _pending.add(_PendingLesson(lessonId: lessonId, title: title)));
+    _appendAssistant(
+      '$title in $location — ${words.length} word${words.length == 1 ? '' : 's'} '
+      '(${words.join(', ')}). Generating exercises in the background; '
+      'you can start the next lesson now.',
+      actions: _nextStepActions(),
+    );
+    unawaited(_watchExerciseGeneration(taskId: taskId, lessonId: lessonId, title: title, before: before));
+  }
+
+  Future<void> _watchExerciseGeneration({
+    required String taskId,
+    required int lessonId,
+    required String title,
+    required int before,
+  }) async {
+    final api = ref.read(dashboardApiProvider);
+    try {
+      await api.awaitTask(taskId);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _pending.removeWhere((p) => p.lessonId == lessonId));
+      _appendAssistant('$title — exercise generation failed: ${_errorText(e)}', isError: true);
+      return;
+    }
+    if (!mounted) return;
+    await _reload();
+    if (!mounted) return;
+    setState(() => _pending.removeWhere((p) => p.lessonId == lessonId));
+    final added = (_lessonById(lessonId)?.exercises.length ?? 0) - before;
+    _appendAssistant(
+      '$title is ready 🎉 — $added exercise${added == 1 ? '' : 's'}. Review or tweak it in the Lessons tab.',
+    );
   }
 
   Future<void> _doCreateSentences(int lessonId) async {
@@ -480,25 +551,14 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       _appendAssistant("This lesson has no words selected yet — pick some first.");
       return;
     }
-    final beforeExercises = _lessonById(lessonId)?.exercises.length ?? 0;
     _appendUser('Create exercises directly');
-    await _thinkThen(() async {
-      final api = ref.read(dashboardApiProvider);
-      final taskId = await api.generateAiExercises(
-        course: course,
-        lessonId: lessonId,
-        words: words,
-        numElements: _exerciseTarget(words.length),
-      );
-      await api.awaitTask(taskId);
-      await _reload();
-      final added = (_lessonById(lessonId)?.exercises.length ?? 0) - beforeExercises;
-      _appendAssistant(
-        'Done — generated $added exercise${added == 1 ? '' : 's'}. '
-        'Check the Lessons tab to review or edit, or preview it.',
-        actions: _nextStepActions(),
-      );
-    });
+    final lesson = _lessonById(lessonId);
+    await _startExerciseGeneration(
+      lessonId: lessonId,
+      title: lesson?.title ?? 'This lesson',
+      location: 'the course',
+      words: words,
+    );
   }
 
   List<_ChatAction> _nextStepActions() => const [
@@ -607,6 +667,23 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
             },
           ),
         ),
+        if (_pending.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
+            child: Row(
+              children: [
+                const SizedBox(
+                    width: 13, height: 13, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Generating exercises — ${_pending.map((p) => p.title).join(', ')}',
+                    style: TextStyle(fontSize: 11, color: DashColors.w(0.6)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
           child: Align(
@@ -684,6 +761,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
                       _Tab.lessons => _LessonsTab(
                           course: c,
                           currentLessonId: _currentLesson?.lessonId,
+                          generatingLessonIds: {for (final p in _pending) p.lessonId},
                           editingSentenceIds: _editingSentenceIds,
                           onToggleEdit: (id, editing) => setState(() {
                             if (editing) {
@@ -1260,12 +1338,15 @@ class _WordChip extends StatelessWidget {
 class _LessonsTab extends StatelessWidget {
   final AiCourseFull course;
   final int? currentLessonId;
+  /// Lessons whose exercise-generation job is still running server-side.
+  final Set<int> generatingLessonIds;
   final Set<int> editingSentenceIds;
   final void Function(int, bool) onToggleEdit;
   final Future<void> Function() onChanged;
   const _LessonsTab({
     required this.course,
     required this.currentLessonId,
+    required this.generatingLessonIds,
     required this.editingSentenceIds,
     required this.onToggleEdit,
     required this.onChanged,
@@ -1284,8 +1365,10 @@ class _LessonsTab extends StatelessWidget {
           if (m.lessons.isNotEmpty)
             _ModuleBlock(
               module: m,
-              isCurrent: m.lessons.any((l) => l.lessonId == currentLessonId),
+              isCurrent: m.lessons.any((l) =>
+                  l.lessonId == currentLessonId || generatingLessonIds.contains(l.lessonId)),
               currentLessonId: currentLessonId,
+              generatingLessonIds: generatingLessonIds,
               course: course,
               editingSentenceIds: editingSentenceIds,
               onToggleEdit: onToggleEdit,
@@ -1300,6 +1383,7 @@ class _ModuleBlock extends StatefulWidget {
   final AiModuleFull module;
   final bool isCurrent;
   final int? currentLessonId;
+  final Set<int> generatingLessonIds;
   final AiCourseFull course;
   final Set<int> editingSentenceIds;
   final void Function(int, bool) onToggleEdit;
@@ -1308,6 +1392,7 @@ class _ModuleBlock extends StatefulWidget {
     required this.module,
     required this.isCurrent,
     required this.currentLessonId,
+    required this.generatingLessonIds,
     required this.course,
     required this.editingSentenceIds,
     required this.onToggleEdit,
@@ -1320,6 +1405,14 @@ class _ModuleBlock extends StatefulWidget {
 
 class _ModuleBlockState extends State<_ModuleBlock> {
   late bool _open = widget.isCurrent;
+
+  @override
+  void didUpdateWidget(covariant _ModuleBlock old) {
+    super.didUpdateWidget(old);
+    // A lesson in this module just started generating — pop it open so the
+    // "Generating" pill is visible.
+    if (widget.isCurrent && !old.isCurrent) _open = true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1354,6 +1447,7 @@ class _ModuleBlockState extends State<_ModuleBlock> {
                     _LessonBlock(
                       lesson: l,
                       isCurrent: l.lessonId == widget.currentLessonId,
+                      generating: widget.generatingLessonIds.contains(l.lessonId),
                       course: widget.course,
                       editingSentenceIds: widget.editingSentenceIds,
                       onToggleEdit: widget.onToggleEdit,
@@ -1371,6 +1465,8 @@ class _ModuleBlockState extends State<_ModuleBlock> {
 class _LessonBlock extends StatefulWidget {
   final AiLesson lesson;
   final bool isCurrent;
+  /// Exercise generation for this lesson is still running server-side.
+  final bool generating;
   final AiCourseFull course;
   final Set<int> editingSentenceIds;
   final void Function(int, bool) onToggleEdit;
@@ -1378,6 +1474,7 @@ class _LessonBlock extends StatefulWidget {
   const _LessonBlock({
     required this.lesson,
     required this.isCurrent,
+    required this.generating,
     required this.course,
     required this.editingSentenceIds,
     required this.onToggleEdit,
@@ -1409,7 +1506,10 @@ class _LessonBlockState extends State<_LessonBlock> {
                 children: [
                   Text(lesson.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
                   const SizedBox(width: 10),
-                  StatusPill(label: lesson.status, kind: lesson.isReady ? PillKind.active : PillKind.draft, swatch: true),
+                  if (widget.generating)
+                    const _GeneratingPill()
+                  else
+                    StatusPill(label: lesson.status, kind: lesson.isReady ? PillKind.active : PillKind.draft, swatch: true),
                   const Spacer(),
                   Icon(_open ? Icons.expand_more : Icons.chevron_right, size: 18, color: DashColors.w(0.4)),
                 ],
@@ -1482,6 +1582,66 @@ class _MiniChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: DashColors.w(0.04), border: Border.all(color: DashColors.w(0.14)), borderRadius: DashRadii.pill),
       child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+    );
+  }
+}
+
+/// Animated "exercises are still generating" pill — shown on a lesson in
+/// the Lessons tab while its background job runs.
+class _GeneratingPill extends StatefulWidget {
+  const _GeneratingPill();
+  @override
+  State<_GeneratingPill> createState() => _GeneratingPillState();
+}
+
+class _GeneratingPillState extends State<_GeneratingPill> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: DashColors.brand.withValues(alpha: 0.16),
+        border: Border.all(color: DashColors.brand.withValues(alpha: 0.4)),
+        borderRadius: DashRadii.pill,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Generating',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: DashColors.w(0.8))),
+          const SizedBox(width: 5),
+          SizedBox(
+            width: 16,
+            height: 6,
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (_, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(3, (i) {
+                  final phase = (_c.value - i * 0.16) % 1.0;
+                  final t = phase < 0.5 ? (1 - (phase * 4 - 1).abs()) : 0.0;
+                  return Transform.translate(
+                    offset: Offset(0, -2 * t),
+                    child: CircleAvatar(
+                      radius: 1.7,
+                      backgroundColor: DashColors.brand.withValues(alpha: 0.4 + 0.5 * t),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
