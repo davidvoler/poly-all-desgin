@@ -608,6 +608,18 @@ e. show all completed when all are done
 a. We do not have to wait for long tasks to complete
 
 
+
+
+### More UI improvements and ideas 
+- having the module on the tope - next to the paper trail - to left
+- Alternatively - have a top section with 
+      - Course options 
+            - 
+      - Module options 
+- Lesson numbers start with 1 for each module 
+
+
+
 ### Start using for arabic 
 Before we chose the best method for 
 
@@ -621,12 +633,5 @@ Problem with words
       solutions
       - keep words as deleted 
 
-
-
-### More UI improvements and ideas 
-- having the module on the tope - next to the paper trail - to left
-- Alternatively - have a top section with 
-      - Course options 
-            - 
-      - Module options 
-- Lesson numbers start with 1 for each module 
+- running multiple tasks at the same time makes it run forever - it does not seem to be faster 
+- maybe we do need to implement the run on 
