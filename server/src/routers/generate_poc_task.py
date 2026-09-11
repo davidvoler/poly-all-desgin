@@ -359,6 +359,7 @@ async def _exercise_for_word(generate: GenerateForWords,
 
     out: list[ExerciseOut] = []
     for b in built:
+        c_options = [{"text": o["text"], "correct": o.get("correct", False)} for o in b["options"]]
         rows = await get_query_results(
             """INSERT INTO course_simple.exercise
                 (course_id, module_id, lesson_id, exercise_type, sentence, sentence_id, options, answer)
@@ -371,7 +372,7 @@ async def _exercise_for_word(generate: GenerateForWords,
                 b["exercise_type"],
                 b["prompt"],
                 b["sentence_id"],
-                json.dumps(b["options"]),
+                json.dumps(c_options),
                 b["answer"],
             ),
         )

@@ -671,6 +671,6 @@ We can finish such a lesson with a final quiz
       - [] Generate sentences and phrases from subtitles 
       - [] Generate quizzes 
       - [] Each quiz should have a time - 
-      - [] Break the video into multiple parts 
-      - [] 
+      - [] Break the video into multiple parts - can be done as we go - 
+      - [] Preview
 

@@ -74,7 +74,7 @@ def exercise_from_row(row: dict) -> ExerciseOut:
         exercise_type=row["exercise_type"],
         prompt=row.get("sentence") or "",
         options=options,
-        answer=row.get("answer"),
+        answer=row.get("answer",''),
     )
 
 
