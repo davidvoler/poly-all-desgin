@@ -88,4 +88,11 @@ class TaskStart(BaseModel):
     status: str | None = None
     error: str | None = None
     completed: bool | None = False
-    
+
+
+
+class VideoCourseOption(BaseModel):
+    content_source: ContentSource | None = ContentSource.CORPUS
+    provider: AiProvider | None = AiProvider.OLLAMA
+    model: AiModel | None = AiModel.GEMMA4
+    video_section_len_sec: int | None = 120
