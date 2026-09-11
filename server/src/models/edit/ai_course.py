@@ -2,12 +2,16 @@ import json
 
 from pydantic import BaseModel
 
+from models.edit.exercise import Options
+
 
 # --- Words -----------------------------------------------------------
 # Words are not a database entity — course_simple.course.words is a
 # plain ordered jsonb list (AI-generated order = simplest/most common
 # word first). There's no id to create/delete by; the word string
 # itself is the identity, same as course_simple.lesson.words already is.
+
+
 
 class CourseWord(BaseModel):
     word: str
@@ -44,14 +48,13 @@ class LessonSentenceOut(BaseModel):
     gloss: str | None = ''
     chosen: bool = True
 
-
 class ExerciseOut(BaseModel):
     exercise_id: int
     lesson_id: int
     sentence_id: int | None = None
     exercise_type: str
     prompt: str
-    options: list[str] = []
+    options: list[Options] = []
     answer: str | None = None
 
 

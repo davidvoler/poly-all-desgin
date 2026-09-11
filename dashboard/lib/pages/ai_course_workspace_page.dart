@@ -1736,7 +1736,7 @@ class _ExerciseCard extends StatefulWidget {
 class _ExerciseCardState extends State<_ExerciseCard> {
   late final _prompt = TextEditingController(text: widget.exercise.prompt);
   late final List<TextEditingController> _options =
-      widget.exercise.options.map((o) => TextEditingController(text: o)).toList();
+      widget.exercise.options.map((o) => TextEditingController(text: o.text)).toList();
   late String? _answer = widget.exercise.answer;
 
   @override
@@ -1749,7 +1749,9 @@ class _ExerciseCardState extends State<_ExerciseCard> {
   }
 
   Future<void> _save() async {
-    final options = _options.map((c) => c.text).toList();
+    final options = _options
+        .map((c) => AiExerciseOption(text: c.text, correct: c.text == _answer))
+        .toList();
     await providerScopeApi(context).updateAiExercise(
       exerciseId: widget.exercise.exerciseId,
       prompt: _prompt.text,
@@ -2015,11 +2017,11 @@ class _PreviewTab extends StatelessWidget {
                               margin: const EdgeInsets.only(bottom: 4),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                               decoration: BoxDecoration(
-                                color: opt == ex.answer ? DashColors.green500.withValues(alpha: 0.16) : DashColors.w(0.04),
+                                color: opt.correct ? DashColors.green500.withValues(alpha: 0.16) : DashColors.w(0.04),
                                 borderRadius: BorderRadius.circular(7),
                               ),
-                              child: Text(opt,
-                                  style: TextStyle(fontSize: 12, color: opt == ex.answer ? const Color(0xFFC8E6C9) : Colors.white)),
+                              child: Text(opt.text,
+                                  style: TextStyle(fontSize: 12, color: opt.correct ? const Color(0xFFC8E6C9) : Colors.white)),
                             ),
                         ],
                       ),

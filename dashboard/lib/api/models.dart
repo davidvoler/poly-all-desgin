@@ -663,13 +663,30 @@ class AiLessonSentence {
       );
 }
 
+/// Mirrors server `Options` (models/edit/exercise.py) — an exercise option
+/// carries its own `correct` flag now, alongside the legacy `answer` string
+/// on `AiExercise` that still names the correct option's text.
+class AiExerciseOption {
+  final String text;
+  final bool correct;
+
+  const AiExerciseOption({this.text = '', this.correct = false});
+
+  factory AiExerciseOption.fromJson(Map<String, dynamic> j) => AiExerciseOption(
+        text: (j['text'] as String?) ?? '',
+        correct: (j['correct'] as bool?) ?? false,
+      );
+
+  Map<String, dynamic> toJson() => {'text': text, 'correct': correct};
+}
+
 class AiExercise {
   final int exerciseId;
   final int lessonId;
   final int? sentenceId;
   final String exerciseType;
   final String prompt;
-  final List<String> options;
+  final List<AiExerciseOption> options;
   final String? answer;
 
   const AiExercise({
@@ -688,7 +705,10 @@ class AiExercise {
         sentenceId: j['sentence_id'] as int?,
         exerciseType: (j['exercise_type'] as String?) ?? 'single_choice',
         prompt: (j['prompt'] as String?) ?? '',
-        options: ((j['options'] as List?) ?? const []).cast<String>(),
+        options: ((j['options'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExerciseOption.fromJson)
+            .toList(),
         answer: j['answer'] as String?,
       );
 }

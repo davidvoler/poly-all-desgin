@@ -644,7 +644,7 @@ Problem with words
 
 
 
-### Video Lessons 
+### Video Lessons - Planning
 
 
 Working with video lessons 
@@ -659,3 +659,18 @@ Working with video lessons
 7, So in the course the user will see - quiz - play some vide - quiz again - yet another sections in the video 
 We can start such a lesson with - initial quiz 
 We can finish such a lesson with a final quiz
+
+
+### Video Lessons - Implementations 
+
+- [] The page UI/UX
+      - [] choose a video
+      - [] show it 
+      - O[] info about the lesson - show available translation - audio etc.
+      - [] Download subtitles
+      - [] Generate sentences and phrases from subtitles 
+      - [] Generate quizzes 
+      - [] Each quiz should have a time - 
+      - [] Break the video into multiple parts 
+      - [] 
+

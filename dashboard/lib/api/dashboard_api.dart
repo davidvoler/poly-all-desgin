@@ -549,7 +549,7 @@ class DashboardApi {
   Future<AiExercise> updateAiExercise({
     required int exerciseId,
     String? prompt,
-    List<String>? options,
+    List<AiExerciseOption>? options,
     String? answer,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
@@ -557,7 +557,7 @@ class DashboardApi {
       data: {
         'exercise_id': exerciseId,
         'prompt': ?prompt,
-        'options': ?options,
+        'options': ?options?.map((o) => o.toJson()).toList(),
         'answer': ?answer,
       },
     );

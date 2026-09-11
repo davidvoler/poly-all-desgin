@@ -155,7 +155,7 @@ async def update_exercise_post(
     answer = request.answer if request.answer is not None else existing.answer
     await run_query(
         "UPDATE course_simple.exercise SET sentence = %s, options = %s, answer = %s WHERE exercise_id = %s",
-        (sentence, json.dumps(options), answer, request.exercise_id),
+        (sentence, json.dumps([o.model_dump() for o in options]), answer, request.exercise_id),
     )
     rows = await get_query_results(
         "SELECT * FROM course_simple.exercise WHERE exercise_id = %s", (request.exercise_id,)

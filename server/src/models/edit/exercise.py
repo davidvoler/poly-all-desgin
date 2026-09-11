@@ -40,7 +40,7 @@ class ExerciseEdit(BaseModel):
 class ExerciseUpdateRequest(BaseModel):
     exercise_id: int
     prompt: str | None = None  # maps onto exercise.sentence — see ExerciseOut
-    options: list[str] | None = None
+    options: list[Options] | None = None
     answer: str | None = None
 
 
