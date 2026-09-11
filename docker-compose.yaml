@@ -95,6 +95,7 @@ services:
       - -fsd
       - --log-level 
       - INFO
+      - --reload
     volumes:
       - ./server/src:/app
     environment: *server-env

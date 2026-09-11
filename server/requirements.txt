@@ -19,6 +19,7 @@ ollama
 pycountry
 taskiq
 taskiq-redis
+taskiq[reload]
 # test suite (server/tests) — run inside the server container
 pytest
 pytest-asyncio
