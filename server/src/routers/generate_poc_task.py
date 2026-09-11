@@ -330,7 +330,7 @@ async def _exercise_for_word(generate: GenerateForWords,
             sentence = s.get("sentence") or s.get(course.lang) or ""
             translation = s.get("translation") or s.get(course.to_lang) or ""
             distractors = [d for d in (s.get("distractors") or []) if d and d != translation]
-            options = distractors + [translation]
+            options = [{"text": d} for d in distractors] + [{"text": translation, "correct": True}]
             random.shuffle(options)
             built.append(
                 {

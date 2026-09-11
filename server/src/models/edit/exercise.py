@@ -5,6 +5,7 @@ class ExerciseType(str, Enum):
     MULTIPLE_CHOICE = 'multiple_choice'
     EXPLAIN = 'explain'
     IDENTIFY_WORDS = 'identify_words'
+    SIMPLE = 'simple'
 
 
 class Options(BaseModel):

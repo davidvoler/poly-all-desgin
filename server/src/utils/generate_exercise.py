@@ -30,7 +30,7 @@ def gen_single_choice_exercise(sentence, to_sentence, options):
     random.shuffle(e_options)
     exercise = ExerciseEdit(
         exercise_id=0,
-        exercise_type=ExerciseType.SINGLE_CHOICE,
+        exercise_type=ExerciseType.SIMPLE,
         sentence=sentence,
         options=e_options,
         answer=to_sentence,

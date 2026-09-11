@@ -622,10 +622,11 @@ a. We do not have to wait for long tasks to complete
 
 ### Start using for arabic 
 Before we chose the best method for 
-
 For arabic I need 
 1. I need much higher level words 
 2. I may need to generate words with AI
+
+
 
 
 Problem with words 
@@ -635,3 +636,26 @@ Problem with words
 
 - running multiple tasks at the same time makes it run forever - it does not seem to be faster 
 - maybe we do need to implement the run on 
+
+
+- [] There is a problem with the exercises on the client side - seems like the data does not match
+- [] 
+
+
+
+
+### Video Lessons 
+
+
+Working with video lessons 
+1. We want to add a youtube video 
+2. from this yuotube video we want to extract subtitles - if exsits - there is code that does in in the repo - please find it
+3. We want to break the video into say 3 minutes sections
+
+4. We want to make a list of difficult words - I can do it on the server - using some python logic 
+
+5. extract sentences, phrases 
+6 create a quiz for word, sentence, phrase
+7, So in the course the user will see - quiz - play some vide - quiz again - yet another sections in the video 
+We can start such a lesson with - initial quiz 
+We can finish such a lesson with a final quiz
