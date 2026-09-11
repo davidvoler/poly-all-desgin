@@ -132,6 +132,8 @@ class VideoModule(BaseModel):
     module_id: str
     title: str = ''
     video_url: str = ''
+    # None until Download Subtitles has run for this module's video.
+    subtitles: list[VideoSubtitleLine] | None = None
 
 
 class VideoCourse(BaseModel):
@@ -153,3 +155,8 @@ class VideoCourseId(BaseModel):
 class VideoAction(BaseModel):
     course_id: int
     video_url: str
+
+
+class ModuleAction(BaseModel):
+    course_id: int
+    module_id: str

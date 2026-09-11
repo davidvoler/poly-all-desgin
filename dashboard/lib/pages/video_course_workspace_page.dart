@@ -807,6 +807,9 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
     }
   }
 
+  Future<VideoCourse> _downloadModuleSubtitles(String moduleId) =>
+      ref.read(dashboardApiProvider).downloadModuleSubtitles(widget.course.courseId, moduleId);
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -835,6 +838,7 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
             }),
             onRemove: () => _removeModule(i),
             onSaveModule: _save,
+            onDownloadSubtitles: _downloadModuleSubtitles,
           ),
         const SizedBox(height: 8),
         Align(
@@ -860,12 +864,14 @@ class _ModuleCard extends StatefulWidget {
   final ValueChanged<VideoModule> onChanged;
   final VoidCallback onRemove;
   final Future<void> Function() onSaveModule;
+  final Future<VideoCourse> Function(String moduleId) onDownloadSubtitles;
   const _ModuleCard({
     super.key,
     required this.module,
     required this.onChanged,
     required this.onRemove,
     required this.onSaveModule,
+    required this.onDownloadSubtitles,
   });
 
   @override
@@ -877,6 +883,8 @@ class _ModuleCardState extends State<_ModuleCard> {
   late final _videoUrl = TextEditingController(text: widget.module.videoUrl);
   Timer? _videoUrlDebounce;
   bool _savingVideoUrl = false;
+  bool _downloadingSubtitles = false;
+  String? _subtitlesError;
 
   @override
   void dispose() {
@@ -905,6 +913,27 @@ class _ModuleCardState extends State<_ModuleCard> {
         if (mounted) setState(() => _savingVideoUrl = false);
       }
     });
+  }
+
+  Future<void> _downloadSubtitles() async {
+    setState(() {
+      _downloadingSubtitles = true;
+      _subtitlesError = null;
+    });
+    try {
+      final updated = await widget.onDownloadSubtitles(widget.module.moduleId);
+      final match = updated.modules.firstWhere(
+        (m) => m.moduleId == widget.module.moduleId,
+        orElse: () => widget.module,
+      );
+      if (!mounted) return;
+      widget.onChanged(match);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _subtitlesError = '$e');
+    } finally {
+      if (mounted) setState(() => _downloadingSubtitles = false);
+    }
   }
 
   @override
@@ -948,6 +977,18 @@ class _ModuleCardState extends State<_ModuleCard> {
           if (m.videoUrl.isNotEmpty) ...[
             const SizedBox(height: 10),
             _VideoCard(video: VideoItem(videoUrl: m.videoUrl)),
+            const SizedBox(height: 10),
+            _PipelineButton(
+              label: 'Download subtitles',
+              doneLabel: '${m.subtitles?.length ?? 0} subtitle lines',
+              done: m.subtitles != null,
+              busy: _downloadingSubtitles,
+              onTap: _downloadSubtitles,
+            ),
+            if (_subtitlesError != null) ...[
+              const SizedBox(height: 6),
+              Text(_subtitlesError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+            ],
           ],
         ],
       ),

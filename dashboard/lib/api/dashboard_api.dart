@@ -398,6 +398,16 @@ class DashboardApi {
   Future<VideoCourse> createVideoSections(int courseId, String videoUrl) =>
       _videoPipelineStep('create_video_sections', courseId, videoUrl);
 
+  /// Same as [downloadVideoSubtitles], but for a Video Module's own video
+  /// (matched by [moduleId] rather than a video already in course.videos).
+  Future<VideoCourse> downloadModuleSubtitles(int courseId, String moduleId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/download_module_subtitles',
+      data: {'course_id': courseId, 'module_id': moduleId},
+    );
+    return VideoCourse.fromJson(res.data ?? const {});
+  }
+
   /// Everything the course workspace needs in one call — course meta,
   /// word bank (with used-in-a-lesson flags), and every
   /// module/lesson/sentence/exercise.

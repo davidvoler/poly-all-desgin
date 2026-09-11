@@ -24,6 +24,7 @@ from models.edit.generate_poc_new import (
     CourseOption,
     CourseWord,
     GenerateForWords,
+    ModuleAction,
     Sentence,
     VideoAction,
     VideoCourse,
@@ -293,6 +294,21 @@ def _find_video(course: VideoCourse, video_url: str) -> VideoItem:
     raise HTTPException(status_code=404, detail="Video not found on this course")
 
 
+async def _save_video_course_modules(course: VideoCourse, school_user: SchoolUser) -> None:
+    await run_query(
+        """UPDATE course_simple.course SET modules = %s, updated_at = now()
+        WHERE course_id = %s AND user_id = %s::text AND school_id = %s""",
+        (_modules_json(course), course.course_id, school_user.user_id, school_user.school_id),
+    )
+
+
+def _find_module(course: VideoCourse, module_id: str) -> VideoModule:
+    for m in course.modules or []:
+        if m.module_id == module_id:
+            return m
+    raise HTTPException(status_code=404, detail="Module not found on this course")
+
+
 _WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
 
 
@@ -342,6 +358,24 @@ async def download_video_subtitles(body: VideoAction, school_user: SchoolUser = 
         raise HTTPException(status_code=400, detail=f"Could not download subtitles: {e}")
     video.subtitles = [VideoSubtitleLine(**s) for s in subs]
     await _save_video_course_videos(course, school_user)
+    return course
+
+
+@router.post("/download_module_subtitles", response_model=VideoCourse)
+async def download_module_subtitles(body: ModuleAction, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Same as download_video_subtitles, but for a Video Module's own video
+    (module.video_url), storing the result on the module itself."""
+    course = await _load_video_course_owned(body.course_id, school_user)
+    module = _find_module(course, body.module_id)
+    video_id = youtube_id_from_url(module.video_url)
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Could not parse a YouTube video id from this URL")
+    try:
+        subs, _seconds = youtube_subs(video_id, course.lang or "en")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not download subtitles: {e}")
+    module.subtitles = [VideoSubtitleLine(**s) for s in subs]
+    await _save_video_course_modules(course, school_user)
     return course
 
 

@@ -1198,28 +1198,38 @@ class VideoModule {
   final String moduleId;
   final String title;
   final String videoUrl;
+  // None until Download Subtitles has run for this module's video.
+  final List<VideoSubtitleLine>? subtitles;
 
   const VideoModule({
     required this.moduleId,
     this.title = '',
     this.videoUrl = '',
+    this.subtitles,
   });
 
   factory VideoModule.fromJson(Map<String, dynamic> j) => VideoModule(
         moduleId: (j['module_id'] as String?) ?? '',
         title: (j['title'] as String?) ?? '',
         videoUrl: (j['video_url'] as String?) ?? '',
+        subtitles: (j['subtitles'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoSubtitleLine.fromJson)
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
         'module_id': moduleId,
         'title': title,
         'video_url': videoUrl,
+        if (subtitles != null) 'subtitles': subtitles!.map((s) => s.toJson()).toList(),
       };
 
-  VideoModule copyWith({String? title, String? videoUrl}) => VideoModule(
+  VideoModule copyWith({String? title, String? videoUrl, List<VideoSubtitleLine>? subtitles}) =>
+      VideoModule(
         moduleId: moduleId,
         title: title ?? this.title,
+        subtitles: subtitles ?? this.subtitles,
         videoUrl: videoUrl ?? this.videoUrl,
       );
 }
