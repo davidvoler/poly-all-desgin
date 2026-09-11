@@ -128,20 +128,10 @@ class VideoItem(BaseModel):
     sections: list[VideoSection] | None = None
 
 
-class VideoExercise(BaseModel):
-    exercise_id: str
-    prompt: str = ''
-    options: list[str] = []
-    answer: str = ''
-
-
 class VideoModule(BaseModel):
     module_id: str
     title: str = ''
-    # References into VideoCourse.videos by video_url — a module doesn't
-    # own its videos, it just groups a subset of the course's video list.
-    video_urls: list[str] = []
-    exercises: list[VideoExercise] = []
+    video_url: str = ''
 
 
 class VideoCourse(BaseModel):

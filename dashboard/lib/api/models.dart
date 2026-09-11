@@ -1192,87 +1192,35 @@ class VideoItem {
       );
 }
 
-/// A manually-authored single-choice exercise tied to a video module.
-/// Mirrors server `VideoExercise`.
-class VideoExercise {
-  final String exerciseId;
-  final String prompt;
-  final List<String> options;
-  final String answer;
-
-  const VideoExercise({
-    required this.exerciseId,
-    this.prompt = '',
-    this.options = const [],
-    this.answer = '',
-  });
-
-  factory VideoExercise.fromJson(Map<String, dynamic> j) => VideoExercise(
-        exerciseId: (j['exercise_id'] as String?) ?? '',
-        prompt: (j['prompt'] as String?) ?? '',
-        options: ((j['options'] as List?) ?? const []).cast<String>(),
-        answer: (j['answer'] as String?) ?? '',
-      );
-
-  Map<String, dynamic> toJson() => {
-        'exercise_id': exerciseId,
-        'prompt': prompt,
-        'options': options,
-        'answer': answer,
-      };
-
-  VideoExercise copyWith({String? prompt, List<String>? options, String? answer}) =>
-      VideoExercise(
-        exerciseId: exerciseId,
-        prompt: prompt ?? this.prompt,
-        options: options ?? this.options,
-        answer: answer ?? this.answer,
-      );
-}
-
-/// A group of videos + exercises within a video course. Mirrors server
-/// `VideoModule`. `videoUrls` references into `VideoCourse.videos` by URL
-/// rather than owning the videos itself.
+/// A single video within a video course. Mirrors server `VideoModule` — a
+/// module is one video, not a group.
 class VideoModule {
   final String moduleId;
   final String title;
-  final List<String> videoUrls;
-  final List<VideoExercise> exercises;
+  final String videoUrl;
 
   const VideoModule({
     required this.moduleId,
     this.title = '',
-    this.videoUrls = const [],
-    this.exercises = const [],
+    this.videoUrl = '',
   });
 
   factory VideoModule.fromJson(Map<String, dynamic> j) => VideoModule(
         moduleId: (j['module_id'] as String?) ?? '',
         title: (j['title'] as String?) ?? '',
-        videoUrls: ((j['video_urls'] as List?) ?? const []).cast<String>(),
-        exercises: ((j['exercises'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>()
-            .map(VideoExercise.fromJson)
-            .toList(),
+        videoUrl: (j['video_url'] as String?) ?? '',
       );
 
   Map<String, dynamic> toJson() => {
         'module_id': moduleId,
         'title': title,
-        'video_urls': videoUrls,
-        'exercises': exercises.map((e) => e.toJson()).toList(),
+        'video_url': videoUrl,
       };
 
-  VideoModule copyWith({
-    String? title,
-    List<String>? videoUrls,
-    List<VideoExercise>? exercises,
-  }) =>
-      VideoModule(
+  VideoModule copyWith({String? title, String? videoUrl}) => VideoModule(
         moduleId: moduleId,
         title: title ?? this.title,
-        videoUrls: videoUrls ?? this.videoUrls,
-        exercises: exercises ?? this.exercises,
+        videoUrl: videoUrl ?? this.videoUrl,
       );
 }
 
@@ -1280,7 +1228,7 @@ class VideoModule {
 /// (server/src/models/edit/generate_poc_new.py) — the video-course
 /// counterpart of the AI-course `Course`/`AiCourseFull` shapes. A video
 /// course can hold more than one video (`videos`), added after creation,
-/// and can group them into `modules` with their own exercises.
+/// and can organize them into `modules`.
 class VideoCourse {
   final int courseId;
   final String title;
