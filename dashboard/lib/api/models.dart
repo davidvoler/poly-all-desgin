@@ -175,6 +175,9 @@ class EditorCourse {
   final int? moduleCount;
   final int? lessonCount;
   final int? readyLessonCount;
+  // 'ai' | 'video' — which workspace page (`/ai-course/:id` vs
+  // `/video-course/:id`) a "My courses" card should route to.
+  final String kind;
 
   const EditorCourse({
     required this.courseId,
@@ -191,6 +194,7 @@ class EditorCourse {
     this.moduleCount,
     this.lessonCount,
     this.readyLessonCount,
+    this.kind = 'ai',
   });
 
   factory EditorCourse.fromJson(Map<String, dynamic> j) {
@@ -211,6 +215,7 @@ class EditorCourse {
       moduleCount: j['module_count'] as int?,
       lessonCount: j['lesson_count'] as int?,
       readyLessonCount: j['ready_lesson_count'] as int?,
+      kind: (j['kind'] as String?) ?? 'ai',
     );
   }
 
@@ -1013,6 +1018,146 @@ class CourseOptions {
       description: dbl(j['description'], d.description),
     );
   }
+}
+
+// ===========================================================================
+// Video course generation options — mirrors server `VideoCourseOption`
+// (server/src/models/edit/generate_poc_new.py). Stored on
+// course_simple.course.metadata (kind='video') at create time.
+// ===========================================================================
+
+class VideoCourseOptions {
+  final String contentSource; // corpus | ai
+  final String provider; // ollama | openai | claude
+  final String model; // gemma4
+  final int videoSectionLenSec;
+
+  const VideoCourseOptions({
+    this.contentSource = 'corpus',
+    this.provider = 'ollama',
+    this.model = 'gemma4',
+    this.videoSectionLenSec = 120,
+  });
+
+  VideoCourseOptions copyWith({
+    String? contentSource,
+    String? provider,
+    String? model,
+    int? videoSectionLenSec,
+  }) =>
+      VideoCourseOptions(
+        contentSource: contentSource ?? this.contentSource,
+        provider: provider ?? this.provider,
+        model: model ?? this.model,
+        videoSectionLenSec: videoSectionLenSec ?? this.videoSectionLenSec,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'content_source': contentSource,
+        'provider': provider,
+        'model': model,
+        'video_section_len_sec': videoSectionLenSec,
+      };
+
+  factory VideoCourseOptions.fromJson(Map<String, dynamic> j) {
+    const d = VideoCourseOptions();
+    int integer(Object? v, int fallback) => (v as num?)?.toInt() ?? fallback;
+    return VideoCourseOptions(
+      contentSource: (j['content_source'] as String?) ?? d.contentSource,
+      provider: (j['provider'] as String?) ?? d.provider,
+      model: (j['model'] as String?) ?? d.model,
+      videoSectionLenSec:
+          integer(j['video_section_len_sec'], d.videoSectionLenSec),
+    );
+  }
+}
+
+/// One video in a video course's playlist. Mirrors server `VideoItem`.
+class VideoItem {
+  final String videoUrl;
+  final String title;
+
+  const VideoItem({required this.videoUrl, this.title = ''});
+
+  factory VideoItem.fromJson(Map<String, dynamic> j) => VideoItem(
+        videoUrl: (j['video_url'] as String?) ?? '',
+        title: (j['title'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {'video_url': videoUrl, 'title': title};
+}
+
+/// Client-side mirror of server `VideoCourse`
+/// (server/src/models/edit/generate_poc_new.py) — the video-course
+/// counterpart of the AI-course `Course`/`AiCourseFull` shapes. A video
+/// course can hold more than one video (`videos`), added after creation.
+class VideoCourse {
+  final int courseId;
+  final String title;
+  final String description;
+  final String lang;
+  final String toLang;
+  final String level;
+  final List<VideoItem> videos;
+  final VideoCourseOptions metadata;
+
+  const VideoCourse({
+    required this.courseId,
+    required this.title,
+    required this.description,
+    required this.lang,
+    required this.toLang,
+    required this.level,
+    required this.videos,
+    required this.metadata,
+  });
+
+  factory VideoCourse.fromJson(Map<String, dynamic> j) => VideoCourse(
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        lang: (j['lang'] as String?) ?? '',
+        toLang: (j['to_lang'] as String?) ?? '',
+        level: (j['level'] as String?) ?? '',
+        videos: ((j['videos'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(VideoItem.fromJson)
+            .toList(),
+        metadata: VideoCourseOptions.fromJson(
+          (j['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'course_id': courseId,
+        'title': title,
+        'description': description,
+        'lang': lang,
+        'to_lang': toLang,
+        'level': level,
+        'videos': videos.map((v) => v.toJson()).toList(),
+        'metadata': metadata.toJson(),
+      };
+
+  VideoCourse copyWith({
+    String? title,
+    String? description,
+    String? lang,
+    String? toLang,
+    String? level,
+    List<VideoItem>? videos,
+    VideoCourseOptions? metadata,
+  }) =>
+      VideoCourse(
+        courseId: courseId,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        lang: lang ?? this.lang,
+        toLang: toLang ?? this.toLang,
+        level: level ?? this.level,
+        videos: videos ?? this.videos,
+        metadata: metadata ?? this.metadata,
+      );
 }
 
 // ===========================================================================

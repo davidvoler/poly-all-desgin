@@ -13,12 +13,14 @@ import 'pages/create_course_page.dart';
 import 'pages/create_course_steps_page.dart';
 import 'pages/create_from_subtitles_page.dart';
 import 'pages/create_school_page.dart';
+import 'pages/create_video_course_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
 import 'pages/login_page.dart';
 import 'pages/overview_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/students_page.dart';
+import 'pages/video_course_workspace_page.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -107,6 +109,13 @@ class DashboardApp extends StatelessWidget {
             builder: (_) => _Guarded(child: AiCourseWorkspacePage(courseId: courseId)),
           );
         }
+        if (name.startsWith('/video-course/')) {
+          final courseId = int.tryParse(name.substring('/video-course/'.length)) ?? 0;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => _Guarded(child: VideoCourseWorkspacePage(courseId: courseId)),
+          );
+        }
         return null;
       },
       routes: {
@@ -126,6 +135,7 @@ class DashboardApp extends StatelessWidget {
             const _Guarded(child: CreateFromSubtitlesPage()),
         '/ai-courses': (_) => const _Guarded(child: AiCoursesPage()),
         '/ai-course-new': (_) => const _Guarded(child: CreateAiCoursePage()),
+        '/video-course-new': (_) => const _Guarded(child: CreateVideoCoursePage()),
         '/overview': (_) => const _Guarded(child: OverviewPage()),
         // NB: the id-bearing form "/ai-course/<id>" is handled in
         // onGenerateRoute below so a browser refresh keeps working — this
@@ -134,6 +144,13 @@ class DashboardApp extends StatelessWidget {
           final args = ModalRoute.of(context)?.settings.arguments;
           final courseId = args is int ? args : 0;
           return _Guarded(child: AiCourseWorkspacePage(courseId: courseId));
+        },
+        // Same legacy-arguments fallback as '/ai-course' above, for
+        // "/video-course/<id>" (onGenerateRoute handles the URL form).
+        '/video-course': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final courseId = args is int ? args : 0;
+          return _Guarded(child: VideoCourseWorkspacePage(courseId: courseId));
         },
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),

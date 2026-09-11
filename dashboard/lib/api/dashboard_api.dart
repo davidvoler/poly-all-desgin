@@ -330,6 +330,50 @@ class DashboardApi {
     return (res.data?['course_id'] as num?)?.toInt();
   }
 
+  /// Create a video course via generate_poc_new, persisting the generation
+  /// [options] (content source / provider / model / target section length)
+  /// onto course_simple.course (kind='video'). Videos are added afterward
+  /// via [updateVideoCourse] — a course can hold more than one. Returns the
+  /// created course id.
+  Future<int?> createVideoCourse({
+    required String lang,
+    required String toLang,
+    required String level,
+    String? title,
+    String? description,
+    VideoCourseOptions options = const VideoCourseOptions(),
+  }) async {
+    final trimmedTitle = title?.trim();
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/create_video_course',
+      data: {
+        'lang': languageCode(lang),
+        'to_lang': languageCode(toLang),
+        'level': level,
+        'title': (trimmedTitle == null || trimmedTitle.isEmpty) ? null : trimmedTitle,
+        'description': description,
+        'metadata': options.toJson(),
+      },
+    );
+    return (res.data?['course_id'] as num?)?.toInt();
+  }
+
+  Future<VideoCourse> fetchVideoCourse(int courseId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/get_video_course',
+      data: {'course_id': courseId},
+    );
+    return VideoCourse.fromJson(res.data ?? const {});
+  }
+
+  Future<VideoCourse> updateVideoCourse(VideoCourse course) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/update_video_course',
+      data: course.toJson(),
+    );
+    return VideoCourse.fromJson(res.data ?? course.toJson());
+  }
+
   /// Everything the course workspace needs in one call — course meta,
   /// word bank (with used-in-a-lesson flags), and every
   /// module/lesson/sentence/exercise.

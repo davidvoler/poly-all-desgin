@@ -46,6 +46,12 @@ class _AiCoursesPageState extends ConsumerState<AiCoursesPage> {
                   ],
                 ),
               ),
+              GhostButton(
+                label: 'New video course',
+                leading: Icons.video_collection_outlined,
+                onTap: () => Navigator.pushNamed(context, '/video-course-new'),
+              ),
+              const SizedBox(width: 10),
               PrimaryButton(
                 label: 'New course',
                 leading: Icons.add,
@@ -154,7 +160,12 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
             borderRadius: DashRadii.card,
             onTap: _busy
                 ? null
-                : () => Navigator.pushNamed(context, '/ai-course/${course.courseId}'),
+                : () => Navigator.pushNamed(
+                    context,
+                    course.kind == 'video'
+                        ? '/video-course/${course.courseId}'
+                        : '/ai-course/${course.courseId}',
+                  ),
             child: GlassCard(
               padding: const EdgeInsets.all(18),
               child: Opacity(
@@ -162,8 +173,16 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${flagFor(course.lang)}${flagFor(course.toLang)}',
-                        style: const TextStyle(fontSize: 22)),
+                    Row(
+                      children: [
+                        Text('${flagFor(course.lang)}${flagFor(course.toLang)}',
+                            style: const TextStyle(fontSize: 22)),
+                        if (course.kind == 'video') ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.video_collection, size: 16, color: DashColors.w(0.55)),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.only(right: 28),

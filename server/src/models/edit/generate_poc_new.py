@@ -61,6 +61,7 @@ class GenerateForWords(BaseModel):
     # When set, generated sentences / exercises are also persisted onto
     # this lesson (course_simple.lesson.sentences + course_simple.exercise)
     # so the Lessons / Preview tabs pick them up.
+    module_id: int | None = None
     lesson_id: int | None = None
 
 class Sentences(BaseModel):
@@ -96,3 +97,23 @@ class VideoCourseOption(BaseModel):
     provider: AiProvider | None = AiProvider.OLLAMA
     model: AiModel | None = AiModel.GEMMA4
     video_section_len_sec: int | None = 120
+
+
+class VideoItem(BaseModel):
+    video_url: str
+    title: str | None = ''
+
+
+class VideoCourse(BaseModel):
+    course_id: int | None = None
+    title: str | None = ''
+    description: str | None = ''
+    lang: str | None = ''
+    to_lang: str | None = ''
+    level: str | None = ''
+    videos: list[VideoItem] | None = []
+    metadata: VideoCourseOption | None = VideoCourseOption()
+
+
+class VideoCourseId(BaseModel):
+    course_id: int

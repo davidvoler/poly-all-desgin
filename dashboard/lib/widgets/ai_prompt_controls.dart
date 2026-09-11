@@ -330,6 +330,7 @@ class NumberStepper extends StatelessWidget {
   final int value;
   final int min;
   final int max;
+  final int step;
   final ValueChanged<int> onChanged;
   const NumberStepper({
     super.key,
@@ -337,6 +338,7 @@ class NumberStepper extends StatelessWidget {
     required this.value,
     required this.min,
     required this.max,
+    this.step = 1,
     required this.onChanged,
   });
 
@@ -356,7 +358,9 @@ class NumberStepper extends StatelessWidget {
         ),
         RoundStep(
           icon: Icons.remove,
-          onTap: value > min ? () => onChanged(value - 1) : null,
+          onTap: value > min
+              ? () => onChanged((value - step).clamp(min, max))
+              : null,
         ),
         SizedBox(
           width: 36,
@@ -372,7 +376,9 @@ class NumberStepper extends StatelessWidget {
         ),
         RoundStep(
           icon: Icons.add,
-          onTap: value < max ? () => onChanged(value + 1) : null,
+          onTap: value < max
+              ? () => onChanged((value + step).clamp(min, max))
+              : null,
         ),
       ],
     );
@@ -650,6 +656,99 @@ class _CourseOptionsEditorState extends State<CourseOptionsEditor> {
             label: 'Description',
             value: _o.description,
             onChanged: (v) => _set(_o.copyWith(description: v)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Editor for video-course generation options (`VideoCourseOptions` —
+/// mirrors the server `VideoCourseOption`): content source, AI
+/// provider/model and the target video-section length. Used by the
+/// create-video-course form (create_video_course_page.dart) and the video
+/// workspace's Edit tab (video_course_workspace_page.dart).
+class VideoCourseOptionsEditor extends StatefulWidget {
+  final VideoCourseOptions options;
+  final ValueChanged<VideoCourseOptions> onChanged;
+  final bool initiallyExpanded;
+  final String heading;
+
+  const VideoCourseOptionsEditor({
+    super.key,
+    required this.options,
+    required this.onChanged,
+    this.initiallyExpanded = false,
+    this.heading = 'GENERATION OPTIONS',
+  });
+
+  @override
+  State<VideoCourseOptionsEditor> createState() =>
+      _VideoCourseOptionsEditorState();
+}
+
+class _VideoCourseOptionsEditorState extends State<VideoCourseOptionsEditor> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  VideoCourseOptions get _o => widget.options;
+  void _set(VideoCourseOptions next) => widget.onChanged(next);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: DashRadii.input,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: DashColors.w(0.7),
+                ),
+                const SizedBox(width: 6),
+                Text(widget.heading, style: DashText.sectionLabel(size: 10)),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          Text('CONTENT SOURCE', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 6),
+          Segment(
+            options: kContentSources,
+            selected: _o.contentSource,
+            onSelect: (v) => _set(_o.copyWith(contentSource: v)),
+          ),
+          const SizedBox(height: 12),
+          Text('AI PROVIDER', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 6),
+          Segment(
+            options: kAiProviders,
+            selected: _o.provider,
+            onSelect: (v) => _set(_o.copyWith(provider: v)),
+          ),
+          const SizedBox(height: 12),
+          Text('MODEL', style: DashText.sectionLabel(size: 10)),
+          const SizedBox(height: 6),
+          Segment(
+            options: kAiModels,
+            selected: _o.model,
+            onSelect: (v) => _set(_o.copyWith(model: v)),
+          ),
+          const SizedBox(height: 14),
+          NumberStepper(
+            label: 'Section length (sec)',
+            value: _o.videoSectionLenSec,
+            min: 30,
+            max: 600,
+            step: 30,
+            onChanged: (v) => _set(_o.copyWith(videoSectionLenSec: v)),
           ),
         ],
       ],

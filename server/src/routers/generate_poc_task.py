@@ -292,6 +292,7 @@ async def sentences_for_word(generate: GenerateForWords, school_user: SchoolUser
     )
 
 
+
 @broker.task
 async def _exercise_for_word(generate: GenerateForWords, 
                              school_user: SchoolUser,
@@ -305,14 +306,10 @@ async def _exercise_for_word(generate: GenerateForWords,
     course = generate.course
     words = generate.words or []
     p = _gen_params(course)
-
-    lesson = None
-    if generate.lesson_id:
-        lesson = await assert_lesson_owned(generate.lesson_id, school_user)
-
-    built: list[dict] = []  # {prompt, options: list[str], answer, exercise_type}
+    
+    num_sentences = round((generate.num_elements+2) / len(words))
     for i, w in enumerate(words):
-        num_sentences = _spread(generate.num_elements, len(words), i, len(built))
+        # num_sentences = _spread(generate.num_elements, len(words), i, len(built))
         if num_sentences <= 0:
             continue
         rows = await generate_translated_sentence_distractors(
@@ -332,58 +329,27 @@ async def _exercise_for_word(generate: GenerateForWords,
             distractors = [d for d in (s.get("distractors") or []) if d and d != translation]
             options = [{"text": d} for d in distractors] + [{"text": translation, "correct": True}]
             random.shuffle(options)
-            built.append(
-                {
-                    "prompt": sentence,
-                    "options": options,
-                    "answer": translation,
-                    "exercise_type": "single_choice",
-                    "sentence_id": sentence_id_for(course.lang or "", sentence),
-                }
+            await get_query_results(
+                """
+                INSERT INTO course_simple.exercise
+                    (course_id, module_id, lesson_id, exercise_type, sentence, sentence_id, options, answer)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                returning exercise_id
+                """,
+                (
+                    course.course_id,
+                    generate.module_id,
+                    generate.lesson_id,
+                    "single_choice",
+                    sentence,
+                    s.get("sentence_id"),
+                    json.dumps(options),
+                    translation,
+                ),
             )
 
-    if not (lesson and generate.lesson_id):
-        # Not persisting — hand back a preview shape the client can render.
-        return [
-            ExerciseOut(
-                exercise_id=0,
-                lesson_id=generate.lesson_id or 0,
-                sentence_id=b["sentence_id"],
-                exercise_type=b["exercise_type"],
-                prompt=b["prompt"],
-                options=b["options"],
-                answer=b["answer"],
-            )
-            for b in built
-        ]
-
-    out: list[ExerciseOut] = []
-    for b in built:
-        c_options = [{"text": o["text"], "correct": o.get("correct", False)} for o in b["options"]]
-        rows = await get_query_results(
-            """INSERT INTO course_simple.exercise
-                (course_id, module_id, lesson_id, exercise_type, sentence, sentence_id, options, answer)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING exercise_id, lesson_id, sentence_id, exercise_type, sentence, options, answer""",
-            (
-                lesson["course_id"],
-                lesson["module_id"],
-                generate.lesson_id,
-                b["exercise_type"],
-                b["prompt"],
-                b["sentence_id"],
-                json.dumps(c_options),
-                b["answer"],
-            ),
-        )
-        out.append(exercise_from_row(rows[0]))
-
-    if out:
-        await run_query(
-            "UPDATE course_simple.lesson SET status = 'ready' WHERE lesson_id = %s",
-            (generate.lesson_id,),
-        )
-    return out
+        
+ 
 @router.post("/exercise_for_word", response_model=TaskStart)
 async def exercise_for_word(generate: GenerateForWords, school_user: SchoolUser = Depends(current_ai_school_user)):
     task = await _exercise_for_word.kiq(generate, school_user)

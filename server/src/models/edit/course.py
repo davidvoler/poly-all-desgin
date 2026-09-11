@@ -10,6 +10,7 @@ class Course(BaseModel):
     metadata: dict | None = {}
     published: bool | None = False
     level: str | None = ''
+    kind: str | None = 'ai'
     # Only populated by GET /courses (the create_with_ai_poc "My courses"
     # list) — None everywhere else, kept optional so existing consumers of
     # GET /course/{id} and POST /course are unaffected.

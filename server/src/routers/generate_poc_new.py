@@ -22,6 +22,10 @@ from models.edit.generate_poc_new import (
     CourseWord,
     GenerateForWords,
     Sentence,
+    VideoCourse,
+    VideoCourseOption,
+    VideoCourseId,
+    VideoItem,
 )
 from models.edit.ai_course import ExerciseOut, exercise_from_row
 
@@ -143,6 +147,115 @@ async def update_course(course: Course, school_user: SchoolUser = Depends(curren
     if not result:
         raise HTTPException(status_code=404, detail="Course not found")
     return course
+
+
+def _default_video_title(course: VideoCourse, school_user: SchoolUser) -> str:
+    return (
+        f"Video course {course.lang or 'Unknown'} to {course.to_lang or 'Unknown'} "
+        f"school {school_user.school_name or 'Unknown'} "
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+
+def _video_metadata_json(course: VideoCourse) -> str:
+    return json.dumps((course.metadata or VideoCourseOption()).model_dump())
+
+
+def _videos_json(course: VideoCourse) -> str:
+    return json.dumps([v.model_dump() for v in (course.videos or [])])
+
+
+def _row_to_video_course(row: dict) -> VideoCourse:
+    return VideoCourse(
+        course_id=row["course_id"],
+        title=row.get("title") or '',
+        description=row.get("description") or '',
+        lang=row.get("lang") or '',
+        to_lang=row.get("to_lang") or '',
+        level=row.get("level") or '',
+        videos=[VideoItem(**v) for v in coerce_json_list(row.get("videos"))],
+        metadata=VideoCourseOption(**(row.get("metadata") or {})),
+    )
+
+
+@router.post("/create_video_course", response_model=VideoCourse)
+async def create_video_course(course: VideoCourse, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """
+    Creates a new video course. Videos are added afterward (a course can
+    hold more than one) — see add_video_to_course. The `metadata`
+    (VideoCourseOption) block carries the generation options — content
+    source, AI provider/model and the target video-section length — and is
+    stored on the course, same as a text course's CourseOption.
+    """
+    if not course.title:
+        course.title = _default_video_title(course, school_user)
+
+    sql = """
+    INSERT INTO course_simple.course
+        (lang, to_lang, user_id, school_id, title, description, status, level, metadata, kind, videos)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'video', %s)
+    RETURNING course_id
+    """
+    params = (
+        course.lang,
+        course.to_lang,
+        school_user.user_id,
+        school_user.school_id,
+        course.title,
+        course.description,
+        "draft",
+        course.level or "",
+        _video_metadata_json(course),
+        _videos_json(course),
+    )
+    rows = await get_query_results(sql, params)
+    course.course_id = rows[0]["course_id"] if rows else 0
+    return course
+
+
+@router.post("/update_video_course", response_model=VideoCourse)
+async def update_video_course(course: VideoCourse, school_user: SchoolUser = Depends(current_ai_school_user)):
+    sql = """
+    UPDATE course_simple.course
+    SET lang = %s,
+        to_lang = %s,
+        title = %s,
+        description = %s,
+        level = %s,
+        metadata = %s,
+        videos = %s,
+        updated_at = now()
+    WHERE course_id = %s AND user_id = %s::text AND school_id = %s AND kind = 'video'
+    RETURNING course_id
+    """
+    params = (
+        course.lang,
+        course.to_lang,
+        course.title,
+        course.description,
+        course.level or "",
+        _video_metadata_json(course),
+        _videos_json(course),
+        course.course_id,
+        school_user.user_id,
+        school_user.school_id,
+    )
+    result = await get_query_results(sql, params)
+    if not result:
+        raise HTTPException(status_code=404, detail="Video course not found")
+    return course
+
+
+@router.post("/get_video_course", response_model=VideoCourse)
+async def get_video_course(body: VideoCourseId, school_user: SchoolUser = Depends(current_ai_school_user)):
+    sql = """
+    SELECT * FROM course_simple.course
+    WHERE course_id = %s AND user_id = %s::text AND school_id = %s AND kind = 'video'
+    """
+    rows = await get_query_results(sql, (body.course_id, school_user.user_id, school_user.school_id))
+    if not rows:
+        raise HTTPException(status_code=404, detail="Video course not found")
+    return _row_to_video_course(rows[0])
 
 
 @router.post("/generate_words_list", response_model=list[CourseWord])
