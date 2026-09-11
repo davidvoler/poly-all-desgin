@@ -15,6 +15,8 @@ PyYAML
 # Used by school.utils.auth0 to fetch the Auth0 JWKS over HTTPS.
 httpx
 youtube_transcript_api
+# Word-frequency/difficulty ranking for video-course "Extract Words" (utils/edit/part_utils.py)
+wordfreq
 ollama
 pycountry
 taskiq

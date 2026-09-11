@@ -374,6 +374,30 @@ class DashboardApi {
     return VideoCourse.fromJson(res.data ?? course.toJson());
   }
 
+  /// The video-course pipeline steps (Edit tab per-video buttons). Each
+  /// acts on one video already saved onto the course (matched by
+  /// [videoUrl]) and returns the whole course with that video's
+  /// subtitles/words/phrases/sections updated.
+  Future<VideoCourse> _videoPipelineStep(String endpoint, int courseId, String videoUrl) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/$endpoint',
+      data: {'course_id': courseId, 'video_url': videoUrl},
+    );
+    return VideoCourse.fromJson(res.data ?? const {});
+  }
+
+  Future<VideoCourse> downloadVideoSubtitles(int courseId, String videoUrl) =>
+      _videoPipelineStep('download_video_subtitles', courseId, videoUrl);
+
+  Future<VideoCourse> extractVideoWords(int courseId, String videoUrl) =>
+      _videoPipelineStep('extract_video_words', courseId, videoUrl);
+
+  Future<VideoCourse> extractVideoPhrases(int courseId, String videoUrl) =>
+      _videoPipelineStep('extract_video_phrases', courseId, videoUrl);
+
+  Future<VideoCourse> createVideoSections(int courseId, String videoUrl) =>
+      _videoPipelineStep('create_video_sections', courseId, videoUrl);
+
   /// Everything the course workspace needs in one call — course meta,
   /// word bank (with used-in-a-lesson flags), and every
   /// module/lesson/sentence/exercise.

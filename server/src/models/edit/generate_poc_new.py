@@ -99,9 +99,49 @@ class VideoCourseOption(BaseModel):
     video_section_len_sec: int | None = 120
 
 
+class VideoSubtitleLine(BaseModel):
+    start: float = 0
+    duration: float = 0
+    text: str = ''
+
+
+class VideoWordRank(BaseModel):
+    word: str
+    rank: int
+
+
+class VideoSection(BaseModel):
+    start_seconds: float
+    end_seconds: float
+    text: str = ''
+
+
 class VideoItem(BaseModel):
     video_url: str
     title: str | None = ''
+    # Populated step by step by the Edit tab's pipeline buttons — each is
+    # None until its step has run, so the UI can tell "not run yet" apart
+    # from "ran and found nothing".
+    subtitles: list[VideoSubtitleLine] | None = None
+    words: list[VideoWordRank] | None = None
+    phrases: list[str] | None = None
+    sections: list[VideoSection] | None = None
+
+
+class VideoExercise(BaseModel):
+    exercise_id: str
+    prompt: str = ''
+    options: list[str] = []
+    answer: str = ''
+
+
+class VideoModule(BaseModel):
+    module_id: str
+    title: str = ''
+    # References into VideoCourse.videos by video_url — a module doesn't
+    # own its videos, it just groups a subset of the course's video list.
+    video_urls: list[str] = []
+    exercises: list[VideoExercise] = []
 
 
 class VideoCourse(BaseModel):
@@ -112,8 +152,14 @@ class VideoCourse(BaseModel):
     to_lang: str | None = ''
     level: str | None = ''
     videos: list[VideoItem] | None = []
+    modules: list[VideoModule] | None = []
     metadata: VideoCourseOption | None = VideoCourseOption()
 
 
 class VideoCourseId(BaseModel):
     course_id: int
+
+
+class VideoAction(BaseModel):
+    course_id: int
+    video_url: str

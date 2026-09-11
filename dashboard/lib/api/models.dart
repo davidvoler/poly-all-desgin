@@ -1072,25 +1072,215 @@ class VideoCourseOptions {
   }
 }
 
+/// One subtitle/caption line. Mirrors server `VideoSubtitleLine`.
+class VideoSubtitleLine {
+  final double start;
+  final double duration;
+  final String text;
+
+  const VideoSubtitleLine({required this.start, required this.duration, required this.text});
+
+  factory VideoSubtitleLine.fromJson(Map<String, dynamic> j) => VideoSubtitleLine(
+        start: (j['start'] as num?)?.toDouble() ?? 0,
+        duration: (j['duration'] as num?)?.toDouble() ?? 0,
+        text: (j['text'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {'start': start, 'duration': duration, 'text': text};
+}
+
+/// A word ranked by rarity/difficulty. Mirrors server `VideoWordRank`.
+class VideoWordRank {
+  final String word;
+  final int rank;
+
+  const VideoWordRank({required this.word, required this.rank});
+
+  factory VideoWordRank.fromJson(Map<String, dynamic> j) => VideoWordRank(
+        word: (j['word'] as String?) ?? '',
+        rank: (j['rank'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {'word': word, 'rank': rank};
+}
+
+/// A time-bounded chunk of a video's subtitles. Mirrors server `VideoSection`.
+class VideoSection {
+  final double startSeconds;
+  final double endSeconds;
+  final String text;
+
+  const VideoSection({required this.startSeconds, required this.endSeconds, required this.text});
+
+  factory VideoSection.fromJson(Map<String, dynamic> j) => VideoSection(
+        startSeconds: (j['start_seconds'] as num?)?.toDouble() ?? 0,
+        endSeconds: (j['end_seconds'] as num?)?.toDouble() ?? 0,
+        text: (j['text'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'start_seconds': startSeconds,
+        'end_seconds': endSeconds,
+        'text': text,
+      };
+}
+
 /// One video in a video course's playlist. Mirrors server `VideoItem`.
+/// `subtitles`/`words`/`phrases`/`sections` are null until their pipeline
+/// step (Download Subtitles / Extract Words / Extract Phrases / Create
+/// Sections, in the Edit tab) has run — null means "not run yet", an empty
+/// list means "ran and found nothing".
 class VideoItem {
   final String videoUrl;
   final String title;
+  final List<VideoSubtitleLine>? subtitles;
+  final List<VideoWordRank>? words;
+  final List<String>? phrases;
+  final List<VideoSection>? sections;
 
-  const VideoItem({required this.videoUrl, this.title = ''});
+  const VideoItem({
+    required this.videoUrl,
+    this.title = '',
+    this.subtitles,
+    this.words,
+    this.phrases,
+    this.sections,
+  });
 
   factory VideoItem.fromJson(Map<String, dynamic> j) => VideoItem(
         videoUrl: (j['video_url'] as String?) ?? '',
         title: (j['title'] as String?) ?? '',
+        subtitles: (j['subtitles'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoSubtitleLine.fromJson)
+            .toList(),
+        words: (j['words'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoWordRank.fromJson)
+            .toList(),
+        phrases: (j['phrases'] as List?)?.cast<String>(),
+        sections: (j['sections'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoSection.fromJson)
+            .toList(),
       );
 
-  Map<String, dynamic> toJson() => {'video_url': videoUrl, 'title': title};
+  Map<String, dynamic> toJson() => {
+        'video_url': videoUrl,
+        'title': title,
+        if (subtitles != null) 'subtitles': subtitles!.map((s) => s.toJson()).toList(),
+        if (words != null) 'words': words!.map((w) => w.toJson()).toList(),
+        if (phrases != null) 'phrases': phrases,
+        if (sections != null) 'sections': sections!.map((s) => s.toJson()).toList(),
+      };
+
+  VideoItem copyWith({
+    String? videoUrl,
+    String? title,
+    List<VideoSubtitleLine>? subtitles,
+    List<VideoWordRank>? words,
+    List<String>? phrases,
+    List<VideoSection>? sections,
+  }) =>
+      VideoItem(
+        videoUrl: videoUrl ?? this.videoUrl,
+        title: title ?? this.title,
+        subtitles: subtitles ?? this.subtitles,
+        words: words ?? this.words,
+        phrases: phrases ?? this.phrases,
+        sections: sections ?? this.sections,
+      );
+}
+
+/// A manually-authored single-choice exercise tied to a video module.
+/// Mirrors server `VideoExercise`.
+class VideoExercise {
+  final String exerciseId;
+  final String prompt;
+  final List<String> options;
+  final String answer;
+
+  const VideoExercise({
+    required this.exerciseId,
+    this.prompt = '',
+    this.options = const [],
+    this.answer = '',
+  });
+
+  factory VideoExercise.fromJson(Map<String, dynamic> j) => VideoExercise(
+        exerciseId: (j['exercise_id'] as String?) ?? '',
+        prompt: (j['prompt'] as String?) ?? '',
+        options: ((j['options'] as List?) ?? const []).cast<String>(),
+        answer: (j['answer'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'exercise_id': exerciseId,
+        'prompt': prompt,
+        'options': options,
+        'answer': answer,
+      };
+
+  VideoExercise copyWith({String? prompt, List<String>? options, String? answer}) =>
+      VideoExercise(
+        exerciseId: exerciseId,
+        prompt: prompt ?? this.prompt,
+        options: options ?? this.options,
+        answer: answer ?? this.answer,
+      );
+}
+
+/// A group of videos + exercises within a video course. Mirrors server
+/// `VideoModule`. `videoUrls` references into `VideoCourse.videos` by URL
+/// rather than owning the videos itself.
+class VideoModule {
+  final String moduleId;
+  final String title;
+  final List<String> videoUrls;
+  final List<VideoExercise> exercises;
+
+  const VideoModule({
+    required this.moduleId,
+    this.title = '',
+    this.videoUrls = const [],
+    this.exercises = const [],
+  });
+
+  factory VideoModule.fromJson(Map<String, dynamic> j) => VideoModule(
+        moduleId: (j['module_id'] as String?) ?? '',
+        title: (j['title'] as String?) ?? '',
+        videoUrls: ((j['video_urls'] as List?) ?? const []).cast<String>(),
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(VideoExercise.fromJson)
+            .toList(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'module_id': moduleId,
+        'title': title,
+        'video_urls': videoUrls,
+        'exercises': exercises.map((e) => e.toJson()).toList(),
+      };
+
+  VideoModule copyWith({
+    String? title,
+    List<String>? videoUrls,
+    List<VideoExercise>? exercises,
+  }) =>
+      VideoModule(
+        moduleId: moduleId,
+        title: title ?? this.title,
+        videoUrls: videoUrls ?? this.videoUrls,
+        exercises: exercises ?? this.exercises,
+      );
 }
 
 /// Client-side mirror of server `VideoCourse`
 /// (server/src/models/edit/generate_poc_new.py) — the video-course
 /// counterpart of the AI-course `Course`/`AiCourseFull` shapes. A video
-/// course can hold more than one video (`videos`), added after creation.
+/// course can hold more than one video (`videos`), added after creation,
+/// and can group them into `modules` with their own exercises.
 class VideoCourse {
   final int courseId;
   final String title;
@@ -1099,6 +1289,7 @@ class VideoCourse {
   final String toLang;
   final String level;
   final List<VideoItem> videos;
+  final List<VideoModule> modules;
   final VideoCourseOptions metadata;
 
   const VideoCourse({
@@ -1109,6 +1300,7 @@ class VideoCourse {
     required this.toLang,
     required this.level,
     required this.videos,
+    this.modules = const [],
     required this.metadata,
   });
 
@@ -1123,6 +1315,10 @@ class VideoCourse {
             .cast<Map<String, dynamic>>()
             .map(VideoItem.fromJson)
             .toList(),
+        modules: ((j['modules'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(VideoModule.fromJson)
+            .toList(),
         metadata: VideoCourseOptions.fromJson(
           (j['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
         ),
@@ -1136,6 +1332,7 @@ class VideoCourse {
         'to_lang': toLang,
         'level': level,
         'videos': videos.map((v) => v.toJson()).toList(),
+        'modules': modules.map((m) => m.toJson()).toList(),
         'metadata': metadata.toJson(),
       };
 
@@ -1146,6 +1343,7 @@ class VideoCourse {
     String? toLang,
     String? level,
     List<VideoItem>? videos,
+    List<VideoModule>? modules,
     VideoCourseOptions? metadata,
   }) =>
       VideoCourse(
@@ -1156,6 +1354,7 @@ class VideoCourse {
         toLang: toLang ?? this.toLang,
         level: level ?? this.level,
         videos: videos ?? this.videos,
+        modules: modules ?? this.modules,
         metadata: metadata ?? this.metadata,
       );
 }

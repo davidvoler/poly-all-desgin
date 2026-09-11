@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +16,8 @@ from utils.generate import (
     generate_sentences,
     generate_translated_sentence_distractors,
 )
+from utils.edit.youtube_srt import youtube_id_from_url, youtube_subs
+from utils.edit.part_utils import get_ranked_words, text_to_parts
 
 from models.edit.generate_poc_new import (
     Course,
@@ -22,10 +25,15 @@ from models.edit.generate_poc_new import (
     CourseWord,
     GenerateForWords,
     Sentence,
+    VideoAction,
     VideoCourse,
     VideoCourseOption,
     VideoCourseId,
     VideoItem,
+    VideoModule,
+    VideoSection,
+    VideoSubtitleLine,
+    VideoWordRank,
 )
 from models.edit.ai_course import ExerciseOut, exercise_from_row
 
@@ -165,6 +173,10 @@ def _videos_json(course: VideoCourse) -> str:
     return json.dumps([v.model_dump() for v in (course.videos or [])])
 
 
+def _modules_json(course: VideoCourse) -> str:
+    return json.dumps([m.model_dump() for m in (course.modules or [])])
+
+
 def _row_to_video_course(row: dict) -> VideoCourse:
     return VideoCourse(
         course_id=row["course_id"],
@@ -174,6 +186,7 @@ def _row_to_video_course(row: dict) -> VideoCourse:
         to_lang=row.get("to_lang") or '',
         level=row.get("level") or '',
         videos=[VideoItem(**v) for v in coerce_json_list(row.get("videos"))],
+        modules=[VideoModule(**m) for m in coerce_json_list(row.get("modules"))],
         metadata=VideoCourseOption(**(row.get("metadata") or {})),
     )
 
@@ -192,8 +205,8 @@ async def create_video_course(course: VideoCourse, school_user: SchoolUser = Dep
 
     sql = """
     INSERT INTO course_simple.course
-        (lang, to_lang, user_id, school_id, title, description, status, level, metadata, kind, videos)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'video', %s)
+        (lang, to_lang, user_id, school_id, title, description, status, level, metadata, kind, videos, modules)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'video', %s, %s)
     RETURNING course_id
     """
     params = (
@@ -207,6 +220,7 @@ async def create_video_course(course: VideoCourse, school_user: SchoolUser = Dep
         course.level or "",
         _video_metadata_json(course),
         _videos_json(course),
+        _modules_json(course),
     )
     rows = await get_query_results(sql, params)
     course.course_id = rows[0]["course_id"] if rows else 0
@@ -224,6 +238,7 @@ async def update_video_course(course: VideoCourse, school_user: SchoolUser = Dep
         level = %s,
         metadata = %s,
         videos = %s,
+        modules = %s,
         updated_at = now()
     WHERE course_id = %s AND user_id = %s::text AND school_id = %s AND kind = 'video'
     RETURNING course_id
@@ -236,6 +251,7 @@ async def update_video_course(course: VideoCourse, school_user: SchoolUser = Dep
         course.level or "",
         _video_metadata_json(course),
         _videos_json(course),
+        _modules_json(course),
         course.course_id,
         school_user.user_id,
         school_user.school_id,
@@ -248,14 +264,140 @@ async def update_video_course(course: VideoCourse, school_user: SchoolUser = Dep
 
 @router.post("/get_video_course", response_model=VideoCourse)
 async def get_video_course(body: VideoCourseId, school_user: SchoolUser = Depends(current_ai_school_user)):
-    sql = """
-    SELECT * FROM course_simple.course
-    WHERE course_id = %s AND user_id = %s::text AND school_id = %s AND kind = 'video'
-    """
-    rows = await get_query_results(sql, (body.course_id, school_user.user_id, school_user.school_id))
+    return await _load_video_course_owned(body.course_id, school_user)
+
+
+async def _load_video_course_owned(course_id: int, school_user: SchoolUser) -> VideoCourse:
+    rows = await get_query_results(
+        """SELECT * FROM course_simple.course
+        WHERE course_id = %s AND user_id = %s::text AND school_id = %s AND kind = 'video'""",
+        (course_id, school_user.user_id, school_user.school_id),
+    )
     if not rows:
         raise HTTPException(status_code=404, detail="Video course not found")
     return _row_to_video_course(rows[0])
+
+
+async def _save_video_course_videos(course: VideoCourse, school_user: SchoolUser) -> None:
+    await run_query(
+        """UPDATE course_simple.course SET videos = %s, updated_at = now()
+        WHERE course_id = %s AND user_id = %s::text AND school_id = %s""",
+        (_videos_json(course), course.course_id, school_user.user_id, school_user.school_id),
+    )
+
+
+def _find_video(course: VideoCourse, video_url: str) -> VideoItem:
+    for v in course.videos or []:
+        if v.video_url == video_url:
+            return v
+    raise HTTPException(status_code=404, detail="Video not found on this course")
+
+
+_WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+
+
+def _tokenize(text: str) -> list[str]:
+    return [w.lower() for w in _WORD_RE.findall(text) if len(w) > 1]
+
+
+def _sections_from_subs(subs: list[VideoSubtitleLine], section_len_sec: int) -> list[VideoSection]:
+    """Bucket subtitle lines into consecutive `section_len_sec`-second windows."""
+    if not subs:
+        return []
+    sections: list[VideoSection] = []
+    bucket_start = subs[0].start
+    bucket_text: list[str] = []
+    for s in subs:
+        if s.start - bucket_start >= section_len_sec and bucket_text:
+            sections.append(VideoSection(
+                start_seconds=bucket_start,
+                end_seconds=s.start,
+                text=" ".join(bucket_text).strip(),
+            ))
+            bucket_start = s.start
+            bucket_text = []
+        bucket_text.append(s.text)
+    if bucket_text:
+        last = subs[-1]
+        sections.append(VideoSection(
+            start_seconds=bucket_start,
+            end_seconds=last.start + last.duration,
+            text=" ".join(bucket_text).strip(),
+        ))
+    return sections
+
+
+@router.post("/download_video_subtitles", response_model=VideoCourse)
+async def download_video_subtitles(body: VideoAction, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Fetches the video's subtitles (in the course's learning language) via
+    youtube_transcript_api and stores them on the matching video entry."""
+    course = await _load_video_course_owned(body.course_id, school_user)
+    video = _find_video(course, body.video_url)
+    video_id = youtube_id_from_url(body.video_url)
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Could not parse a YouTube video id from this URL")
+    try:
+        subs, _seconds = youtube_subs(video_id, course.lang or "en")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not download subtitles: {e}")
+    video.subtitles = [VideoSubtitleLine(**s) for s in subs]
+    await _save_video_course_videos(course, school_user)
+    return course
+
+
+@router.post("/extract_video_words", response_model=VideoCourse)
+async def extract_video_words(body: VideoAction, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Ranks the words in the video's subtitles by rarity (wordfreq zipf
+    frequency) — requires subtitles to have been downloaded first."""
+    course = await _load_video_course_owned(body.course_id, school_user)
+    video = _find_video(course, body.video_url)
+    if video.subtitles is None:
+        raise HTTPException(status_code=400, detail="Download subtitles first")
+    tokens = _tokenize(" ".join(s.text for s in video.subtitles))
+    try:
+        ranked = get_ranked_words(tokens, course.lang or "en")
+    except Exception as e:
+        # wordfreq needs extra, not-always-installed tokenizer backends for
+        # some languages (e.g. MeCab for Japanese) — surface that as a
+        # clean 400 instead of a raw 500.
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not rank words for language '{course.lang}': {e}",
+        )
+    ranked.sort(key=lambda r: r["rank"])
+    video.words = [VideoWordRank(**r) for r in ranked]
+    await _save_video_course_videos(course, school_user)
+    return course
+
+
+@router.post("/extract_video_phrases", response_model=VideoCourse)
+async def extract_video_phrases(body: VideoAction, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Splits the video's subtitles into short phrases — requires subtitles
+    to have been downloaded first."""
+    course = await _load_video_course_owned(body.course_id, school_user)
+    video = _find_video(course, body.video_url)
+    if video.subtitles is None:
+        raise HTTPException(status_code=400, detail="Download subtitles first")
+    full_text = " ".join(s.text for s in video.subtitles)
+    _sentences, phrases = text_to_parts(full_text)
+    video.phrases = phrases
+    await _save_video_course_videos(course, school_user)
+    return course
+
+
+@router.post("/create_video_sections", response_model=VideoCourse)
+async def create_video_sections(body: VideoAction, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Breaks the video's subtitles into time sections of
+    metadata.video_section_len_sec each — requires subtitles to have been
+    downloaded first."""
+    course = await _load_video_course_owned(body.course_id, school_user)
+    video = _find_video(course, body.video_url)
+    if video.subtitles is None:
+        raise HTTPException(status_code=400, detail="Download subtitles first")
+    section_len = (course.metadata or VideoCourseOption()).video_section_len_sec or 120
+    video.sections = _sections_from_subs(video.subtitles, section_len)
+    await _save_video_course_videos(course, school_user)
+    return course
 
 
 @router.post("/generate_words_list", response_model=list[CourseWord])

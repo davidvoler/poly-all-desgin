@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs, urlparse
+
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._transcripts import FetchedTranscript
 from youtube_transcript_api._transcripts import FetchedTranscriptSnippet
@@ -6,6 +8,22 @@ from models.edit.youtube import YoutubeParts
 
 BASE_FOLDER = '../data/content/srt'
 ytt_api = YouTubeTranscriptApi()
+
+
+def youtube_id_from_url(url: str) -> str | None:
+    """Pull the video id out of a youtube.com/watch?v=... or youtu.be/... URL."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return None
+    host = (parsed.hostname or '').lower()
+    if 'youtu.be' in host:
+        video_id = parsed.path.lstrip('/')
+        return video_id or None
+    if 'youtube.com' in host:
+        video_id = parse_qs(parsed.query).get('v')
+        return video_id[0] if video_id else None
+    return None
 
 def youtube_to_srt(video_id: str, lang: str, base_folder: str = BASE_FOLDER) -> str:
     ts = ytt_api.fetch(video_id, languages=[lang])

@@ -674,3 +674,8 @@ We can finish such a lesson with a final quiz
       - [] Break the video into multiple parts - can be done as we go - 
       - [] Preview
 
+
+### Cleanup tasks 
+1. Should be break the server into editor and school 2 separate server 
+2. Should we unite models - for editor and student
+3. 
