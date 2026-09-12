@@ -29,13 +29,13 @@ class VideoCourseWorkspacePage extends ConsumerStatefulWidget {
   ConsumerState<VideoCourseWorkspacePage> createState() => _VideoCourseWorkspacePageState();
 }
 
-enum _Tab { preview, edit, modules }
+enum _Tab { modules, preview, edit }
 
 class _VideoCourseWorkspacePageState extends ConsumerState<VideoCourseWorkspacePage> {
   bool _loading = true;
   String? _loadError;
   VideoCourse? _course;
-  _Tab _tab = _Tab.preview;
+  _Tab _tab = _Tab.modules;
 
   @override
   void initState() {
@@ -107,9 +107,9 @@ class _VideoCourseWorkspacePageState extends ConsumerState<VideoCourseWorkspaceP
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
               child: Row(
                 children: [
+                  _TabButton(label: 'Video Modules', active: _tab == _Tab.modules, onTap: () => setState(() => _tab = _Tab.modules)),
                   _TabButton(label: 'Preview', active: _tab == _Tab.preview, onTap: () => setState(() => _tab = _Tab.preview)),
                   _TabButton(label: 'Edit', active: _tab == _Tab.edit, onTap: () => setState(() => _tab = _Tab.edit)),
-                  _TabButton(label: 'Video Modules', active: _tab == _Tab.modules, onTap: () => setState(() => _tab = _Tab.modules)),
                 ],
               ),
             ),
@@ -118,20 +118,27 @@ class _VideoCourseWorkspacePageState extends ConsumerState<VideoCourseWorkspaceP
                 width: double.infinity,
                 color: DashColors.w(0.06),
                 padding: const EdgeInsets.fromLTRB(18, 16, 18, 40),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 640),
-                    child: SingleChildScrollView(
-                      child: switch (_tab) {
-                        _Tab.preview => _PreviewTab(course: c),
-                        _Tab.edit =>
-                          _EditTab(course: c, onSaved: (updated) => setState(() => _course = updated)),
-                        _Tab.modules => _ModulesTab(
-                            course: c, onSaved: (updated) => setState(() => _course = updated)),
-                      },
+                // Modules gets the full width for its list + side pane
+                // layout; Preview/Edit stay in the narrow centered column.
+                child: switch (_tab) {
+                  _Tab.preview => Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 640),
+                        child: SingleChildScrollView(child: _PreviewTab(course: c)),
+                      ),
                     ),
-                  ),
-                ),
+                  _Tab.edit => Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 640),
+                        child: SingleChildScrollView(
+                          child: _EditTab(
+                              course: c, onSaved: (updated) => setState(() => _course = updated)),
+                        ),
+                      ),
+                    ),
+                  _Tab.modules => _ModulesTab(
+                      course: c, onSaved: (updated) => setState(() => _course = updated)),
+                },
               ),
             ),
           ],
@@ -759,8 +766,23 @@ class _ModulesTab extends ConsumerStatefulWidget {
 
 class _ModulesTabState extends ConsumerState<_ModulesTab> {
   late List<VideoModule> _modules = List.of(widget.course.modules);
+  int? _selectedModuleId;
   bool _addingModule = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_modules.isNotEmpty) _selectedModuleId = _modules.first.moduleId;
+  }
+
+  VideoModule? get _selectedModule {
+    if (_selectedModuleId == null) return null;
+    for (final m in _modules) {
+      if (m.moduleId == _selectedModuleId) return m;
+    }
+    return null;
+  }
 
   Future<void> _addModule() async {
     setState(() {
@@ -772,7 +794,10 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
           .read(dashboardApiProvider)
           .createVideoModule(widget.course.courseId, title: 'Module ${_modules.length + 1}');
       if (!mounted) return;
-      setState(() => _modules = [..._modules, created]);
+      setState(() {
+        _modules = [..._modules, created];
+        _selectedModuleId ??= created.moduleId;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = apiErrorText(e));
@@ -783,7 +808,12 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
 
   Future<void> _removeModule(int i) async {
     final module = _modules[i];
-    setState(() => _modules = [..._modules]..removeAt(i));
+    setState(() {
+      _modules = [..._modules]..removeAt(i);
+      if (_selectedModuleId == module.moduleId) {
+        _selectedModuleId = _modules.isNotEmpty ? _modules.first.moduleId : null;
+      }
+    });
     if (module.moduleId == null) return;
     try {
       await ref.read(dashboardApiProvider).deleteVideoModule(widget.course.courseId, module.moduleId!);
@@ -807,55 +837,223 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
 
   @override
   Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1040),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 3,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('VIDEO MODULES', style: DashText.sectionLabel(size: 10)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'A module is one video.',
+                      style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
+                    ),
+                    const SizedBox(height: 14),
+                    if (_modules.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text('No modules yet — add one below.',
+                            style: TextStyle(fontSize: 12, color: DashColors.w(0.55))),
+                      ),
+                    for (var i = 0; i < _modules.length; i++)
+                      _ModuleCard(
+                        key: ValueKey(_modules[i].moduleId),
+                        module: _modules[i],
+                        selected: _modules[i].moduleId != null &&
+                            _modules[i].moduleId == _selectedModuleId,
+                        onSelect: () => setState(() => _selectedModuleId = _modules[i].moduleId),
+                        onChanged: (updated) => setState(() {
+                          _modules = [..._modules];
+                          _modules[i] = updated;
+                        }),
+                        onRemove: () => _removeModule(i),
+                        onSaveModule: _updateModule,
+                        onDownloadSubtitles: _downloadModuleSubtitles,
+                        onExtractContent: _extractModuleContent,
+                      ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GhostButton(
+                        label: _addingModule ? 'Adding…' : 'Add module',
+                        leading: Icons.add,
+                        onTap: _addingModule ? null : _addModule,
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      SelectableText(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(width: 300, child: _ModuleContentPane(module: _selectedModule)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Side pane — Words / Sentences tabs showing the selected module's
+// extracted content (from the "Extract words & sentences" button).
+// ===========================================================================
+enum _ContentTab { words, sentences }
+
+class _ModuleContentPane extends StatefulWidget {
+  final VideoModule? module;
+  const _ModuleContentPane({required this.module});
+
+  @override
+  State<_ModuleContentPane> createState() => _ModuleContentPaneState();
+}
+
+class _ModuleContentPaneState extends State<_ModuleContentPane> {
+  _ContentTab _tab = _ContentTab.words;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = widget.module;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: DashColors.w(0.04),
+        border: Border.all(color: DashColors.w(0.08)),
+        borderRadius: DashRadii.cardSm,
+      ),
+      child: m == null
+          ? Text(
+              'Select a module to see its extracted words and sentences.',
+              style: TextStyle(fontSize: 12, color: DashColors.w(0.5)),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  m.title.isEmpty ? 'Module' : m.title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PaneTabButton(
+                        label: 'Words (${m.words?.length ?? 0})',
+                        active: _tab == _ContentTab.words,
+                        onTap: () => setState(() => _tab = _ContentTab.words),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _PaneTabButton(
+                        label: 'Sentences (${m.sentences?.length ?? 0})',
+                        active: _tab == _ContentTab.sentences,
+                        onTap: () => setState(() => _tab = _ContentTab.sentences),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Expanded(child: SingleChildScrollView(child: _paneContent(m))),
+              ],
+            ),
+    );
+  }
+
+  Widget _paneContent(VideoModule m) {
+    if (_tab == _ContentTab.words) {
+      final words = m.words;
+      if (words == null) {
+        return Text('Not extracted yet.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+      }
+      if (words.isEmpty) {
+        return Text('No words found.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+      }
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final w in words)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: DashColors.w(0.06),
+                borderRadius: DashRadii.pill,
+                border: Border.all(color: DashColors.w(0.14)),
+              ),
+              child: Text(w, style: const TextStyle(fontSize: 12, color: Colors.white)),
+            ),
+        ],
+      );
+    }
+    final sentences = m.sentences;
+    if (sentences == null) {
+      return Text('Not extracted yet.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+    }
+    if (sentences.isEmpty) {
+      return Text('No sentences found.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('VIDEO MODULES', style: DashText.sectionLabel(size: 10)),
-        const SizedBox(height: 4),
-        Text(
-          'A module is one video.',
-          style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
-        ),
-        const SizedBox(height: 14),
-        if (_modules.isEmpty)
+        for (final s in sentences)
           Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text('No modules yet — add one below.',
-                style: TextStyle(fontSize: 12, color: DashColors.w(0.55))),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SelectableText(s, style: const TextStyle(fontSize: 12, color: Colors.white)),
           ),
-        for (var i = 0; i < _modules.length; i++)
-          _ModuleCard(
-            key: ValueKey(_modules[i].moduleId),
-            module: _modules[i],
-            onChanged: (updated) => setState(() {
-              _modules = [..._modules];
-              _modules[i] = updated;
-            }),
-            onRemove: () => _removeModule(i),
-            onSaveModule: _updateModule,
-            onDownloadSubtitles: _downloadModuleSubtitles,
-            onExtractContent: _extractModuleContent,
-          ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: GhostButton(
-            label: _addingModule ? 'Adding…' : 'Add module',
-            leading: Icons.add,
-            onTap: _addingModule ? null : _addModule,
+      ],
+    );
+  }
+}
+
+class _PaneTabButton extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  const _PaneTabButton({required this.label, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: DashRadii.pill,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? DashColors.brand.withValues(alpha: 0.18) : DashColors.w(0.06),
+          borderRadius: DashRadii.pill,
+          border: Border.all(color: active ? DashColors.brand : DashColors.w(0.14)),
+        ),
+        child: Text(
+          label,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : DashColors.w(0.7),
           ),
         ),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          SelectableText(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
-        ],
-      ],
+      ),
     );
   }
 }
 
 class _ModuleCard extends StatefulWidget {
   final VideoModule module;
+  final bool selected;
+  final VoidCallback onSelect;
   final ValueChanged<VideoModule> onChanged;
   final VoidCallback onRemove;
   final Future<VideoModule> Function(VideoModule module) onSaveModule;
@@ -864,6 +1062,8 @@ class _ModuleCard extends StatefulWidget {
   const _ModuleCard({
     super.key,
     required this.module,
+    required this.selected,
+    required this.onSelect,
     required this.onChanged,
     required this.onRemove,
     required this.onSaveModule,
@@ -975,8 +1175,8 @@ class _ModuleCardState extends State<_ModuleCard> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DashColors.w(0.04),
-        border: Border.all(color: DashColors.w(0.08)),
+        color: widget.selected ? DashColors.brand.withValues(alpha: 0.06) : DashColors.w(0.04),
+        border: Border.all(color: widget.selected ? DashColors.brand : DashColors.w(0.08)),
         borderRadius: DashRadii.cardSm,
       ),
       child: Column(
@@ -986,6 +1186,16 @@ class _ModuleCardState extends State<_ModuleCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: CourseField(controller: _title, label: 'Module title', onChanged: _pushEdits)),
+              IconButton(
+                tooltip: widget.selected ? 'Showing in side pane' : 'Show words & sentences',
+                iconSize: 16,
+                visualDensity: VisualDensity.compact,
+                icon: Icon(
+                  widget.selected ? Icons.visibility : Icons.visibility_outlined,
+                  color: widget.selected ? DashColors.brand : DashColors.w(0.5),
+                ),
+                onPressed: widget.onSelect,
+              ),
               IconButton(
                 tooltip: 'Remove module',
                 iconSize: 16,
