@@ -129,11 +129,17 @@ class VideoItem(BaseModel):
 
 
 class VideoModule(BaseModel):
-    module_id: str
+    """A video module — a row in course_simple.module with module_type
+    'video', alongside the AI-course modules that already live in that
+    table (module_type NULL). subtitles/words/sentences are None until
+    their pipeline step has run."""
+    module_id: int | None = None
+    course_id: int
     title: str = ''
     video_url: str = ''
-    # None until Download Subtitles has run for this module's video.
     subtitles: list[VideoSubtitleLine] | None = None
+    words: list[str] | None = None
+    sentences: list[str] | None = None
 
 
 class VideoCourse(BaseModel):
@@ -159,4 +165,9 @@ class VideoAction(BaseModel):
 
 class ModuleAction(BaseModel):
     course_id: int
-    module_id: str
+    module_id: int
+
+
+class CreateVideoModule(BaseModel):
+    course_id: int
+    title: str | None = ''

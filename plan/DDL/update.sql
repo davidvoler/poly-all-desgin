@@ -239,3 +239,8 @@ CREATE TABLE content_simple.course_sentences (
 	word4 varchar(100) default '',
 	CONSTRAINT sentences_pkey PRIMARY KEY (lang, id_hash)
 );
+
+-- %%
+alter table course_simple.module add column module_type varchar(20), 
+alter table course_simple.module add column subtitles JSONB;
+alter table course_simple.module add column sentences varchar[350][];
