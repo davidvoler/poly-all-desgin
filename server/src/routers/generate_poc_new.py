@@ -277,6 +277,7 @@ def _row_to_video_module(row: dict) -> VideoModule:
         if subtitles_raw is not None else None,
         words=list(row["words"]) if row.get("words") is not None else None,
         sentences=list(row["sentences"]) if row.get("sentences") is not None else None,
+        phrases=list(row["phrases"]) if row.get("phrases") is not None else None,
     )
 
 
@@ -448,8 +449,9 @@ async def download_module_subtitles(body: ModuleAction, school_user: SchoolUser 
 @router.post("/extract_module_content", response_model=VideoModule)
 async def extract_module_content(body: ModuleAction, school_user: SchoolUser = Depends(current_ai_school_user)):
     """Ranks the words in the module's subtitles by rarity and pulls out
-    short sentences (at most metadata.max_sentence_words words) — requires
-    subtitles to have been downloaded first."""
+    short sentences and phrases (each at most metadata.max_sentence_words
+    words) — requires subtitles to have been downloaded first. Sentences
+    split on '.' only; phrases split on both ',' and '.' (finer-grained)."""
     course, module = await _load_video_module_owned(body.course_id, body.module_id, school_user)
     if module.subtitles is None:
         raise HTTPException(status_code=400, detail="Download subtitles first")
@@ -467,14 +469,17 @@ async def extract_module_content(body: ModuleAction, school_user: SchoolUser = D
     ranked.sort(key=lambda r: r["rank"])
     words = [r["word"] for r in ranked]
 
-    sentences_all, _parts = text_to_parts(full_text)
+    sentences_all, phrases_all = text_to_parts(full_text)
     sentences = [s for s in sentences_all if len(s.split()) <= max_words]
+    phrases = [p for p in phrases_all if len(p.split()) <= max_words]
 
     module.words = words
     module.sentences = sentences
+    module.phrases = phrases
     await run_query(
-        "UPDATE course_simple.module SET words = %s, sentences = %s, updated_at = now() WHERE module_id = %s",
-        (words, sentences, module.module_id),
+        """UPDATE course_simple.module SET words = %s, sentences = %s, phrases = %s, updated_at = now()
+        WHERE module_id = %s""",
+        (words, sentences, phrases, module.module_id),
     )
     return module
 

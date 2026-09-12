@@ -134,8 +134,9 @@ class VideoItem(BaseModel):
 class VideoModule(BaseModel):
     """A video module — a row in course_simple.module with module_type
     'video', alongside the AI-course modules that already live in that
-    table (module_type NULL). subtitles/words/sentences are None until
-    their pipeline step has run."""
+    table (module_type NULL). subtitles/words/sentences/phrases are None
+    until their pipeline step has run. sentences split on '.' only;
+    phrases split on both ',' and '.' (finer-grained)."""
     module_id: int | None = None
     course_id: int
     title: str = ''
@@ -143,6 +144,7 @@ class VideoModule(BaseModel):
     subtitles: list[VideoSubtitleLine] | None = None
     words: list[str] | None = None
     sentences: list[str] | None = None
+    phrases: list[str] | None = None
 
 
 class VideoCourse(BaseModel):

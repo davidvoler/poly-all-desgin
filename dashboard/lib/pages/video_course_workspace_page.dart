@@ -905,10 +905,10 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
 }
 
 // ===========================================================================
-// Side pane — Words / Sentences tabs showing the selected module's
-// extracted content (from the "Extract words & sentences" button).
+// Side pane — Words / Sentences / Phrases tabs showing the selected
+// module's extracted content (from the "Extract content" button).
 // ===========================================================================
-enum _ContentTab { words, sentences }
+enum _ContentTab { words, sentences, phrases }
 
 class _ModuleContentPane extends StatefulWidget {
   final VideoModule? module;
@@ -933,7 +933,7 @@ class _ModuleContentPaneState extends State<_ModuleContentPane> {
       ),
       child: m == null
           ? Text(
-              'Select a module to see its extracted words and sentences.',
+              'Select a module to see its extracted words, sentences and phrases.',
               style: TextStyle(fontSize: 12, color: DashColors.w(0.5)),
             )
           : Column(
@@ -945,22 +945,24 @@ class _ModuleContentPaneState extends State<_ModuleContentPane> {
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
                 const SizedBox(height: 10),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
-                    Expanded(
-                      child: _PaneTabButton(
-                        label: 'Words (${m.words?.length ?? 0})',
-                        active: _tab == _ContentTab.words,
-                        onTap: () => setState(() => _tab = _ContentTab.words),
-                      ),
+                    _PaneTabButton(
+                      label: 'Words (${m.words?.length ?? 0})',
+                      active: _tab == _ContentTab.words,
+                      onTap: () => setState(() => _tab = _ContentTab.words),
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _PaneTabButton(
-                        label: 'Sentences (${m.sentences?.length ?? 0})',
-                        active: _tab == _ContentTab.sentences,
-                        onTap: () => setState(() => _tab = _ContentTab.sentences),
-                      ),
+                    _PaneTabButton(
+                      label: 'Sentences (${m.sentences?.length ?? 0})',
+                      active: _tab == _ContentTab.sentences,
+                      onTap: () => setState(() => _tab = _ContentTab.sentences),
+                    ),
+                    _PaneTabButton(
+                      label: 'Phrases (${m.phrases?.length ?? 0})',
+                      active: _tab == _ContentTab.phrases,
+                      onTap: () => setState(() => _tab = _ContentTab.phrases),
                     ),
                   ],
                 ),
@@ -972,42 +974,52 @@ class _ModuleContentPaneState extends State<_ModuleContentPane> {
   }
 
   Widget _paneContent(VideoModule m) {
-    if (_tab == _ContentTab.words) {
-      final words = m.words;
-      if (words == null) {
-        return Text('Not extracted yet.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
-      }
-      if (words.isEmpty) {
-        return Text('No words found.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
-      }
-      return Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          for (final w in words)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: DashColors.w(0.06),
-                borderRadius: DashRadii.pill,
-                border: Border.all(color: DashColors.w(0.14)),
-              ),
-              child: Text(w, style: const TextStyle(fontSize: 12, color: Colors.white)),
-            ),
-        ],
-      );
+    switch (_tab) {
+      case _ContentTab.words:
+        return _wordChips(m.words, 'words');
+      case _ContentTab.sentences:
+        return _textList(m.sentences, 'sentences');
+      case _ContentTab.phrases:
+        return _textList(m.phrases, 'phrases');
     }
-    final sentences = m.sentences;
-    if (sentences == null) {
+  }
+
+  Widget _wordChips(List<String>? items, String noun) {
+    if (items == null) {
       return Text('Not extracted yet.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
     }
-    if (sentences.isEmpty) {
-      return Text('No sentences found.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+    if (items.isEmpty) {
+      return Text('No $noun found.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+    }
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final w in items)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: DashColors.w(0.06),
+              borderRadius: DashRadii.pill,
+              border: Border.all(color: DashColors.w(0.14)),
+            ),
+            child: Text(w, style: const TextStyle(fontSize: 12, color: Colors.white)),
+          ),
+      ],
+    );
+  }
+
+  Widget _textList(List<String>? items, String noun) {
+    if (items == null) {
+      return Text('Not extracted yet.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
+    }
+    if (items.isEmpty) {
+      return Text('No $noun found.', style: TextStyle(fontSize: 12, color: DashColors.w(0.5)));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final s in sentences)
+        for (final s in items)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: SelectableText(s, style: const TextStyle(fontSize: 12, color: Colors.white)),
@@ -1029,7 +1041,7 @@ class _PaneTabButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: DashRadii.pill,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: active ? DashColors.brand.withValues(alpha: 0.18) : DashColors.w(0.06),
@@ -1233,8 +1245,9 @@ class _ModuleCardState extends State<_ModuleCard> {
                   onTap: _downloadSubtitles,
                 ),
                 _PipelineButton(
-                  label: 'Extract words & sentences',
-                  doneLabel: '${m.words?.length ?? 0} words · ${m.sentences?.length ?? 0} sentences',
+                  label: 'Extract content',
+                  doneLabel:
+                      '${m.words?.length ?? 0} words · ${m.sentences?.length ?? 0} sentences · ${m.phrases?.length ?? 0} phrases',
                   done: m.words != null,
                   busy: _extractingContent,
                   enabled: m.subtitles != null,

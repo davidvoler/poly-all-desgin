@@ -1209,9 +1209,12 @@ class VideoModule {
   final String title;
   final String videoUrl;
   // None until their pipeline step has run for this module's video.
+  // sentences split on '.' only; phrases split on both ',' and '.'
+  // (finer-grained).
   final List<VideoSubtitleLine>? subtitles;
   final List<String>? words;
   final List<String>? sentences;
+  final List<String>? phrases;
 
   const VideoModule({
     this.moduleId,
@@ -1221,6 +1224,7 @@ class VideoModule {
     this.subtitles,
     this.words,
     this.sentences,
+    this.phrases,
   });
 
   factory VideoModule.fromJson(Map<String, dynamic> j) => VideoModule(
@@ -1234,6 +1238,7 @@ class VideoModule {
             .toList(),
         words: (j['words'] as List?)?.cast<String>(),
         sentences: (j['sentences'] as List?)?.cast<String>(),
+        phrases: (j['phrases'] as List?)?.cast<String>(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -1244,6 +1249,7 @@ class VideoModule {
         if (subtitles != null) 'subtitles': subtitles!.map((s) => s.toJson()).toList(),
         if (words != null) 'words': words,
         if (sentences != null) 'sentences': sentences,
+        if (phrases != null) 'phrases': phrases,
       };
 
   VideoModule copyWith({
@@ -1252,6 +1258,7 @@ class VideoModule {
     List<VideoSubtitleLine>? subtitles,
     List<String>? words,
     List<String>? sentences,
+    List<String>? phrases,
   }) =>
       VideoModule(
         moduleId: moduleId,
@@ -1261,6 +1268,7 @@ class VideoModule {
         subtitles: subtitles ?? this.subtitles,
         words: words ?? this.words,
         sentences: sentences ?? this.sentences,
+        phrases: phrases ?? this.phrases,
       );
 }
 
