@@ -91,7 +91,7 @@ class _VideoCourseWorkspacePageState extends ConsumerState<VideoCourseWorkspaceP
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Could not load video course — ${_loadError ?? 'not found'}',
+            child: SelectableText('Could not load video course — ${_loadError ?? 'not found'}',
                 textAlign: TextAlign.center, style: TextStyle(color: DashColors.red400)),
           ),
         ),
@@ -519,7 +519,7 @@ class _EditTabState extends ConsumerState<_EditTab> {
         ),
         if (_addVideoError != null) ...[
           const SizedBox(height: 6),
-          Text(_addVideoError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+          SelectableText(_addVideoError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
         const SizedBox(height: 10),
         Align(
@@ -534,7 +534,7 @@ class _EditTabState extends ConsumerState<_EditTab> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text('Could not save — $_error', style: TextStyle(fontSize: 12, color: DashColors.red400)),
+          SelectableText('Could not save — $_error', style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
         const SizedBox(height: 16),
         Align(
@@ -692,7 +692,7 @@ class _VideoEditRowState extends ConsumerState<_VideoEditRow> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+            SelectableText(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
           ],
         ],
       ),
@@ -858,7 +858,7 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+          SelectableText(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
       ],
     );
@@ -995,7 +995,7 @@ class _ModuleCardState extends State<_ModuleCard> {
             ),
             if (_subtitlesError != null) ...[
               const SizedBox(height: 6),
-              Text(_subtitlesError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+              SelectableText(_subtitlesError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
             ],
           ],
         ],

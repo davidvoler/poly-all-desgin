@@ -154,7 +154,7 @@ class _CreateAiCoursePageState extends ConsumerState<CreateAiCoursePage> {
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text('Could not create the course — $_error',
+                  SelectableText('Could not create the course — $_error',
                       style: TextStyle(fontSize: 12, color: DashColors.red400)),
                 ],
                 const SizedBox(height: 20),

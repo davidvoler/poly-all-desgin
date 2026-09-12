@@ -312,7 +312,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content: Text('Could not generate words — ${_errorText(e)}'),
+          content: SelectableText('Could not generate words — ${_errorText(e)}'),
           backgroundColor: DashColors.red400,
         ));
     } finally {

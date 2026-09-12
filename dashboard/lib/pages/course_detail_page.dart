@@ -103,7 +103,7 @@ class _CourseEditFormState extends ConsumerState<_CourseEditForm> {
       ref.invalidate(editorCoursesProvider);
       messenger.showSnackBar(const SnackBar(content: Text('Saved')));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      messenger.showSnackBar(SnackBar(content: SelectableText('Could not save: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -168,7 +168,7 @@ class _CourseEditFormState extends ConsumerState<_CourseEditForm> {
       ref.invalidate(editorCoursesProvider);
       navigator.pushReplacementNamed('/courses');
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not delete: $e')));
+      messenger.showSnackBar(SnackBar(content: SelectableText('Could not delete: $e')));
     }
   }
 

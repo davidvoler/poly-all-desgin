@@ -67,7 +67,7 @@ class _AiCoursesPageState extends ConsumerState<AiCoursesPage> {
             ),
             error: (e, _) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Text('Could not load courses — $e',
+              child: SelectableText('Could not load courses — $e',
                   style: TextStyle(color: DashColors.red400, fontSize: 13)),
             ),
             data: (courses) => _CourseGrid(courses: courses),
@@ -143,7 +143,7 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content: Text('Could not delete — $e'),
+          content: SelectableText('Could not delete — $e'),
           backgroundColor: DashColors.red400,
         ));
     }

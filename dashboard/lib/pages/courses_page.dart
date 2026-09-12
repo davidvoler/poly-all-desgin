@@ -374,7 +374,7 @@ class _CoursesTable extends ConsumerWidget {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not change status: $e')),
+        SnackBar(content: SelectableText('Could not change status: $e')),
       );
     }
   }

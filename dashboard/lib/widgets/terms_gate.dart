@@ -45,7 +45,7 @@ class _TermsGateState extends ConsumerState<TermsGate> {
       if (!mounted) return;
       setState(() => _accepting = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not record acceptance: $e')),
+        SnackBar(content: SelectableText('Could not record acceptance: $e')),
       );
     }
   }

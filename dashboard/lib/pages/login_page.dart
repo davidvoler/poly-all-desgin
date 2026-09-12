@@ -674,7 +674,7 @@ class _ForgotPasswordDialogState
         _ResetField(controller: _slug, label: 'School slug (optional)'),
         if (_error != null) ...[
           const SizedBox(height: 10),
-          Text(_error!,
+          SelectableText(_error!,
               style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
         const SizedBox(height: 16),
@@ -760,7 +760,7 @@ class _ForgotPasswordDialogState
         ),
         if (_error != null) ...[
           const SizedBox(height: 10),
-          Text(_error!,
+          SelectableText(_error!,
               style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
         const SizedBox(height: 16),
