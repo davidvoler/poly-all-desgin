@@ -9,20 +9,34 @@ from models.edit.youtube import YoutubeParts
 BASE_FOLDER = '../data/content/srt'
 ytt_api = YouTubeTranscriptApi()
 
+_PATH_ID_PREFIXES = ('/shorts/', '/embed/', '/live/', '/v/')
+
 
 def youtube_id_from_url(url: str) -> str | None:
-    """Pull the video id out of a youtube.com/watch?v=... or youtu.be/... URL."""
+    """Pull the video id out of any common YouTube URL shape:
+    youtu.be/<id>, youtube.com/watch?v=<id>, /shorts/<id>, /embed/<id>,
+    /live/<id>, /v/<id> — with or without a scheme."""
+    url = url.strip()
+    if url and '//' not in url:
+        url = f'https://{url}'
     try:
         parsed = urlparse(url)
     except ValueError:
         return None
     host = (parsed.hostname or '').lower()
+    if not host:
+        return None
     if 'youtu.be' in host:
-        video_id = parsed.path.lstrip('/')
+        video_id = parsed.path.strip('/').split('/')[0]
         return video_id or None
     if 'youtube.com' in host:
         video_id = parse_qs(parsed.query).get('v')
-        return video_id[0] if video_id else None
+        if video_id and video_id[0]:
+            return video_id[0]
+        for prefix in _PATH_ID_PREFIXES:
+            if parsed.path.startswith(prefix):
+                video_id = parsed.path[len(prefix):].strip('/').split('/')[0]
+                return video_id or None
     return None
 
 def youtube_to_srt(video_id: str, lang: str, base_folder: str = BASE_FOLDER) -> str:

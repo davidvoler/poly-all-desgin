@@ -757,12 +757,11 @@ class _PipelineButton extends StatelessWidget {
   }
 }
 
-String _newLocalId() => DateTime.now().microsecondsSinceEpoch.toString();
-
 // ===========================================================================
-// Video Modules — a module is a single video. Mirrors server VideoModule,
-// persisted the same way as everything else in the Edit tab (stage
-// locally, one updateVideoCourse call on Save).
+// Video Modules — a module is a single video. Mirrors server VideoModule, a
+// real row in course_simple.module (module_type='video'). Unlike the rest
+// of the Edit tab, each module is created/edited/deleted through its own
+// endpoint immediately — there's no local staging or bulk Save button.
 // ===========================================================================
 class _ModulesTab extends ConsumerStatefulWidget {
   final VideoCourse course;
@@ -775,39 +774,47 @@ class _ModulesTab extends ConsumerStatefulWidget {
 
 class _ModulesTabState extends ConsumerState<_ModulesTab> {
   late List<VideoModule> _modules = List.of(widget.course.modules);
-  bool _saving = false;
+  bool _addingModule = false;
   String? _error;
 
-  void _addModule() {
-    setState(() => _modules = [
-          ..._modules,
-          VideoModule(moduleId: _newLocalId(), title: 'Module ${_modules.length + 1}'),
-        ]);
-  }
-
-  void _removeModule(int i) {
-    setState(() => _modules = [..._modules]..removeAt(i));
-  }
-
-  Future<void> _save() async {
+  Future<void> _addModule() async {
     setState(() {
-      _saving = true;
+      _addingModule = true;
       _error = null;
     });
     try {
-      final updated = widget.course.copyWith(modules: _modules);
-      final saved = await ref.read(dashboardApiProvider).updateVideoCourse(updated);
+      final created = await ref
+          .read(dashboardApiProvider)
+          .createVideoModule(widget.course.courseId, title: 'Module ${_modules.length + 1}');
       if (!mounted) return;
-      widget.onSaved(saved);
+      setState(() => _modules = [..._modules, created]);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = '$e');
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) setState(() => _addingModule = false);
     }
   }
 
-  Future<VideoCourse> _downloadModuleSubtitles(String moduleId) =>
+  Future<void> _removeModule(int i) async {
+    final module = _modules[i];
+    setState(() => _modules = [..._modules]..removeAt(i));
+    if (module.moduleId == null) return;
+    try {
+      await ref.read(dashboardApiProvider).deleteVideoModule(widget.course.courseId, module.moduleId!);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _modules = [..._modules]..insert(i, module);
+        _error = '$e';
+      });
+    }
+  }
+
+  Future<VideoModule> _updateModule(VideoModule module) =>
+      ref.read(dashboardApiProvider).updateVideoModule(module);
+
+  Future<VideoModule> _downloadModuleSubtitles(int moduleId) =>
       ref.read(dashboardApiProvider).downloadModuleSubtitles(widget.course.courseId, moduleId);
 
   @override
@@ -837,23 +844,22 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
               _modules[i] = updated;
             }),
             onRemove: () => _removeModule(i),
-            onSaveModule: _save,
+            onSaveModule: _updateModule,
             onDownloadSubtitles: _downloadModuleSubtitles,
           ),
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
-          child: GhostButton(label: 'Add module', leading: Icons.add, onTap: _addModule),
+          child: GhostButton(
+            label: _addingModule ? 'Adding…' : 'Add module',
+            leading: Icons.add,
+            onTap: _addingModule ? null : _addModule,
+          ),
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text('Could not save — $_error', style: TextStyle(fontSize: 12, color: DashColors.red400)),
+          Text(_error!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: PrimaryButton(label: _saving ? 'Saving…' : 'Save changes', onTap: _saving ? null : _save),
-        ),
       ],
     );
   }
@@ -863,8 +869,8 @@ class _ModuleCard extends StatefulWidget {
   final VideoModule module;
   final ValueChanged<VideoModule> onChanged;
   final VoidCallback onRemove;
-  final Future<void> Function() onSaveModule;
-  final Future<VideoCourse> Function(String moduleId) onDownloadSubtitles;
+  final Future<VideoModule> Function(VideoModule module) onSaveModule;
+  final Future<VideoModule> Function(int moduleId) onDownloadSubtitles;
   const _ModuleCard({
     super.key,
     required this.module,
@@ -881,53 +887,54 @@ class _ModuleCard extends StatefulWidget {
 class _ModuleCardState extends State<_ModuleCard> {
   late final _title = TextEditingController(text: widget.module.title);
   late final _videoUrl = TextEditingController(text: widget.module.videoUrl);
-  Timer? _videoUrlDebounce;
-  bool _savingVideoUrl = false;
+  Timer? _saveDebounce;
+  bool _saving = false;
   bool _downloadingSubtitles = false;
   String? _subtitlesError;
 
   @override
   void dispose() {
-    _videoUrlDebounce?.cancel();
+    _saveDebounce?.cancel();
     _title.dispose();
     _videoUrl.dispose();
     super.dispose();
   }
 
-  void _pushTitle() => widget.onChanged(widget.module.copyWith(title: _title.text.trim()));
-
   /// Updates the module locally on every keystroke (so the thumbnail
-  /// preview reacts live), then saves the module ~1s after the user stops
-  /// typing — matches "after adding a video URL, show it and save".
-  void _pushVideoUrl() {
-    widget.onChanged(widget.module.copyWith(videoUrl: _videoUrl.text.trim()));
-    _videoUrlDebounce?.cancel();
-    final url = _videoUrl.text.trim();
-    if (url.isEmpty) return;
-    _videoUrlDebounce = Timer(const Duration(milliseconds: 900), () async {
+  /// preview reacts live), then saves ~1s after the user stops typing —
+  /// matches "after adding a video URL, show it and save".
+  void _pushEdits() {
+    final updated = widget.module.copyWith(
+      title: _title.text.trim(),
+      videoUrl: _videoUrl.text.trim(),
+    );
+    widget.onChanged(updated);
+    _saveDebounce?.cancel();
+    if (updated.moduleId == null) return;
+    _saveDebounce = Timer(const Duration(milliseconds: 900), () async {
       if (!mounted) return;
-      setState(() => _savingVideoUrl = true);
+      setState(() => _saving = true);
       try {
-        await widget.onSaveModule();
+        final saved = await widget.onSaveModule(updated);
+        if (!mounted) return;
+        widget.onChanged(saved);
       } finally {
-        if (mounted) setState(() => _savingVideoUrl = false);
+        if (mounted) setState(() => _saving = false);
       }
     });
   }
 
   Future<void> _downloadSubtitles() async {
+    final moduleId = widget.module.moduleId;
+    if (moduleId == null) return;
     setState(() {
       _downloadingSubtitles = true;
       _subtitlesError = null;
     });
     try {
-      final updated = await widget.onDownloadSubtitles(widget.module.moduleId);
-      final match = updated.modules.firstWhere(
-        (m) => m.moduleId == widget.module.moduleId,
-        orElse: () => widget.module,
-      );
+      final updated = await widget.onDownloadSubtitles(moduleId);
       if (!mounted) return;
-      widget.onChanged(match);
+      widget.onChanged(updated);
     } catch (e) {
       if (!mounted) return;
       setState(() => _subtitlesError = '$e');
@@ -953,7 +960,7 @@ class _ModuleCardState extends State<_ModuleCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: CourseField(controller: _title, label: 'Module title', onChanged: _pushTitle)),
+              Expanded(child: CourseField(controller: _title, label: 'Module title', onChanged: _pushEdits)),
               IconButton(
                 tooltip: 'Remove module',
                 iconSize: 16,
@@ -968,9 +975,9 @@ class _ModuleCardState extends State<_ModuleCard> {
             controller: _videoUrl,
             label: 'Video URL',
             hint: 'https://www.youtube.com/watch?v=...',
-            onChanged: _pushVideoUrl,
+            onChanged: _pushEdits,
           ),
-          if (_savingVideoUrl) ...[
+          if (_saving) ...[
             const SizedBox(height: 4),
             Text('Saving…', style: TextStyle(fontSize: 11, color: DashColors.w(0.5))),
           ],
@@ -983,6 +990,7 @@ class _ModuleCardState extends State<_ModuleCard> {
               doneLabel: '${m.subtitles?.length ?? 0} subtitle lines',
               done: m.subtitles != null,
               busy: _downloadingSubtitles,
+              enabled: m.moduleId != null,
               onTap: _downloadSubtitles,
             ),
             if (_subtitlesError != null) ...[

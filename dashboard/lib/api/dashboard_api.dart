@@ -398,14 +398,40 @@ class DashboardApi {
   Future<VideoCourse> createVideoSections(int courseId, String videoUrl) =>
       _videoPipelineStep('create_video_sections', courseId, videoUrl);
 
+  /// Video Modules — real rows in course_simple.module (module_type
+  /// 'video'), created/edited/deleted independently rather than through
+  /// updateVideoCourse.
+  Future<VideoModule> createVideoModule(int courseId, {String? title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/create_video_module',
+      data: {'course_id': courseId, 'title': title},
+    );
+    return VideoModule.fromJson(res.data ?? const {});
+  }
+
+  Future<VideoModule> updateVideoModule(VideoModule module) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/update_video_module',
+      data: module.toJson(),
+    );
+    return VideoModule.fromJson(res.data ?? module.toJson());
+  }
+
+  Future<void> deleteVideoModule(int courseId, int moduleId) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/delete_video_module',
+      data: {'course_id': courseId, 'module_id': moduleId},
+    );
+  }
+
   /// Same as [downloadVideoSubtitles], but for a Video Module's own video
   /// (matched by [moduleId] rather than a video already in course.videos).
-  Future<VideoCourse> downloadModuleSubtitles(int courseId, String moduleId) async {
+  Future<VideoModule> downloadModuleSubtitles(int courseId, int moduleId) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/generate_poc_new/download_module_subtitles',
       data: {'course_id': courseId, 'module_id': moduleId},
     );
-    return VideoCourse.fromJson(res.data ?? const {});
+    return VideoModule.fromJson(res.data ?? const {});
   }
 
   /// Everything the course workspace needs in one call — course meta,

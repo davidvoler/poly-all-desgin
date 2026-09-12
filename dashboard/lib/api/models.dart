@@ -1193,44 +1193,66 @@ class VideoItem {
 }
 
 /// A single video within a video course. Mirrors server `VideoModule` — a
-/// module is one video, not a group.
+/// real row in course_simple.module (module_type='video'), alongside the
+/// AI-course modules that already live in that table.
 class VideoModule {
-  final String moduleId;
+  final int? moduleId;
+  final int courseId;
   final String title;
   final String videoUrl;
-  // None until Download Subtitles has run for this module's video.
+  // None until their pipeline step has run for this module's video.
   final List<VideoSubtitleLine>? subtitles;
+  final List<String>? words;
+  final List<String>? sentences;
 
   const VideoModule({
-    required this.moduleId,
+    this.moduleId,
+    required this.courseId,
     this.title = '',
     this.videoUrl = '',
     this.subtitles,
+    this.words,
+    this.sentences,
   });
 
   factory VideoModule.fromJson(Map<String, dynamic> j) => VideoModule(
-        moduleId: (j['module_id'] as String?) ?? '',
+        moduleId: j['module_id'] as int?,
+        courseId: j['course_id'] as int,
         title: (j['title'] as String?) ?? '',
         videoUrl: (j['video_url'] as String?) ?? '',
         subtitles: (j['subtitles'] as List?)
             ?.cast<Map<String, dynamic>>()
             .map(VideoSubtitleLine.fromJson)
             .toList(),
+        words: (j['words'] as List?)?.cast<String>(),
+        sentences: (j['sentences'] as List?)?.cast<String>(),
       );
 
   Map<String, dynamic> toJson() => {
         'module_id': moduleId,
+        'course_id': courseId,
         'title': title,
         'video_url': videoUrl,
         if (subtitles != null) 'subtitles': subtitles!.map((s) => s.toJson()).toList(),
+        if (words != null) 'words': words,
+        if (sentences != null) 'sentences': sentences,
       };
 
-  VideoModule copyWith({String? title, String? videoUrl, List<VideoSubtitleLine>? subtitles}) =>
+  VideoModule copyWith({
+    String? title,
+    String? videoUrl,
+    List<VideoSubtitleLine>? subtitles,
+    List<String>? words,
+    List<String>? sentences,
+  }) =>
       VideoModule(
         moduleId: moduleId,
+        courseId: courseId,
         title: title ?? this.title,
-        subtitles: subtitles ?? this.subtitles,
         videoUrl: videoUrl ?? this.videoUrl,
+        subtitles: subtitles ?? this.subtitles,
+        words: words ?? this.words,
+        sentences: sentences ?? this.sentences,
       );
 }
 
