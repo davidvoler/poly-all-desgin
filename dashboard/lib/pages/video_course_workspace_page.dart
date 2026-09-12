@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../util/error_text.dart';
 import '../widgets/ai_prompt_controls.dart';
 import '../widgets/common.dart';
 import 'ai_courses_page.dart' show kAiLevels;
@@ -59,26 +59,11 @@ class _VideoCourseWorkspacePageState extends ConsumerState<VideoCourseWorkspaceP
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _loadError = _errorText(e);
+        _loadError = apiErrorText(e);
       });
     }
   }
 
-  String _errorText(Object e) {
-    if (e is DioException) {
-      final code = e.response?.statusCode;
-      final data = e.response?.data;
-      final detail = data is Map ? (data['detail'] ?? data['error'] ?? data['message']) : null;
-      final where = e.requestOptions.uri.path;
-      final parts = [
-        if (code != null) 'HTTP $code',
-        if (detail != null) '$detail' else e.type.name,
-        where,
-      ];
-      return parts.join(' · ');
-    }
-    return e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -450,7 +435,7 @@ class _EditTabState extends ConsumerState<_EditTab> {
       widget.onSaved(saved);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = '$e');
+      setState(() => _error = apiErrorText(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -601,7 +586,7 @@ class _VideoEditRowState extends ConsumerState<_VideoEditRow> {
       widget.onChanged(match);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = '$e');
+      setState(() => _error = apiErrorText(e));
     } finally {
       if (mounted) setState(() => _busyAction = null);
     }
@@ -790,7 +775,7 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
       setState(() => _modules = [..._modules, created]);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = '$e');
+      setState(() => _error = apiErrorText(e));
     } finally {
       if (mounted) setState(() => _addingModule = false);
     }
@@ -806,7 +791,7 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
       if (!mounted) return;
       setState(() {
         _modules = [..._modules]..insert(i, module);
-        _error = '$e';
+        _error = apiErrorText(e);
       });
     }
   }
@@ -816,6 +801,9 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
 
   Future<VideoModule> _downloadModuleSubtitles(int moduleId) =>
       ref.read(dashboardApiProvider).downloadModuleSubtitles(widget.course.courseId, moduleId);
+
+  Future<VideoModule> _extractModuleContent(int moduleId) =>
+      ref.read(dashboardApiProvider).extractModuleContent(widget.course.courseId, moduleId);
 
   @override
   Widget build(BuildContext context) {
@@ -846,6 +834,7 @@ class _ModulesTabState extends ConsumerState<_ModulesTab> {
             onRemove: () => _removeModule(i),
             onSaveModule: _updateModule,
             onDownloadSubtitles: _downloadModuleSubtitles,
+            onExtractContent: _extractModuleContent,
           ),
         const SizedBox(height: 8),
         Align(
@@ -871,6 +860,7 @@ class _ModuleCard extends StatefulWidget {
   final VoidCallback onRemove;
   final Future<VideoModule> Function(VideoModule module) onSaveModule;
   final Future<VideoModule> Function(int moduleId) onDownloadSubtitles;
+  final Future<VideoModule> Function(int moduleId) onExtractContent;
   const _ModuleCard({
     super.key,
     required this.module,
@@ -878,6 +868,7 @@ class _ModuleCard extends StatefulWidget {
     required this.onRemove,
     required this.onSaveModule,
     required this.onDownloadSubtitles,
+    required this.onExtractContent,
   });
 
   @override
@@ -891,6 +882,8 @@ class _ModuleCardState extends State<_ModuleCard> {
   bool _saving = false;
   bool _downloadingSubtitles = false;
   String? _subtitlesError;
+  bool _extractingContent = false;
+  String? _extractError;
 
   @override
   void dispose() {
@@ -911,17 +904,28 @@ class _ModuleCardState extends State<_ModuleCard> {
     widget.onChanged(updated);
     _saveDebounce?.cancel();
     if (updated.moduleId == null) return;
-    _saveDebounce = Timer(const Duration(milliseconds: 900), () async {
+    _saveDebounce = Timer(const Duration(milliseconds: 900), () => _save(updated));
+  }
+
+  Future<void> _save(VideoModule module) async {
+    setState(() => _saving = true);
+    try {
+      final saved = await widget.onSaveModule(module);
       if (!mounted) return;
-      setState(() => _saving = true);
-      try {
-        final saved = await widget.onSaveModule(updated);
-        if (!mounted) return;
-        widget.onChanged(saved);
-      } finally {
-        if (mounted) setState(() => _saving = false);
-      }
-    });
+      widget.onChanged(saved);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// The title/video-URL save is debounced (900ms after the last
+  /// keystroke), so a pipeline button clicked right after typing could
+  /// otherwise race ahead of that save and run against the server's
+  /// stale (often still-empty) video_url. Flush it first.
+  Future<void> _flushPendingSave() async {
+    if (_saveDebounce == null || !_saveDebounce!.isActive) return;
+    _saveDebounce!.cancel();
+    await _save(widget.module);
   }
 
   Future<void> _downloadSubtitles() async {
@@ -932,14 +936,35 @@ class _ModuleCardState extends State<_ModuleCard> {
       _subtitlesError = null;
     });
     try {
+      await _flushPendingSave();
       final updated = await widget.onDownloadSubtitles(moduleId);
       if (!mounted) return;
       widget.onChanged(updated);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _subtitlesError = '$e');
+      setState(() => _subtitlesError = apiErrorText(e));
     } finally {
       if (mounted) setState(() => _downloadingSubtitles = false);
+    }
+  }
+
+  Future<void> _extractContent() async {
+    final moduleId = widget.module.moduleId;
+    if (moduleId == null) return;
+    setState(() {
+      _extractingContent = true;
+      _extractError = null;
+    });
+    try {
+      await _flushPendingSave();
+      final updated = await widget.onExtractContent(moduleId);
+      if (!mounted) return;
+      widget.onChanged(updated);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _extractError = apiErrorText(e));
+    } finally {
+      if (mounted) setState(() => _extractingContent = false);
     }
   }
 
@@ -985,17 +1010,35 @@ class _ModuleCardState extends State<_ModuleCard> {
             const SizedBox(height: 10),
             _VideoCard(video: VideoItem(videoUrl: m.videoUrl)),
             const SizedBox(height: 10),
-            _PipelineButton(
-              label: 'Download subtitles',
-              doneLabel: '${m.subtitles?.length ?? 0} subtitle lines',
-              done: m.subtitles != null,
-              busy: _downloadingSubtitles,
-              enabled: m.moduleId != null,
-              onTap: _downloadSubtitles,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _PipelineButton(
+                  label: 'Download subtitles',
+                  doneLabel: '${m.subtitles?.length ?? 0} subtitle lines',
+                  done: m.subtitles != null,
+                  busy: _downloadingSubtitles,
+                  enabled: m.moduleId != null,
+                  onTap: _downloadSubtitles,
+                ),
+                _PipelineButton(
+                  label: 'Extract words & sentences',
+                  doneLabel: '${m.words?.length ?? 0} words · ${m.sentences?.length ?? 0} sentences',
+                  done: m.words != null,
+                  busy: _extractingContent,
+                  enabled: m.subtitles != null,
+                  onTap: _extractContent,
+                ),
+              ],
             ),
             if (_subtitlesError != null) ...[
               const SizedBox(height: 6),
               SelectableText(_subtitlesError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
+            ],
+            if (_extractError != null) ...[
+              const SizedBox(height: 6),
+              SelectableText(_extractError!, style: TextStyle(fontSize: 12, color: DashColors.red400)),
             ],
           ],
         ],

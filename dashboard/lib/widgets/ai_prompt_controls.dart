@@ -750,6 +750,15 @@ class _VideoCourseOptionsEditorState extends State<VideoCourseOptionsEditor> {
             step: 30,
             onChanged: (v) => _set(_o.copyWith(videoSectionLenSec: v)),
           ),
+          const SizedBox(height: 10),
+          NumberStepper(
+            label: 'Max sentence length (words)',
+            value: _o.maxSentenceWords,
+            min: 3,
+            max: 30,
+            step: 1,
+            onChanged: (v) => _set(_o.copyWith(maxSentenceWords: v)),
+          ),
         ],
       ],
     );

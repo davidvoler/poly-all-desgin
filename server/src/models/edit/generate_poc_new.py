@@ -97,6 +97,9 @@ class VideoCourseOption(BaseModel):
     provider: AiProvider | None = AiProvider.OLLAMA
     model: AiModel | None = AiModel.GEMMA4
     video_section_len_sec: int | None = 120
+    # Sentences extracted from subtitles longer than this (by word count)
+    # are dropped — keeps flashcard-style sentences short.
+    max_sentence_words: int | None = 12
 
 
 class VideoSubtitleLine(BaseModel):

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../util/error_text.dart';
 import '../widgets/ai_prompt_controls.dart';
 import '../widgets/common.dart';
 import 'ai_courses_page.dart' show flagFor, kAiLevels;
@@ -136,7 +136,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _loadError = _errorText(e);
+        _loadError = apiErrorText(e);
       });
     }
   }
@@ -262,23 +262,6 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     });
   }
 
-  /// Unwrap a caught error into something worth copying — a DioException's
-  /// server `detail` / status / URL rather than a stack-trace-shaped blob.
-  String _errorText(Object e) {
-    if (e is DioException) {
-      final code = e.response?.statusCode;
-      final data = e.response?.data;
-      final detail = data is Map ? (data['detail'] ?? data['error'] ?? data['message']) : null;
-      final where = e.requestOptions.uri.path;
-      final parts = [
-        if (code != null) 'HTTP $code',
-        if (detail != null) '$detail' else e.type.name,
-        where,
-      ];
-      return parts.join(' · ');
-    }
-    return e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
-  }
 
   /// Kick an AI word-list generation and wait for it. Lives on the page
   /// (not the Words tab) so switching tabs mid-run doesn't abandon the
@@ -312,7 +295,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content: SelectableText('Could not generate words — ${_errorText(e)}'),
+          content: SelectableText('Could not generate words — ${apiErrorText(e)}'),
           backgroundColor: DashColors.red400,
         ));
     } finally {
@@ -325,7 +308,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     try {
       await cb();
     } catch (e) {
-      _appendAssistant('Something went wrong — ${_errorText(e)}', isError: true);
+      _appendAssistant('Something went wrong — ${apiErrorText(e)}', isError: true);
     } finally {
       if (mounted) setState(() => _thinking = false);
     }
@@ -443,7 +426,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
         numElements: _exerciseTarget(words.length),
       );
     } catch (e) {
-      _appendAssistant('Couldn\'t start exercises for $title — ${_errorText(e)}', isError: true);
+      _appendAssistant('Couldn\'t start exercises for $title — ${apiErrorText(e)}', isError: true);
       return;
     }
 
@@ -469,7 +452,7 @@ class _AiCourseWorkspacePageState extends ConsumerState<AiCourseWorkspacePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _pending.removeWhere((p) => p.lessonId == lessonId));
-      _appendAssistant('$title — exercise generation failed: ${_errorText(e)}', isError: true);
+      _appendAssistant('$title — exercise generation failed: ${apiErrorText(e)}', isError: true);
       return;
     }
     if (!mounted) return;

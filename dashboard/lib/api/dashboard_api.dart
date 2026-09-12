@@ -434,6 +434,17 @@ class DashboardApi {
     return VideoModule.fromJson(res.data ?? const {});
   }
 
+  /// Ranks words by rarity and pulls out short sentences (at most
+  /// metadata.maxSentenceWords words) from the module's downloaded
+  /// subtitles.
+  Future<VideoModule> extractModuleContent(int courseId, int moduleId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/extract_module_content',
+      data: {'course_id': courseId, 'module_id': moduleId},
+    );
+    return VideoModule.fromJson(res.data ?? const {});
+  }
+
   /// Everything the course workspace needs in one call — course meta,
   /// word bank (with used-in-a-lesson flags), and every
   /// module/lesson/sentence/exercise.

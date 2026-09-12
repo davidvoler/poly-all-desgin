@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
 import '../theme.dart';
+import '../util/error_text.dart';
 import '../widgets/ai_prompt_controls.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
@@ -209,7 +210,7 @@ class _CreateFromSubtitlesPageState
       if (!mounted) return;
       setState(() {
         _importing = false;
-        _importError = '$e';
+        _importError = apiErrorText(e);
       });
     }
   }

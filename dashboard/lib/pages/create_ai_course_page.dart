@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../util/error_text.dart';
 import '../widgets/ai_prompt_controls.dart';
 import '../widgets/common.dart';
 import '../widgets/shell.dart';
@@ -77,7 +78,7 @@ class _CreateAiCoursePageState extends ConsumerState<CreateAiCoursePage> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = '$e';
+        _error = apiErrorText(e);
       });
     }
   }

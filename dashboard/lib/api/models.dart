@@ -1031,12 +1031,16 @@ class VideoCourseOptions {
   final String provider; // ollama | openai | claude
   final String model; // gemma4
   final int videoSectionLenSec;
+  // Sentences extracted from subtitles longer than this (by word count)
+  // are dropped.
+  final int maxSentenceWords;
 
   const VideoCourseOptions({
     this.contentSource = 'corpus',
     this.provider = 'ollama',
     this.model = 'gemma4',
     this.videoSectionLenSec = 120,
+    this.maxSentenceWords = 12,
   });
 
   VideoCourseOptions copyWith({
@@ -1044,12 +1048,14 @@ class VideoCourseOptions {
     String? provider,
     String? model,
     int? videoSectionLenSec,
+    int? maxSentenceWords,
   }) =>
       VideoCourseOptions(
         contentSource: contentSource ?? this.contentSource,
         provider: provider ?? this.provider,
         model: model ?? this.model,
         videoSectionLenSec: videoSectionLenSec ?? this.videoSectionLenSec,
+        maxSentenceWords: maxSentenceWords ?? this.maxSentenceWords,
       );
 
   Map<String, dynamic> toJson() => {
@@ -1057,6 +1063,7 @@ class VideoCourseOptions {
         'provider': provider,
         'model': model,
         'video_section_len_sec': videoSectionLenSec,
+        'max_sentence_words': maxSentenceWords,
       };
 
   factory VideoCourseOptions.fromJson(Map<String, dynamic> j) {
@@ -1068,6 +1075,7 @@ class VideoCourseOptions {
       model: (j['model'] as String?) ?? d.model,
       videoSectionLenSec:
           integer(j['video_section_len_sec'], d.videoSectionLenSec),
+      maxSentenceWords: integer(j['max_sentence_words'], d.maxSentenceWords),
     );
   }
 }

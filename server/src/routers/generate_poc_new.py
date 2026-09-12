@@ -16,6 +16,8 @@ from utils.generate import (
     generate_sentences,
     generate_translated_sentence_distractors,
 )
+from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled
+
 from utils.edit.youtube_srt import youtube_id_from_url, youtube_subs
 from utils.edit.part_utils import get_ranked_words, text_to_parts
 
@@ -329,6 +331,18 @@ def _find_video(course: VideoCourse, video_url: str) -> VideoItem:
     raise HTTPException(status_code=404, detail="Video not found on this course")
 
 
+def _download_subtitles_or_400(video_id: str, lang: str) -> list[dict]:
+    """youtube_subs, with the common "this video just has no captions" cases
+    turned into one friendly message instead of the raw library error."""
+    try:
+        subs, _seconds = youtube_subs(video_id, lang)
+        return subs
+    except (NoTranscriptFound, TranscriptsDisabled):
+        raise HTTPException(status_code=400, detail="No subtitles available for this video")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not download subtitles: {e}")
+
+
 _WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
 
 
@@ -372,10 +386,7 @@ async def download_video_subtitles(body: VideoAction, school_user: SchoolUser = 
     video_id = youtube_id_from_url(body.video_url)
     if not video_id:
         raise HTTPException(status_code=400, detail="Could not parse a YouTube video id from this URL")
-    try:
-        subs, _seconds = youtube_subs(video_id, course.lang or "en")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not download subtitles: {e}")
+    subs = _download_subtitles_or_400(video_id, course.lang or "en")
     video.subtitles = [VideoSubtitleLine(**s) for s in subs]
     await _save_video_course_videos(course, school_user)
     return course
@@ -425,14 +436,45 @@ async def download_module_subtitles(body: ModuleAction, school_user: SchoolUser 
     video_id = youtube_id_from_url(module.video_url)
     if not video_id:
         raise HTTPException(status_code=400, detail="Could not parse a YouTube video id from this URL")
-    try:
-        subs, _seconds = youtube_subs(video_id, course.lang or "en")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not download subtitles: {e}")
+    subs = _download_subtitles_or_400(video_id, course.lang or "en")
     module.subtitles = [VideoSubtitleLine(**s) for s in subs]
     await run_query(
         "UPDATE course_simple.module SET subtitles = %s, updated_at = now() WHERE module_id = %s",
         (json.dumps([s.model_dump() for s in module.subtitles]), module.module_id),
+    )
+    return module
+
+
+@router.post("/extract_module_content", response_model=VideoModule)
+async def extract_module_content(body: ModuleAction, school_user: SchoolUser = Depends(current_ai_school_user)):
+    """Ranks the words in the module's subtitles by rarity and pulls out
+    short sentences (at most metadata.max_sentence_words words) — requires
+    subtitles to have been downloaded first."""
+    course, module = await _load_video_module_owned(body.course_id, body.module_id, school_user)
+    if module.subtitles is None:
+        raise HTTPException(status_code=400, detail="Download subtitles first")
+    full_text = " ".join(s.text for s in module.subtitles)
+    max_words = (course.metadata or VideoCourseOption()).max_sentence_words or 12
+
+    tokens = _tokenize(full_text)
+    try:
+        ranked = get_ranked_words(tokens, course.lang or "en")
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not rank words for language '{course.lang}': {e}",
+        )
+    ranked.sort(key=lambda r: r["rank"])
+    words = [r["word"] for r in ranked]
+
+    sentences_all, _parts = text_to_parts(full_text)
+    sentences = [s for s in sentences_all if len(s.split()) <= max_words]
+
+    module.words = words
+    module.sentences = sentences
+    await run_query(
+        "UPDATE course_simple.module SET words = %s, sentences = %s, updated_at = now() WHERE module_id = %s",
+        (words, sentences, module.module_id),
     )
     return module
 
