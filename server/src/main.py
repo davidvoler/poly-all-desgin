@@ -17,6 +17,7 @@ from routers import (
     auth_new,
     generate_poc_task,
     generate_poc_new,
+    video_module,
 )
 from routers.edit import  (
     edit_course,
@@ -159,6 +160,10 @@ app.include_router(generate_poc_task.router,
 app.include_router(generate_poc_new.router,
     prefix="/api/v1/generate_poc_new",
     tags=["generate_poc_new"])
+
+app.include_router(video_module.router,
+    prefix="/api/v1/video_module",
+    tags=["video_module"])
 
 app.include_router(status.router,
     prefix="/api/v1/tasks",
