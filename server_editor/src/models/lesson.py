@@ -8,3 +8,5 @@ class Lesson(BaseModel):
     description: str|None = None
     words: list[str]|None = None
     sentences: list[str]|None = None
+    deleted: bool|None = False
+    weight: int|None = 0

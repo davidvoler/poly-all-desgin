@@ -1,14 +1,16 @@
+create schema if not exists course;
+
 create table course.course (
     course_id serial primary key,
     school varchar(255) not null,
-    user int8 not null,
+    user_id int8 not null,
     lang varchar(12) not null,
     to_lang varchar(12) not null,
     level varchar(30) not null,
     title varchar(255) not null,
+    description text,
     deleted boolean default false,
     status varchar(50), -- draft, reviewed, published, archived
-    description text,
     course_options jsonb,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
@@ -43,14 +45,20 @@ create table course.module (
     module_id serial primary key,
     course_id int not null,
     title varchar(255) not null,
-    description text
+    description text,
+    deleted boolean default false,
+    weight int2 DEFAULT 0 NULL
 );
 
 create table course.lesson (
     lesson_id serial primary key,
     module_id int not null,
     course_id int not null,
-    title varchar(255) not null
+    title varchar(255) not null,
+    description text,
+    words varchar(100)[],
+    deleted boolean default false,
+    weight int2 DEFAULT 0 NULL
 );
 
 create table course.exercise (
@@ -58,10 +66,38 @@ create table course.exercise (
     course_id int,
     module_id int,
     lesson_id int ,
-    exercise_type varchar(30),
+    exercise_type varchar(100),
     question varchar(255),
     options jsonb,
-    explanation text
+    explanation text,
+	sentence_alt1 varchar(300) NULL,
+	sentence_alt2 varchar(300) NULL,
+    sentence_alt3 varchar(300) NULL,
+	ruby_text jsonb NULL,
+	annotations jsonb NULL,
+	answer varchar(300) NULL,
+    weight int2 DEFAULT 0 NULL
+);
+
+
+create table course.video (
+    video_id serial primary key,
+    course_id int,
+    module_id int,
+    lang varchar(12) not null,
+    url varchar(500) not null,
+    raw_subtitles text,
+    deleted boolean default false,
+    weight int2 DEFAULT 0 NULL
+);
+create table course.subtitles(
+    video_id int not null,
+    lang varchar(12) not null,
+    start_time int not null,
+    end_time int not null,
+    text text not null,
+    deleted boolean default false,
+    weight int2 DEFAULT 0 NULL
 );
 
 
