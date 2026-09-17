@@ -27,8 +27,9 @@ for l in lines:
     duration = float(l.get("duration ", 0))
     print(start)
     if start > next_break:
+        text+= l.get("text", "") # adding text to the current break - even if it is also added to the beginning of the next break
         print(f"Break at {next_break} seconds: {text}")
-        sections.append({"text": text , "start": last_break, "end": next_break})
+        sections.append({"text": text , "start": last_break, "end": start+duration})
         next_break += break_video_seconds
         last_break = next_break
         text = l.get("text", "") + " "

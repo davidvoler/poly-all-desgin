@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from prompts.single_choice import SingleChoiceList, SingleChoicePrompt, get_single_choice
 from models.exercise import Exercise
-from models.generate import GenerateQuizRequest
+from models.generate import QuizRequest
 
 async def get_quiz_cache(quiz_request: QuizRequest)->SingleChoiceList:
     return SingleChoiceList(questions=[])
@@ -9,7 +9,7 @@ async def get_quiz_cache(quiz_request: QuizRequest)->SingleChoiceList:
 async def save_exercise(exercises: list[Exercise]):
     pass
 
-async def generate_single_choice_quiz(quiz_request: GenerateQuizRequest):
+async def generate_single_choice_quiz(quiz_request: QuizRequest):
     #Get from cache first
     number_of_questions = quiz_request.number_of_questions
     if quiz_request.cache:

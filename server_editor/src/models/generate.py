@@ -1,30 +1,28 @@
 from pydantic import BaseModel
 
-class GenerateQuizRequest(BaseModel):
+class GenerateRequest(BaseModel):
     course_id: int
     module_id: int
     lesson_id: int
     lang: str
     to_lang: str
-
-class GenerateLessonRequest(BaseModel):
-    course_id: int
-    module_id: int
-    words: list[str]
-    lang: str
-    to_lang: str
-
-
-class GenerateWordsRequest(BaseModel):
-    pass
-
-
-class QuizRequest(BaseModel):
-    course_id: str
-    module_id: str
-    lesson_id: str
     provider: str
     model: str
     cache: bool = True
+
+class GenerateWordsRequest(GenerateRequest):
+    count: int
+    already_used: list[str] = []
+
+class GenerateLessonRequest(GenerateRequest):
+    words: list[str]
+
+
+
+class GenerateQuizRequest(GenerateRequest):
     number_of_questions: int
     word: str
+
+class BreakTextRequest(GenerateRequest):
+    text: str
+    
