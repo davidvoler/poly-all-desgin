@@ -1,6 +1,6 @@
 """
 """
-from server.src.models.edit.generate_poc import Course
+from models.course import Course
 from taskiq import Context, TaskiqDepends
 from task_runner import broker
 from models.tasks import TaskResults

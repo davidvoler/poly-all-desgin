@@ -1,7 +1,7 @@
 from fastapi import HTTPException, Depends, APIRouter
 from models.course import Course
 from utils.db import get_query_results
-from utils.permision import get_school_user
+from utils.permission import get_school_user
 router = APIRouter()
 
 

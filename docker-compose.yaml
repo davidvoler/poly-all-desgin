@@ -121,3 +121,27 @@ services:
   #   volumes:
   #     - ./build_web/web:/usr/share/nginx/html
   #     - ./conf/web.conf:/etc/nginx/conf.d/default.conf
+
+
+  editor-server:
+    container_name: editor-server
+    image: editor-server:polyglots
+    build:
+      context: server_editor
+      dockerfile: Dockerfile
+    ports:
+      - 8005:8005
+    volumes:
+      - ./server_editor/src:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8005"
+      - --reload
+    depends_on:
+      - postgres

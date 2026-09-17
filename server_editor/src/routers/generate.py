@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from tasks.generate_quiz import generate_words_with_ai, generate_quiz_with_ai
-from models.generate import GenerateLessonRequest, GenerateQuizRequest
+from tasks.generate_quiz import generate_quiz_with_ai
+from tasks.generate_words import generate_words_with_ai
+from models.generate import GenerateLessonRequest, GenerateQuizRequest, GenerateWordsRequest
 from models.tasks import TaskStatus
 from utils.db import  get_query_results
 from utils.permission import has_course_permission
@@ -10,7 +11,7 @@ router = APIRouter()
 async def generate_words(request: GenerateWordsRequest, has_permission=Depends(has_course_permission)):
     if not has_permission:
         raise HTTPException(status_code=403, detail="Permission denied")
-    task = await generate_words_with_ai(request.course_id, request.module_id, request.count, request.word, request.school_user)
+    task = await generate_words_with_ai(request.lang, request.to_lang, request.course_id, request.module_id, request.count, request.word, request.school_user)
     return TaskStatus(
             task_id=task.task_id,
             task_type="generate_words",
@@ -21,7 +22,7 @@ async def generate_words(request: GenerateWordsRequest, has_permission=Depends(h
 async def generate_quiz(request: GenerateQuizRequest, has_permission=Depends(has_course_permission)):
     if not has_permission:
         raise HTTPException(status_code=403, detail="Permission denied")
-    task = await generate_quiz_with_ai(request.course_id, request.module_id, request.count, request.word, request.school_user)
+    task = await generate_quiz_with_ai(request.lang, request.to_lang, request.course_id, request.module_id, request.count, request.word, request.school_user)
     return TaskStatus(
             task_id=task.task_id,
             task_type="generate_quiz",
@@ -41,7 +42,7 @@ async def generate_lesson(request: GenerateLessonRequest, has_permission=Depends
     lesson_id = await get_query_results(sql, values)
     results = []
     for word in request.words:
-        task = await generate_quiz_with_ai(request.course_id, request.module_id, request.words, request.lang, request.to_lang)
+        task = await generate_quiz_with_ai(request.lang, request.to_lang, request.course_id, request.module_id, 1, word, request.school_user)
         results.append(TaskStatus(
                 task_id=task.task_id,
                 task_type="generate_quiz",

@@ -1,0 +1,27 @@
+fastapi
+uvicorn
+pydantic
+typing-extensions
+python-dotenv
+python-jose
+bcrypt
+passlib[bcrypt]
+jose
+jwt
+psycopg[binary]
+# psycopg
+python-multipart
+PyYAML
+# Used by school.utils.auth0 to fetch the Auth0 JWKS over HTTPS.
+httpx
+youtube_transcript_api
+# Word-frequency/difficulty ranking for video-course "Extract Words" (utils/edit/part_utils.py)
+wordfreq
+ollama
+pycountry
+taskiq
+taskiq-redis
+taskiq[reload]
+# test suite (server/tests) — run inside the server container
+pytest
+pytest-asyncio

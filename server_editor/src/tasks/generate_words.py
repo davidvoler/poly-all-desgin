@@ -20,7 +20,7 @@ def _save_words_to_db(words: list[str], course_id, module_id):
 
 
 @broker.task
-async def generate_words_ai(
+async def generate_words_with_ai(
     lang,
     to_lang,
     course_id,
