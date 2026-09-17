@@ -1,8 +1,11 @@
 import json
+import json
+from unittest.mock import Base
+from pydantic import BaseModel
 
-from pydantic import BaseModel, field_validator
 
 
+#Full database exercise model
 class Exercise(BaseModel):
     exercise_id: int | None = None
     course_id: int | None = None
@@ -15,34 +18,20 @@ class Exercise(BaseModel):
     sentence_alt1: str | None = None
     sentence_alt2: str | None = None
     sentence_alt3: str | None = None
-    ruby_text: dict | None = None
+    ruby_text: list | None = None
     annotations: list | None = None
     answer: str | None = None
     weight: int | None = 0
 
-    # options / ruby_text / annotations are jsonb and, per historical upload
-    # runs, can come back as a real object/array, a double-encoded JSON
-    # string, or null - coerce them to their canonical shape.
-    @field_validator("options", "ruby_text", mode="before")
-    @classmethod
-    def _coerce_jsonb_dict(cls, v):
-        if v is None:
-            return None
-        if isinstance(v, str):
-            try:
-                v = json.loads(v)
-            except (ValueError, TypeError):
-                return None
-        return v if isinstance(v, dict) else None
 
-    @field_validator("annotations", mode="before")
-    @classmethod
-    def _coerce_annotations(cls, v):
-        if v is None:
-            return None
-        if isinstance(v, str):
-            try:
-                v = json.loads(v)
-            except (ValueError, TypeError):
-                return None
-        return v if isinstance(v, list) else None
+class SingleChoice(BaseModel):
+    sentence: str | None = None
+    incorrect_options: list[str] | None = None
+    translation: str | None = None
+class SentenceTranslation(BaseModel):
+    sentence: str | None = None
+    translation: str | None = None
+
+class SingleChoicePrompt(BaseModel):
+    prompt: str = "Please create NUM_SENTENCES single-choice questions for the word: WORD"
+    response_format: list[SingleChoice] = []
