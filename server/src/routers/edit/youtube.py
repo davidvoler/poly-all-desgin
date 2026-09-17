@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from server.src.models.edit.course import CourseImport
-from server.src.routers.edit import course_import
-from utils.auth_deps import current_school_user, current_school_user_full
-from utils.db import get_query_results
+from utils.auth_deps import current_school_user
 from models.auth import SchoolUser
 from models.edit.youtube import YoutubeInfo, SubtitleInfo, SubtitlesDownloadRequest
-from utils.edit.youtube_srt import youtube_to_srt, youtube_subs
+from utils.edit.youtube_srt import  youtube_subs
 
 router = APIRouter()
 
