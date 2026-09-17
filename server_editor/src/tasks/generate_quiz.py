@@ -1,5 +1,3 @@
-"""
-"""
 from models.course import Course
 from taskiq import Context, TaskiqDepends
 from task_runner import broker

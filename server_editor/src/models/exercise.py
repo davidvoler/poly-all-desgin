@@ -1,6 +1,3 @@
-import json
-import json
-from unittest.mock import Base
 from pydantic import BaseModel
 
 
@@ -22,16 +19,3 @@ class Exercise(BaseModel):
     annotations: list | None = None
     answer: str | None = None
     weight: int | None = 0
-
-
-class SingleChoice(BaseModel):
-    sentence: str | None = None
-    incorrect_options: list[str] | None = None
-    translation: str | None = None
-class SentenceTranslation(BaseModel):
-    sentence: str | None = None
-    translation: str | None = None
-
-class SingleChoicePrompt(BaseModel):
-    prompt: str = "Please create NUM_SENTENCES single-choice questions for the word: WORD"
-    response_format: list[SingleChoice] = []

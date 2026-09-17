@@ -1,7 +1,7 @@
 from pydantic_ai.models.ollama import OllamaModel
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.models.gemini import GeminiModel
-from pydantic_ai.models.claude import ClaudeModel
+# from pydantic_ai.models.claude import ClaudeModel
 import os 
 
 def get_provider(provider: str="ollama", model: str="llama3.1"):
@@ -14,8 +14,8 @@ def get_provider(provider: str="ollama", model: str="llama3.1"):
         return OpenAIModel(model_name=model)
     elif provider == "gemini":
         return GeminiModel(model_name=model)
-    elif provider == "claude":
-        return ClaudeModel(model_name=model)
+    # elif provider == "claude":
+    #     return ClaudeModel(model_name=model)
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 

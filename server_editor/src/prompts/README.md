@@ -8,7 +8,7 @@
 #### Instructor 
 
 
-1. Instructor (Best for Direct, Single-Call Structured Output)
+Instructor (Best for Direct, Single-Call Structured Output)
 If your application consists of isolated LLM queries—e.g., “give it a sentence and get back a quiz” or “extract difficult words into a schema”—Instructor is the lightweight standard.
 
 Why it shines: It is a thin wrapper over provider clients. Switching from Ollama to OpenAI, Anthropic, or Gemini takes just one or two lines of code (usually updating the base URL/API key or client constructor).
@@ -40,7 +40,8 @@ response = client.chat.completions.create(
 
 #### PydanticAI
 
-2. PydanticAI (Best if you need Tools, Agents, and Multi-step Workflows)Created by the official Pydantic team, PydanticAI is a full agent framework.  Why it shines: Instead of just wrapping raw API requests, it gives you a unified Agent class that natively supports multi-provider model swapping (via model string IDs like 'ollama:llama3.1', 'openai:gpt-4o', or 'anthropic:claude-3-5-sonnet').  Best for: Complex pipelines (e.g., “Fetch video subtitles → run analysis → call a tool to lookup dictionary definitions → output structured JSON”).  Pros: Built-in tool calling, dependency injection (great for FastAPI testing/mocking), and native observability/tracing integration via Pydantic Logfire.
+PydanticAI (Best if you need Tools, Agents, and Multi-step Workflows)Created by the official Pydantic team, PydanticAI is a full agent framework. 
+ Why it shines: Instead of just wrapping raw API requests, it gives you a unified Agent class that natively supports multi-provider model swapping (via model string IDs like 'ollama:llama3.1', 'openai:gpt-4o', or 'anthropic:claude-3-5-sonnet').  Best for: Complex pipelines (e.g., “Fetch video subtitles → run analysis → call a tool to lookup dictionary definitions → output structured JSON”).  Pros: Built-in tool calling, dependency injection (great for FastAPI testing/mocking), and native observability/tracing integration via Pydantic Logfire.
 
 ```python
 from pydantic_ai import Agent
