@@ -17,3 +17,14 @@ class GenerateLessonRequest(BaseModel):
 
 class GenerateWordsRequest(BaseModel):
     pass
+
+
+class QuizRequest(BaseModel):
+    course_id: str
+    module_id: str
+    lesson_id: str
+    provider: str
+    model: str
+    cache: bool = True
+    number_of_questions: int
+    word: str
