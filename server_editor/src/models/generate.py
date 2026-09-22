@@ -4,6 +4,7 @@ class GenerateRequest(BaseModel):
     course_id: int
     module_id: int
     lesson_id: int
+    level: str = "A1"
     lang: str
     to_lang: str
     provider: str

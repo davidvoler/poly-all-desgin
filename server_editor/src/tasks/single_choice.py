@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from taskiq import Context, TaskiqDepends
+from task_runner import broker
+from models.tasks import TaskResults
 from prompts.single_choice import SingleChoiceList, SingleChoicePrompt, get_single_choice
 from models.exercise import Exercise
 from models.generate import GenerateQuizRequest
@@ -8,6 +10,7 @@ async def get_quiz_cache(quiz_request: QuizRequest)->SingleChoiceList:
 
 async def save_exercise(exercises: list[Exercise]):
     pass
+
 
 async def generate_single_choice_quiz(quiz_request: GenerateQuizRequest):
     #Get from cache first
@@ -39,3 +42,11 @@ async def generate_single_choice_quiz(quiz_request: GenerateQuizRequest):
     #4. return results - what format
     return exercises
 
+@broker.task
+async def generate_single_choice_quiz_task(quiz_request: GenerateQuizRequest, context: Context = TaskiqDepends()):
+    exercises = await generate_single_choice_quiz(quiz_request, context)
+    return TaskResults( course_id=quiz_request.course_id,
+                        module_id=quiz_request.module_id,
+                        lesson_id=quiz_request.lesson_id,
+                        results=exercises,
+                        success=True)

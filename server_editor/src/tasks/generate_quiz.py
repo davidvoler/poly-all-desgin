@@ -30,7 +30,7 @@ async def generate_quiz_with_ai(
     lesson_id,
     count: int,
     word: str,
-    context: Context = TaskiqDepends(),
+    context: Context = TaskiqDepends(), 
 )->TaskResults:
     """Generate quiz with AI - returns TaskResults containing the results and any errors.
     """
@@ -69,3 +69,4 @@ async def generate_words_ai(
         else:
             results.errors.append(error)
     return results
+    

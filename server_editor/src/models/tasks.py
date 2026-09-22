@@ -4,12 +4,12 @@ from pydantic import BaseModel
 
 
 class TaskResults(BaseModel):
-    method_name: str
     course_id: str
+    module_id: str
     success: bool
     errors: str | None = None
     success_count: int | None = None
-    results: list[Any]  = []
+    results: Any  = []
 
 
 class TaskStatus(BaseModel):
