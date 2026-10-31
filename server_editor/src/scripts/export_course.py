@@ -107,7 +107,7 @@ async def export_course(src: AsyncConnection, dst: AsyncConnection, course_id: i
 
     lesson_map: dict[int, int] = {}
     lessons = await c.fetch(
-        "SELECT * FROM course.lesson WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, lesson_id",
+        "SELECT * FROM course_simple.lesson WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, lesson_id",
         (course_id,),
     )
     for l in lessons:
@@ -115,7 +115,7 @@ async def export_course(src: AsyncConnection, dst: AsyncConnection, course_id: i
         l["course_id"] = new_course_id
         if not remap(l, "module_id", module_map):
             continue  # lesson of a deleted module
-        lesson_map[old_id] = await c.insert("course.lesson", "lesson_id", l)
+        lesson_map[old_id] = await c.insert("course_simple.lesson", "lesson_id", l)
     counts["lessons"] = len(lesson_map)
 
     # Exercises can be linked by course_id or only by lesson_id, so match either.

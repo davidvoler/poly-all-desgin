@@ -73,7 +73,7 @@ async def module_sentences(course_id: int, module_id: int) -> list[Sentence]:
         EXISTS (SELECT 1 FROM course.exercise e
                 WHERE e.module_id = s.module_id AND e.question = s.sentence) AS used
     FROM course.sentences s
-    LEFT JOIN course.lesson l ON l.lesson_id = s.lesson_id
+    LEFT JOIN course_simple.lesson l ON l.lesson_id = s.lesson_id
     WHERE s.course_id = %s AND s.module_id = %s
     ORDER BY l.weight NULLS LAST, s.lesson_id, s.sentence_id
     """

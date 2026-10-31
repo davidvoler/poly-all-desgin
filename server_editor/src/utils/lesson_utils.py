@@ -5,7 +5,7 @@ from utils.exercise_utils import get_lesson_exercises
 
 async def create_lesson(lesson: Lesson) -> Lesson:
     sql = """
-    INSERT INTO course.lesson (course_id, module_id, title, description, deleted, weight, video_start, video_end)
+    INSERT INTO course_simple.lesson (course_id, module_id, title, description, deleted, weight, video_start, video_end)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
     """
@@ -17,7 +17,7 @@ async def create_lesson(lesson: Lesson) -> Lesson:
 async def get_lesson_full(lesson_id: int) -> LessonFull:
     sql = """
     SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
-    FROM course.lesson
+    FROM course_simple.lesson
     WHERE lesson_id = %s
     """
     values = (lesson_id,)
@@ -30,7 +30,7 @@ async def get_lesson_full(lesson_id: int) -> LessonFull:
 async def get_lesson(lesson_id: int) -> Lesson:
     sql = """
     SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
-    FROM course.lesson
+    FROM course_simple.lesson
     WHERE lesson_id = %s
     """
     values = (lesson_id,)
@@ -40,7 +40,7 @@ async def get_lesson(lesson_id: int) -> Lesson:
 async def get_module_lessons(module_id: int) -> list[Lesson]:
     sql = """
     SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
-    FROM course.lesson
+    FROM course_simple.lesson
     WHERE module_id = %s
     ORDER BY weight, lesson_id
     """
@@ -52,7 +52,7 @@ async def get_module_lessons(module_id: int) -> list[Lesson]:
 async def get_module_lesson_full(module_id: int) -> list[LessonFull]:
     sql = """
     SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
-    FROM course.lesson
+    FROM course_simple.lesson
     WHERE module_id = %s
     ORDER BY weight, lesson_id
     """
@@ -67,7 +67,7 @@ async def get_module_lesson_full(module_id: int) -> list[LessonFull]:
 
 async def update_lesson(lesson: Lesson) -> Lesson:
     sql = """
-    UPDATE course.lesson
+    UPDATE course_simple.lesson
     SET module_id = %s, title = %s, description = %s, deleted = %s, weight = %s
     WHERE lesson_id = %s
     RETURNING lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
@@ -78,7 +78,7 @@ async def update_lesson(lesson: Lesson) -> Lesson:
 
 async def delete_lesson(lesson: Lesson) -> None:
     sql = """
-    DELETE FROM course.lesson
+    DELETE FROM course_simple.lesson
     WHERE lesson_id = %s
     """
     values = (lesson.lesson_id,)

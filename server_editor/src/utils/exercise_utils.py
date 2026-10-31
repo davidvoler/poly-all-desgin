@@ -37,7 +37,7 @@ async def _fill_from_lesson(exercise: Exercise) -> None:
     """Exercises are saved with their lesson's module and course."""
     if exercise.lesson_id and not (exercise.module_id and exercise.course_id):
         rows = await get_query_results(
-            "SELECT course_id, module_id FROM course.lesson WHERE lesson_id = %s", (exercise.lesson_id,)
+            "SELECT course_id, module_id FROM course_simple.lesson WHERE lesson_id = %s", (exercise.lesson_id,)
         )
         if rows:
             exercise.course_id = exercise.course_id or rows[0]["course_id"]

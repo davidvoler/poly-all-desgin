@@ -107,7 +107,7 @@ async def next_part_to_extract(module_id: int) -> Lesson | None:
     """The first part whose words and sentences are not extracted yet."""
     rows = await get_query_results(
         """SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
-        FROM course.lesson
+        FROM course_simple.lesson
         WHERE module_id = %s AND words IS NULL AND COALESCE(description, '') <> ''
         ORDER BY weight, lesson_id LIMIT 1""",
         (module_id,),
@@ -118,7 +118,7 @@ async def next_part_to_extract(module_id: int) -> Lesson | None:
 async def count_parts(module_id: int) -> tuple[int, int]:
     """(parts, parts already extracted) of a video module."""
     rows = await get_query_results(
-        """SELECT count(*) AS parts, count(words) AS extracted FROM course.lesson
+        """SELECT count(*) AS parts, count(words) AS extracted FROM course_simple.lesson
         WHERE module_id = %s AND COALESCE(description, '') <> ''""",
         (module_id,),
     )
@@ -126,7 +126,7 @@ async def count_parts(module_id: int) -> tuple[int, int]:
 
 
 async def mark_part_extracted(lesson_id: int, words: list[str]) -> None:
-    await run_query("UPDATE course.lesson SET words = %s WHERE lesson_id = %s", ([w[:100] for w in words], lesson_id))
+    await run_query("UPDATE course_simple.lesson SET words = %s WHERE lesson_id = %s", ([w[:100] for w in words], lesson_id))
 
 
 async def save_sentences(lang: str, course_id: int, module_id: int, lesson_id: int,
@@ -147,7 +147,7 @@ async def part_words_without_exercises(lesson_id: int, module_id: int) -> list[t
     """(word, translation) for the part's extracted words that no exercise uses yet."""
     rows = await get_query_results(
         """SELECT w.word, min(w.translation) AS translation
-        FROM course.lesson l
+        FROM course_simple.lesson l
         JOIN course.words w ON w.module_id = l.module_id AND w.word = ANY(l.words)
         WHERE l.lesson_id = %s AND w.module_id = %s AND w.deleted IS NOT TRUE
           AND COALESCE(w.translation, '') <> ''
@@ -177,7 +177,7 @@ async def next_part_with_exercise_material(module_id: int) -> tuple[Lesson, list
     with those words and sentences."""
     rows = await get_query_results(
         """SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
-        FROM course.lesson WHERE module_id = %s AND words IS NOT NULL
+        FROM course_simple.lesson WHERE module_id = %s AND words IS NOT NULL
         ORDER BY weight, lesson_id""",
         (module_id,),
     )
