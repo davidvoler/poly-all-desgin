@@ -16,11 +16,12 @@ from utils.prompt_utils import save_prompt_response
 def _translation_choices(common: dict, questions) -> list[Exercise]:
     """Sentence in the learned language; the options are its translations, the correct one first."""
     return [Exercise(**common, word=q.word, question=q.sentence, answer=q.translation,
-                     options={"correct": [q.translation],
-                              "incorrect": q.incorrect_translations[:WRONG_TRANSLATIONS]},
+                     options = get_options([q.translation], q.incorrect_translations[:WRONG_TRANSLATIONS]),
                      sentence_alt1=q.translation)
             for q in questions]
 
+def get_options(correct: list[str], incorrect: list[str]) -> list[dict]:
+    return [{"text": text, "correct": True} for text in correct] + [{"text": text, "correct": False} for text in incorrect]
 
 async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, words: list[str],
                     course, context) -> list[Exercise]:
@@ -32,7 +33,7 @@ async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, wo
     if exercise_type == PromptType.EXERCISE_FILL_IN_THE_BLANK:
         generated = (await get_fill_in_blank_for_words(words, **kwargs)).exercises
         return [Exercise(**common, word=g.word, question=g.sentence, answer=g.word,
-                         options={"incorrect": g.incorrect_options[:3]}, sentence_alt1=g.translation)
+                         options = get_options([g.translation], g.incorrect_options[:3]))
                 for g in generated]
     if exercise_type == PromptType.EXERCISE_SINGLE_CHOICE:
         return _translation_choices(common, (await get_single_choice_for_words(words, **kwargs)).questions)
