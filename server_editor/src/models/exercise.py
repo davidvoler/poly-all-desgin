@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 
 
+class Option(BaseModel):
+    text: str
+    correct: bool = False
 
 #Full database exercise model
 class Exercise(BaseModel):
@@ -11,7 +14,7 @@ class Exercise(BaseModel):
     exercise_type: str | None = None
     word: str | None = None  # the word the exercise practises
     question: str | None = None
-    options: dict | None| list = None
+    options: list[Option] | None = None
     explanation: str | None = None
     sentence_alt1: str | None = None
     sentence_alt2: str | None = None
@@ -20,3 +23,4 @@ class Exercise(BaseModel):
     annotations: list | None = None
     answer: str | None = None
     weight: int | None = 0
+
