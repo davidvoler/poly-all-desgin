@@ -1,8 +1,20 @@
 
 
 
-async def get_school_user() -> bool:
-    return True
+from pydantic import BaseModel
+
+
+class SchoolUser(BaseModel):
+    user_id: int
+    school: str
+
+
+# Placeholder identity until Auth0 is wired in.
+LOCAL_SCHOOL_USER = SchoolUser(user_id=1, school="local")
+
+
+async def get_school_user() -> SchoolUser:
+    return LOCAL_SCHOOL_USER
 
 async def has_course_permission(course_id, permission):
     """

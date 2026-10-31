@@ -1,0 +1,99 @@
+# Add a new run below when you want to compare a prompt change.
+# Keep the comment field specific so it is visible beside that run in the output.
+
+tests:
+- test:
+    target: prompts.text_quiz:get_text_quiz
+    params:
+      language: English
+      to_language: Spanish
+      text: The curious student opened the old book.
+      level: A2
+      provider: ollama
+      model: gemma4
+  comments: Baseline Spanish quiz prompt.
+  results:
+    error: 'UnexpectedModelBehavior: Exceeded maximum output retries (1)'
+  status: fail
+- test:
+    target: prompts.break_text_parts:get_text_parts
+    params:
+      language: German
+      to_language: English
+      text: Der neugierige Student öffnete das alte Buch.
+      level: A2
+      provider: ollama
+      model: muse-glimmer
+  comments: Compare sentence splitting after the prompt wording change.
+  results:
+    clauses:
+    - text: Der neugierige Student öffnete das alte Buch.
+      translation: The curious student opened the old book.
+    sentences:
+    - text: Der neugierige Student öffnete das alte Buch.
+      translation: The curious student opened the old book.
+    paragraphs:
+    - text: Der neugierige Student öffnete das alte Buch.
+      translation: The curious student opened the old book.
+    words:
+    - text: Der
+      translation: The
+    - text: neugierige
+      translation: curious
+    - text: Student
+      translation: student
+    - text: öffnete
+      translation: opened
+    - text: das
+      translation: the
+    - text: alte
+      translation: old
+    - text: Buch
+      translation: book
+  status: success
+- test:
+    target: prompts.single_choice:get_single_choice
+    params:
+      word: wander
+      num_sentences: 2
+      provider: ollama
+      model: gemma4
+  comments: Check whether the distractors remain plausible.
+  results:
+    questions:
+    - sentence: (See prompt)
+      incorrect_options:
+      - To walk in a straight line according to a map.
+      - To travel across the sea in a large boat.
+      translation: Perderse o vagar por un lugar sin rumbo fijo.
+    - sentence: The couple decided to wander through the old market, letting hours
+        slip by simply enjoying the scenery.
+      incorrect_options:
+      - race
+      - stray
+      translation: La pareja decidió vagar por el mercado antiguo, dejando pasar las
+        horas simplemente disfrutando del paisaje.
+  status: success
+- test:
+    target: prompts.sentence:get_sentence_translation
+    params:
+      word: libro
+      num_sentences: 2
+      provider: ollama
+      model: muse-glimmer
+  comments: Spanish vocabulary comparison run.
+  results:
+    questions:
+    - sentence: Ayer terminé de leer un ____ muy emocionante sobre la guerra.
+      incorrect_options:
+      - periódico
+      - revista
+      - cuaderno
+      translation: Yesterday I finished reading a very exciting book about the war.
+    - sentence: ¿Puedes prestarme tu ____ de matemáticas para estudiar?
+      incorrect_options:
+      - cuaderno
+      - bolígrafo
+      - mochila
+      translation: Can you lend me your math book to study?
+  status: success

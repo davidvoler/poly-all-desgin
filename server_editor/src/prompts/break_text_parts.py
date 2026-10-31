@@ -33,7 +33,7 @@ async def get_text_parts(
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
-        result_type=TextParts,
+        output_type=TextParts,
         system_prompt=f"You are an expert language teacher. You are creating {language} learning materials for {level} learners.")
     result = await agent.run(f"Break the following text language: {language} into clauses, sentences, paragraphs, and words: {text} use native translations for each part from {language} to {to_language}. ")
-    return result.data
+    return result.output

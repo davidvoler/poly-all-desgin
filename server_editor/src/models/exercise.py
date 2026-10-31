@@ -9,6 +9,7 @@ class Exercise(BaseModel):
     module_id: int | None = None
     lesson_id: int | None = None
     exercise_type: str | None = None
+    word: str | None = None  # the word the exercise practises
     question: str | None = None
     options: dict | None = None
     explanation: str | None = None
