@@ -23,4 +23,3 @@ class Exercise(BaseModel):
     annotations: list | None = None
     answer: str | None = None
     weight: int | None = 0
-

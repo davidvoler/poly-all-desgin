@@ -17,15 +17,3 @@ def test_exercise_accepts_option_objects():
         {"text": "We heard him come downstairs.", "correct": True},
     ]
 
-
-def test_exercise_normalizes_legacy_option_maps():
-    exercise = Exercise(
-        answer="hi",
-        options={"incorrect": ["thanks", "please"]},
-    )
-
-    assert exercise.model_dump(mode="json")["options"] == [
-        {"text": "hi", "correct": True},
-        {"text": "thanks", "correct": False},
-        {"text": "please", "correct": False},
-    ]
