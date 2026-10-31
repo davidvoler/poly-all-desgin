@@ -74,12 +74,17 @@ async def get_exercises_by_words(lang:str,words: list[str]):
     WHERE( 
     word1 IN ({placehoslder}) or word2 IN ({placehoslder}) )
     """
+    print('words:', words)
     params = (*words, *words)
     res = await get_query_results(sql, params)
     results = []
     for r in res:
-        exercise = Exercise(**r)
-        results.append(exercise)
+        print('exercise row:', r)
+        try:
+            exercise = Exercise(**r)
+            results.append(exercise)
+        except Exception as e:
+            print('Error creating exercise:', e)
     random.shuffle(results)
     return results[:10]
 
