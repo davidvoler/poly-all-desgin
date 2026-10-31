@@ -52,14 +52,28 @@ Clean code      | 3          | 1        | 9        | 10
 
 
 #### Option 1 - Implementation
-- [] unify both repos 
+- [v] unify both repos 
     - [v]  decide on which - poly-all-design as it has more history
-    - [] New clean repo - optional 
 - [v] DDL compare/Merge 1H 
-- [] find replace course -> course_simple 1H
+- [v] find replace course -> course_simple 1H
+- [] move the database
 - [] Rename exercise types 
 - [] Test ad fix gaps 4H
 - [] Extra 9H 
+
+- [] Change format of options 
+this is how options is defined in PAD
+```json
+[{"text": "Tobias rushed down the stairs."}, {"text": "We started according to plan."}, {"text": "We heard him come downstairs.", "correct": true}]
+```
+
+This is how it is defined in Editor:
+```json
+{"correct": ["פריחה כלכלית, קפיצה"], "incorrect": ["בקתה", "בריחה", "חדשני, יצירתי"]}
+```
+I thinks that we should follow PAD
+
+
 #### Options 2 Implementations 
  - [] Write a script the exports data from Editor to the PAD/DB
  - [] Run both DBS on different ports 

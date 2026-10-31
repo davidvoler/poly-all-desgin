@@ -11,12 +11,12 @@ class Exercise(BaseModel):
     exercise_type: str | None = None
     word: str | None = None  # the word the exercise practises
     question: str | None = None
-    options: dict | None = None
+    options: dict | None| list = None
     explanation: str | None = None
     sentence_alt1: str | None = None
     sentence_alt2: str | None = None
     sentence_alt3: str | None = None
-    ruby_text: list | None = None
+    ruby_text: list | None| dict = []
     annotations: list | None = None
     answer: str | None = None
     weight: int | None = 0
