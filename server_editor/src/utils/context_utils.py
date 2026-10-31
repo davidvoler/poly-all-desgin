@@ -12,7 +12,7 @@ from utils.words_utils import course_words
 
 async def save_context(context: PromptsContext) -> PromptsContext:
     sql = """
-    INSERT INTO course.prompt_context (course_id, module_id, lesson_id)
+    INSERT INTO course_simple.prompt_context (course_id, module_id, lesson_id)
     VALUES (%s, %s, %s)
     RETURNING context_id, course_id, module_id, lesson_id
     """
@@ -47,7 +47,7 @@ async def _get_or_create_context(course_id: int, module_id: int, lesson_id: int)
         params = (course_id,)
     sql = f"""
     SELECT context_id, course_id, module_id, lesson_id
-    FROM course.prompt_context WHERE {whr}
+    FROM course_simple.prompt_context WHERE {whr}
     ORDER BY context_id DESC
     LIMIT 1
     """

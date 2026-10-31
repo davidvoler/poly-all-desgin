@@ -5,7 +5,7 @@ import json
 
 async def get_courses() -> list[Course]:
     query = """
-    SELECT * FROM course.course
+    SELECT * FROM course_simple.course
     WHERE deleted IS NOT TRUE
     ORDER BY course_id
     """
@@ -16,7 +16,7 @@ async def get_courses() -> list[Course]:
 
 async def get_course(course_id: int) -> Course:
     query = """
-    SELECT * FROM course.course
+    SELECT * FROM course_simple.course
     WHERE course_id = %(course_id)s
     """
     params = {"course_id": course_id}
@@ -27,7 +27,7 @@ async def get_course(course_id: int) -> Course:
 
 async def update_course(course: Course) -> Course:
     query = """
-    UPDATE course.course
+    UPDATE course_simple.course
     SET lang = %(lang)s,
         to_lang = %(to_lang)s,
         level = %(level)s,
@@ -60,7 +60,7 @@ async def update_course(course: Course) -> Course:
 async def create_course(course: Course) -> Course:
     """Creates a new course in the database"""
     query = """
-    INSERT INTO course.course (lang, to_lang, level, user_id, school, title, description, course_options, status)
+    INSERT INTO course_simple.course (lang, to_lang, level, user_id, school, title, description, course_options, status)
     VALUES (%(lang)s, %(to_lang)s, %(level)s, %(user_id)s, %(school)s, %(title)s, %(description)s, %(course_options)s, %(status)s)
     RETURNING *
     """
@@ -82,7 +82,7 @@ async def create_course(course: Course) -> Course:
 
 async def delete_course(course_id: int) -> None:
     query = """
-    UPDATE course.course
+    UPDATE course_simple.course
     SET deleted = true
     WHERE course_id = %(course_id)s
     """

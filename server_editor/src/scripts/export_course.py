@@ -96,7 +96,7 @@ async def export_course(src: AsyncConnection, dst: AsyncConnection, course_id: i
 
     module_map: dict[int, int] = {}
     modules = await c.fetch(
-        "SELECT * FROM course.module WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, module_id",
+        "SELECT * FROM course_simple.module WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, module_id",
         (course_id,),
     )
     for m in modules:
@@ -120,7 +120,7 @@ async def export_course(src: AsyncConnection, dst: AsyncConnection, course_id: i
 
     # Exercises can be linked by course_id or only by lesson_id, so match either.
     exercises = await c.fetch(
-        """SELECT * FROM course.exercise
+        """SELECT * FROM course_simple.exercise
            WHERE course_id = %s OR lesson_id = ANY(%s)
            ORDER BY weight, exercise_id""",
         (course_id, list(lesson_map)),
@@ -136,7 +136,7 @@ async def export_course(src: AsyncConnection, dst: AsyncConnection, course_id: i
 
     # Module videos (lesson video previews read the module's video url).
     videos = await c.fetch(
-        "SELECT * FROM course.video WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, video_id",
+        "SELECT * FROM course_simple.video WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, video_id",
         (course_id,),
     )
     n = 0
@@ -149,7 +149,7 @@ async def export_course(src: AsyncConnection, dst: AsyncConnection, course_id: i
     counts["videos"] = n
 
     words = await c.fetch(
-        "SELECT * FROM course.words WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, word_id",
+        "SELECT * FROM course_simple.words WHERE course_id = %s AND deleted IS NOT TRUE ORDER BY weight, word_id",
         (course_id,),
     )
     n = 0

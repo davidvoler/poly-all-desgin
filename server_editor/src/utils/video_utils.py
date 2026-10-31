@@ -67,7 +67,7 @@ def part_counts(subtitles: list[Subtitle]) -> list[tuple[int, int]]:
 
 async def save_video(course_id: int, module_id: int, lang: str, url: str, subtitles: list[Subtitle]) -> int:
     rows = await get_query_results(
-        """INSERT INTO course.video (course_id, module_id, lang, url, raw_subtitles)
+        """INSERT INTO course_simple.video (course_id, module_id, lang, url, raw_subtitles)
         VALUES (%s, %s, %s, %s, %s) RETURNING video_id""",
         (course_id, module_id, lang, url, json.dumps([s.model_dump() for s in subtitles])),
     )
@@ -77,7 +77,7 @@ async def save_video(course_id: int, module_id: int, lang: str, url: str, subtit
 async def get_module_video(module_id: int) -> tuple[str, list[Subtitle]] | None:
     """The module's video URL and subtitles, or None when it is not a video module."""
     rows = await get_query_results(
-        """SELECT url, raw_subtitles FROM course.video
+        """SELECT url, raw_subtitles FROM course_simple.video
         WHERE module_id = %s AND deleted IS NOT TRUE ORDER BY video_id DESC LIMIT 1""",
         (module_id,),
     )
@@ -133,7 +133,7 @@ async def save_sentences(lang: str, course_id: int, module_id: int, lesson_id: i
                          sentences: list[tuple[str, str]]) -> None:
     for sentence, translation in sentences:
         await run_query(
-            """INSERT INTO course.sentences (lang, course_id, module_id, lesson_id, sentence, translation)
+            """INSERT INTO course_simple.sentences (lang, course_id, module_id, lesson_id, sentence, translation)
             VALUES (%s, %s, %s, %s, %s, %s)""",
             (lang, course_id, module_id, lesson_id, sentence[:355], translation),
         )
@@ -148,7 +148,7 @@ async def part_words_without_exercises(lesson_id: int, module_id: int) -> list[t
     rows = await get_query_results(
         """SELECT w.word, min(w.translation) AS translation
         FROM course_simple.lesson l
-        JOIN course.words w ON w.module_id = l.module_id AND w.word = ANY(l.words)
+        JOIN course_simple.words w ON w.module_id = l.module_id AND w.word = ANY(l.words)
         WHERE l.lesson_id = %s AND w.module_id = %s AND w.deleted IS NOT TRUE
           AND COALESCE(w.translation, '') <> ''
         GROUP BY w.word
@@ -162,9 +162,9 @@ async def part_words_without_exercises(lesson_id: int, module_id: int) -> list[t
 async def part_sentences_without_exercises(lesson_id: int, module_id: int) -> list[tuple[str, str]]:
     """(sentence, translation) for the part's sentences that are not an exercise question yet."""
     rows = await get_query_results(
-        """SELECT s.sentence, s.translation FROM course.sentences s
+        """SELECT s.sentence, s.translation FROM course_simple.sentences s
         WHERE s.lesson_id = %s AND COALESCE(s.translation, '') <> ''
-          AND NOT EXISTS (SELECT 1 FROM course.exercise e
+          AND NOT EXISTS (SELECT 1 FROM course_simple.exercise e
                           WHERE e.module_id = %s AND e.question = s.sentence)
         ORDER BY s.sentence_id""",
         (lesson_id, module_id),
@@ -191,9 +191,9 @@ async def next_part_with_exercise_material(module_id: int) -> tuple[Lesson, list
 
 async def module_translations(module_id: int, sentences: bool) -> list[str]:
     """Translations of the module's words, or of its sentences, to draw wrong options from."""
-    sql = ("SELECT DISTINCT translation FROM course.sentences WHERE module_id = %s"
+    sql = ("SELECT DISTINCT translation FROM course_simple.sentences WHERE module_id = %s"
            if sentences else
-           "SELECT DISTINCT translation FROM course.words WHERE module_id = %s AND deleted IS NOT TRUE")
+           "SELECT DISTINCT translation FROM course_simple.words WHERE module_id = %s AND deleted IS NOT TRUE")
     rows = await get_query_results(sql, (module_id,))
     return [r["translation"] for r in rows if (r["translation"] or "").strip()]
 

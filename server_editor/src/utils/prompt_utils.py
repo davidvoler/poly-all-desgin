@@ -10,7 +10,7 @@ async def get_last_responses(course_id: int, module_id: int = 0, limit: int = 50
     where_module = ''
     if module_id > 0:
         where_module = 'AND module_id = %s'
-    sql = f"""SELECT * FROM course.prompt_response
+    sql = f"""SELECT * FROM course_simple.prompt_response
              WHERE course_id = %s 
              {where_module}
              ORDER BY created_at DESC
@@ -25,7 +25,7 @@ async def get_last_responses(course_id: int, module_id: int = 0, limit: int = 50
 
 
 async def save_prompt_response(prompt_response: PromptResponse)->int|None:
-    sql = """INSERT INTO course.prompt_response (
+    sql = """INSERT INTO course_simple.prompt_response (
         course_id,
         module_id,
         lesson_id,
@@ -60,7 +60,7 @@ async def save_prompt_response(prompt_response: PromptResponse)->int|None:
     return res[0]['prompt_response_id'] if res else None
 
 async def save_prompt_request(prompt_request: PromptRequest) -> int|None:
-    sql = """ INSERT INTO course.prompt_request (
+    sql = """ INSERT INTO course_simple.prompt_request (
         course_id,
         module_id,
         lesson_id,

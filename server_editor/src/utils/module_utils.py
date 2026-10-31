@@ -5,7 +5,7 @@ from utils.lesson_utils import get_module_lesson_full
 
 async def create_module(module: Module) -> Module:
     sql = """
-    INSERT INTO course.module (course_id, title, description, deleted, weight)
+    INSERT INTO course_simple.module (course_id, title, description, deleted, weight)
     VALUES (%s, %s, %s, %s, %s)
     RETURNING module_id, course_id, title, description, deleted, weight
     """
@@ -19,7 +19,7 @@ async def create_module(module: Module) -> Module:
 async def get_module(module_id: int) -> Module:
     sql = """
     SELECT module_id, course_id, title, description, deleted, weight
-    FROM course.module
+    FROM course_simple.module
     WHERE module_id = %s
     """
     values = (module_id,)
@@ -35,10 +35,10 @@ async def get_module_full(module_id: int) -> ModuleFull:
 async def get_course_modules(course_id: int) -> list[Module]:
     sql = """
     SELECT m.module_id, m.course_id, m.title, m.description, m.deleted, m.weight,
-        (SELECT v.url FROM course.video v
+        (SELECT v.url FROM course_simple.video v
          WHERE v.module_id = m.module_id AND v.deleted IS NOT TRUE
          ORDER BY v.video_id DESC LIMIT 1) AS video_url
-    FROM course.module m
+    FROM course_simple.module m
     WHERE m.course_id = %s
     ORDER BY m.weight, m.module_id
     """
@@ -48,7 +48,7 @@ async def get_course_modules(course_id: int) -> list[Module]:
 
 async def update_module(module: Module) -> Module:
     sql = """
-    UPDATE course.module
+    UPDATE course_simple.module
     SET title = %s, description = %s, deleted = %s, weight = %s
     WHERE module_id = %s
     RETURNING module_id, course_id, title, description, deleted, weight
@@ -60,7 +60,7 @@ async def update_module(module: Module) -> Module:
 
 async def delete_module(module: Module) -> None:
     sql = """
-    DELETE FROM course.module
+    DELETE FROM course_simple.module
     WHERE module_id = %s
 """
     values = (module.module_id,)

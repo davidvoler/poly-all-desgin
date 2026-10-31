@@ -9,7 +9,7 @@ async def course_words(course_id:int, module_id:int|None = None) -> list[Word]:
     query = """
     SELECT word AS text, bool_or(COALESCE(used, false)) AS used,
         COALESCE((array_agg(translation ORDER BY word_id))[1], '') AS translation
-    FROM course.words
+    FROM course_simple.words
     WHERE course_id = %(course_id)s AND deleted IS NOT TRUE
     """
     params = {"course_id": course_id}
@@ -23,11 +23,11 @@ async def course_words(course_id:int, module_id:int|None = None) -> list[Word]:
 async def save_words(lang:str, to_lang:str, course_id:int, module_id:int|None = 0, words: list[WordTranslation] = []):
     
     # Removed words count as known, so they are not suggested again.
-    rows = await get_query_results("SELECT DISTINCT word FROM course.words WHERE course_id = %s", (course_id,))
+    rows = await get_query_results("SELECT DISTINCT word FROM course_simple.words WHERE course_id = %s", (course_id,))
     known_words = {row["word"] for row in rows}
     # insert only new words 
     query = """
-    INSERT INTO course.words (course_id, module_id,lang, to_lang, word, translation)
+    INSERT INTO course_simple.words (course_id, module_id,lang, to_lang, word, translation)
     VALUES (%s,%s,%s,%s,%s,%s)
     """
     for word_translation in words:
@@ -45,9 +45,9 @@ async def save_words(lang:str, to_lang:str, course_id:int, module_id:int|None = 
 async def move_unused_words(from_module_id: int, to_module_id: int) -> int:
     """Moves the words no exercise uses yet to another module; returns how many words moved."""
     query = """
-    UPDATE course.words SET module_id = %s
+    UPDATE course_simple.words SET module_id = %s
     WHERE module_id = %s AND deleted IS NOT TRUE
-      AND word NOT IN (SELECT word FROM course.words WHERE module_id = %s AND used)
+      AND word NOT IN (SELECT word FROM course_simple.words WHERE module_id = %s AND used)
     RETURNING word
     """
     rows = await get_query_results(query, (to_module_id, from_module_id, from_module_id))
@@ -58,7 +58,7 @@ async def update_word(course_id: int, module_id: int, text: str, translation: st
                       deleted: bool = False) -> int:
     """Changes a module word's translation, or removes it; returns how many rows changed."""
     query = """
-    UPDATE course.words SET translation = COALESCE(%s, translation), deleted = %s
+    UPDATE course_simple.words SET translation = COALESCE(%s, translation), deleted = %s
     WHERE course_id = %s AND module_id = %s AND word = %s AND deleted IS NOT TRUE
     RETURNING word_id
     """
@@ -70,9 +70,9 @@ async def module_sentences(course_id: int, module_id: int) -> list[Sentence]:
     """The module's sentences in part order; used when an exercise in the module asks the sentence."""
     query = """
     SELECT s.sentence_id, s.lesson_id, s.sentence, COALESCE(s.translation, '') AS translation,
-        EXISTS (SELECT 1 FROM course.exercise e
+        EXISTS (SELECT 1 FROM course_simple.exercise e
                 WHERE e.module_id = s.module_id AND e.question = s.sentence) AS used
-    FROM course.sentences s
+    FROM course_simple.sentences s
     LEFT JOIN course_simple.lesson l ON l.lesson_id = s.lesson_id
     WHERE s.course_id = %s AND s.module_id = %s
     ORDER BY l.weight NULLS LAST, s.lesson_id, s.sentence_id

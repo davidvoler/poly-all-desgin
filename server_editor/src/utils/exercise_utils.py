@@ -23,9 +23,9 @@ def _values(exercise: Exercise) -> tuple:
 async def mark_module_words_used(module_id: int) -> None:
     """A module's word is used when one of the module's exercises practises it."""
     sql = """
-    UPDATE course.words w
+    UPDATE course_simple.words w
     SET used = EXISTS (
-        SELECT 1 FROM course.exercise e
+        SELECT 1 FROM course_simple.exercise e
         WHERE e.module_id = w.module_id AND e.word = w.word
     )
     WHERE w.module_id = %s
@@ -47,7 +47,7 @@ async def _fill_from_lesson(exercise: Exercise) -> None:
 async def create_exercise(exercise: Exercise) -> Exercise:
     await _fill_from_lesson(exercise)
     sql = f"""
-    INSERT INTO course.exercise ({", ".join(_EDITABLE)})
+    INSERT INTO course_simple.exercise ({", ".join(_EDITABLE)})
     VALUES ({", ".join(["%s"] * len(_EDITABLE))})
     RETURNING {EXERCISE_COLUMNS}
     """
@@ -60,7 +60,7 @@ async def create_exercise(exercise: Exercise) -> Exercise:
 async def get_exercise(exercise_id: int) -> Exercise:
     sql = f"""
     SELECT {EXERCISE_COLUMNS}
-    FROM course.exercise
+    FROM course_simple.exercise
     WHERE exercise_id = %s
     """
     row = await get_query_results(sql, (exercise_id,))
@@ -69,7 +69,7 @@ async def get_exercise(exercise_id: int) -> Exercise:
 async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
     sql = f"""
     SELECT {EXERCISE_COLUMNS}
-    FROM course.exercise
+    FROM course_simple.exercise
     WHERE lesson_id = %s
     ORDER BY weight, exercise_id
     """
@@ -80,7 +80,7 @@ async def update_exercise(exercise: Exercise) -> Exercise:
     await _fill_from_lesson(exercise)
     previous = await get_exercise(exercise.exercise_id)
     sql = f"""
-    UPDATE course.exercise
+    UPDATE course_simple.exercise
     SET {", ".join(f"{c} = %s" for c in _EDITABLE)}
     WHERE exercise_id = %s
     RETURNING {EXERCISE_COLUMNS}
@@ -93,7 +93,7 @@ async def update_exercise(exercise: Exercise) -> Exercise:
 
 async def delete_exercise(exercise_id: int) -> None:
     rows = await get_query_results(
-        "DELETE FROM course.exercise WHERE exercise_id = %s RETURNING module_id", (exercise_id,)
+        "DELETE FROM course_simple.exercise WHERE exercise_id = %s RETURNING module_id", (exercise_id,)
     )
     if rows and rows[0]["module_id"]:
         await mark_module_words_used(rows[0]["module_id"])
