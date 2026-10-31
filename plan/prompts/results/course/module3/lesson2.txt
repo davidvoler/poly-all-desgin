@@ -1,0 +1,101 @@
+---
+title: Lesson 2 - The Particle か (ka) — Question Marker
+weight: 2
+---
+type: explanation
+か (ka) placed at the end of a sentence turns it into a yes/no question. No change in word order is needed — just add か at the end.
+---
+type: single_selection
+text: ねこはかわいいですか
+romanji: Neko wa kawaii desu ka
+option: Is the cat cute?
+correct: true
+option: The cat is cute
+option: The cat is not cute
+option: I think the cat is cute
+---
+type: single_selection
+text: みずはつめたいですか
+romanji: Mizu wa tsumetai desu ka
+option: Is the water cold?
+correct: true
+option: The water is cold
+option: I want cold water
+option: The water is not cold
+---
+type: single_selection
+text: はい、ねこはかわいいです
+romanji: Hai, neko wa kawaii desu
+option: Yes, the cat is cute
+correct: true
+option: No, the cat is cute
+option: Yes, is the cat cute?
+option: Yes, I like cats
+---
+type: single_selection
+text: いいえ、みずはつめたくないです
+romanji: Iie, mizu wa tsumetakunai desu
+option: No, the water is not cold
+correct: true
+option: Yes, the water is cold
+option: No, I don't want water
+option: The water is a little cold
+---
+type: identify_words
+text: サラはがくせいですか
+romanji: Sara wa gakusei desu ka
+option: か
+correct: true
+option: は
+correct: true
+option: です
+correct: true
+option: サラ
+correct: true
+option: ね
+---
+type: single_selection
+text: ワタナベさんはせんせいですか
+romanji: Watanabe-san wa sensei desu ka
+option: Is Watanabe a teacher?
+correct: true
+option: Watanabe is a teacher
+option: Watanabe is not a teacher
+option: Is Watanabe a student?
+---
+type: single_selection
+text: コーヒーはあつくないですか
+romanji: Kōhī wa atsukunai desu ka
+option: Isn't the coffee hot?
+correct: true
+option: Is the coffee hot?
+option: The coffee is not hot
+option: The coffee is hot
+---
+type: multiple_choice
+text: か (ka)
+romanji: ka
+option: goes at the end of the sentence
+correct: true
+option: turns a statement into a yes/no question
+correct: true
+option: changes the word order
+option: is written after は
+---
+type: single_selection
+text: ジョージはげんきですか
+romanji: Jōji wa genki desu ka
+option: Is George well?
+correct: true
+option: George is well
+option: George is not well
+option: George is a student
+---
+type: single_selection
+text: はい、わたしはげんきです
+romanji: Hai, watashi wa genki desu
+option: Yes, I am well
+correct: true
+option: No, I am well
+option: Yes, I am a student
+option: Yes, I am Sara

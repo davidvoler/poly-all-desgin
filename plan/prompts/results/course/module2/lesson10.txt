@@ -1,0 +1,116 @@
+---
+title: Lesson 10 - Particles Review — で、と、も + All Particles
+weight: 10
+---
+type: explanation
+We have now learned seven particles: は (topic), か (question), を (object), に (direction/time), の (possession), で (location of action), と (and/with), も (also). These particles are the skeleton of Japanese sentences.
+---
+type: multiple_choice
+text: All particles learned so far
+romanji: (select all correct answers)
+option: は — topic marker
+correct: true
+option: か — question marker
+correct: true
+option: を — object marker
+correct: true
+option: に — direction and time
+correct: true
+option: の — possession
+correct: true
+option: で — location of action
+correct: true
+option: と — and / together with
+correct: true
+option: も — also / too
+correct: true
+---
+type: single_selection
+text: サラはジョージとがっこうでにほんごをべんきょうします
+romanji: Sara wa Jōji to gakkō de nihongo wo benkyō shimasu
+option: Sara studies Japanese at school with George
+correct: true
+option: Sara and George like studying Japanese at school
+option: Sara teaches George Japanese at school
+option: George studies Japanese at school for Sara
+---
+type: single_selection
+text: ワタナベさんのねこもかわいいですか
+romanji: Watanabe-san no neko mo kawaii desu ka
+option: Is Watanabe's cat cute too?
+correct: true
+option: Is Watanabe's cat cute?
+option: Watanabe's cat is also cute
+option: Watanabe's cat is not cute either
+---
+type: identify_words
+text: わたしはまいにちいえでみずとコーヒーをのみます
+romanji: Watashi wa mainichi ie de mizu to kōhī wo nomimasu
+option: は
+correct: true
+option: で
+correct: true
+option: と
+correct: true
+option: を
+correct: true
+option: も
+option: か
+---
+type: single_selection
+text: ジョージもサラもがっこうにいきます
+romanji: Jōji mo Sara mo gakkō ni ikimasu
+option: Both George and Sara go to school
+correct: true
+option: George or Sara goes to school
+option: George and Sara like school
+option: George goes to school with Sara
+---
+type: single_selection
+text: ワタナベさんはいえであさにサラとコーヒーをのみますか
+romanji: Watanabe-san wa ie de asa ni Sara to kōhī wo nomimasu ka
+option: Does Watanabe drink coffee with Sara at home in the morning?
+correct: true
+option: Watanabe drinks coffee with Sara at home in the morning
+option: Does Sara drink coffee with Watanabe at home in the morning?
+option: Does Watanabe make coffee with Sara at home?
+---
+type: single_selection
+text: わたしのねこはまいにちいえでみずをのみます
+romanji: Watashi no neko wa mainichi ie de mizu wo nomimasu
+option: My cat drinks water at home every day
+correct: true
+option: My cat likes water at home every day
+option: I drink water with my cat at home every day
+option: My cat wants water at home every day
+---
+type: identify_words
+text: サラとジョージもがっこうでべんきょうします
+romanji: Sara to Jōji mo gakkō de benkyō shimasu
+option: と
+correct: true
+option: も
+correct: true
+option: で
+correct: true
+option: は
+option: を
+option: に
+---
+type: single_selection
+text: ねこはかわいいですが、いぬもかわいいです
+romanji: Neko wa kawaii desu ga, inu mo kawaii desu
+option: Cats are cute, but dogs are also cute
+correct: true
+option: Cats are cute and dogs are cute
+option: Cats are cute, dogs are not cute
+option: Both cats and dogs are cute
+---
+type: single_selection
+text: ワタナベさんはせんせいで、サラはがくせいです
+romanji: Watanabe-san wa sensei de, Sara wa gakusei desu
+option: Watanabe is a teacher and Sara is a student
+correct: true
+option: Watanabe and Sara are teachers
+option: Watanabe is a student and Sara is a teacher
+option: Watanabe is a teacher, is Sara a student?

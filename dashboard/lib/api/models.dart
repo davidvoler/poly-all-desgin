@@ -154,48 +154,30 @@ class LanguageSummary {
       );
 }
 
-enum CourseStatusWire { draft, review, published, archived, unknown }
-
-CourseStatusWire _statusFromWire(String? s) {
-  switch (s) {
-    case 'draft':
-      return CourseStatusWire.draft;
-    case 'review':
-      return CourseStatusWire.review;
-    case 'published':
-      return CourseStatusWire.published;
-    case 'archived':
-      return CourseStatusWire.archived;
-    default:
-      return CourseStatusWire.unknown;
-  }
-}
-
-enum CourseAccessWire { public, members, unknown }
-
-CourseAccessWire _accessFromWire(String? s) {
-  switch (s) {
-    case 'public':
-      return CourseAccessWire.public;
-    case 'members':
-      return CourseAccessWire.members;
-    default:
-      return CourseAccessWire.unknown;
-  }
-}
-
+/// Course editing was simplified server-side to publish/unpublish only
+/// (see server/EDITOR.md option 2) — the DB still has a 4-value
+/// `status` column, but `models.edit.course.Course` collapses it to a
+/// single `published` bool, so the dashboard follows suit.
 class EditorCourse {
   final int courseId;
   final String title;
   final String description;
   final String lang;
   final String toLang;
-  final CourseStatusWire status;
-  final CourseAccessWire access;
-  final int lessonCount;
-  final int moduleCount;
-  final int studentCount;
-  final String updatedHuman;
+  final bool published;
+  final List<String> tags;
+  final Map<String, dynamic> metadata;
+  final CourseMeta meta;
+  // Only populated by GET /courses — the create_with_ai_poc "My courses"
+  // list card badges. Null everywhere else (GET/POST /course/{id}).
+  final String? level;
+  final int? wordCount;
+  final int? moduleCount;
+  final int? lessonCount;
+  final int? readyLessonCount;
+  // 'ai' | 'video' — which workspace page (`/ai-course/:id` vs
+  // `/video-course/:id`) a "My courses" card should route to.
+  final String kind;
 
   const EditorCourse({
     required this.courseId,
@@ -203,32 +185,76 @@ class EditorCourse {
     required this.description,
     required this.lang,
     required this.toLang,
-    required this.status,
-    required this.access,
-    required this.lessonCount,
-    required this.moduleCount,
-    required this.studentCount,
-    required this.updatedHuman,
+    required this.published,
+    this.tags = const [],
+    this.metadata = const {},
+    this.meta = CourseMeta.empty,
+    this.level,
+    this.wordCount,
+    this.moduleCount,
+    this.lessonCount,
+    this.readyLessonCount,
+    this.kind = 'ai',
   });
 
   factory EditorCourse.fromJson(Map<String, dynamic> j) {
-    // The server returns an ISO timestamp; we render it client-side
-    // since the design uses relative strings.
-    final raw = j['updated_at'] as String?;
+    final rawMeta =
+        (j['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
     return EditorCourse(
       courseId: j['course_id'] as int,
       title: (j['title'] as String?) ?? '',
       description: (j['description'] as String?) ?? '',
       lang: (j['lang'] as String?) ?? '',
       toLang: (j['to_lang'] as String?) ?? '',
-      status: _statusFromWire(j['status'] as String?),
-      access: _accessFromWire(j['access'] as String?),
-      lessonCount: (j['lesson_count'] as int?) ?? 0,
-      moduleCount: (j['module_count'] as int?) ?? 0,
-      studentCount: (j['student_count'] as int?) ?? 0,
-      updatedHuman: _humanizeIso(raw),
+      published: (j['published'] as bool?) ?? false,
+      tags: ((j['tags'] as List?) ?? const []).cast<String>(),
+      metadata: rawMeta,
+      meta: CourseMeta.fromJson(rawMeta),
+      level: j['level'] as String?,
+      wordCount: j['word_count'] as int?,
+      moduleCount: j['module_count'] as int?,
+      lessonCount: j['lesson_count'] as int?,
+      readyLessonCount: j['ready_lesson_count'] as int?,
+      kind: (j['kind'] as String?) ?? 'ai',
     );
   }
+
+  /// Round-trips `tags`/`metadata` unchanged — the edit form only
+  /// touches title/description/published, but POST /course rewrites
+  /// every column, so omitting them here would silently wipe them.
+  Map<String, dynamic> toJson() => {
+        'course_id': courseId,
+        'title': title,
+        'description': description,
+        'lang': lang,
+        'to_lang': toLang,
+        'tags': tags,
+        'metadata': metadata,
+        'published': published,
+        'level': level,
+      };
+
+  EditorCourse copyWith({
+    String? title,
+    String? description,
+    bool? published,
+    String? lang,
+    String? toLang,
+    String? level,
+    Map<String, dynamic>? metadata,
+  }) =>
+      EditorCourse(
+        courseId: courseId,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        lang: lang ?? this.lang,
+        toLang: toLang ?? this.toLang,
+        published: published ?? this.published,
+        tags: tags,
+        metadata: metadata ?? this.metadata,
+        meta: meta,
+        level: level ?? this.level,
+      );
 }
 
 /// Mirrors the server's `_humanize` helper for the client side — used
@@ -247,138 +273,53 @@ String _humanizeIso(String? iso) {
   return '${delta.inDays ~/ 365} years ago';
 }
 
-/// Full lesson + exercise list as returned by
-/// GET /api/v1/editor/lesson/{id}. Exercises are kept as a list of
-/// loosely-typed maps because the schema includes optional fields
-/// the dashboard editor doesn't have to fully understand to render.
-class LessonDetailRemote {
-  final int lessonId;
-  final int courseId;
-  final int moduleId;
-  final String title;
-  final String description;
-  final List<String> words;
-  final List<Map<String, dynamic>> exercises;
-
-  const LessonDetailRemote({
-    required this.lessonId,
-    required this.courseId,
-    required this.moduleId,
-    required this.title,
-    required this.description,
-    required this.words,
-    required this.exercises,
+/// One course-metadata variant descriptor (a reading or sentence-alt the
+/// course declares) — display name plus optional icon/tooltip and, for
+/// sentence-alt variants, the slot it labels.
+class VariantDescriptor {
+  final String name;
+  final String? icon;
+  final String? tooltip;
+  final int? slot;
+  const VariantDescriptor({
+    required this.name,
+    this.icon,
+    this.tooltip,
+    this.slot,
   });
-
-  factory LessonDetailRemote.fromJson(Map<String, dynamic> j) =>
-      LessonDetailRemote(
-        lessonId: j['lesson_id'] as int,
-        courseId: j['course_id'] as int,
-        moduleId: j['module_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        words: ((j['words'] as List?) ?? const []).cast<String>(),
-        exercises: ((j['exercises'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>(),
+  factory VariantDescriptor.fromJson(Map<String, dynamic> j) =>
+      VariantDescriptor(
+        name: (j['name'] as String?) ?? '',
+        icon: j['icon'] as String?,
+        tooltip: j['tooltip_text'] as String?,
+        slot: (j['slot'] as num?)?.toInt(),
       );
 }
 
-class EditorLessonRemote {
-  final int lessonId;
-  final String title;
-  final String description;
-  final List<String> words;
-  final int exerciseCount;
-  const EditorLessonRemote({
-    required this.lessonId,
-    required this.title,
-    required this.description,
-    required this.words,
-    required this.exerciseCount,
-  });
-  factory EditorLessonRemote.fromJson(Map<String, dynamic> j) =>
-      EditorLessonRemote(
-        lessonId: j['lesson_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        words: ((j['words'] as List?) ?? const []).cast<String>(),
-        exerciseCount: (j['exercise_count'] as int?) ?? 0,
-      );
-}
+/// Course-level display metadata: the reading (`ruby_text`) and full-sentence
+/// (`sentence_alt`) variants the course offers. Empty when unset.
+class CourseMeta {
+  final List<VariantDescriptor> rubyText;
+  final List<VariantDescriptor> sentenceAlt;
+  const CourseMeta({this.rubyText = const [], this.sentenceAlt = const []});
 
-class EditorModuleRemote {
-  final int moduleId;
-  final String title;
-  final String description;
-  final int weight;
-  final List<EditorLessonRemote> lessons;
-  const EditorModuleRemote({
-    required this.moduleId,
-    required this.title,
-    required this.description,
-    required this.weight,
-    required this.lessons,
-  });
-  factory EditorModuleRemote.fromJson(Map<String, dynamic> j) =>
-      EditorModuleRemote(
-        moduleId: j['module_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        weight: (j['weight'] as int?) ?? 0,
-        lessons: ((j['lessons'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>()
-            .map(EditorLessonRemote.fromJson)
-            .toList(),
-      );
-}
+  static const empty = CourseMeta();
+  bool get isEmpty => rubyText.isEmpty && sentenceAlt.isEmpty;
 
-class EditorCourseDetail {
-  final int courseId;
-  final String title;
-  final String description;
-  final String lang;
-  final String toLang;
-  final CourseStatusWire status;
-  final CourseAccessWire access;
-  final int lessonCount;
-  final int moduleCount;
-  final int studentCount;
-  final String updatedHuman;
-  final List<EditorModuleRemote> modules;
-
-  const EditorCourseDetail({
-    required this.courseId,
-    required this.title,
-    required this.description,
-    required this.lang,
-    required this.toLang,
-    required this.status,
-    required this.access,
-    required this.lessonCount,
-    required this.moduleCount,
-    required this.studentCount,
-    required this.updatedHuman,
-    required this.modules,
-  });
-
-  factory EditorCourseDetail.fromJson(Map<String, dynamic> j) =>
-      EditorCourseDetail(
-        courseId: j['course_id'] as int,
-        title: (j['title'] as String?) ?? '',
-        description: (j['description'] as String?) ?? '',
-        lang: (j['lang'] as String?) ?? '',
-        toLang: (j['to_lang'] as String?) ?? '',
-        status: _statusFromWire(j['status'] as String?),
-        access: _accessFromWire(j['access'] as String?),
-        lessonCount: (j['lesson_count'] as int?) ?? 0,
-        moduleCount: (j['module_count'] as int?) ?? 0,
-        studentCount: (j['student_count'] as int?) ?? 0,
-        updatedHuman: _humanizeIso(j['updated_at'] as String?),
-        modules: ((j['modules'] as List?) ?? const [])
-            .cast<Map<String, dynamic>>()
-            .map(EditorModuleRemote.fromJson)
-            .toList(),
-      );
+  factory CourseMeta.fromJson(Object? raw) {
+    if (raw is! Map) return CourseMeta.empty;
+    List<VariantDescriptor> parse(Object? v) => v is List
+        ? v
+            .whereType<Map>()
+            .map((m) => VariantDescriptor.fromJson(m.cast<String, dynamic>()))
+            .where((d) => d.name.isNotEmpty)
+            .toList()
+        : const [];
+    return CourseMeta(
+      rubyText: parse(raw['ruby_text']),
+      sentenceAlt: parse(raw['sentence_alt']),
+    );
+  }
 }
 
 /// Role enum in lockstep with `school.school_users.role` on the
@@ -533,4 +474,977 @@ class StudentRowRemote {
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
   }
+
+  // --- Course AI POC (mirrors server/src/models/edit/generate_poc.py) ----
+}
+
+/// Mirrors the server's `PromptType` enum.
+enum PromptType { createLesson, getWords, createCourse, createModules }
+
+String promptTypeToWire(PromptType t) => switch (t) {
+      PromptType.createLesson => 'create_lesson',
+      PromptType.getWords => 'get_words',
+      PromptType.createCourse => 'create_course',
+      PromptType.createModules => 'create_modules',
+    };
+
+PromptType promptTypeFromWire(String? wire) => switch (wire) {
+      'create_lesson' => PromptType.createLesson,
+      'get_words' => PromptType.getWords,
+      'create_modules' => PromptType.createModules,
+      _ => PromptType.createCourse,
+    };
+
+/// Mirrors `PromptResponseOption` — one of the "what next" choices offered
+/// after a generate_poc call (e.g. "Create Lesson", "Get Words List").
+class PromptResponseOption {
+  final String title;
+  final String text;
+  final PromptType promptType;
+
+  const PromptResponseOption({
+    required this.title,
+    required this.text,
+    required this.promptType,
+  });
+
+  factory PromptResponseOption.fromJson(Map<String, dynamic> j) =>
+      PromptResponseOption(
+        title: (j['title'] as String?) ?? '',
+        text: (j['text'] as String?) ?? '',
+        promptType: promptTypeFromWire(j['prompt_type'] as String?),
+      );
+}
+
+/// Mirrors `PromptResponse` — the result of any /api/v1/generate_poc/* call.
+class PromptResponse {
+  final PromptType? promptType;
+  final String prompt;
+  final String title;
+  final String description;
+  final List<PromptResponseOption> options;
+  final String response;
+  final int? courseId;
+  final String? lang;
+  final String? toLang;
+  final int actualTokens;
+  final double actualCost;
+
+  const PromptResponse({
+    this.promptType,
+    this.prompt = '',
+    this.title = '',
+    this.description = '',
+    this.options = const [],
+    this.response = '',
+    this.courseId,
+    this.lang,
+    this.toLang,
+    this.actualTokens = 0,
+    this.actualCost = 0,
+  });
+
+  factory PromptResponse.fromJson(Map<String, dynamic> j) => PromptResponse(
+        promptType: j['prompt_type'] != null
+            ? promptTypeFromWire(j['prompt_type'] as String?)
+            : null,
+        prompt: (j['prompt'] as String?) ?? '',
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        options: ((j['options'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(PromptResponseOption.fromJson)
+            .toList(),
+        response: (j['response'] as String?) ?? '',
+        courseId: j['course_id'] as int?,
+        lang: j['lang'] as String?,
+        toLang: j['to_lang'] as String?,
+        actualTokens: (j['actual_tokens'] as num?)?.toInt() ?? 0,
+        actualCost: (j['actual_cost'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+// ===========================================================================
+// Create-with-AI course workspace — mirrors server/src/models/edit/ai_course.py
+// (words / modules / lessons / sentences / exercises) and the aggregate
+// GET /api/v1/edit/course/course/{id}/full response. Backs
+// pages/ai_course_workspace_page.dart (a Flutter port of
+// plan/design_experiments/create_with_ai_poc/course.html).
+// ===========================================================================
+
+// Words aren't a database entity — just an ordered jsonb list on the
+// course row. There's no id; the word string itself is the identity,
+// same as course_simple.lesson.words.
+class AiCourseWord {
+  final String word;
+  final String gloss;
+  final String exampleSentence;
+  final String exampleGloss;
+  final bool used;
+
+  const AiCourseWord({
+    required this.word,
+    this.gloss = '',
+    this.exampleSentence = '',
+    this.exampleGloss = '',
+    this.used = false,
+  });
+
+  factory AiCourseWord.fromJson(Map<String, dynamic> j) => AiCourseWord(
+        word: (j['word'] as String?) ?? '',
+        gloss: (j['gloss'] as String?) ?? '',
+        exampleSentence: (j['example_sentence'] as String?) ?? '',
+        exampleGloss: (j['example_gloss'] as String?) ?? '',
+        used: (j['used'] as bool?) ?? false,
+      );
+}
+
+/// Mirrors server `CourseWord` (models/edit/generate_poc_new.py) — the
+/// `{word, weight, used}` shape that `generate_poc_new/generate_words_list`
+/// returns and persists onto `course_simple.course.words`.
+class CourseWord {
+  final String word;
+  final int weight;
+  final int used;
+
+  const CourseWord({this.word = '', this.weight = 0, this.used = 0});
+
+  factory CourseWord.fromJson(Map<String, dynamic> j) => CourseWord(
+        word: (j['word'] as String?) ?? '',
+        weight: (j['weight'] as num?)?.toInt() ?? 0,
+        used: (j['used'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() =>
+      {'word': word, 'weight': weight, 'used': used};
+}
+
+class AiModule {
+  final int moduleId;
+  final String title;
+
+  const AiModule({required this.moduleId, required this.title});
+
+  factory AiModule.fromJson(Map<String, dynamic> j) => AiModule(
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+      );
+}
+
+// Sentences ARE a database entity (course_simple.sentence), but nothing
+// links to them by foreign key — sentenceId is a deterministic hash of
+// "lang:text" the server computes, masked to a JS-safe 53 bits, and a
+// lesson just carries it inline as an address into its own sentences
+// list (course_simple.lesson.sentences jsonb), not a join.
+class AiLessonSentence {
+  final int sentenceId;
+  // Only set by the /edit/lesson/sentences/* responses, which echo back
+  // the lesson_id they were addressed with. Absent from GET .../full and
+  // the generate_poc responses (the server's LessonSentenceOut doesn't
+  // carry it) — callers there already know which lesson they're in.
+  final int? lessonId;
+  final String? word;
+  final String text;
+  final String gloss;
+  final bool chosen;
+
+  const AiLessonSentence({
+    required this.sentenceId,
+    this.lessonId,
+    this.word,
+    required this.text,
+    this.gloss = '',
+    this.chosen = true,
+  });
+
+  factory AiLessonSentence.fromJson(Map<String, dynamic> j) => AiLessonSentence(
+        sentenceId: (j['sentence_id'] as num?)?.toInt() ?? 0,
+        lessonId: (j['lesson_id'] as num?)?.toInt(),
+        word: j['word'] as String?,
+        // generate_poc_new's Sentence model names the text field `sentences`.
+        text: (j['text'] as String?) ?? (j['sentences'] as String?) ?? '',
+        gloss: (j['gloss'] as String?) ?? '',
+        chosen: (j['chosen'] as bool?) ?? true,
+      );
+}
+
+/// Mirrors server `Options` (models/edit/exercise.py) — an exercise option
+/// carries its own `correct` flag now, alongside the legacy `answer` string
+/// on `AiExercise` that still names the correct option's text.
+class AiExerciseOption {
+  final String text;
+  final bool correct;
+
+  const AiExerciseOption({this.text = '', this.correct = false});
+
+  factory AiExerciseOption.fromJson(Map<String, dynamic> j) => AiExerciseOption(
+        text: (j['text'] as String?) ?? '',
+        correct: (j['correct'] as bool?) ?? false,
+      );
+
+  Map<String, dynamic> toJson() => {'text': text, 'correct': correct};
+}
+
+class AiExercise {
+  final int exerciseId;
+  final int lessonId;
+  final int? sentenceId;
+  final String exerciseType;
+  final String prompt;
+  final List<AiExerciseOption> options;
+  final String? answer;
+
+  const AiExercise({
+    required this.exerciseId,
+    required this.lessonId,
+    this.sentenceId,
+    this.exerciseType = 'single_choice',
+    this.prompt = '',
+    this.options = const [],
+    this.answer,
+  });
+
+  factory AiExercise.fromJson(Map<String, dynamic> j) => AiExercise(
+        exerciseId: j['exercise_id'] as int,
+        lessonId: j['lesson_id'] as int,
+        sentenceId: j['sentence_id'] as int?,
+        exerciseType: (j['exercise_type'] as String?) ?? 'single_choice',
+        prompt: (j['prompt'] as String?) ?? '',
+        options: ((j['options'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExerciseOption.fromJson)
+            .toList(),
+        answer: j['answer'] as String?,
+      );
+}
+
+class AiLesson {
+  final int lessonId;
+  final int moduleId;
+  final int courseId;
+  final String title;
+  final String status; // 'draft' | 'ready'
+  final List<String> words;
+  final List<AiLessonSentence> sentences;
+  final List<AiExercise> exercises;
+
+  const AiLesson({
+    required this.lessonId,
+    required this.moduleId,
+    required this.courseId,
+    required this.title,
+    this.status = 'draft',
+    this.words = const [],
+    this.sentences = const [],
+    this.exercises = const [],
+  });
+
+  bool get isReady => status == 'ready';
+
+  factory AiLesson.fromJson(Map<String, dynamic> j) => AiLesson(
+        lessonId: j['lesson_id'] as int,
+        moduleId: j['module_id'] as int,
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        status: (j['status'] as String?) ?? 'draft',
+        words: ((j['words'] as List?) ?? const []).cast<String>(),
+        sentences: ((j['sentences'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLessonSentence.fromJson)
+            .toList(),
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExercise.fromJson)
+            .toList(),
+      );
+}
+
+class AiModuleFull {
+  final int moduleId;
+  final String title;
+  final List<AiLesson> lessons;
+
+  const AiModuleFull({
+    required this.moduleId,
+    required this.title,
+    this.lessons = const [],
+  });
+
+  factory AiModuleFull.fromJson(Map<String, dynamic> j) => AiModuleFull(
+        moduleId: j['module_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        lessons: ((j['lessons'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLesson.fromJson)
+            .toList(),
+      );
+}
+
+class AiCourseFull {
+  final int courseId;
+  final String title;
+  final String description;
+  final String lang;
+  final String toLang;
+  final String level;
+  final List<AiCourseWord> words;
+  final List<AiModuleFull> modules;
+
+  const AiCourseFull({
+    required this.courseId,
+    required this.title,
+    this.description = '',
+    required this.lang,
+    required this.toLang,
+    required this.level,
+    this.words = const [],
+    this.modules = const [],
+  });
+
+  factory AiCourseFull.fromJson(Map<String, dynamic> j) => AiCourseFull(
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        lang: (j['lang'] as String?) ?? '',
+        toLang: (j['to_lang'] as String?) ?? '',
+        level: (j['level'] as String?) ?? 'A1',
+        words: ((j['words'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiCourseWord.fromJson)
+            .toList(),
+        modules: ((j['modules'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiModuleFull.fromJson)
+            .toList(),
+      );
+}
+
+/// Fake per-call token/cost usage, shared by every generate_poc response
+/// below — mirrors PromptResponse.actual_tokens/actual_cost.
+class AiUsage {
+  final int tokens;
+  final double cost;
+  const AiUsage({this.tokens = 0, this.cost = 0});
+
+  factory AiUsage.fromJson(Map<String, dynamic> j) => AiUsage(
+        tokens: (j['actual_tokens'] as num?)?.toInt() ?? 0,
+        cost: (j['actual_cost'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class AiWordsResult {
+  final String message;
+  final List<AiCourseWord> words;
+  final AiUsage usage;
+  const AiWordsResult({required this.message, required this.words, required this.usage});
+
+  factory AiWordsResult.fromJson(Map<String, dynamic> j) => AiWordsResult(
+        message: (j['response'] as String?) ?? '',
+        words: ((j['words'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiCourseWord.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+class AiSentencesResult {
+  final String message;
+  final List<AiLessonSentence> sentences;
+  final AiUsage usage;
+  const AiSentencesResult({required this.message, required this.sentences, required this.usage});
+
+  factory AiSentencesResult.fromJson(Map<String, dynamic> j) => AiSentencesResult(
+        message: (j['response'] as String?) ?? '',
+        sentences: ((j['sentences'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLessonSentence.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+class AiExercisesResult {
+  final String message;
+  final List<AiExercise> exercises;
+  final AiUsage usage;
+  const AiExercisesResult({required this.message, required this.exercises, required this.usage});
+
+  factory AiExercisesResult.fromJson(Map<String, dynamic> j) => AiExercisesResult(
+        message: (j['response'] as String?) ?? '',
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExercise.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+class AiLessonGenerateResult {
+  final String message;
+  final List<AiLessonSentence> sentences;
+  final List<AiExercise> exercises;
+  final AiUsage usage;
+  const AiLessonGenerateResult({
+    required this.message,
+    required this.sentences,
+    required this.exercises,
+    required this.usage,
+  });
+
+  factory AiLessonGenerateResult.fromJson(Map<String, dynamic> j) => AiLessonGenerateResult(
+        message: (j['response'] as String?) ?? '',
+        sentences: ((j['sentences'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiLessonSentence.fromJson)
+            .toList(),
+        exercises: ((j['exercises'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(AiExercise.fromJson)
+            .toList(),
+        usage: AiUsage.fromJson(j),
+      );
+}
+
+// ===========================================================================
+// Course generation options — mirrors server `CourseOption`
+// (server/src/models/edit/generate_poc_new.py). Stored on
+// course_simple.course.metadata at create time and sent back with every
+// generate_poc_new call. Defaults here must match the server defaults.
+// ===========================================================================
+
+const kContentSources = ['corpus', 'ai'];
+const kAiProviders = ['ollama', 'openai', 'claude'];
+const kAiModels = ['gemma4', 'muse-glimmer', 'deepseek-r1:86'];
+
+class CourseOptions {
+  final String contentSource; // corpus | ai
+  final String provider; // ollama | openai | claude
+  final String model; // gemma4
+  // sentence + exercise generation
+  final int exercisesPerWord;
+  final int wordsPerLesson;
+  final int maxSentencesWords;
+  final int minSentencesWords;
+  final double distractorSimilarity;
+  // exercise-type mix — relative weights, roughly summing to 1.0
+  final double singleChoice;
+  final double multipleChoice;
+  final double identifyWords;
+  final double description;
+
+  const CourseOptions({
+    this.contentSource = 'corpus',
+    this.provider = 'ollama',
+    this.model = 'gemma4',
+    this.exercisesPerWord = 5,
+    this.wordsPerLesson = 2,
+    this.maxSentencesWords = 4,
+    this.minSentencesWords = 1,
+    this.distractorSimilarity = 0.5,
+    this.singleChoice = 0.9,
+    this.multipleChoice = 0.1,
+    this.identifyWords = 0.1,
+    this.description = 0.0,
+  });
+
+  CourseOptions copyWith({
+    String? contentSource,
+    String? provider,
+    String? model,
+    int? exercisesPerWord,
+    int? wordsPerLesson,
+    int? maxSentencesWords,
+    int? minSentencesWords,
+    double? distractorSimilarity,
+    double? singleChoice,
+    double? multipleChoice,
+    double? identifyWords,
+    double? description,
+  }) =>
+      CourseOptions(
+        contentSource: contentSource ?? this.contentSource,
+        provider: provider ?? this.provider,
+        model: model ?? this.model,
+        exercisesPerWord: exercisesPerWord ?? this.exercisesPerWord,
+        wordsPerLesson: wordsPerLesson ?? this.wordsPerLesson,
+        maxSentencesWords: maxSentencesWords ?? this.maxSentencesWords,
+        minSentencesWords: minSentencesWords ?? this.minSentencesWords,
+        distractorSimilarity: distractorSimilarity ?? this.distractorSimilarity,
+        singleChoice: singleChoice ?? this.singleChoice,
+        multipleChoice: multipleChoice ?? this.multipleChoice,
+        identifyWords: identifyWords ?? this.identifyWords,
+        description: description ?? this.description,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'content_source': contentSource,
+        'provider': provider,
+        'model': model,
+        'exercises_per_word': exercisesPerWord,
+        'words_per_lesson': wordsPerLesson,
+        'max_sentences_words': maxSentencesWords,
+        'min_sentences_words': minSentencesWords,
+        'distractor_similarity': distractorSimilarity,
+        'single_choice': singleChoice,
+        'multiple_choice': multipleChoice,
+        'identify_words': identifyWords,
+        'description': description,
+      };
+
+  /// Merge these options onto an existing metadata map, leaving any
+  /// non-option keys (e.g. `ruby_text` / `sentence_alt` from an imported
+  /// course) untouched. The course `metadata` jsonb column holds both.
+  Map<String, dynamic> mergeInto(Map<String, dynamic> base) =>
+      {...base, ...toJson()};
+
+  factory CourseOptions.fromJson(Map<String, dynamic> j) {
+    const d = CourseOptions();
+    double dbl(Object? v, double fallback) => (v as num?)?.toDouble() ?? fallback;
+    int integer(Object? v, int fallback) => (v as num?)?.toInt() ?? fallback;
+    return CourseOptions(
+      contentSource: (j['content_source'] as String?) ?? d.contentSource,
+      provider: (j['provider'] as String?) ?? d.provider,
+      model: (j['model'] as String?) ?? d.model,
+      exercisesPerWord: integer(j['exercises_per_word'], d.exercisesPerWord),
+      wordsPerLesson: integer(j['words_per_lesson'], d.wordsPerLesson),
+      maxSentencesWords: integer(j['max_sentences_words'], d.maxSentencesWords),
+      minSentencesWords: integer(j['min_sentences_words'], d.minSentencesWords),
+      distractorSimilarity:
+          dbl(j['distractor_similarity'], d.distractorSimilarity),
+      singleChoice: dbl(j['single_choice'], d.singleChoice),
+      multipleChoice: dbl(j['multiple_choice'], d.multipleChoice),
+      identifyWords: dbl(j['identify_words'], d.identifyWords),
+      description: dbl(j['description'], d.description),
+    );
+  }
+}
+
+// ===========================================================================
+// Video course generation options — mirrors server `VideoCourseOption`
+// (server/src/models/edit/generate_poc_new.py). Stored on
+// course_simple.course.metadata (kind='video') at create time.
+// ===========================================================================
+
+class VideoCourseOptions {
+  final String contentSource; // corpus | ai
+  final String provider; // ollama | openai | claude
+  final String model; // gemma4
+  final int videoSectionLenSec;
+  // Sentences extracted from subtitles longer than this (by word count)
+  // are dropped.
+  final int maxSentenceWords;
+
+  const VideoCourseOptions({
+    this.contentSource = 'corpus',
+    this.provider = 'ollama',
+    this.model = 'gemma4',
+    this.videoSectionLenSec = 120,
+    this.maxSentenceWords = 12,
+  });
+
+  VideoCourseOptions copyWith({
+    String? contentSource,
+    String? provider,
+    String? model,
+    int? videoSectionLenSec,
+    int? maxSentenceWords,
+  }) =>
+      VideoCourseOptions(
+        contentSource: contentSource ?? this.contentSource,
+        provider: provider ?? this.provider,
+        model: model ?? this.model,
+        videoSectionLenSec: videoSectionLenSec ?? this.videoSectionLenSec,
+        maxSentenceWords: maxSentenceWords ?? this.maxSentenceWords,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'content_source': contentSource,
+        'provider': provider,
+        'model': model,
+        'video_section_len_sec': videoSectionLenSec,
+        'max_sentence_words': maxSentenceWords,
+      };
+
+  factory VideoCourseOptions.fromJson(Map<String, dynamic> j) {
+    const d = VideoCourseOptions();
+    int integer(Object? v, int fallback) => (v as num?)?.toInt() ?? fallback;
+    return VideoCourseOptions(
+      contentSource: (j['content_source'] as String?) ?? d.contentSource,
+      provider: (j['provider'] as String?) ?? d.provider,
+      model: (j['model'] as String?) ?? d.model,
+      videoSectionLenSec:
+          integer(j['video_section_len_sec'], d.videoSectionLenSec),
+      maxSentenceWords: integer(j['max_sentence_words'], d.maxSentenceWords),
+    );
+  }
+}
+
+/// One subtitle/caption line. Mirrors server `VideoSubtitleLine`.
+class VideoSubtitleLine {
+  final double start;
+  final double duration;
+  final String text;
+
+  const VideoSubtitleLine({required this.start, required this.duration, required this.text});
+
+  factory VideoSubtitleLine.fromJson(Map<String, dynamic> j) => VideoSubtitleLine(
+        start: (j['start'] as num?)?.toDouble() ?? 0,
+        duration: (j['duration'] as num?)?.toDouble() ?? 0,
+        text: (j['text'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {'start': start, 'duration': duration, 'text': text};
+}
+
+/// A word ranked by rarity/difficulty. Mirrors server `VideoWordRank`.
+class VideoWordRank {
+  final String word;
+  final int rank;
+
+  const VideoWordRank({required this.word, required this.rank});
+
+  factory VideoWordRank.fromJson(Map<String, dynamic> j) => VideoWordRank(
+        word: (j['word'] as String?) ?? '',
+        rank: (j['rank'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {'word': word, 'rank': rank};
+}
+
+/// A time-bounded chunk of a video's subtitles. Mirrors server `VideoSection`.
+class VideoSection {
+  final double startSeconds;
+  final double endSeconds;
+  final String text;
+
+  const VideoSection({required this.startSeconds, required this.endSeconds, required this.text});
+
+  factory VideoSection.fromJson(Map<String, dynamic> j) => VideoSection(
+        startSeconds: (j['start_seconds'] as num?)?.toDouble() ?? 0,
+        endSeconds: (j['end_seconds'] as num?)?.toDouble() ?? 0,
+        text: (j['text'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'start_seconds': startSeconds,
+        'end_seconds': endSeconds,
+        'text': text,
+      };
+}
+
+/// One video in a video course's playlist. Mirrors server `VideoItem`.
+/// `subtitles`/`words`/`phrases`/`sections` are null until their pipeline
+/// step (Download Subtitles / Extract Words / Extract Phrases / Create
+/// Sections, in the Edit tab) has run — null means "not run yet", an empty
+/// list means "ran and found nothing".
+class VideoItem {
+  final String videoUrl;
+  final String title;
+  final List<VideoSubtitleLine>? subtitles;
+  final List<VideoWordRank>? words;
+  final List<String>? phrases;
+  final List<VideoSection>? sections;
+
+  const VideoItem({
+    required this.videoUrl,
+    this.title = '',
+    this.subtitles,
+    this.words,
+    this.phrases,
+    this.sections,
+  });
+
+  factory VideoItem.fromJson(Map<String, dynamic> j) => VideoItem(
+        videoUrl: (j['video_url'] as String?) ?? '',
+        title: (j['title'] as String?) ?? '',
+        subtitles: (j['subtitles'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoSubtitleLine.fromJson)
+            .toList(),
+        words: (j['words'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoWordRank.fromJson)
+            .toList(),
+        phrases: (j['phrases'] as List?)?.cast<String>(),
+        sections: (j['sections'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoSection.fromJson)
+            .toList(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'video_url': videoUrl,
+        'title': title,
+        if (subtitles != null) 'subtitles': subtitles!.map((s) => s.toJson()).toList(),
+        if (words != null) 'words': words!.map((w) => w.toJson()).toList(),
+        if (phrases != null) 'phrases': phrases,
+        if (sections != null) 'sections': sections!.map((s) => s.toJson()).toList(),
+      };
+
+  VideoItem copyWith({
+    String? videoUrl,
+    String? title,
+    List<VideoSubtitleLine>? subtitles,
+    List<VideoWordRank>? words,
+    List<String>? phrases,
+    List<VideoSection>? sections,
+  }) =>
+      VideoItem(
+        videoUrl: videoUrl ?? this.videoUrl,
+        title: title ?? this.title,
+        subtitles: subtitles ?? this.subtitles,
+        words: words ?? this.words,
+        phrases: phrases ?? this.phrases,
+        sections: sections ?? this.sections,
+      );
+}
+
+/// A single video within a video course. Mirrors server `VideoModule` — a
+/// real row in course_simple.module (module_type='video'), alongside the
+/// AI-course modules that already live in that table.
+class VideoModule {
+  final int? moduleId;
+  final int courseId;
+  final String title;
+  final String videoUrl;
+  // None until their pipeline step has run for this module's video.
+  // sentences split on '.' only; phrases split on both ',' and '.'
+  // (finer-grained).
+  final List<VideoSubtitleLine>? subtitles;
+  final List<String>? words;
+  final List<String>? sentences;
+  final List<String>? phrases;
+
+  const VideoModule({
+    this.moduleId,
+    required this.courseId,
+    this.title = '',
+    this.videoUrl = '',
+    this.subtitles,
+    this.words,
+    this.sentences,
+    this.phrases,
+  });
+
+  factory VideoModule.fromJson(Map<String, dynamic> j) => VideoModule(
+        moduleId: j['module_id'] as int?,
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        videoUrl: (j['video_url'] as String?) ?? '',
+        subtitles: (j['subtitles'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(VideoSubtitleLine.fromJson)
+            .toList(),
+        words: (j['words'] as List?)?.cast<String>(),
+        sentences: (j['sentences'] as List?)?.cast<String>(),
+        phrases: (j['phrases'] as List?)?.cast<String>(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'module_id': moduleId,
+        'course_id': courseId,
+        'title': title,
+        'video_url': videoUrl,
+        if (subtitles != null) 'subtitles': subtitles!.map((s) => s.toJson()).toList(),
+        if (words != null) 'words': words,
+        if (sentences != null) 'sentences': sentences,
+        if (phrases != null) 'phrases': phrases,
+      };
+
+  VideoModule copyWith({
+    String? title,
+    String? videoUrl,
+    List<VideoSubtitleLine>? subtitles,
+    List<String>? words,
+    List<String>? sentences,
+    List<String>? phrases,
+  }) =>
+      VideoModule(
+        moduleId: moduleId,
+        courseId: courseId,
+        title: title ?? this.title,
+        videoUrl: videoUrl ?? this.videoUrl,
+        subtitles: subtitles ?? this.subtitles,
+        words: words ?? this.words,
+        sentences: sentences ?? this.sentences,
+        phrases: phrases ?? this.phrases,
+      );
+}
+
+/// Client-side mirror of server `VideoCourse`
+/// (server/src/models/edit/generate_poc_new.py) — the video-course
+/// counterpart of the AI-course `Course`/`AiCourseFull` shapes. A video
+/// course can hold more than one video (`videos`), added after creation,
+/// and can organize them into `modules`.
+class VideoCourse {
+  final int courseId;
+  final String title;
+  final String description;
+  final String lang;
+  final String toLang;
+  final String level;
+  final List<VideoItem> videos;
+  final List<VideoModule> modules;
+  final VideoCourseOptions metadata;
+
+  const VideoCourse({
+    required this.courseId,
+    required this.title,
+    required this.description,
+    required this.lang,
+    required this.toLang,
+    required this.level,
+    required this.videos,
+    this.modules = const [],
+    required this.metadata,
+  });
+
+  factory VideoCourse.fromJson(Map<String, dynamic> j) => VideoCourse(
+        courseId: j['course_id'] as int,
+        title: (j['title'] as String?) ?? '',
+        description: (j['description'] as String?) ?? '',
+        lang: (j['lang'] as String?) ?? '',
+        toLang: (j['to_lang'] as String?) ?? '',
+        level: (j['level'] as String?) ?? '',
+        videos: ((j['videos'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(VideoItem.fromJson)
+            .toList(),
+        modules: ((j['modules'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(VideoModule.fromJson)
+            .toList(),
+        metadata: VideoCourseOptions.fromJson(
+          (j['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'course_id': courseId,
+        'title': title,
+        'description': description,
+        'lang': lang,
+        'to_lang': toLang,
+        'level': level,
+        'videos': videos.map((v) => v.toJson()).toList(),
+        'modules': modules.map((m) => m.toJson()).toList(),
+        'metadata': metadata.toJson(),
+      };
+
+  VideoCourse copyWith({
+    String? title,
+    String? description,
+    String? lang,
+    String? toLang,
+    String? level,
+    List<VideoItem>? videos,
+    List<VideoModule>? modules,
+    VideoCourseOptions? metadata,
+  }) =>
+      VideoCourse(
+        courseId: courseId,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        lang: lang ?? this.lang,
+        toLang: toLang ?? this.toLang,
+        level: level ?? this.level,
+        videos: videos ?? this.videos,
+        modules: modules ?? this.modules,
+        metadata: metadata ?? this.metadata,
+      );
+}
+
+// ===========================================================================
+// Language codes — `Course.lang` / `to_lang` are always stored/sent as a
+// short ISO 639-1 code ("ar"), never a display name ("Arabic"): the
+// backend corpus tables and AI prompts key off the code. The LanguageField
+// pickers show the name; convert with [languageCode] on the way out and
+// [languageName] on the way in.
+// ===========================================================================
+
+const Map<String, String> kLanguageNamesByCode = {
+  'ar': 'Arabic',
+  'zh': 'Chinese (Mandarin)',
+  'cs': 'Czech',
+  'da': 'Danish',
+  'nl': 'Dutch',
+  'en': 'English',
+  'fi': 'Finnish',
+  'fr': 'French',
+  'de': 'German',
+  'el': 'Greek',
+  'he': 'Hebrew',
+  'hi': 'Hindi',
+  'hu': 'Hungarian',
+  'id': 'Indonesian',
+  'it': 'Italian',
+  'ja': 'Japanese',
+  'ko': 'Korean',
+  'no': 'Norwegian',
+  'pl': 'Polish',
+  'pt': 'Portuguese',
+  'ro': 'Romanian',
+  'ru': 'Russian',
+  'es': 'Spanish',
+  'sv': 'Swedish',
+  'th': 'Thai',
+  'tr': 'Turkish',
+  'uk': 'Ukrainian',
+  'vi': 'Vietnamese',
+};
+
+final Map<String, String> _codeByLanguageName = {
+  for (final e in kLanguageNamesByCode.entries) e.value.toLowerCase(): e.key,
+  'chinese': 'zh',
+  'mandarin': 'zh',
+};
+
+/// Language name ("Arabic") or code ("AR") → ISO 639-1 code ("ar").
+/// Anything unrecognised passes through trimmed + lowercased.
+String languageCode(String input) {
+  final s = input.trim().toLowerCase();
+  if (s.isEmpty) return s;
+  return _codeByLanguageName[s] ?? s;
+}
+
+/// ISO 639-1 code ("ar") → display name ("Arabic"). Anything unrecognised
+/// (already a name, or an unknown code) is returned trimmed.
+String languageName(String codeOrName) {
+  final s = codeOrName.trim();
+  return kLanguageNamesByCode[s.toLowerCase()] ?? s;
+}
+
+// ===========================================================================
+// Background jobs — mirrors server `TaskStart`
+// (models/edit/generate_poc_new.py). The generate_poc endpoints kick a
+// worker job and return `{task_id}`; the client polls
+// GET /api/v1/tasks/{task_id} until `completed`, then re-fetches the course
+// (words / sentences / exercises are written straight to the DB — the job's
+// own return value is never read).
+// ===========================================================================
+class TaskStatus {
+  final String taskId;
+  final String? taskType;
+  final String status; // QUEUED | PENDING | SUCCESS | FAILED (case varies)
+  final String? error;
+  final bool completed;
+
+  const TaskStatus({
+    required this.taskId,
+    this.taskType,
+    this.status = 'PENDING',
+    this.error,
+    this.completed = false,
+  });
+
+  bool get failed => error != null || status.toUpperCase() == 'FAILED';
+
+  factory TaskStatus.fromJson(Map<String, dynamic> j) => TaskStatus(
+        taskId: (j['task_id'] as String?) ?? '',
+        taskType: j['task_type'] as String?,
+        status: (j['status'] as String?) ?? 'PENDING',
+        error: j['error'] as String?,
+        completed: (j['completed'] as bool?) ?? false,
+      );
 }

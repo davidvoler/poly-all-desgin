@@ -1,0 +1,107 @@
+---
+title: Lesson 1 - First Words & Greetings
+weight: 1
+---
+type: explanation
+In Japanese, greetings change depending on the time of day.
+おはよう (Ohayō) is used in the morning — think of it as 'good morning'.
+こんにちは (Konnichiwa) is used during the day, and こんばんは (Konbanwa) in the evening.
+Japanese is written in three scripts: hiragana, katakana, and kanji. We'll start with hiragana.
+---
+type: single_selection
+text: おはよう
+romanji: Ohayō
+option: Good morning
+correct: true
+option: Good evening
+option: How are you?
+option: Goodbye
+---
+type: single_selection
+text: ありがとう
+romanji: Arigatō
+option: Yes
+option: Please
+option: Thank you
+correct: true
+option: Sorry
+---
+type: explanation
+はい (hai) means 'yes' and いいえ (iie) means 'no'.
+Japanese sentences often end with か (ka) to turn them into a question — similar to a question mark.
+The particle は (wa) marks the topic of a sentence. For example: わたしは (watashi wa) means 'as for me' or simply 'I'.
+---
+type: identify_words
+text: おはようございます
+romanji: Ohayō gozaimasu
+option: おはよう
+correct: true
+option: ございます
+correct: true
+option: こんにちは
+option: ありがとう
+---
+type: multiple_choice
+text: 水
+romanji: Mizu
+option: water
+correct: true
+option: liquid
+option: drink
+option: H₂O
+correct: true
+---
+type: single_selection
+text: 猫
+romanji: Neko
+option: dog
+option: cat
+correct: true
+option: bird
+option: fish
+---
+type: identify_words
+text: 猫は悲しそうに見える
+romanji: Neko wa kanashisō ni mieru
+option: 猫
+correct: true
+option: は
+correct: true
+option: おはよう
+option: 思った
+---
+type: multiple_choice
+text: 花
+romanji: Hana
+option: flower
+correct: true
+option: blossom
+correct: true
+option: flowers
+correct: true
+option: cat
+---
+type: explanation
+Numbers 1–10 in Japanese: 一(ichi), 二(ni), 三(san), 四(shi/yon), 五(go), 六(roku), 七(shichi/nana), 八(hachi), 九(ku/kyū), 十(jū).
+Japanese counts change depending on what you are counting — people, animals, and flat objects all use different counters.
+For now, just focus on learning the base numbers 1–10.
+---
+type: single_selection
+text: さようなら
+romanji: Sayōnara
+option: Good morning
+option: Excuse me
+option: Goodbye
+correct: true
+option: Thank you
+---
+type: identify_words
+text: わたしはがくせいです
+romanji: Watashi wa gakusei desu
+option: わたし
+correct: true
+option: がくせい
+correct: true
+option: です
+correct: true
+option: ありがとう

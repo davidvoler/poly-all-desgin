@@ -1,0 +1,92 @@
+---
+title: Lesson 3 - The Letter み (mi)
+weight: 3
+---
+type: explanation
+み makes the sound "mi". You have already seen it in 水 (mizu) — み is the first sound in みず (mizu), the hiragana spelling of water.
+---
+type: single_selection
+text: み
+romanji: mi
+option: the letter "mi"
+correct: true
+option: the letter "ma"
+option: the letter "me"
+option: the letter "mu"
+---
+type: identify_words
+text: みず
+romanji: mizu
+option: み
+correct: true
+option: ず
+correct: true
+option: か
+option: あ
+---
+type: single_selection
+text: み is the first sound in which word?
+romanji: (choose the word that starts with み)
+option: みず (water)
+correct: true
+option: ありがとう (thank you)
+option: おはよう (good morning)
+option: 猫 (cat)
+---
+type: single_selection
+text: みず、ありがとう
+romanji: Mizu, arigatō
+option: Thank you for the water
+correct: true
+option: I want water
+option: Good morning, water
+option: No water, thank you
+---
+type: single_selection
+text: みず、はありがとうございますか
+romanji: Mizu wa arigatō gozaimasu ka
+option: Would you like water?
+correct: true
+option: Thank you for the water
+option: Is the water good?
+option: No water please
+---
+type: identify_words
+text: みずはありがとうございます
+romanji: Mizu wa arigatō gozaimasu
+option: み
+correct: true
+option: あ
+correct: true
+option: か
+correct: true
+option: お
+correct: true
+---
+type: single_selection
+text: はい、みずはありがとうございます
+romanji: Hai, mizu wa arigatō gozaimasu
+option: Yes, thank you for the water
+correct: true
+option: No, thank you for the water
+option: Yes, good morning
+option: Yes, I like water
+---
+type: multiple_choice
+text: み
+romanji: mi
+option: found in みず (water)
+correct: true
+option: the sound "mi"
+correct: true
+option: found in ありがとう
+option: found in おはよう
+---
+type: single_selection
+text: おはよう、みずはありがとう
+romanji: Ohayō, mizu wa arigatō
+option: Good morning, and thanks for the water
+correct: true
+option: Good morning, do you want water?
+option: Thank you, good morning
+option: Good morning, goodbye

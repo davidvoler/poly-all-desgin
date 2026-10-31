@@ -48,7 +48,7 @@ async def require_school_member(
     rows = await get_query_results(
         """
         SELECT school_id, status FROM school.school_users
-        WHERE school_user_id = %s
+        WHERE user_id = %s
         LIMIT 1
         """,
         (x_school_user_id,),

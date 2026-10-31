@@ -1,0 +1,168 @@
+---
+title: Lesson 10 - Sentence Structure — Full Review
+weight: 10
+---
+type: explanation
+We now have the full basic sentence skeleton: [topic]は [person]と [place]で [time]に [object]を [verb]か. In practice, not all slots are filled — use only what the sentence needs. The verb is always last.
+---
+type: sentence_structure
+text: わたしはまいにちいえでサラとコーヒーをのみます
+romanji: Watashi wa mainichi ie de Sara to kōhī wo nomimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: と
+romanji: to
+meaning: with
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: わたしはまいにちいえでサラとコーヒーをのみます
+romanji: Watashi wa mainichi ie de Sara to kōhī wo nomimasu
+option: I drink coffee at home with Sara every day
+correct: true
+option: Sara drinks coffee at home with me every day
+option: I make coffee at home with Sara every day
+option: I drink coffee at school with Sara every day
+---
+type: sentence_structure
+text: ジョージのねこはいえであさにみずをのみます
+romanji: Jōji no neko wa ie de asa ni mizu wo nomimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: の
+romanji: no
+meaning: 's (possession)
+pos: particle
+word: ねこ
+romanji: neko
+meaning: cat
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: あさ
+romanji: asa
+meaning: morning
+pos: noun
+word: に
+romanji: ni
+meaning: in (time)
+pos: particle
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: ジョージのねこはいえであさにみずをのみます
+romanji: Jōji no neko wa ie de asa ni mizu wo nomimasu
+option: George's cat drinks water at home in the morning
+correct: true
+option: George's cat drinks coffee at home in the morning
+option: George drinks water with his cat at home in the morning
+option: George's cat wants water at home in the morning
+---
+type: single_selection
+text: ワタナベさんはがっこうでサラにほんごをおしえますか
+romanji: Watanabe-san wa gakkō de Sara ni nihongo wo oshiemasu ka
+option: Does Watanabe teach Sara Japanese at school?
+correct: true
+option: Watanabe teaches Sara Japanese at school
+option: Does Sara teach Watanabe Japanese at school?
+option: Does Watanabe study Japanese with Sara at school?
+---
+type: multiple_choice
+text: Which comes last in a Japanese sentence?
+romanji: (select all correct)
+option: the verb
+correct: true
+option: か when it is a question
+correct: true
+option: the topic
+option: the object
+---
+type: single_selection
+text: サラもジョージもワタナベさんのがくせいです
+romanji: Sara mo Jōji mo Watanabe-san no gakusei desu
+option: Both Sara and George are Watanabe's students
+correct: true
+option: Sara or George is Watanabe's student
+option: Sara and George are Watanabe's teachers
+option: Both Sara and George like Watanabe's class
+---
+type: identify_words
+text: わたしはサラとがっこうでまいにちにほんごをべんきょうします
+romanji: Watashi wa Sara to gakkō de mainichi nihongo wo benkyō shimasu
+option: は
+correct: true
+option: と
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: も
+option: の
+option: か
+---
+type: single_selection
+text: はい、ジョージのねこもサラのねこもかわいいです
+romanji: Hai, Jōji no neko mo Sara no neko mo kawaii desu
+option: Yes, both George's cat and Sara's cat are cute
+correct: true
+option: No, both cats are cute
+option: Yes, George's cat or Sara's cat is cute
+option: Yes, George's cat and Sara's cat are not cute

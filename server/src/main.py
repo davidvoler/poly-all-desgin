@@ -13,18 +13,39 @@ from routers import (
     preference,
     user_stats,
     practice,
-    achievement
+    achievement, 
+    auth_new,
+    generate_poc_task,
+    generate_poc_new,
+    video_module,
 )
-from school.routes import school as school_routes, users as school_users
-from editor.routes import (
-    upload_course,
-    export_course,
-    editor_courses,
-    review as editor_review,
-    lesson as editor_lesson,
+from routers.edit import  (
+    edit_course,
+    course_import,
+    course_export,
+    word as edit_word,
+    module as edit_module,
+    lesson as edit_lesson,
+    exercise as edit_exercise,
 )
+from tasks import status
+from school.routes import school as school_routes, users as school_users 
+# from editor.routes import (
+#     upload_course,
+#     editor_courses,
+#     review as editor_review,
+#     lesson as editor_lesson,
+# )
+enable_docs =  bool(os.environ.get("ENABLE_DOCS", ""))
 
-app = FastAPI()
+from tasks.broker import lifespan
+
+app = FastAPI(
+    docs_url="/docs" if enable_docs else None, 
+    redoc_url="/redoc" if enable_docs else None, 
+    openapi_url="/openapi.json" if enable_docs else None,
+    lifespan=lifespan,
+)
 
 # CORS — credentialed requests (i.e. every /api/v1/auth/* call, which
 # carries the HttpOnly user_id cookie) require an explicit origin
@@ -37,32 +58,34 @@ app = FastAPI()
 # box; the default list covers a local docker-compose stack so a
 # fresh checkout still works without env setup.
 _DEFAULT_CORS_ORIGINS = (
-    "http://localhost:3000,"
-    "http://127.0.0.1:3000,"
-    "http://localhost:5000,"
-    "http://127.0.0.1:5000,"
-    "http://localhost:8000,"
-    "http://127.0.0.1:8000,"
-    "https://www.polyglots.social,"
-    "https://app.polyglots.social,"
-    "https://dashboard.polyglots.social"
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://www.polyglots.social",
+    "https://app.polyglots.social",
+    "https://dashboard.polyglots.social",    
+    "https://school1.app.polyglots.social",    
+    "https://school1.dashboard.polyglots.social",    
 )
-_cors_origins = [
-    o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
-    if o.strip()
-]
+# _cors_origins = [
+#     o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
+#     if o.strip()
+# ]
 # `flutter run -d chrome` picks a random ephemeral port (62889 today,
 # something else tomorrow). The regex below matches any localhost /
 # 127.0.0.1 port so dev keeps working without re-listing it every
 # time. Production scope is unchanged — the regex can't widen prod
 # since the allowed hosts are still just localhost.
 _cors_origin_regex = os.getenv(
-    "CORS_ORIGIN_REGEX",
+    "_DEFAULT_CORS_ORIGINS",
     r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=_DEFAULT_CORS_ORIGINS,
     allow_origin_regex=_cors_origin_regex,
     allow_credentials=True,
     allow_methods=["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
@@ -96,9 +119,9 @@ app.include_router(practice.router,
 app.include_router(achievement.router,
     prefix="/api/v1/achievement",
     tags=["achievement"])
-app.include_router(auth.router,
+app.include_router(auth_new.router,
     prefix="/api/v1/auth",
-    tags=["auth"])
+    tags=["auth_new"])
 
 # --- School-admin dashboard ---------------------------------------------------
 app.include_router(school_routes.router,
@@ -107,20 +130,41 @@ app.include_router(school_routes.router,
 app.include_router(school_users.router,
     prefix="/api/v1/school_users",
     tags=["school_users"])
+#-- new editor routes for course import/export
+app.include_router(edit_course.router,
+    prefix="/api/v1/edit/course",
+    tags=["edit_course"])   
+app.include_router(course_import.router,
+    prefix="/api/v1/edit/course/import",
+    tags=["import_course"])
+app.include_router(course_export.router,
+    prefix="/api/v1/edit/course/export",
+    tags=["export_course"])
+app.include_router(edit_word.router,
+    prefix="/api/v1/edit/word",
+    tags=["edit_word"])
+app.include_router(edit_module.router,
+    prefix="/api/v1/edit/module",
+    tags=["edit_module"])
+app.include_router(edit_lesson.router,
+    prefix="/api/v1/edit/lesson",
+    tags=["edit_lesson"])
+app.include_router(edit_exercise.router,
+    prefix="/api/v1/edit/exercise",
+    tags=["edit_exercise"])
 
-# --- Course editor (dashboard-side, not the public app) -----------------------
-app.include_router(upload_course.router,
-    prefix="/api/v1/editor/upload",
-    tags=["editor_upload"])
-app.include_router(export_course.router,
-    prefix="/api/v1/editor/export",
-    tags=["editor_export"])
-app.include_router(editor_courses.router,
-    prefix="/api/v1/editor/courses",
-    tags=["editor_courses"])
-app.include_router(editor_review.router,
-    prefix="/api/v1/editor/review",
-    tags=["editor_review"])
-app.include_router(editor_lesson.router,
-    prefix="/api/v1/editor/lesson",
-    tags=["editor_lesson"])
+app.include_router(generate_poc_task.router,
+    prefix="/api/v1/generate_poc",
+    tags=["generate_poc"])
+
+app.include_router(generate_poc_new.router,
+    prefix="/api/v1/generate_poc_new",
+    tags=["generate_poc_new"])
+
+app.include_router(video_module.router,
+    prefix="/api/v1/video_module",
+    tags=["video_module"])
+
+app.include_router(status.router,
+    prefix="/api/v1/tasks",
+    tags=["status"])

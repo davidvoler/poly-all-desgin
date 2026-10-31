@@ -1,0 +1,148 @@
+---
+title: Lesson 7 - Sentence Structure — も (also) in Full Sentences
+weight: 7
+---
+type: explanation
+も replaces は to say "also" or "too". When the same action applies to two people, use AもBも to say "both A and B". The rest of the sentence stays the same.
+---
+type: sentence_structure
+text: わたしもまいにちコーヒーをのみます
+romanji: Watashi mo mainichi kōhī wo nomimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: も
+romanji: mo
+meaning: also / too
+pos: particle
+word: まいにち
+romanji: mainichi
+meaning: every day
+pos: adverb
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: わたしもまいにちコーヒーをのみます
+romanji: Watashi mo mainichi kōhī wo nomimasu
+option: I also drink coffee every day
+correct: true
+option: I only drink coffee every day
+option: I drink coffee every day too much
+option: I don't drink coffee every day either
+---
+type: sentence_structure
+text: サラもジョージもがっこうにいきます
+romanji: Sara mo Jōji mo gakkō ni ikimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: も
+romanji: mo
+meaning: also (A and B both)
+pos: particle
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: も
+romanji: mo
+meaning: also (A and B both)
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: to (direction)
+pos: particle
+word: いきます
+romanji: ikimasu
+meaning: go
+pos: verb
+---
+type: single_selection
+text: サラもジョージもがっこうにいきます
+romanji: Sara mo Jōji mo gakkō ni ikimasu
+option: Both Sara and George go to school
+correct: true
+option: Sara or George goes to school
+option: Sara goes to school with George
+option: Sara and George like school
+---
+type: sentence_structure
+text: ねこもいぬもみずをのみます
+romanji: Neko mo inu mo mizu wo nomimasu
+word: ねこ
+romanji: neko
+meaning: cat
+pos: noun
+word: も
+romanji: mo
+meaning: also (A and B both)
+pos: particle
+word: いぬ
+romanji: inu
+meaning: dog
+pos: noun
+word: も
+romanji: mo
+meaning: also (A and B both)
+pos: particle
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: ねこもいぬもみずをのみます
+romanji: Neko mo inu mo mizu wo nomimasu
+option: Both cats and dogs drink water
+correct: true
+option: Cats or dogs drink water
+option: Cats drink water with dogs
+option: Cats also drink water with dogs
+---
+type: single_selection
+text: ワタナベさんもジョージもせんせいですか
+romanji: Watanabe-san mo Jōji mo sensei desu ka
+option: Are both Watanabe and George teachers?
+correct: true
+option: Is Watanabe or George a teacher?
+option: Both Watanabe and George are teachers
+option: Are Watanabe and George students?
+---
+type: identify_words
+text: サラもワタナベさんもいえであさにコーヒーをのみます
+romanji: Sara mo Watanabe-san mo ie de asa ni kōhī wo nomimasu
+option: も
+correct: true
+option: で
+correct: true
+option: に
+correct: true
+option: を
+correct: true
+option: は
+option: の

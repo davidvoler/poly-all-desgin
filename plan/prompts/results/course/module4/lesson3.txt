@@ -1,0 +1,152 @@
+---
+title: Lesson 3 - Sentence Structure — [Subject] は [Place] で [Object] を [Verb]
+weight: 3
+---
+type: explanation
+When we add a place with で, it slots in before the object. The order becomes: [topic]は [place]で [object]を [verb]. The verb is always last.
+---
+type: sentence_structure
+text: わたしはいえでコーヒーをのみます
+romanji: Watashi wa ie de kōhī wo nomimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: わたしはいえでコーヒーをのみます
+romanji: Watashi wa ie de kōhī wo nomimasu
+option: I drink coffee at home
+correct: true
+option: I drink coffee at school
+option: I make coffee at home
+option: I want coffee at home
+---
+type: sentence_structure
+text: サラはがっこうでにほんごをべんきょうします
+romanji: Sara wa gakkō de nihongo wo benkyō shimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: にほんご
+romanji: nihongo
+meaning: Japanese (language)
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: べんきょうします
+romanji: benkyō shimasu
+meaning: study
+pos: verb
+---
+type: single_selection
+text: サラはがっこうでにほんごをべんきょうします
+romanji: Sara wa gakkō de nihongo wo benkyō shimasu
+option: Sara studies Japanese at school
+correct: true
+option: Sara likes Japanese at school
+option: Sara teaches Japanese at school
+option: Sara goes to school for Japanese
+---
+type: sentence_structure
+text: ジョージはいえでみずをのみます
+romanji: Jōji wa ie de mizu wo nomimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: ジョージはいえでみずをのみます
+romanji: Jōji wa ie de mizu wo nomimasu
+option: George drinks water at home
+correct: true
+option: George drinks water at school
+option: George wants water at home
+option: George makes water at home
+---
+type: single_selection
+text: ワタナベさんはがっこうでにほんごをおしえます
+romanji: Watanabe-san wa gakkō de nihongo wo oshiemasu
+option: Watanabe teaches Japanese at school
+correct: true
+option: Watanabe studies Japanese at school
+option: Watanabe likes Japanese at school
+option: Watanabe speaks Japanese at school
+---
+type: identify_words
+text: わたしはがっこうでにほんごをべんきょうします
+romanji: Watashi wa gakkō de nihongo wo benkyō shimasu
+option: は
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: がっこう
+correct: true
+option: に
+option: も

@@ -1,18 +1,44 @@
 from fastapi import APIRouter, Depends
 from models.course import Lesson, LessonCompleted
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results, run_query
 from routers.course import user_course_status
+from fastapi import Request
 router = APIRouter()
 
 
+
 @router.get("/", response_model=list[Lesson])
-async def get_lessons(module_id: int):
+async def get_lessons(module_id: int,
+                      user_id: int = Depends(current_user_id)):
+    # Join each lesson row against the user's own lesson_status
+    # aggregate so the client gets max/sum/attempts alongside the
+    # static lesson copy. `completed` is derived from max_score —
+    # any positive best-attempt counts as done.
     sql = """
-    SELECT *  
-    FROM course_simple.lesson
-    WHERE module_id = %s
+    SELECT lesson.lesson_id, lesson.title, lesson.description, lesson.words,
+           COALESCE(ls.max_score, 0.0) AS max_score,
+           COALESCE(ls.sum_score, 0.0) AS sum_score,
+           COALESCE(ls.num_attempts, 0) AS num_attempts,
+           CASE WHEN COALESCE(ls.max_score, 0) > 0 THEN 1 ELSE 0 END AS completed
+    FROM course_simple.lesson AS lesson
+    LEFT JOIN (
+        -- Each lesson_status row already holds one attempt's score, which
+        -- is sum(score) of that attempt's exercises (see the quiz client's
+        -- _buildSummary). Keep the lesson rollup as sum(score) / max(score)
+        -- across attempts — do NOT switch to avg/normalised.
+        SELECT lesson_id,
+               max(score) AS max_score,
+               sum(score) AS sum_score,
+               count(*) AS num_attempts
+        FROM user_data.lesson_status
+        WHERE user_id = %s
+        GROUP BY lesson_id
+    ) AS ls ON lesson.lesson_id = ls.lesson_id
+    WHERE lesson.module_id = %s
+    ORDER BY lesson.weight ASC
     """
-    params = (module_id,)
+    params = (user_id, module_id)
     res = await get_query_results(sql, params)
     results = []
     for r in res:
@@ -23,8 +49,10 @@ async def get_lessons(module_id: int):
 
 
 @router.post("/completed")
-async def lesson_completed(lesson_completed: LessonCompleted):
+async def lesson_completed(lesson_completed: LessonCompleted,
+                           user_id: int = Depends(current_user_id)):
     """Handle lesson completion."""
+    lesson_completed.user_id = user_id
     print(lesson_completed)
     sql = """
     INSERT INTO user_data.lesson_status (
@@ -46,3 +74,15 @@ async def lesson_completed(lesson_completed: LessonCompleted):
 
     print(lesson_completed)
     return {"message": "Lesson completion recorded successfully"}
+
+@router.get("/status")
+async def get_current_url(request:Request):
+    return {"url": str(request.url),
+            "path": str(request.url.path),
+            "query": str(request.url.query),
+            "base_url": str(request.base_url),
+            "host": str(request.client.host),
+            "port": str(request.client.port),
+            "scheme": str(request.url.scheme),
+            "hostname": str(request.url.hostname),
+            "user_agent": str(request.headers.get("user-agent"))}

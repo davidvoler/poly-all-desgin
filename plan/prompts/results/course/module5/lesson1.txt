@@ -1,0 +1,136 @@
+---
+title: Lesson 1 - New Word — たべます (eat)
+weight: 1
+---
+type: explanation
+たべます (tabemasu) means "eat". It follows the same pattern as のみます: [topic]は [object]を たべます. The object is the food being eaten.
+---
+type: single_selection
+text: たべます
+romanji: tabemasu
+option: eat
+correct: true
+option: drink
+option: go
+option: study
+---
+type: single_selection
+text: わたしはごはんをたべます
+romanji: Watashi wa gohan wo tabemasu
+option: I eat rice
+correct: true
+option: I drink rice
+option: I like rice
+option: I make rice
+---
+type: single_selection
+text: サラはパンをたべます
+romanji: Sara wa pan wo tabemasu
+option: Sara eats bread
+correct: true
+option: Sara drinks bread
+option: Sara likes bread
+option: Sara makes bread
+---
+type: single_selection
+text: ジョージはいえであさにごはんをたべます
+romanji: Jōji wa ie de asa ni gohan wo tabemasu
+option: George eats rice at home in the morning
+correct: true
+option: George drinks rice at home in the morning
+option: George makes rice at home in the morning
+option: George likes rice at home in the morning
+---
+type: sentence_structure
+text: ワタナベさんはがっこうでひるにパンをたべます
+romanji: Watanabe-san wa gakkō de hiru ni pan wo tabemasu
+word: ワタナベさん
+romanji: Watanabe-san
+meaning: Watanabe (polite)
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: ひる
+romanji: hiru
+meaning: noon / lunchtime
+pos: noun
+word: に
+romanji: ni
+meaning: at (time)
+pos: particle
+word: パン
+romanji: pan
+meaning: bread
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: たべます
+romanji: tabemasu
+meaning: eat
+pos: verb
+---
+type: single_selection
+text: ワタナベさんはがっこうでひるにパンをたべます
+romanji: Watanabe-san wa gakkō de hiru ni pan wo tabemasu
+option: Watanabe eats bread at school at lunchtime
+correct: true
+option: Watanabe drinks bread at school at lunchtime
+option: Watanabe makes bread at school at lunchtime
+option: Watanabe likes bread at school at lunchtime
+---
+type: multiple_choice
+text: たべます
+romanji: tabemasu
+option: eat
+correct: true
+option: eats
+correct: true
+option: eating (present)
+correct: true
+option: drink
+---
+type: single_selection
+text: サラはまいにちいえでごはんをたべますか
+romanji: Sara wa mainichi ie de gohan wo tabemasu ka
+option: Does Sara eat rice at home every day?
+correct: true
+option: Sara eats rice at home every day
+option: Does Sara make rice at home every day?
+option: Does Sara drink rice at home every day?
+---
+type: single_selection
+text: はい、わたしもいえであさにごはんをたべます
+romanji: Hai, watashi mo ie de asa ni gohan wo tabemasu
+option: Yes, I also eat rice at home in the morning
+correct: true
+option: No, I also eat rice at home in the morning
+option: Yes, I drink rice at home in the morning too
+option: Yes, I make rice at home in the morning too
+---
+type: identify_words
+text: ジョージとサラはがっこうでひるにごはんをたべます
+romanji: Jōji to Sara wa gakkō de hiru ni gohan wo tabemasu
+option: と
+correct: true
+option: は
+correct: true
+option: で
+correct: true
+option: に
+correct: true
+option: を
+correct: true
+option: の
+option: も

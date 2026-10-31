@@ -1,0 +1,221 @@
+{
+    "modules": [
+        {
+            "type": "module",
+            "title": "Introduction to Example Course",
+            "description": "This module provides an overview of the example course and its objectives.",
+            "weight": 1,
+            "lessons": [
+                {
+                    "type": "lesson",
+                    "title": "Lesson 1 -  Getting Started",
+                    "description": "In this lesson, we will cover the basics of getting started with the example course.",
+                    "weight": 2,
+                    "exercises": [
+                        {
+                            "question_type": "description",
+                            "description": "Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.",
+                            "weight": 1
+                        },
+                        {
+                            "question_type": "multiple_choice",
+                            "sentence": "\u00bfCu\u00e1l de las siguientes opciones son frutas?",
+                            "correct_options": [
+                                "Manzana",
+                                "Pl\u00e1tano"
+                            ],
+                            "incorrect_options": [
+                                "Zanahoria",
+                                "Lechuga"
+                            ],
+                            "weight": 2
+                        },
+                        {
+                            "question_type": "annotated_sentence",
+                            "sentence": "La casa es grande.",
+                            "annotations": [
+                                {
+                                    "word": "casa",
+                                    "annotation": "house"
+                                }
+                            ],
+                            "description": "La case = the house - Casa is feminine in Spanish.",
+                            "weight": 3
+                        },
+                        {
+                            "question_type": "words in sentence",
+                            "sentence": "El perro corre r\u00e1pido.",
+                            "correct_options": [
+                                "corre",
+                                "perro"
+                            ],
+                            "incorrect_options": [
+                                "gato",
+                                "lento"
+                            ],
+                            "weight": 4
+                        }
+                    ]
+                },
+                {
+                    "type": "lesson",
+                    "title": "Lesson 2",
+                    "description": "In this lesson, we will cover the basics of getting started with the example course.",
+                    "weight": 3,
+                    "exercises": [
+                        {
+                            "question_type": "description",
+                            "description": "Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.",
+                            "weight": 1
+                        },
+                        {
+                            "question_type": "multiple_choice",
+                            "sentence": "\u00bfCu\u00e1l de las siguientes opciones son frutas?",
+                            "correct_options": [
+                                "Manzana",
+                                "Pl\u00e1tano"
+                            ],
+                            "incorrect_options": [
+                                "Zanahoria",
+                                "Lechuga"
+                            ],
+                            "weight": 2
+                        },
+                        {
+                            "question_type": "annotated_sentence",
+                            "sentence": "La casa es grande.",
+                            "annotations": [
+                                {
+                                    "word": "casa",
+                                    "annotation": "house"
+                                }
+                            ],
+                            "description": "La case = the house - Casa is feminine in Spanish.",
+                            "weight": 3
+                        }
+                    ]
+                },
+                {
+                    "type": "lesson",
+                    "title": "Lesson 3",
+                    "description": "lesson 3 description",
+                    "exercises": [
+                        {
+                            "question_type": "description",
+                            "description": "Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.",
+                            "weight": 1
+                        },
+                        {
+                            "question_type": "multiple_choice",
+                            "sentence": "\u00bfCu\u00e1l de las siguientes opciones son frutas?",
+                            "correct_options": [
+                                "Manzana",
+                                "Pl\u00e1tano"
+                            ],
+                            "incorrect_options": [
+                                "Zanahoria",
+                                "Lechuga"
+                            ],
+                            "weight": 2
+                        },
+                        {
+                            "question_type": "annotated_sentence",
+                            "sentence": "La casa es grande.",
+                            "annotations": [
+                                {
+                                    "word": "casa",
+                                    "annotation": "house"
+                                }
+                            ],
+                            "description": "La case = the house - Casa is feminine in Spanish.",
+                            "weight": 3
+                        },
+                        {
+                            "question_type": "words in sentence",
+                            "sentence": "El perro corre r\u00e1pido.",
+                            "correct_options": [
+                                "corre",
+                                "perro"
+                            ],
+                            "incorrect_options": [
+                                "gato",
+                                "lento"
+                            ],
+                            "weight": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "module",
+            "title": "second module",
+            "description": "This module provides an overview of the example course and its objectives.",
+            "weight": 1,
+            "lessons": [
+                {
+                    "type": "lesson",
+                    "title": "Lesson 1 - second module first lesson",
+                    "description": "In this lesson, we will cover the basics of getting started with the example course.",
+                    "exercises": [
+                        {
+                            "question_type": "description",
+                            "description": "Some description text here. This type of question does not require a correct answer, but rather provides information or context for the learner.",
+                            "weight": 1
+                        },
+                        {
+                            "question_type": "multiple_choice",
+                            "sentence": "\u00bfCu\u00e1l de las siguientes opciones son frutas?",
+                            "correct_options": [
+                                "Manzana",
+                                "Pl\u00e1tano"
+                            ],
+                            "incorrect_options": [
+                                "Zanahoria",
+                                "Lechuga"
+                            ],
+                            "weight": 2
+                        },
+                        {
+                            "question_type": "annotated_sentence",
+                            "sentence": "La casa es grande.",
+                            "annotations": [
+                                {
+                                    "word": "casa",
+                                    "annotation": "house"
+                                }
+                            ],
+                            "description": "La case = the house - Casa is feminine in Spanish.",
+                            "weight": 3
+                        },
+                        {
+                            "question_type": "words in sentence",
+                            "sentence": "El perro corre r\u00e1pido.",
+                            "correct_options": [
+                                "corre",
+                                "perro"
+                            ],
+                            "incorrect_options": [
+                                "gato",
+                                "lento"
+                            ],
+                            "weight": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "module",
+            "title": "module 7",
+            "description": "placeholder description",
+            "weight": 6,
+            "lessons": []
+        }
+    ],
+    "type": "course",
+    "title": "Example Course",
+    "description": "This is an example course to demonstrate the structure of a course YAML file.",
+    "lang": "en",
+    "to_lang": "es"
+}

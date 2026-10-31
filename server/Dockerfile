@@ -1,6 +1,6 @@
 FROM python:3.14-alpine
 RUN apt-get update \
-    && apt-get -y install libpq-dev gcc \
+    && apt-get -y install libpq-dev gcc cargo \
     && pip install psycopg2
 WORKDIR /tmp
 COPY requirements.txt requirements.txt

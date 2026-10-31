@@ -1,4 +1,25 @@
- services:
+# Shared by `server` (FastAPI) and `broker` (taskiq worker) — the worker
+# runs the generate_poc_new jobs, so it needs the same DB + Ollama access.
+x-server-env: &server-env
+  - POSTGRES_DB=polyglots
+  - POSTGRES_PORT=5432
+  - POSTGRES_HOST=postgres
+  - POSTGRES_USER=polyglots
+  - POSTGRES_PASSWORD=polyglots
+  - POSTGRES_CONTENT_PORT=5432
+  - POSTGRES_CONTENT_HOST=postgres_content
+  - POSTGRES_CONTENT_USER=polyglots
+  - POSTGRES_CONTENT_PASSWORD=polyglots
+  - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+  - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+  - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+  - ENABLE_DOCS=true
+  - COOKIE_SECURE=false
+  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  - REDIS_HOST=redis
+  - REDIS_PORT=6379
+
+services:
   postgres:
     container_name: postgres
     image: postgres:17.4
@@ -12,7 +33,21 @@
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     shm_size: 4GB
-  
+  postgres_content:
+    container_name: postgres_content
+    image: postgres:17.4
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 4GB 
+    volumes:
+      - ./data/postgres_full:/var/lib/postgresql/data
+    shm_size: 4GB
+
+
   server:
     container_name: server
     image: server:polyglots
@@ -23,20 +58,13 @@
       - 8004:8004
     volumes:
       - ./server/src:/app
-    environment:
-      - POSTGRES_DB=polyglots
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=polyglots
-      - POSTGRES_PASSWORD=polyglots
-      # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
-      # /api/v1/school_users/login_auth0 route verifies ID tokens
-      # against the tenant JWKS; otherwise it returns 503 and the
-      # dashboard falls back to the local password flow.
-      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
-      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
-      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
-    command: 
+      # pytest suite (server/tests) — run with:
+      #   docker compose exec -w /app/tests server python -m pytest -q
+      - ./server/tests:/app/tests
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
       - uvicorn
       - main:app
       - --host
@@ -47,7 +75,35 @@
     depends_on:
       - postgres
 
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:7.2
+    ports:
+      - 6379:6379
 
+
+  broker:
+    container_name: broker
+    image: server:polyglots
+    command:
+      - taskiq
+      - worker
+      - tasks.broker:broker
+      # task modules to import so their @broker.task fns register on the worker
+      - routers.generate_poc_task
+      - -fsd
+      - --log-level 
+      - INFO
+      - --reload
+    volumes:
+      - ./server/src:/app
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - postgres
 
   audio-server:
     container_name: audio-server
@@ -65,3 +121,27 @@
   #   volumes:
   #     - ./build_web/web:/usr/share/nginx/html
   #     - ./conf/web.conf:/etc/nginx/conf.d/default.conf
+
+
+  # editor-server:
+  #   container_name: editor-server
+  #   image: editor-server:polyglots
+  #   build:
+  #     context: server_editor
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 8005:8005
+  #   volumes:
+  #     - ./server_editor/src:/app
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   command:
+  #     - uvicorn
+  #     - main:app
+  #     - --host
+  #     - 0.0.0.0
+  #     - --port
+  #     - "8005"
+  #     - --reload
+  #   depends_on:
+  #     - postgres

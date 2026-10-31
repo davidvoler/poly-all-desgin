@@ -1,0 +1,132 @@
+---
+title: Lesson 9 - New Word — おいしい (delicious)
+weight: 9
+---
+type: explanation
+おいしい (oishii) means "delicious" or "tasty". Like かわいい and おおきい, it is an adjective — it comes before a noun or after は with です.
+---
+type: single_selection
+text: おいしい
+romanji: oishii
+option: delicious
+correct: true
+option: cute
+option: hot
+option: big
+---
+type: single_selection
+text: コーヒーはおいしいです
+romanji: Kōhī wa oishii desu
+option: The coffee is delicious
+correct: true
+option: The coffee is hot
+option: The coffee is cold
+option: The coffee is good
+---
+type: single_selection
+text: ごはんはおいしいですか
+romanji: Gohan wa oishii desu ka
+option: Is the rice delicious?
+correct: true
+option: The rice is delicious
+option: Is the rice hot?
+option: Do you like rice?
+---
+type: sentence_structure
+text: サラのいえのコーヒーはとてもおいしいです
+romanji: Sara no ie no kōhī wa totemo oishii desu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: の
+romanji: no
+meaning: 's (possession)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: の
+romanji: no
+meaning: 's / at (linking nouns)
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: とても
+romanji: totemo
+meaning: very
+pos: adverb
+word: おいしい
+romanji: oishii
+meaning: delicious
+pos: adjective
+word: です
+romanji: desu
+meaning: is (polite)
+pos: verb (copula)
+---
+type: single_selection
+text: サラのいえのコーヒーはとてもおいしいです
+romanji: Sara no ie no kōhī wa totemo oishii desu
+option: The coffee at Sara's house is very delicious
+correct: true
+option: Sara's coffee is a little delicious
+option: The coffee at Sara's school is very delicious
+option: Sara's coffee is hot and delicious
+---
+type: single_selection
+text: ワタナベさんのいえのごはんもおいしいです
+romanji: Watanabe-san no ie no gohan mo oishii desu
+option: The rice at Watanabe's house is also delicious
+correct: true
+option: The rice at Watanabe's house is delicious
+option: Watanabe's rice is a little delicious
+option: Watanabe's school lunch is also delicious
+---
+type: multiple_choice
+text: おいしい
+romanji: oishii
+option: delicious
+correct: true
+option: tasty
+correct: true
+option: hot
+option: cute
+---
+type: single_selection
+text: ジョージはサラのいえのコーヒーがすきです
+romanji: Jōji wa Sara no ie no kōhī ga suki desu
+option: George likes the coffee at Sara's house
+correct: true
+option: Sara likes the coffee at George's house
+option: George makes coffee at Sara's house
+option: George drinks coffee at Sara's house
+---
+type: single_selection
+text: おいしいごはんをありがとうございます
+romanji: Oishii gohan wo arigatō gozaimasu
+option: Thank you for the delicious rice
+correct: true
+option: The delicious rice is ready
+option: Please make delicious rice
+option: I like delicious rice
+---
+type: identify_words
+text: ともだちのいえのごはんはとてもおいしかったです
+romanji: Tomodachi no ie no gohan wa totemo oishikatta desu
+option: の
+correct: true
+option: は
+correct: true
+option: です
+correct: true
+option: が
+option: を
+option: で

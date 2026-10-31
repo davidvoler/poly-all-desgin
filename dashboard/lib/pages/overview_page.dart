@@ -14,7 +14,7 @@ class OverviewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const DashboardShell(
       title: 'Overview',
-      activeRoute: '/',
+      activeRoute: '/overview',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

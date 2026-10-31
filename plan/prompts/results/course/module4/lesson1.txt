@@ -1,0 +1,131 @@
+---
+title: Lesson 1 - Sentence Structure — [Subject] は [Object] を [Verb]
+weight: 1
+---
+type: explanation
+The most common Japanese sentence pattern is: [topic]は [object]を [verb]. The verb always comes last. This is the opposite of English word order.
+---
+type: sentence_structure
+text: わたしはみずをのみます
+romanji: Watashi wa mizu wo nomimasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: わたしはみずをのみます
+romanji: Watashi wa mizu wo nomimasu
+option: I drink water
+correct: true
+option: Water drinks me
+option: I want water
+option: I like water
+---
+type: sentence_structure
+text: サラはコーヒーをのみます
+romanji: Sara wa kōhī wo nomimasu
+word: サラ
+romanji: Sara
+meaning: Sara
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: サラはコーヒーをのみます
+romanji: Sara wa kōhī wo nomimasu
+option: Sara drinks coffee
+correct: true
+option: Coffee drinks Sara
+option: Sara wants coffee
+option: Sara likes coffee
+---
+type: sentence_structure
+text: ジョージはみずをのみます
+romanji: Jōji wa mizu wo nomimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: のみます
+romanji: nomimasu
+meaning: drink
+pos: verb
+---
+type: single_selection
+text: ジョージはみずをのみます
+romanji: Jōji wa mizu wo nomimasu
+option: George drinks water
+correct: true
+option: George wants water
+option: Water drinks George
+option: George likes water
+---
+type: identify_words
+text: わたしはコーヒーをのみます
+romanji: Watashi wa kōhī wo nomimasu
+option: わたし
+correct: true
+option: は
+correct: true
+option: コーヒー
+correct: true
+option: を
+correct: true
+option: のみます
+correct: true
+option: に
+---
+type: multiple_choice
+text: The pattern [topic]は [object]を [verb]
+romanji: (select all correct)
+option: the verb comes last
+correct: true
+option: は marks the topic
+correct: true
+option: を marks the object
+correct: true
+option: the verb comes first

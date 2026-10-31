@@ -1,5 +1,8 @@
+import 'dart:convert' show Utf8Decoder;
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
@@ -11,56 +14,55 @@ import '../widgets/data_table.dart';
 import '../widgets/search_field.dart';
 import '../widgets/shell.dart';
 
-/// Local mirror of the server-side course-status state graph in
-/// server/src/editor/routes/review.py. Keep in sync — the UI only
-/// offers transitions the server will accept.
-const Map<CourseStatusWire, Set<CourseStatusWire>> kAllowedTransitions = {
-  CourseStatusWire.draft: {CourseStatusWire.review, CourseStatusWire.archived},
-  CourseStatusWire.review: {
-    CourseStatusWire.draft,
-    CourseStatusWire.published,
-    CourseStatusWire.archived,
-  },
-  CourseStatusWire.published: {
-    CourseStatusWire.review,
-    CourseStatusWire.archived,
-  },
-  CourseStatusWire.archived: {CourseStatusWire.draft},
-};
-
-const Map<CourseStatusWire, String> kStatusWire = {
-  CourseStatusWire.draft: 'draft',
-  CourseStatusWire.review: 'review',
-  CourseStatusWire.published: 'published',
-  CourseStatusWire.archived: 'archived',
-};
-
-const Map<CourseStatusWire, String> kStatusLabel = {
-  CourseStatusWire.draft: 'Move to Draft',
-  CourseStatusWire.review: 'Submit for Review',
-  CourseStatusWire.published: 'Publish',
-  CourseStatusWire.archived: 'Archive',
-};
-
 class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The course list is shown to everyone. Uploading new content, though,
+    // requires accepting the editor Terms & Conditions first: when the server
+    // reports permissions['signed_terms'] == true we disable the upload CTAs
+    // and show a notice pointing to where the terms can be accepted.
+    final needsTerms = ref.watch(meProvider).value?.needsTerms ?? false;
     return DashboardShell(
       title: 'Courses',
       activeRoute: '/courses',
       topbarTrailing: [
-        PrimaryButton(
-          label: 'Upload course',
-          leading: Icons.file_upload_outlined,
-          onTap: () => _pickAndUpload(context, ref),
+        GhostButton(
+          label: 'Create with AI',
+          leading: Icons.auto_awesome_outlined,
+          onTap: () => Navigator.pushNamed(context, '/create-course'),
         ),
+        if (needsTerms)
+          Tooltip(
+            message: 'Accept the editor terms to upload courses',
+            child: Opacity(
+              opacity: 0.5,
+              child: PrimaryButton(
+                label: 'Upload course',
+                leading: Icons.file_upload_outlined,
+                onTap: null,
+              ),
+            ),
+          )
+        else
+          PrimaryButton(
+            label: 'Upload course',
+            leading: Icons.file_upload_outlined,
+            onTap: () => _pickAndUploadYaml(context, ref),
+          ),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Dropzone(onBrowse: () => _pickAndUpload(context, ref)),
+          if (needsTerms) ...[
+            const _TermsNotice(),
+            const SizedBox(height: 14),
+          ],
+          _Dropzone(
+            onBrowse:
+                needsTerms ? null : () => _pickAndUploadYaml(context, ref),
+          ),
           const SizedBox(height: 18),
           const _CoursesPanel(),
         ],
@@ -69,22 +71,87 @@ class CoursesPage extends ConsumerWidget {
   }
 }
 
-/// Picks a .zip, POSTs it to /api/v1/editor/upload/, then invalidates
-/// the courses + activity providers so the table and Overview feed
-/// pick up the new row. Shared by the topbar CTA and the dropzone.
-Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
-  final me = ref.read(currentUserProvider);
-  if (me == null) return;
+/// Inline banner shown above the courses list when the signed-in user hasn't
+/// accepted the editor Terms & Conditions. The list stays visible; only
+/// uploading is disabled. "Review terms" jumps to Create with AI, which shows
+/// the full terms gate + Accept button.
+class _TermsNotice extends StatelessWidget {
+  const _TermsNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: DashColors.orange300.withValues(alpha: 0.10),
+        borderRadius: DashRadii.card,
+        border: Border.all(color: DashColors.orange300.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 18, color: DashColors.orange300),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Accept the editor Terms & Conditions to upload or create '
+              'content. Browsing the catalogue stays open to everyone.',
+              style: TextStyle(fontSize: 12.5, color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GhostButton(
+            label: 'Review terms',
+            leading: Icons.gavel_outlined,
+            onTap: () => Navigator.pushNamed(context, '/create-course'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Reads a picked file's bytes as UTF-8 text and posts it to
+/// POST /api/v1/edit/course/import/ as-is — the server now expects a
+/// single YAML document (`type: course/module/lesson/exercise` sections
+/// separated by `---`, the same shape a course export produces), not a
+/// zip archive. Shared by the topbar CTA and the dropzone.
+Future<void> _pickAndUploadYaml(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
 
+  // FileType.custom + allowedExtensions relies on the OS/browser
+  // recognizing the extension as a registered file type — macOS in
+  // particular often just hides files with unrecognized extensions
+  // (like .yaml) from the native picker instead of merely disabling
+  // them. Pick from all files instead and validate the extension here.
   final result = await FilePicker.platform.pickFiles(
-    dialogTitle: 'Pick a course .zip',
-    type: FileType.custom,
-    allowedExtensions: ['zip'],
+    dialogTitle: 'Pick a course .yaml or .txt file',
+    type: FileType.any,
     withData: true,
   );
   if (result == null || result.files.isEmpty) return;
   final picked = result.files.first;
+  final ext = picked.extension?.toLowerCase();
+  if (ext != 'yaml' && ext != 'yml' && ext != 'txt') {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+            '${picked.name}: expected a .yaml, .yml, or .txt file'),
+      ),
+    );
+    return;
+  }
+  final bytes = picked.bytes;
+  if (bytes == null) return;
+
+  String document;
+  try {
+    document = const Utf8Decoder().convert(bytes);
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text('${picked.name} is not valid UTF-8 text: $e')),
+    );
+    return;
+  }
 
   messenger.showSnackBar(
     SnackBar(
@@ -93,13 +160,9 @@ Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
     ),
   );
   try {
-    final courseId = await ref.read(dashboardApiProvider).uploadCourse(
-          schoolId: me.schoolId,
-          actorUserId: me.schoolUserId,
-          filename: picked.name,
-          fileBytes: picked.bytes,
-          filePath: picked.path,
-        );
+    final courseId = await ref
+        .read(dashboardApiProvider)
+        .importCourseText(document: document);
     ref.invalidate(editorCoursesProvider);
     ref.invalidate(activityProvider);
     ref.invalidate(schoolStatsProvider);
@@ -112,15 +175,31 @@ Future<void> _pickAndUpload(BuildContext context, WidgetRef ref) async {
               : 'Uploaded — created course #$courseId'),
         ),
       );
-  } catch (e) {
+  } catch (e, st) {
+    // Log the full error + stack to the console (flutter run terminal /
+    // browser DevTools) so a transient SnackBar isn't the only record.
+    debugPrint('Upload failed: $e\n$st');
+    final message = 'Upload failed: $e';
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      ..showSnackBar(
+        SnackBar(
+          // SelectableText so the error can be highlighted; the Copy
+          // action puts the whole message on the clipboard in one tap.
+          content: SelectableText(message),
+          duration: const Duration(days: 1),
+          action: SnackBarAction(
+            label: 'Copy',
+            onPressed: () => Clipboard.setData(ClipboardData(text: message)),
+          ),
+        ),
+      );
   }
 }
 
 class _Dropzone extends StatelessWidget {
-  final VoidCallback onBrowse;
+  /// Null disables the dropzone's Browse action (e.g. terms not yet accepted).
+  final VoidCallback? onBrowse;
   const _Dropzone({required this.onBrowse});
 
   @override
@@ -151,7 +230,7 @@ class _Dropzone extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Drag a course folder or .zip here',
+            'Drag a course .yaml or .txt file here',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -162,8 +241,8 @@ class _Dropzone extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 540),
             child: Text(
-              'Folder layout: course.txt at the top, then module<n>/lesson<n>/exercises.txt. '
-              'A working example lives at content/example_course.',
+              'A single YAML document: type: course/module/lesson/exercise '
+              'sections separated by "---" — the same shape Export produces.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
             ),
@@ -173,10 +252,13 @@ class _Dropzone extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              PrimaryButton(
-                label: 'Browse files',
-                leading: Icons.file_upload_outlined,
-                onTap: onBrowse,
+              Opacity(
+                opacity: onBrowse == null ? 0.5 : 1,
+                child: PrimaryButton(
+                  label: 'Browse files',
+                  leading: Icons.file_upload_outlined,
+                  onTap: onBrowse,
+                ),
               ),
               const SizedBox(width: 8),
               GhostButton(
@@ -224,20 +306,15 @@ class _CoursesPanelState extends ConsumerState<_CoursesPanel> {
         ),
       ),
       data: (rows) {
-        final published = rows
-            .where((c) => c.status == CourseStatusWire.published)
-            .length;
-        final draft =
-            rows.where((c) => c.status == CourseStatusWire.draft).length;
-        final review =
-            rows.where((c) => c.status == CourseStatusWire.review).length;
+        final published = rows.where((c) => c.published).length;
+        final draft = rows.length - published;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HeadRow(
               label: 'All courses',
               subtitle:
-                  '·  ${rows.length} total · $published published, $draft draft, $review in review',
+                  '·  ${rows.length} total · $published published, $draft draft',
               trailing: [
                 SearchField(
                   hint: 'Search title or description…',
@@ -260,7 +337,7 @@ class _CoursesPanelState extends ConsumerState<_CoursesPanel> {
       padding: const EdgeInsets.symmetric(vertical: 32),
       alignment: Alignment.center,
       child: Text(
-        'No courses yet — upload one above.',
+        'No courses yet — create one with AI above.',
         style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
       ),
     );
@@ -271,96 +348,34 @@ class _CoursesTable extends ConsumerWidget {
   final List<EditorCourse> rows;
   const _CoursesTable({required this.rows});
 
-  StatusPill _statusPill(CourseStatusWire s) {
-    switch (s) {
-      case CourseStatusWire.draft:
-        return const StatusPill(
-          label: 'Draft',
-          kind: PillKind.muted,
-          swatch: true,
-        );
-      case CourseStatusWire.review:
-        return const StatusPill(
-          label: 'In review',
-          kind: PillKind.draft,
-          swatch: true,
-        );
-      case CourseStatusWire.published:
-        return const StatusPill(
-          label: 'Published',
-          kind: PillKind.active,
-          swatch: true,
-        );
-      case CourseStatusWire.archived:
-        return const StatusPill(
-          label: 'Archived',
-          kind: PillKind.error,
-          swatch: true,
-        );
-      case CourseStatusWire.unknown:
-        return const StatusPill(
-          label: 'Unknown',
-          kind: PillKind.muted,
-          swatch: true,
-        );
-    }
-  }
+  StatusPill _statusPill(bool published) => published
+      ? const StatusPill(label: 'Published', kind: PillKind.active, swatch: true)
+      : const StatusPill(label: 'Draft', kind: PillKind.muted, swatch: true);
 
-  Future<void> _setStatus(
+  Future<void> _togglePublished(
     BuildContext context,
     WidgetRef ref,
     EditorCourse course,
-    CourseStatusWire next,
   ) async {
-    final me = ref.read(currentUserProvider);
-    if (me == null) return;
     final messenger = ScaffoldMessenger.of(context);
     final api = ref.read(dashboardApiProvider);
+    final next = course.copyWith(published: !course.published);
     try {
-      await api.setCourseStatus(
-        courseId: course.courseId,
-        schoolId: me.schoolId,
-        actorUserId: me.schoolUserId,
-        status: kStatusWire[next]!,
-      );
-      // Refetch list + activity so the UI reflects the change.
+      await api.updateCourse(next);
       ref.invalidate(editorCoursesProvider);
       ref.invalidate(activityProvider);
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Moved "${course.title}" to ${kStatusLabel[next]}'),
+          content: Text(
+            '"${course.title}" ${next.published ? 'published' : 'moved to draft'}',
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not change status: $e')),
+        SnackBar(content: SelectableText('Could not change status: $e')),
       );
-    }
-  }
-
-  String _accessLabel(CourseAccessWire a) {
-    switch (a) {
-      case CourseAccessWire.public:
-        return 'Public';
-      case CourseAccessWire.members:
-        return 'Members';
-      case CourseAccessWire.unknown:
-        return '—';
-    }
-  }
-
-  IconData _accessIcon(CourseAccessWire a) =>
-      a == CourseAccessWire.public ? Icons.public : Icons.lock_outline;
-
-  PillKind _accessKind(CourseAccessWire a) {
-    switch (a) {
-      case CourseAccessWire.public:
-        return PillKind.public;
-      case CourseAccessWire.members:
-        return PillKind.members;
-      case CourseAccessWire.unknown:
-        return PillKind.muted;
     }
   }
 
@@ -384,11 +399,7 @@ class _CoursesTable extends ConsumerWidget {
       columns: const [
         DashCol(label: 'Course', flex: 4),
         DashCol(label: 'Language', flex: 2),
-        DashCol(label: 'Modules · Lessons', flex: 2),
-        DashCol(label: 'Students', flex: 1),
-        DashCol(label: 'Access', flex: 2),
         DashCol(label: 'Status', flex: 2),
-        DashCol(label: 'Updated', flex: 2),
         DashCol(label: '', width: 48),
       ],
       rows: [
@@ -408,29 +419,15 @@ class _CoursesTable extends ConsumerWidget {
                 email: c.description,
               ),
             ),
-            Text(c.lang.toUpperCase()),
-            Text('${c.moduleCount} · ${c.lessonCount}'),
-            Text('${c.studentCount}'),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: StatusPill(
-                label: _accessLabel(c.access),
-                leading: _accessIcon(c.access),
-                kind: _accessKind(c.access),
-              ),
-            ),
+            Text('${c.lang.toUpperCase()} → ${c.toLang.toUpperCase()}'),
             Align(
                 alignment: Alignment.centerLeft,
-                child: _statusPill(c.status)),
-            Text(
-              c.updatedHuman,
-              style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
-            ),
+                child: _statusPill(c.published)),
             Align(
               alignment: Alignment.centerRight,
               child: _RowMenu(
-                current: c.status,
-                onStatus: (next) => _setStatus(context, ref, c, next),
+                published: c.published,
+                onTogglePublished: () => _togglePublished(context, ref, c),
                 onExport: () => _exportCourse(context, ref, c),
               ),
             ),
@@ -440,8 +437,8 @@ class _CoursesTable extends ConsumerWidget {
   }
 }
 
-/// Pulls the course's zip from the server and hands the bytes to
-/// download.dart's `saveBytes`, which forks to Blob on web / saveFile
+/// Pulls the course's exported yaml from the server and hands the bytes
+/// to download.dart's `saveBytes`, which forks to Blob on web / saveFile
 /// on desktop. Shows a snackbar with the filename on success.
 Future<void> _exportCourse(
   BuildContext context,
@@ -455,7 +452,7 @@ Future<void> _exportCourse(
   ));
   try {
     final bytes = await ref.read(dashboardApiProvider).exportCourse(course.courseId);
-    final filename = 'course_${course.courseId}.zip';
+    final filename = 'course_${course.courseId}.yaml';
     final saved = await saveBytes(filename: filename, bytes: bytes);
     messenger
       ..hideCurrentSnackBar()
@@ -471,56 +468,52 @@ Future<void> _exportCourse(
   }
 }
 
-/// Three-dot row menu — server-legal status transitions plus the
-/// always-available "Export as .zip" action. Sentinel "export" key
-/// distinguishes the export entry from status enum values inside the
-/// single `PopupMenuButton<String>`.
+/// Three-dot row menu — toggle publish/draft plus the always-available
+/// export action.
 class _RowMenu extends StatelessWidget {
-  final CourseStatusWire current;
-  final ValueChanged<CourseStatusWire> onStatus;
+  final bool published;
+  final VoidCallback onTogglePublished;
   final VoidCallback onExport;
   const _RowMenu({
-    required this.current,
-    required this.onStatus,
+    required this.published,
+    required this.onTogglePublished,
     required this.onExport,
   });
 
+  static const String _kToggle = 'toggle';
   static const String _kExport = 'export';
 
   @override
   Widget build(BuildContext context) {
-    final allowed = kAllowedTransitions[current] ?? const <CourseStatusWire>{};
     return PopupMenuButton<String>(
       tooltip: 'Actions',
       onSelected: (key) {
-        if (key == _kExport) {
+        if (key == _kToggle) {
+          onTogglePublished();
+        } else if (key == _kExport) {
           onExport();
-          return;
-        }
-        for (final s in CourseStatusWire.values) {
-          if (s.name == key) {
-            onStatus(s);
-            return;
-          }
         }
       },
       color: DashColors.darkBg.withValues(alpha: 0.96),
       itemBuilder: (context) => [
-        for (final s in allowed)
-          PopupMenuItem<String>(
-            value: s.name,
-            child: Row(
-              children: [
-                _statusDot(s),
-                const SizedBox(width: 10),
-                Text(
-                  kStatusLabel[s]!,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-              ],
-            ),
+        PopupMenuItem<String>(
+          value: _kToggle,
+          child: Row(
+            children: [
+              Icon(
+                published ? Icons.unpublished_outlined : Icons.publish_outlined,
+                size: 14,
+                color: DashColors.w(0.70),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                published ? 'Move to draft' : 'Publish',
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ],
           ),
-        if (allowed.isNotEmpty) const PopupMenuDivider(),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: _kExport,
           child: Row(
@@ -528,7 +521,7 @@ class _RowMenu extends StatelessWidget {
               Icon(Icons.download, size: 14, color: DashColors.w(0.70)),
               const SizedBox(width: 10),
               const Text(
-                'Export as .zip',
+                'Export',
                 style: TextStyle(color: Colors.white, fontSize: 13),
               ),
             ],
@@ -546,21 +539,6 @@ class _RowMenu extends StatelessWidget {
         ),
         child: Icon(Icons.more_horiz, size: 14, color: DashColors.w(0.70)),
       ),
-    );
-  }
-
-  Widget _statusDot(CourseStatusWire s) {
-    final color = switch (s) {
-      CourseStatusWire.draft => DashColors.w(0.55),
-      CourseStatusWire.review => DashColors.orange300,
-      CourseStatusWire.published => DashColors.green500,
-      CourseStatusWire.archived => DashColors.red400,
-      CourseStatusWire.unknown => DashColors.w(0.55),
-    };
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
@@ -605,7 +583,8 @@ class _FormatHelpDialog extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Full spec: content/example_course/README.md.',
+                'A single YAML file — the same shape produced by exporting a '
+                'course from the Courses row menu.',
                 style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
               ),
               const SizedBox(height: 14),
@@ -614,64 +593,54 @@ class _FormatHelpDialog extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _section('Folder layout'),
-                      const _CodeBlock('''my-course/
-├── course.txt
-├── module1/
-│   ├── module.txt
-│   ├── lesson1/
-│   │   ├── lesson.txt
-│   │   └── exercises.txt
-│   └── lesson2/
-│       └── …
-└── module2/
-    └── …'''),
+                      _section('Shape'),
+                      _hint(
+                        'One or more sections separated by "---". Each '
+                        'section is plain YAML starting with a "type" key: '
+                        'course, module, lesson, or exercise — nested in '
+                        'that order.',
+                      ),
                       const SizedBox(height: 14),
-                      _section('course.txt'),
-                      const _CodeBlock('''name: Italian for English Speakers
+                      _section('Example'),
+                      const _CodeBlock('''type: course
+title: Italian for English Speakers
 description: Essential grammar + vocabulary.
-language: Italian
-student_languages: English'''),
-                      const SizedBox(height: 6),
-                      _hint(
-                        'language / student_languages accept ISO codes (it, en) '
-                        'or English names (Italian, English).',
-                      ),
-                      const SizedBox(height: 14),
-                      _section('module.txt / lesson.txt'),
-                      const _CodeBlock('''module: Introduction to Italian
-lesson: Greeting sentences'''),
-                      const SizedBox(height: 6),
-                      _hint(
-                        'Numeric suffix in the folder name (module01, '
-                        'lesson02) controls order.',
-                      ),
-                      const SizedBox(height: 14),
-                      _section('exercises.txt'),
-                      const _CodeBlock('''---
-Buona sera
-[+] Good evening
-[-] Good morning
-[-] How are you
---- Explanation
-In Italian the vowels often blend together.
+lang: it
+to_lang: en
+level: 0
+status: draft
 ---
-Buonanotte
-[-] Good evening
-[+] Good night'''),
+type: module
+title: Introduction to Italian
+description: Basics
+weight: 1
+---
+type: lesson
+title: Greetings
+description: Common greeting phrases
+weight: 1
+---
+type: exercise
+exercise_type: multiple_choice
+sentence: Buona sera
+options:
+  - Good evening
+    correct: true
+  - Good morning
+  - Good night
+weight: 1'''),
                       const SizedBox(height: 6),
                       _hint(
-                        '--- separates exercises. First non-blank line = the '
-                        'prompt. [+] = correct option, [-] = distractor. '
-                        '"--- Explanation" opens a free-text note (ends at '
-                        'the next ---).',
+                        'lang / to_lang are ISO codes. weight controls '
+                        'ordering within the parent. A course needs at '
+                        'least one module/lesson/exercise chain to import.',
                       ),
                       const SizedBox(height: 14),
                       _section('Round-trip'),
                       _hint(
                         'Export any course from the Courses row menu to get a '
-                        'zip in this same shape, edit it locally, then '
-                        're-upload here.',
+                        'course.yaml with this same content — edit it '
+                        'locally, then upload it back here.',
                       ),
                     ],
                   ),

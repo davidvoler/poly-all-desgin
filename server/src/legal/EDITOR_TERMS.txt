@@ -1,0 +1,174 @@
+POLYGLOTS OPEN — TERMS & CONDITIONS FOR CONTENT CREATORS (EDITORS)
+
+Last updated: 14 June 2026
+
+These Terms & Conditions ("Terms") govern your use of Polyglots Open (the
+"Platform") as a content creator or editor (a "Creator", "you"). By creating,
+uploading, generating, importing, editing, or publishing any course, lesson,
+exercise, text, audio, image, or other material (collectively, "Content"), you
+agree to these Terms. If you do not agree, do not create or publish Content.
+
+
+1. WHO MAY CREATE CONTENT
+-------------------------
+1.1  You must be at least the age of majority in your jurisdiction, or have the
+     consent and supervision of a parent, guardian, or authorised organisation
+     (for example a school) that accepts these Terms on your behalf.
+1.2  If you create Content on behalf of an organisation, you confirm you are
+     authorised to bind that organisation to these Terms.
+1.3  You are responsible for everything done under your account. Keep your
+     credentials secure and do not share your editor access.
+
+
+2. THE OPEN-CONTENT MODEL — WHAT HAPPENS TO WHAT YOU PUBLISH
+-----------------------------------------------------------
+2.1  Polyglots Open is an open-content platform. Learning is free, and Content
+     you choose to publish becomes part of a public commons that other people
+     can study, copy, adapt, and share.
+2.2  You keep ownership of the original Content you create. Publishing does not
+     transfer your copyright to us.
+2.3  By publishing Content, you grant Polyglots Open and the public a
+     worldwide, royalty-free, perpetual, irrevocable, non-exclusive licence to
+     host, store, reproduce, translate, adapt, distribute, publicly display,
+     and perform that Content for the purpose of operating the Platform and
+     making the content commons available to learners. Where the Platform
+     applies an open-content licence (for example a Creative Commons licence)
+     to published courses, you agree your published Content is released under
+     that licence.
+2.4  This licence is necessary because the whole point of the Platform is to
+     share courses publicly. Once Content has been published and copied or
+     adapted by others, deleting it from your account will not, and cannot,
+     recall copies already distributed under the licence above.
+2.5  You may keep Content unpublished/private; the public licence in 2.3 applies
+     only to Content you choose to publish.
+
+
+3. OWNERSHIP & INTELLECTUAL PROPERTY — YOUR CORE PROMISES
+--------------------------------------------------------
+You represent, warrant, and promise, for every piece of Content you submit,
+that:
+3.1  You created the Content yourself, OR you own all necessary rights to it, OR
+     you have explicit, documented permission from the rights holder to upload
+     it and to license it under Section 2.
+3.2  The Content does NOT infringe anyone's copyright, trademark, patent, trade
+     secret, database right, moral right, or other intellectual-property right.
+3.3  You will not upload text, sentences, recordings, audio, music,
+     translations, images, logos, brand names, or other material that is
+     copied or derived from a source you do not have the right to use —
+     including, but not limited to, textbooks, dictionaries, songs, films,
+     subtitles, paid courses, websites, or another person's teaching materials.
+3.4  Where you use third-party material under an open or permissive licence
+     (for example public-domain or Creative Commons text), you comply with that
+     licence's terms, including any attribution requirements, and the licence is
+     compatible with publication under Section 2.
+3.5  The Content does NOT violate any person's right of privacy or publicity,
+     and you have obtained any consent required to use a real person's name,
+     voice, likeness, or personal information (including for any voice/TTS or
+     recorded audio).
+3.6  AI-assisted generation: if you use the Platform's AI generation or
+     text-to-speech tools, you remain responsible for the resulting Content and
+     for ensuring it does not infringe the rights of others or breach these
+     Terms.
+
+
+4. PROHIBITED CONTENT — WHAT YOU MUST NOT PUBLISH
+-------------------------------------------------
+You must not create, upload, generate, or publish Content that:
+4.1  Promotes, incites, or endorses hatred, violence, discrimination, or
+     dehumanisation against any person or group based on race, ethnicity,
+     national origin, immigration status, religion, caste, sex, gender, gender
+     identity, sexual orientation, disability, age, or any other protected or
+     vulnerable characteristic.
+4.2  Contains racist, antisemitic, xenophobic, misogynistic, homophobic,
+     transphobic, or otherwise hateful slurs, symbols, or messaging.
+4.3  Harasses, bullies, threatens, defames, or targets any individual or group.
+4.4  Is illegal under any applicable law, or promotes, facilitates, or provides
+     instructions for illegal activity (for example terrorism, violent
+     extremism, human trafficking, illegal drugs or weapons, fraud, or hacking).
+4.5  Sexually exploits, sexualises, or endangers minors in any way. This is a
+     zero-tolerance category and may be reported to the relevant authorities.
+4.6  Is pornographic, sexually explicit, or gratuitously violent or graphic,
+     and is unsuitable for a general-audience educational platform.
+4.7  Contains malware, viruses, malicious links, phishing, scams, or attempts
+     to harvest other users' data or credentials.
+4.8  Is spam, deceptive advertising, or unrelated promotional material, or
+     impersonates another person, organisation, or brand.
+4.9  Contains deliberate misinformation presented as fact, or unsafe
+     instructions likely to cause real-world harm.
+4.10 Violates any third-party right or any other provision of these Terms.
+
+Educational use of sensitive language: a course may legitimately teach
+vocabulary that includes difficult or offensive words for genuine language-
+learning purposes. This is permitted only where it is clearly educational, in
+context, not gratuitous, and not used to promote any prohibited message in
+Section 4.
+
+
+5. ACCURACY & QUALITY
+---------------------
+5.1  You will make reasonable efforts to ensure your Content is accurate,
+     linguistically sound, and appropriate for learners.
+5.2  You will not deliberately submit misleading translations, harmful
+     instructions, or low-quality Content designed to game the Platform.
+
+
+6. MODERATION, REMOVAL & ENFORCEMENT
+------------------------------------
+6.1  We may review, moderate, refuse to publish, unpublish, edit, or remove any
+     Content at any time if we reasonably believe it breaches these Terms, in
+     order to protect learners, comply with the law, or respond to a complaint.
+6.2  We may suspend or terminate your editor access for breaches of these Terms,
+     repeated infringement, or abuse of the Platform.
+6.3  We operate a notice-and-takedown process. If you believe Content infringes
+     your rights or breaches these Terms, contact us with details (see
+     Section 10) and we will review it. We may remove Content while we
+     investigate.
+6.4  Removal of Content does not necessarily reverse copies already distributed
+     to the public under the licence in Section 2.
+
+
+7. YOUR RESPONSIBILITY & INDEMNITY
+----------------------------------
+7.1  You are solely responsible for the Content you submit and for your
+     compliance with these Terms and all applicable laws.
+7.2  To the extent permitted by law, you agree to indemnify and hold harmless
+     Polyglots Open, its operators, contributors, and partners from any claims,
+     damages, losses, liabilities, and reasonable costs (including legal fees)
+     arising out of Content you submit that breaches these Terms — in
+     particular any claim that your Content infringes a third party's rights or
+     constitutes prohibited content under Section 4.
+
+
+8. NO WARRANTY; LIMITATION OF LIABILITY
+---------------------------------------
+8.1  The Platform is provided "as is" and "as available", without warranties of
+     any kind to the extent permitted by law.
+8.2  To the maximum extent permitted by law, Polyglots Open is not liable for
+     any indirect, incidental, or consequential loss arising from your use of
+     the Platform as a Creator, or from the publication, moderation, or removal
+     of Content.
+
+
+9. CHANGES TO THESE TERMS
+-------------------------
+9.1  We may update these Terms from time to time. We will update the "Last
+     updated" date above, and material changes will be notified through the
+     Platform. Continuing to create or publish Content after changes take effect
+     means you accept the updated Terms.
+
+
+10. CONTACT
+-----------
+Questions, takedown requests, or rights complaints:
+  Email:    [INSERT CONTACT EMAIL]
+  Operator: [INSERT LEGAL ENTITY / OPERATOR NAME]
+  Address:  [INSERT ADDRESS]
+
+By creating, generating, importing, editing, or publishing Content on
+Polyglots Open, you confirm that you have read, understood, and agree to these
+Terms & Conditions for Content Creators.
+
+---------------------------------------------------------------------------
+NOTE: This is a template and not legal advice. Have a qualified lawyer in your
+jurisdiction review and adapt it (especially Sections 2, 7, and 8, and the
+choice of open-content licence) before you rely on it in production.

@@ -31,12 +31,22 @@ final dioProvider = Provider<Dio>((ref) {
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 15),
       responseType: ResponseType.json,
+      // `/api/v1/auth/*` sets an HttpOnly `user_id` cookie and resolves
+      // the school from the request hostname. The dashboard and API run
+      // on different ports (cross-origin on web), so the browser only
+      // stores/sends that cookie when credentials are enabled. Ignored
+      // on native, where Dio carries cookies regardless.
+      extra: {'withCredentials': true},
     ),
   );
 });
 
-/// Response body of POST /api/v1/school_users/login — what we hand
-/// back to the UI to gate routes.
+/// Signed-in session, built from the `UserPref` returned by
+/// POST /api/v1/auth/login_with_password (and /get_or_create_user). The
+/// school is resolved server-side from the request hostname, so there's
+/// no slug to send or store. `schoolUserId` carries the caller's
+/// `user_id` — the identity the new `school.school_users(school_id,
+/// user_id)` model keys on.
 class LoginInfo {
   final int schoolUserId;
   final int schoolId;
@@ -44,7 +54,8 @@ class LoginInfo {
   final String schoolName;
   final String name;
   final String email;
-  final String role; // owner | editor | viewer
+  final String role; // primary role, derived from [roles]
+  final List<String> roles;
 
   const LoginInfo({
     required this.schoolUserId,
@@ -54,26 +65,58 @@ class LoginInfo {
     required this.name,
     required this.email,
     required this.role,
+    this.roles = const [],
   });
 
-  factory LoginInfo.fromJson(Map<String, dynamic> j) => LoginInfo(
-        schoolUserId: j['school_user_id'] as int,
-        schoolId: j['school_id'] as int,
-        schoolSlug: (j['school_slug'] as String?) ?? '',
-        schoolName: (j['school_name'] as String?) ?? '',
-        name: (j['name'] as String?) ?? '',
-        email: (j['email'] as String?) ?? '',
-        role: (j['role'] as String?) ?? 'editor',
-      );
+  /// Roles that unlock admin-only surfaces (Editors + Settings). Spans
+  /// both the new (`school_admin`/`super_admin`) and legacy
+  /// (`admin`/`owner`) vocabularies so cached sessions keep working.
+  static const _adminRoles = {
+    'admin',
+    'owner',
+    'school_admin',
+    'super_admin',
+  };
+
+  /// Tolerates two shapes:
+  ///   * new `/api/v1/auth` UserPref — `{user_id, school_id, email,
+  ///     school_user: {roles: [...]}}`
+  ///   * legacy `/school_users/login` LoginResponse / cached sessions —
+  ///     flat `{school_user_id, role, school_slug, ...}`
+  factory LoginInfo.fromJson(Map<String, dynamic> j) {
+    final su = j['school_user'];
+    final roles = <String>[
+      if (su is Map && su['roles'] is List)
+        for (final r in su['roles'] as List) '$r',
+      // legacy cache persisted a flat `roles` array
+      if (su is! Map && j['roles'] is List)
+        for (final r in j['roles'] as List) '$r',
+    ];
+    // user_id is the new identity; fall back to the legacy PK.
+    final uid = (j['user_id'] ?? j['school_user_id'] ?? 0) as int;
+    final role = (j['role'] as String?) ??
+        (roles.isNotEmpty ? roles.first : 'editor');
+    return LoginInfo(
+      schoolUserId: uid,
+      schoolId: (j['school_id'] as int?) ?? 0,
+      schoolSlug: (j['school_slug'] as String?) ?? '',
+      schoolName: (j['school_name'] as String?) ?? '',
+      name: (j['name'] as String?) ?? '',
+      email: (j['email'] as String?) ?? '',
+      role: role,
+      roles: roles,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
-        'school_user_id': schoolUserId,
+        'user_id': schoolUserId,
         'school_id': schoolId,
         'school_slug': schoolSlug,
         'school_name': schoolName,
         'name': name,
         'email': email,
         'role': role,
+        'roles': roles,
       };
 
   String get initials {
@@ -85,9 +128,70 @@ class LoginInfo {
   }
 
   /// Only admins can manage staff (Editors page) or change the school
-  /// itself (Settings page). Tolerate the pre-migration "owner" label
-  /// for sessions cached before the role rename.
-  bool get isAdmin => role == 'admin' || role == 'owner';
+  /// itself (Settings page).
+  bool get isAdmin =>
+      _adminRoles.contains(role) || roles.any(_adminRoles.contains);
+}
+
+/// The current user's school-scoped capabilities, read from
+/// GET /api/v1/school/me. `permissions` is the server-computed map
+/// (`courses`, `settings`, `editors`, `create_with_ai`, `signed_terms`,
+/// `about`) the dashboard uses to hide/show nav + gate the Courses page.
+/// `signed_terms == true` means the user still owes an acceptance of the
+/// current editor Terms & Conditions.
+class DashboardMe {
+  final int schoolUserId;
+  final int schoolId;
+  final List<String> roles;
+  final int? signedTermsVersion;
+  final Map<String, bool> permissions;
+  // School branding, carried on the same /me payload so the shell doesn't
+  // need a separate GET /api/v1/school/{id}.
+  final String schoolName;
+  final String schoolType;
+  final String? logoUrl;
+  final String primaryColor;
+
+  const DashboardMe({
+    required this.schoolUserId,
+    required this.schoolId,
+    required this.roles,
+    required this.signedTermsVersion,
+    required this.permissions,
+    required this.schoolName,
+    required this.schoolType,
+    required this.logoUrl,
+    required this.primaryColor,
+  });
+
+  factory DashboardMe.fromJson(Map<String, dynamic> j) {
+    final perms = <String, bool>{};
+    final raw = j['permissions'];
+    if (raw is Map) {
+      for (final e in raw.entries) {
+        perms['${e.key}'] = e.value == true;
+      }
+    }
+    return DashboardMe(
+      schoolUserId: (j['user_id'] as int?) ?? 0,
+      schoolId: (j['school_id'] as int?) ?? 0,
+      roles: ((j['roles'] as List?) ?? const []).map((e) => '$e').toList(),
+      signedTermsVersion: j['signed_terms_version'] as int?,
+      permissions: perms,
+      schoolName: (j['school_name'] as String?) ?? '',
+      schoolType: (j['school_type'] as String?) ?? '',
+      logoUrl: j['logo_url'] as String?,
+      primaryColor: (j['primary_color'] as String?) ?? '#1E88E5',
+    );
+  }
+
+  /// Whether a permission key is granted. Unknown keys default to false so
+  /// new server-side gates fail closed on stale clients.
+  bool can(String key) => permissions[key] ?? false;
+
+  /// The Courses page is gated until the user accepts the current editor
+  /// Terms & Conditions.
+  bool get needsTerms => can('signed_terms');
 }
 
 /// Thin client over the dashboard-side endpoints.
@@ -95,189 +199,578 @@ class DashboardApi {
   final Dio _dio;
   DashboardApi(this._dio);
 
+  /// The signed-in user's roles + permissions + signed-terms state for the
+  /// school resolved server-side from the request hostname. Backs
+  /// [meProvider]; drives nav visibility and the Courses terms gate.
+  Future<DashboardMe> fetchMe() async {
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/school/me');
+    return DashboardMe.fromJson(res.data ?? const {});
+  }
+
+  /// The editor Terms & Conditions text + its current version.
+  Future<({String terms, int version})> fetchEditorTerms() async {
+    final res =
+        await _dio.get<Map<String, dynamic>>('/api/v1/school/editor_terms');
+    final data = res.data ?? const {};
+    return (
+      terms: (data['terms'] as String?) ?? '',
+      version: (data['version'] as int?) ?? 1,
+    );
+  }
+
+  /// Record the caller's acceptance of the current editor Terms & Conditions.
+  Future<void> signEditorTerms() async {
+    await _dio.post<dynamic>('/api/v1/school/sign_editor_terms');
+  }
+
+  /// Email + password sign-in against the unified auth router. The
+  /// school is resolved server-side from the request hostname, so no
+  /// slug is sent. Sets the HttpOnly `user_id` session cookie.
   Future<LoginInfo> login({
     required String email,
     required String password,
-    String? schoolSlug,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/login',
+      '/api/v1/auth/login_with_password',
       data: {
         'email': email,
         'password': password,
-        if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
       },
     );
     return LoginInfo.fromJson(res.data ?? const {});
   }
 
   /// Exchange an Auth0 ID token for a [LoginInfo]. The server verifies
-  /// the token against the configured Auth0 JWKS, matches the
-  /// `email` claim to an existing school_users row, and returns the
-  /// same shape as the password-login route.
+  /// the token against the configured Auth0 JWKS, trusts the `email`
+  /// claim, resolves the school from the request hostname, and returns
+  /// the same `UserPref` shape as the password-login route.
   Future<LoginInfo> loginWithAuth0({
     required String idToken,
-    String? schoolSlug,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/login_auth0',
+      '/api/v1/auth/get_or_create_user',
       data: {
         'id_token': idToken,
-        if (schoolSlug?.isNotEmpty ?? false) 'school_slug': schoolSlug,
       },
     );
     return LoginInfo.fromJson(res.data ?? const {});
   }
 
-  Future<void> setCourseStatus({
-    required int courseId,
-    required int schoolId,
-    int? actorUserId,
-    required String status,
-    String? note,
+  /// Persist title/description/published/tags/metadata for an existing
+  /// course. POST /api/v1/edit/course/course rewrites every column, so
+  /// [course] must carry the fields fetched from the server unchanged
+  /// alongside whatever the caller actually edited (see
+  /// [EditorCourse.copyWith]/[EditorCourse.toJson]).
+  Future<EditorCourse> updateCourse(EditorCourse course) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/course/course',
+      data: course.toJson(),
+    );
+    return EditorCourse.fromJson(res.data ?? course.toJson());
+  }
+
+  Future<void> deleteCourse(int courseId) async {
+    await _dio.delete<dynamic>('/api/v1/edit/course/course/$courseId');
+  }
+
+  // --- Create-with-AI course workspace --------------------------------
+  //
+  // Flutter port of plan/design_experiments/create_with_ai_poc — see
+  // pages/ai_courses_page.dart (course list + create) and
+  // pages/ai_course_workspace_page.dart (chat + Words/Lessons/Edit
+  // Course/Preview tabs). Endpoints/shapes are documented in TASKS.md
+  // ("Planning the api").
+
+  /// Create a course. Returns the created course id plus the "what next"
+  /// options (Create Lesson / Get Words List).
+  Future<PromptResponse> generateCourse({
+    required String lang,
+    required String toLang,
+    required String level,
+    String? title,
+    String? description,
   }) async {
-    await _dio.post<dynamic>(
-      '/api/v1/editor/review/$courseId/status',
-      queryParameters: {
-        'school_id': schoolId,
-        'actor_user_id': ?actorUserId,
-      },
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc/generate_course',
       data: {
-        'status': status,
-        if (note?.isNotEmpty ?? false) 'note': note,
+        'lang': lang,
+        'to_lang': toLang,
+        'level': level,
+        'title': title,
+        'description': description,
       },
+    );
+    return PromptResponse.fromJson(res.data ?? const {});
+  }
+
+  /// Create a course via generate_poc_new, persisting the generation
+  /// [options] (content source / provider / model / sentence + exercise
+  /// knobs) onto course_simple.course.metadata so every later
+  /// generate_poc_new call reads them back. Returns the created course id.
+  Future<int?> createAiCourse({
+    required String lang,
+    required String toLang,
+    required String level,
+    String? title,
+    String? description,
+    CourseOptions options = const CourseOptions(),
+  }) async {
+    final trimmedTitle = title?.trim();
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/create_course',
+      data: {
+        'lang': languageCode(lang),
+        'to_lang': languageCode(toLang),
+        'level': level,
+        'title': (trimmedTitle == null || trimmedTitle.isEmpty) ? null : trimmedTitle,
+        'description': description,
+        'metadata': options.toJson(),
+      },
+    );
+    return (res.data?['course_id'] as num?)?.toInt();
+  }
+
+  /// Create a video course via generate_poc_new, persisting the generation
+  /// [options] (content source / provider / model / target section length)
+  /// onto course_simple.course (kind='video'). Videos are added afterward
+  /// via [updateVideoCourse] — a course can hold more than one. Returns the
+  /// created course id.
+  Future<int?> createVideoCourse({
+    required String lang,
+    required String toLang,
+    required String level,
+    String? title,
+    String? description,
+    VideoCourseOptions options = const VideoCourseOptions(),
+  }) async {
+    final trimmedTitle = title?.trim();
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/create_video_course',
+      data: {
+        'lang': languageCode(lang),
+        'to_lang': languageCode(toLang),
+        'level': level,
+        'title': (trimmedTitle == null || trimmedTitle.isEmpty) ? null : trimmedTitle,
+        'description': description,
+        'metadata': options.toJson(),
+      },
+    );
+    return (res.data?['course_id'] as num?)?.toInt();
+  }
+
+  Future<VideoCourse> fetchVideoCourse(int courseId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/get_video_course',
+      data: {'course_id': courseId},
+    );
+    return VideoCourse.fromJson(res.data ?? const {});
+  }
+
+  Future<VideoCourse> updateVideoCourse(VideoCourse course) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/update_video_course',
+      data: course.toJson(),
+    );
+    return VideoCourse.fromJson(res.data ?? course.toJson());
+  }
+
+  /// The video-course pipeline steps (Edit tab per-video buttons). Each
+  /// acts on one video already saved onto the course (matched by
+  /// [videoUrl]) and returns the whole course with that video's
+  /// subtitles/words/phrases/sections updated.
+  Future<VideoCourse> _videoPipelineStep(String endpoint, int courseId, String videoUrl) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/generate_poc_new/$endpoint',
+      data: {'course_id': courseId, 'video_url': videoUrl},
+    );
+    return VideoCourse.fromJson(res.data ?? const {});
+  }
+
+  Future<VideoCourse> downloadVideoSubtitles(int courseId, String videoUrl) =>
+      _videoPipelineStep('download_video_subtitles', courseId, videoUrl);
+
+  Future<VideoCourse> extractVideoWords(int courseId, String videoUrl) =>
+      _videoPipelineStep('extract_video_words', courseId, videoUrl);
+
+  Future<VideoCourse> extractVideoPhrases(int courseId, String videoUrl) =>
+      _videoPipelineStep('extract_video_phrases', courseId, videoUrl);
+
+  Future<VideoCourse> createVideoSections(int courseId, String videoUrl) =>
+      _videoPipelineStep('create_video_sections', courseId, videoUrl);
+
+  /// Video Modules — real rows in course_simple.module (module_type
+  /// 'video'), created/edited/deleted independently rather than through
+  /// updateVideoCourse.
+  Future<VideoModule> createVideoModule(int courseId, {String? title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/video_module/create_video_module',
+      data: {'course_id': courseId, 'title': title},
+    );
+    return VideoModule.fromJson(res.data ?? const {});
+  }
+
+  Future<VideoModule> updateVideoModule(VideoModule module) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/video_module/update_video_module',
+      data: module.toJson(),
+    );
+    return VideoModule.fromJson(res.data ?? module.toJson());
+  }
+
+  Future<void> deleteVideoModule(int courseId, int moduleId) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/v1/video_module/delete_video_module',
+      data: {'course_id': courseId, 'module_id': moduleId},
+    );
+  }
+
+  /// Same as [downloadVideoSubtitles], but for a Video Module's own video
+  /// (matched by [moduleId] rather than a video already in course.videos).
+  Future<VideoModule> downloadModuleSubtitles(int courseId, int moduleId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/video_module/download_module_subtitles',
+      data: {'course_id': courseId, 'module_id': moduleId},
+    );
+    return VideoModule.fromJson(res.data ?? const {});
+  }
+
+  /// Ranks words by rarity and pulls out short sentences (at most
+  /// metadata.maxSentenceWords words) from the module's downloaded
+  /// subtitles.
+  Future<VideoModule> extractModuleContent(int courseId, int moduleId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/video_module/extract_module_content',
+      data: {'course_id': courseId, 'module_id': moduleId},
+    );
+    return VideoModule.fromJson(res.data ?? const {});
+  }
+
+  /// Everything the course workspace needs in one call — course meta,
+  /// word bank (with used-in-a-lesson flags), and every
+  /// module/lesson/sentence/exercise.
+  Future<AiCourseFull> fetchAiCourseFull(int courseId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/edit/course/course/$courseId/full',
+    );
+    return AiCourseFull.fromJson(res.data ?? const {});
+  }
+
+  /// generate_poc endpoints are async: they kick a worker job and return
+  /// `{task_id}`. Poll [awaitTask], then re-fetch the course.
+  static const _genPrefix = '/api/v1/generate_poc';
+
+  /// Poll one background job's status (`GET /api/v1/tasks/{id}`).
+  Future<TaskStatus> taskStatus(String taskId) async {
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/tasks/$taskId');
+    return TaskStatus.fromJson(res.data ?? const {});
+  }
+
+  /// Poll until a generate_poc job finishes. Returns normally on success;
+  /// throws if the job failed or the wait ran out.
+  Future<void> awaitTask(
+    String taskId, {
+    Duration interval = const Duration(seconds: 2),
+    Duration timeout = const Duration(minutes: 5),
+  }) async {
+    if (taskId.isEmpty) throw Exception('no task id returned');
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final s = await taskStatus(taskId);
+      if (s.failed) throw Exception(s.error ?? 'generation failed');
+      if (s.completed) return;
+      await Future<void>.delayed(interval);
+    }
+    throw Exception('generation is taking too long — check back in a minute');
+  }
+
+  /// Kick the words-generation job. Returns the `task_id` — poll
+  /// [awaitTask], then re-fetch the course (new words land on
+  /// `course_simple.course.words`, skipping ones already there).
+  /// Content-source / provider / model come from `course.metadata`.
+  Future<String> generateAiWords({
+    required EditorCourse course,
+    List<AiCourseWord> currentWords = const [],
+    int count = 12,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '$_genPrefix/generate_words_list',
+      queryParameters: {'count': count},
+      data: {
+        'course_id': course.courseId,
+        'title': course.title,
+        'description': course.description,
+        'lang': languageCode(course.lang),
+        'to_lang': languageCode(course.toLang),
+        'level': course.level ?? '',
+        'published': course.published,
+        'metadata': course.metadata,
+        'words': [
+          for (var i = 0; i < currentWords.length; i++)
+            {
+              'word': currentWords[i].word,
+              'weight': i + 1,
+              'used': currentWords[i].used ? 1 : 0,
+            },
+        ],
+      },
+    );
+    return (res.data?['task_id'] as String?) ?? '';
+  }
+
+  Future<AiCourseWord> addAiWord({required int courseId, required String word, String? gloss}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/word/',
+      data: {'course_id': courseId, 'word': word, 'gloss': gloss},
+    );
+    return AiCourseWord.fromJson(res.data ?? const {});
+  }
+
+  /// Words aren't a database entity — the word string is the identity.
+  Future<void> deleteAiWord({required int courseId, required String word}) async {
+    await _dio.post<dynamic>(
+      '/api/v1/edit/word/delete',
+      data: {'course_id': courseId, 'word': word},
+    );
+  }
+
+  /// Create a module — plain CRUD, not an AI call. Reuses the school's
+  /// existing module-create endpoint (ModuleEdit).
+  Future<AiModule> createAiModule({required int courseId, required String title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/module/',
+      data: {'course_id': courseId, 'title': title},
+    );
+    return AiModule.fromJson(res.data ?? const {});
+  }
+
+  /// Create a draft lesson within a module. Reuses the school's existing
+  /// lesson-create endpoint (LessonEdit).
+  Future<AiLesson> createAiLesson({required int courseId, required int moduleId, required String title}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/lesson/',
+      data: {'course_id': courseId, 'module_id': moduleId, 'title': title},
+    );
+    return AiLesson.fromJson(res.data ?? const {});
+  }
+
+  /// Confirm which words (from the course word bank) are selected for a
+  /// lesson — replaces the lesson's whole `words` list.
+  Future<void> setAiLessonWords({required int lessonId, required List<String> words}) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/lesson/words',
+      data: {'lesson_id': lessonId, 'words': words},
+    );
+  }
+
+  /// The `course` block for a generate_poc_new GenerateForWords request —
+  /// languages as ISO codes, options from `course.metadata`.
+  Map<String, dynamic> _genCourseBody(EditorCourse course) => {
+        'course_id': course.courseId,
+        'title': course.title,
+        'description': course.description,
+        'lang': languageCode(course.lang),
+        'to_lang': languageCode(course.toLang),
+        'level': course.level ?? '',
+        'published': course.published,
+        'metadata': course.metadata,
+      };
+
+  int _spreadCount(int words, int? override) =>
+      override ?? (words * 2).clamp(4, 24);
+
+  /// Kick the sentence-generation job for a lesson's [words]. Returns the
+  /// `task_id` — poll [awaitTask], then re-fetch the course; the drafted
+  /// sentences land on `lesson.sentences`. The "Create sentences" path
+  /// (as opposed to [generateAiExercises], which skips to exercises).
+  Future<String> generateAiSentences({
+    required EditorCourse course,
+    required int lessonId,
+    required List<String> words,
+    int? numElements,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '$_genPrefix/sentences_for_word',
+      data: {
+        'course': _genCourseBody(course),
+        'words': words,
+        'num_elements': _spreadCount(words.length, numElements),
+        'lesson_id': lessonId,
+      },
+    );
+    return (res.data?['task_id'] as String?) ?? '';
+  }
+
+  /// Choose which generated draft sentences to keep for a lesson.
+  Future<List<AiLessonSentence>> confirmAiSentences({required int lessonId, required List<int> sentenceIds}) async {
+    final res = await _dio.post<List<dynamic>>(
+      '/api/v1/edit/lesson/sentences/confirm',
+      data: {'lesson_id': lessonId, 'sentence_ids': sentenceIds},
+    );
+    return (res.data ?? const []).cast<Map<String, dynamic>>().map(AiLessonSentence.fromJson).toList();
+  }
+
+  /// Sentences live on the lesson's own `sentences` list (no join table)
+  /// — [sentenceId] just addresses one entry in it, so [lessonId] is
+  /// required to know which lesson's list to patch.
+  Future<AiLessonSentence> updateAiSentence({required int lessonId, required int sentenceId, required String text}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/lesson/sentences/update',
+      data: {'lesson_id': lessonId, 'sentence_id': sentenceId, 'text': text},
+    );
+    return AiLessonSentence.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteAiSentence({required int lessonId, required int sentenceId}) async {
+    await _dio.post<dynamic>(
+      '/api/v1/edit/lesson/sentences/delete',
+      data: {'lesson_id': lessonId, 'sentence_id': sentenceId},
+    );
+  }
+
+  /// Kick the exercise-generation job for a lesson's [words]. Returns the
+  /// `task_id` — poll [awaitTask], then re-fetch; exercises are inserted
+  /// into `course_simple.exercise` and the lesson marked ready. Backs both
+  /// "Create exercises" (after keeping sentences) and "Create exercises
+  /// directly".
+  Future<String> generateAiExercises({
+    required EditorCourse course,
+    required int lessonId,
+    required List<String> words,
+    int? numElements,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '$_genPrefix/exercise_for_word',
+      data: {
+        'course': _genCourseBody(course),
+        'words': words,
+        'num_elements': _spreadCount(words.length, numElements),
+        'lesson_id': lessonId,
+      },
+    );
+    return (res.data?['task_id'] as String?) ?? '';
+  }
+
+  /// Add a blank exercise manually. Reuses the school's existing
+  /// exercise-create endpoint (ExerciseEdit) — `exerciseId: 0` is a
+  /// required-but-unused placeholder for the not-yet-assigned id.
+  Future<AiExercise> createAiExercise({required int courseId, required int moduleId, required int lessonId}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/exercise/exercise',
+      data: {'exercise_id': 0, 'course_id': courseId, 'module_id': moduleId, 'lesson_id': lessonId},
+    );
+    return AiExercise.fromJson(res.data ?? const {});
+  }
+
+  Future<AiExercise> updateAiExercise({
+    required int exerciseId,
+    String? prompt,
+    List<AiExerciseOption>? options,
+    String? answer,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/edit/exercise/exercise/update',
+      data: {
+        'exercise_id': exerciseId,
+        'prompt': ?prompt,
+        'options': ?options?.map((o) => o.toJson()).toList(),
+        'answer': ?answer,
+      },
+    );
+    return AiExercise.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteAiExercise(int exerciseId) async {
+    await _dio.post<dynamic>(
+      '/api/v1/edit/exercise/exercise/delete',
+      data: {'exercise_id': exerciseId},
     );
   }
 
   // --- Reads --------------------------------------------------------
+  //
+  // The school profile / stats / activity / languages / students / plans /
+  // billing endpoints moved to server/src/school/routes/school_old.py, which
+  // is no longer mounted. They're stubbed here (reads → empty, writes →
+  // UnsupportedError) so the dashboard renders empty/disabled states instead
+  // of 404-ing. Re-wire them if/when that functionality lands in the new
+  // school.py router.
 
   Future<SchoolInfo> fetchSchool(int schoolId) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/school/$schoolId',
-    );
-    return SchoolInfo.fromJson(res.data ?? const {});
+    throw UnsupportedError('school profile endpoint removed (school_old.py)');
   }
 
   Future<SchoolStats> fetchSchoolStats(int schoolId) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/school/$schoolId/stats',
-    );
-    return SchoolStats.fromJson(res.data ?? const {});
+    return const SchoolStats();
   }
 
   Future<List<ActivityRowRemote>> fetchActivity(int schoolId,
       {int limit = 10}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/activity',
-      queryParameters: {'limit': limit},
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(ActivityRowRemote.fromJson)
-        .toList();
+    return const [];
   }
 
   Future<List<LanguageSummary>> fetchLanguages(int schoolId,
       {String? role}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/languages',
-      queryParameters: {
-        'role': ?role,
-      },
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(LanguageSummary.fromJson)
-        .toList();
+    return const [];
   }
 
-  Future<LessonDetailRemote> fetchLessonDetail(int lessonId) async {
+  /// Single course by id — backs the course detail/edit page.
+  Future<EditorCourse> fetchCourseById(int courseId) async {
     final res = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/editor/lesson/$lessonId',
+      '/api/v1/edit/course/course/$courseId',
     );
-    return LessonDetailRemote.fromJson(res.data ?? const {});
+    return EditorCourse.fromJson(res.data ?? const {});
   }
 
-  Future<void> saveLessonDetail({
-    required int courseId,
-    required int moduleId,
-    int? lessonId,
-    required String title,
-    required List<String> words,
-    required List<Map<String, dynamic>> exercises,
-  }) async {
-    await _dio.post<dynamic>(
-      '/api/v1/editor/lesson/',
-      data: {
-        'course_id': courseId,
-        'module_id': moduleId,
-        'lesson_id': ?lessonId,
-        'title': title,
-        'words': words,
-        'exercises': exercises,
-      },
-    );
-  }
-
-  Future<EditorCourseDetail> fetchCourseDetail({
-    required int courseId,
-    required int schoolId,
-  }) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/editor/courses/$courseId/detail',
-      queryParameters: {'school_id': schoolId},
-    );
-    return EditorCourseDetail.fromJson(res.data ?? const {});
-  }
-
+  /// Courses the caller can see, role-scoped server-side (admins see all,
+  /// editors see their own). The school is resolved from the request
+  /// hostname + cookie, so `schoolId` is no longer sent. `status`/`lang`/`q`
+  /// filters are applied client-side by the consuming providers/pages.
   Future<List<EditorCourse>> fetchEditorCourses(int schoolId,
       {String? status, String? lang, String? q}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/editor/courses/',
-      queryParameters: {
-        'school_id': schoolId,
-        'status': ?status,
-        'lang': ?lang,
-        'q': ?q,
-      },
-    );
-    return (res.data ?? const [])
+    final res = await _dio.get<List<dynamic>>('/api/v1/edit/course/courses');
+    var rows = (res.data ?? const [])
         .cast<Map<String, dynamic>>()
         .map(EditorCourse.fromJson)
         .toList();
+    if (lang != null && lang.isNotEmpty) {
+      rows = rows.where((c) => c.lang == lang).toList();
+    }
+    if (q != null && q.trim().isNotEmpty) {
+      final needle = q.trim().toLowerCase();
+      rows = rows
+          .where((c) =>
+              c.title.toLowerCase().contains(needle) ||
+              c.description.toLowerCase().contains(needle))
+          .toList();
+    }
+    return rows;
   }
 
+  /// Staff roster for the caller's school, from the school router.
+  /// Admin/teacher only server-side (403 otherwise). The write actions below
+  /// remain unsupported — only the read is wired.
   Future<List<SchoolUser>> fetchSchoolUsers(int schoolId,
       {String? role, String? q}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school_users/',
-      queryParameters: {
-        'school_id': schoolId,
-        'role': ?role,
-        'q': ?q,
-      },
-    );
-    return (res.data ?? const [])
+    final res =
+        await _dio.get<List<dynamic>>('/api/v1/school/school_users');
+    var rows = (res.data ?? const [])
         .cast<Map<String, dynamic>>()
         .map(SchoolUser.fromJson)
         .toList();
+    if (q != null && q.trim().isNotEmpty) {
+      final needle = q.trim().toLowerCase();
+      rows = rows
+          .where((u) =>
+              u.name.toLowerCase().contains(needle) ||
+              u.email.toLowerCase().contains(needle))
+          .toList();
+    }
+    return rows;
   }
 
   Future<List<StudentRowRemote>> fetchStudents(int schoolId,
       {String? lang, String? status, String? q, int limit = 200}) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/students',
-      queryParameters: {
-        'lang': ?lang,
-        'status': ?status,
-        'q': ?q,
-        'limit': limit,
-      },
-    );
-    return (res.data ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(StudentRowRemote.fromJson)
-        .toList();
+    return const [];
   }
 
   // --- Writes -------------------------------------------------------
@@ -292,20 +785,7 @@ class DashboardApi {
     required List<String> languagesTaught,
     required List<String> nativeLanguages,
   }) async {
-    await _dio.put<dynamic>(
-      '/api/v1/school/$schoolId',
-      data: {
-        'school_id': schoolId,
-        'slug': '',
-        'name': name,
-        'plan': plan,
-        'is_public': isPublic,
-        'logo_url': logoUrl,
-        'primary_color': primaryColor,
-        'languages_taught': languagesTaught,
-        'native_languages': nativeLanguages,
-      },
-    );
+    throw UnsupportedError('school profile endpoint removed (school_old.py)');
   }
 
   Future<SchoolUser> createSchoolUser({
@@ -316,83 +796,42 @@ class DashboardApi {
     String role = 'editor',
     List<String> assignedLanguages = const [],
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/',
-      data: {
-        'school_id': schoolId,
-        'name': name,
-        'email': email,
-        'password': ?password,
-        'role': role,
-        'assigned_languages': assignedLanguages,
-      },
-    );
-    return SchoolUser.fromJson(res.data ?? const {});
+    throw UnsupportedError('school_users API removed');
   }
 
   Future<SchoolUser> updateSchoolUser(SchoolUser u) async {
-    final res = await _dio.put<Map<String, dynamic>>(
-      '/api/v1/school_users/${u.schoolUserId}',
-      data: {
-        'school_user_id': u.schoolUserId,
-        'school_id': u.schoolId,
-        'name': u.name,
-        'email': u.email,
-        'role': roleToWire(u.role),
-        'assigned_languages': u.assignedLanguages,
-        'courses_owned': u.coursesOwned,
-        'status': u.status,
-      },
-    );
-    return SchoolUser.fromJson(res.data ?? const {});
+    throw UnsupportedError('school_users API removed');
   }
 
   Future<void> deleteSchoolUser(int schoolUserId) async {
-    await _dio.delete<dynamic>('/api/v1/school_users/$schoolUserId');
+    throw UnsupportedError('school_users API removed');
   }
 
   /// Upload a zipped course archive. `fileBytes` is preferred for web
   /// (where file_picker returns bytes only); pass `filePath` from
   /// desktop/mobile to stream from disk.
-  Future<int?> uploadCourse({
-    required int schoolId,
-    int? actorUserId,
-    required String filename,
-    List<int>? fileBytes,
-    String? filePath,
-    String? courseTitle,
-    String lang = 'ar',
-    String toLang = 'en',
-  }) async {
-    final MultipartFile multipart;
-    if (fileBytes != null) {
-      multipart = MultipartFile.fromBytes(fileBytes, filename: filename);
-    } else if (filePath != null) {
-      multipart = await MultipartFile.fromFile(filePath, filename: filename);
-    } else {
-      throw ArgumentError('Either fileBytes or filePath is required');
-    }
-    final form = FormData.fromMap({
-      'school_id': schoolId,
-      'actor_user_id': ?actorUserId,
-      if (courseTitle?.isNotEmpty ?? false) 'course_title': courseTitle,
-      'lang': lang,
-      'to_lang': toLang,
-      'file': multipart,
-    });
+  /// Import a course pasted as one `=== path ===`-delimited document (the
+  /// output of the Create-with-AI flow). Returns the new course id.
+  Future<int?> importCourseText({required String document}) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/editor/upload/',
-      data: form,
+      '/api/v1/edit/course/import/',
+      data: {'document': document},
+      options: Options(
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 10),
+      ),
     );
-    return (res.data?['course_id'] as int?);
+    return res.data?['course_id'] as int?;
   }
 
-  /// Download a course's zip export. Returns the raw bytes — caller
-  /// is responsible for writing them somewhere the user can find
-  /// (file_picker's saveFile on desktop, a Blob anchor on web).
+  /// Download a course's export. Returns the raw bytes (a `course.yaml`
+  /// document) — caller is responsible for writing them somewhere the
+  /// user can find (file_picker's saveFile on desktop, a Blob anchor on
+  /// web).
   Future<List<int>> exportCourse(int courseId) async {
-    final res = await _dio.get<List<int>>(
-      '/api/v1/editor/export/$courseId',
+    final res = await _dio.post<List<int>>(
+      '/api/v1/edit/course/export/',
+      data: {'course_id': courseId},
       options: Options(responseType: ResponseType.bytes),
     );
     return res.data ?? const [];
@@ -406,16 +845,7 @@ class DashboardApi {
     int? courseId,
     String? cohort,
   }) async {
-    await _dio.post<dynamic>(
-      '/api/v1/school/$schoolId/students',
-      data: {
-        'email': email,
-        'name': name,
-        'lang': lang,
-        'course_id': ?courseId,
-        'cohort': ?cohort,
-      },
-    );
+    throw UnsupportedError('students endpoint removed (school_old.py)');
   }
 
   /// Bulk-enroll from a CSV upload. Returns the {added, skipped,
@@ -428,32 +858,13 @@ class DashboardApi {
     List<int>? fileBytes,
     String? filePath,
   }) async {
-    final MultipartFile multipart;
-    if (fileBytes != null) {
-      multipart = MultipartFile.fromBytes(fileBytes, filename: filename);
-    } else if (filePath != null) {
-      multipart = await MultipartFile.fromFile(filePath, filename: filename);
-    } else {
-      throw ArgumentError('Either fileBytes or filePath is required');
-    }
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school/$schoolId/students/csv',
-      queryParameters: {
-        'lang': lang,
-        'cohort': ?cohort,
-      },
-      data: FormData.fromMap({'file': multipart}),
-    );
-    return res.data ?? const {};
+    throw UnsupportedError('students endpoint removed (school_old.py)');
   }
 
   // --- Plans + billing (Settings page) ------------------------------
 
   Future<List<Map<String, dynamic>>> fetchPlans(int schoolId) async {
-    final res = await _dio.get<List<dynamic>>(
-      '/api/v1/school/$schoolId/plans',
-    );
-    return (res.data ?? const []).cast<Map<String, dynamic>>();
+    return const [];
   }
 
   Future<Map<String, dynamic>> upsertPlan({
@@ -466,36 +877,14 @@ class DashboardApi {
     bool featured = false,
     required List<Map<String, dynamic>> features,
   }) async {
-    final body = {
-      'tier': tier,
-      'price_cents': priceCents,
-      'cadence': cadence,
-      'blurb': ?blurb,
-      'featured': featured,
-      'features': features,
-    };
-    final res = planId == null
-        ? await _dio.post<Map<String, dynamic>>(
-            '/api/v1/school/$schoolId/plans',
-            data: body,
-          )
-        : await _dio.put<Map<String, dynamic>>(
-            '/api/v1/school/$schoolId/plans/$planId',
-            data: body,
-          );
-    return res.data ?? const {};
+    throw UnsupportedError('plans endpoint removed (school_old.py)');
   }
 
   Future<void> deletePlan({required int schoolId, required int planId}) async {
-    await _dio.delete<dynamic>('/api/v1/school/$schoolId/plans/$planId');
+    throw UnsupportedError('plans endpoint removed (school_old.py)');
   }
 
   Future<Map<String, dynamic>?> fetchBilling(int schoolId) async {
-    final res = await _dio.get<dynamic>(
-      '/api/v1/school/$schoolId/billing',
-    );
-    final data = res.data;
-    if (data is Map) return data.cast<String, dynamic>();
     return null;
   }
 
@@ -506,19 +895,11 @@ class DashboardApi {
     required int expMonth,
     required int expYear,
   }) async {
-    await _dio.put<dynamic>(
-      '/api/v1/school/$schoolId/billing',
-      data: {
-        'brand': brand,
-        'last4': last4,
-        'exp_month': expMonth,
-        'exp_year': expYear,
-      },
-    );
+    throw UnsupportedError('billing endpoint removed (school_old.py)');
   }
 
   Future<void> deleteSchool(int schoolId) async {
-    await _dio.delete<dynamic>('/api/v1/school/$schoolId');
+    throw UnsupportedError('school delete endpoint removed (school_old.py)');
   }
 
   // --- Password reset ----------------------------------------------
@@ -532,27 +913,14 @@ class DashboardApi {
     required String email,
     String? schoolSlug,
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school_users/forgot_password',
-      data: {
-        'email': email,
-        'school_slug': ?schoolSlug,
-      },
-    );
-    return (res.data?['token'] as String?);
+    throw UnsupportedError('school_users API removed');
   }
 
   Future<void> resetPassword({
     required String token,
     required String newPassword,
   }) async {
-    await _dio.post<dynamic>(
-      '/api/v1/school_users/reset_password',
-      data: {
-        'token': token,
-        'new_password': newPassword,
-      },
-    );
+    throw UnsupportedError('school_users API removed');
   }
 
   /// Create a brand-new school + seed its owner in one shot, then log
@@ -569,19 +937,7 @@ class DashboardApi {
     required String ownerEmail,
     required String ownerPassword,
   }) async {
-    await _dio.post<Map<String, dynamic>>(
-      '/api/v1/school/',
-      data: {
-        'slug': slug,
-        'name': name,
-        'plan': plan,
-        'is_public': isPublic,
-        'owner_name': ownerName,
-        'owner_email': ownerEmail,
-        'owner_password': ownerPassword,
-      },
-    );
-    return login(email: ownerEmail, password: ownerPassword);
+    throw UnsupportedError('school create endpoint removed (school_old.py)');
   }
 }
 
@@ -688,14 +1044,12 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> signIn({
     required String email,
     required String password,
-    String? schoolSlug,
   }) async {
     state = const AuthSigningIn();
     try {
       final info = await ref.read(dashboardApiProvider).login(
             email: email,
             password: password,
-            schoolSlug: schoolSlug,
           );
       await _persist(info);
       _setAuthHeader(info.schoolUserId);
@@ -732,7 +1086,6 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Pass [connection] to skip Auth0's hosted picker and go straight
   /// to a specific identity provider (e.g. `google-oauth2`).
   Future<void> signInWithAuth0({
-    String? schoolSlug,
     String? connection,
   }) async {
     state = const AuthSigningIn();
@@ -745,7 +1098,6 @@ class AuthNotifier extends Notifier<AuthState> {
       }
       final info = await ref.read(dashboardApiProvider).loginWithAuth0(
             idToken: idToken,
-            schoolSlug: schoolSlug,
           );
       await _persist(info);
       _setAuthHeader(info.schoolUserId);
@@ -764,8 +1116,8 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Shortcut for [signInWithAuth0] that pins the connection to Google.
   /// The Auth0 dashboard must have google-oauth2 enabled for the SPA
   /// application.
-  Future<void> signInWithGoogle({String? schoolSlug}) =>
-      signInWithAuth0(schoolSlug: schoolSlug, connection: 'google-oauth2');
+  Future<void> signInWithGoogle() =>
+      signInWithAuth0(connection: 'google-oauth2');
 
   Future<void> signOut() async {
     try {
@@ -810,22 +1162,35 @@ final currentUserProvider = Provider<LoginInfo?>((ref) {
 // they short-circuit with empty data so widgets render their loading
 // state without an extra null branch.
 
-final schoolProvider = FutureProvider<SchoolInfo?>((ref) async {
+/// The signed-in user's roles + permissions + signed-terms state, from
+/// GET /api/v1/school/me. Nav visibility (shell.dart), route guards
+/// (main.dart), and the Courses terms gate all read this. Resolves to null
+/// when signed out; consumers fall back to role-based checks while it loads.
+final meProvider = FutureProvider<DashboardMe?>((ref) async {
   final me = ref.watch(currentUserProvider);
   if (me == null) return null;
-  return ref.read(dashboardApiProvider).fetchSchool(me.schoolId);
+  return ref.read(dashboardApiProvider).fetchMe();
+});
+
+final schoolProvider = FutureProvider<SchoolInfo?>((ref) async {
+  // School profile read moved to school_old.py (no longer mounted). Returning
+  // null keeps the Settings page on its "Sign in to edit profile." empty
+  // state instead of erroring; rewire when the profile endpoint returns.
+  return null;
 });
 
 final schoolStatsProvider = FutureProvider<SchoolStats>((ref) async {
-  final me = ref.watch(currentUserProvider);
-  if (me == null) return const SchoolStats();
-  return ref.read(dashboardApiProvider).fetchSchoolStats(me.schoolId);
+  // Stats disabled — the dashboard no longer calls
+  // /api/v1/school/<id>/stats. fetchSchoolStats() is left in place for when
+  // stats are reinstated; consumers fall back to the empty SchoolStats.
+  return const SchoolStats();
 });
 
 final activityProvider = FutureProvider<List<ActivityRowRemote>>((ref) async {
-  final me = ref.watch(currentUserProvider);
-  if (me == null) return const [];
-  return ref.read(dashboardApiProvider).fetchActivity(me.schoolId);
+  // Activity feed disabled — the dashboard no longer calls
+  // /api/v1/school/<id>/activity. fetchActivity() is left in place for when
+  // the feed is reinstated; the Overview panel falls back to its empty state.
+  return const [];
 });
 
 final languagesProvider = FutureProvider<List<LanguageSummary>>((ref) async {
@@ -937,22 +1302,10 @@ final billingProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   return ref.read(dashboardApiProvider).fetchBilling(me.schoolId);
 });
 
-/// Full nested detail for a single course — modules + lessons +
-/// per-lesson exercise counts. Keyed by course id; reuses the
-/// current user's schoolId scope.
-final courseDetailProvider =
-    FutureProvider.family<EditorCourseDetail?, int>((ref, courseId) async {
+/// Single course for the detail/edit page. Keyed by course id.
+final courseHeadProvider =
+    FutureProvider.family<EditorCourse?, int>((ref, courseId) async {
   final me = ref.watch(currentUserProvider);
   if (me == null) return null;
-  return ref.read(dashboardApiProvider).fetchCourseDetail(
-        courseId: courseId,
-        schoolId: me.schoolId,
-      );
-});
-
-/// Lesson + exercises for the per-lesson editor dialog. Keyed by
-/// lesson id; reuses the standard FutureProvider error handling.
-final lessonDetailProvider =
-    FutureProvider.family<LessonDetailRemote, int>((ref, lessonId) async {
-  return ref.read(dashboardApiProvider).fetchLessonDetail(lessonId);
+  return ref.read(dashboardApiProvider).fetchCourseById(courseId);
 });

@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models.user_data import Results
+from utils.auth_deps import current_user_id
 from utils.db import run_query
 router = APIRouter()
 
@@ -15,11 +16,18 @@ def calculate_score(correct_ratio: float, incorrect_count: float, attempts: int)
     else:
         if correct_ratio == 0:
             return -1.0
-        return max(-1.0, (correct_ratio + 0.2 * incorrect_count)*-1)
+        # Partial credit — only reachable for multi-select ("recognize"),
+        # where some-but-not-all sentence words were found. Positive for
+        # the words identified, penalised by wrong picks. Keep in lockstep
+        # with app/lib/score.dart::calculateScore.
+        return max(-1.0, min(1.0, correct_ratio - 0.2 * incorrect_count))
 
 
 @router.post("/")
-async def save_results(results: Results):
+async def save_results(results: Results, user_id: int = Depends(current_user_id)):
+    if user_id <=0:
+        return {"error": "Unauthorized"}
+    results.user_id = user_id
     score = calculate_score(
         results.correct_ratio or 0.0,
         results.incorrect_count or 0.0,

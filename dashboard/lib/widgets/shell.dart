@@ -4,37 +4,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/dashboard_api.dart';
-import '../api/models.dart';
 import '../data/mock.dart';
 import '../theme.dart';
 import 'common.dart';
 
 /// One entry in the sidebar nav. `adminOnly` items are hidden from
 /// non-admin sessions (mirrors the route-level guard in main.dart so
-/// the sidebar matches what the user can actually open).
+/// the sidebar matches what the user can actually open). `permission`,
+/// when set, names a key in the server-computed `meProvider.permissions`
+/// map that must be granted for the item to show — the role-based
+/// `adminOnly` check is the fallback while permissions are still loading.
 class NavItem {
   final String label;
   final IconData icon;
   final String route;
   final bool adminOnly;
+  final String? permission;
   const NavItem({
     required this.label,
     required this.icon,
     required this.route,
     this.adminOnly = false,
+    this.permission,
   });
 }
 
 const List<NavItem> kNavItems = [
-  NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/'),
+  // Course list + workspace (chat + Words/Lessons/Edit Course/Preview
+  // tabs) — the default landing page. Flutter port of
+  // plan/design_experiments/create_with_ai_poc. See TASKS.md.
+  NavItem(
+      label: 'Courses',
+      icon: Icons.menu_book_outlined,
+      route: '/ai-courses'),
+  // Paste a movie/show's .srt file and build a course from its dialogue —
+  // see MVP.md's "build on movie subtitles" phase.
+  NavItem(
+      label: 'Video Courses',
+      icon: Icons.subtitles_outlined,
+      route: '/create-from-subtitles'),
+  NavItem(label: 'Overview', icon: Icons.home_outlined, route: '/overview'),
   NavItem(label: 'Languages', icon: Icons.language, route: '/languages'),
-  NavItem(label: 'Courses', icon: Icons.menu_book_outlined, route: '/courses'),
+  // Temporarily hidden while the dashboard nav is being reorganised — the
+  // pages/routes still exist (/courses, /create-course,
+  // /create-course-steps), they're just off the menu for now.
   NavItem(label: 'Editors', icon: Icons.edit_outlined, route: '/editors',
-      adminOnly: true),
+      adminOnly: true, permission: 'editors'),
   NavItem(label: 'Students', icon: Icons.people_outline, route: '/students'),
   NavItem(label: 'Settings', icon: Icons.tune, route: '/settings',
-      adminOnly: true),
+      adminOnly: true, permission: 'settings'),
 ];
+
+/// Whether [item] should appear for the current session. Prefers the
+/// server-computed permission map ([me]); falls back to the role-based
+/// `adminOnly` check while `me` is still loading (or absent) so the nav
+/// never flickers or hides everything mid-fetch.
+bool navItemVisible(NavItem item, {DashboardMe? me, required bool isAdmin}) {
+  if (me != null && item.permission != null) {
+    return me.can(item.permission!);
+  }
+  return !item.adminOnly || isAdmin;
+}
 
 /// The full dashboard chrome: gradient background, sticky sidebar, topbar,
 /// and a scrolling content area. Pages slot their content via [child].
@@ -52,6 +82,10 @@ class DashboardShell extends StatelessWidget {
   /// to the right of the streak chip.
   final List<Widget> topbarTrailing;
 
+  /// Whether to fall back to the streak chip + search icon when
+  /// [topbarTrailing] is empty. Set false to hide them entirely.
+  final bool showTopbarDefaults;
+
   /// Page body.
   final Widget child;
 
@@ -62,6 +96,7 @@ class DashboardShell extends StatelessWidget {
     required this.child,
     this.overline,
     this.topbarTrailing = const [],
+    this.showTopbarDefaults = true,
   });
 
   @override
@@ -81,6 +116,7 @@ class DashboardShell extends StatelessWidget {
                     title: title,
                     overline: overline,
                     trailing: topbarTrailing,
+                    showDefaults: showTopbarDefaults,
                   ),
                   Expanded(
                     child: SingleChildScrollView(
@@ -109,11 +145,13 @@ class _Sidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(currentUserProvider);
     final isAdmin = me?.isAdmin ?? false;
-    // Hide admin-only items from non-admin sessions so the sidebar
-    // matches what /editors and /settings actually let them open.
+    // Drive nav visibility off the server-computed permission map when it's
+    // loaded; fall back to the role-based adminOnly check while it's in
+    // flight so the sidebar matches what each page actually lets them open.
+    final perms = ref.watch(meProvider).value;
     final items = [
       for (final i in kNavItems)
-        if (!i.adminOnly || isAdmin) i,
+        if (navItemVisible(i, me: perms, isAdmin: isAdmin)) i,
     ];
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
@@ -160,14 +198,18 @@ class _SchoolBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Read from the live school first; fall back to LoginInfo's name
-    // while the GET /school/{id} is in flight, and to mock data on
-    // signed-out designs/tests.
-    final SchoolInfo? live = ref.watch(schoolProvider).value;
+    // Branding rides on the /me payload (meProvider); fall back to
+    // LoginInfo's name while it's in flight, and to mock data on
+    // signed-out designs/tests. No separate GET /school/{id} call.
+    final perms = ref.watch(meProvider).value;
     final me = ref.watch(currentUserProvider);
-    final String mark = live?.mark ?? _initialsFrom(me?.schoolName ?? MockData.school.name);
-    final String name = live?.name ?? me?.schoolName ?? MockData.school.name;
-    final String plan = '${live?.plan ?? MockData.school.plan} plan';
+    final String name = (perms?.schoolName.isNotEmpty ?? false)
+        ? perms!.schoolName
+        : (me?.schoolName ?? MockData.school.name);
+    final String mark = _initialsFrom(name);
+    final String plan = (perms?.schoolType.isNotEmpty ?? false)
+        ? '${perms!.schoolType} school'
+        : '${MockData.school.plan} plan';
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -338,19 +380,23 @@ class _Topbar extends ConsumerWidget {
   final String title;
   final String? overline;
   final List<Widget> trailing;
+  final bool showDefaults;
   const _Topbar({
     required this.title,
     required this.overline,
     required this.trailing,
+    required this.showDefaults,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final school = ref.watch(schoolProvider).value;
+    final perms = ref.watch(meProvider).value;
     final me = ref.watch(currentUserProvider);
-    final streakDays = school?.streakDays ?? MockData.school.streakDays;
+    // Streak isn't on the /me payload; keep the mock-backed fallback the
+    // topbar already used when the school read hadn't resolved.
+    final streakDays = MockData.school.streakDays;
     final effectiveOverline =
-        overline ?? school?.name ?? me?.schoolName ?? MockData.school.name;
+        overline ?? perms?.schoolName ?? me?.schoolName ?? MockData.school.name;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -387,7 +433,7 @@ class _Topbar extends ConsumerWidget {
                 w,
                 const SizedBox(width: 10),
               ],
-              if (trailing.isEmpty) ...[
+              if (trailing.isEmpty && showDefaults) ...[
                 StreakChip(days: streakDays),
                 const SizedBox(width: 10),
                 const DashIconButton(icon: Icons.search, tooltip: 'Search'),

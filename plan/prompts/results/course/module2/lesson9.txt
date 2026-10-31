@@ -1,0 +1,107 @@
+---
+title: Lesson 9 - The Particle も (mo) — Also / Too
+weight: 9
+---
+type: explanation
+も (mo) replaces は or が to mean "also" or "too". Example: わたしもコーヒーをのみます — "I also drink coffee". It adds the new topic alongside something already mentioned.
+---
+type: single_selection
+text: わたしもコーヒーをのみます
+romanji: Watashi mo kōhī wo nomimasu
+option: I also drink coffee
+correct: true
+option: I drink coffee too much
+option: I only drink coffee
+option: I don't drink coffee either
+---
+type: single_selection
+text: サラもがくせいです
+romanji: Sara mo gakusei desu
+option: Sara is also a student
+correct: true
+option: Sara is a student only
+option: Sara is not a student either
+option: Sara is the only student
+---
+type: single_selection
+text: ねこもみずをのみます
+romanji: Neko mo mizu wo nomimasu
+option: The cat also drinks water
+correct: true
+option: The cat only drinks water
+option: The cat doesn't drink water either
+option: The cat drinks too much water
+---
+type: identify_words
+text: ジョージもワタナベさんもせんせいです
+romanji: Jōji mo Watanabe-san mo sensei desu
+option: も
+correct: true
+option: です
+correct: true
+option: ジョージ
+correct: true
+option: ワタナベ
+correct: true
+option: は
+---
+type: single_selection
+text: ジョージもワタナベさんもせんせいです
+romanji: Jōji mo Watanabe-san mo sensei desu
+option: Both George and Watanabe are teachers
+correct: true
+option: George or Watanabe is a teacher
+option: George and Watanabe are students
+option: George is also Watanabe's teacher
+---
+type: single_selection
+text: わたしもいえであさにコーヒーをのみます
+romanji: Watashi mo ie de asa ni kōhī wo nomimasu
+option: I also drink coffee at home in the morning
+correct: true
+option: I drink coffee at home every morning
+option: I only drink coffee at home in the morning
+option: I make coffee at home in the morning too
+---
+type: multiple_choice
+text: も (mo)
+romanji: mo
+option: means "also" or "too"
+correct: true
+option: replaces は in the sentence
+correct: true
+option: can be used with multiple nouns: AもBも means "both A and B"
+correct: true
+option: marks the object of the action
+---
+type: single_selection
+text: サラのねこもジョージのねこもかわいい
+romanji: Sara no neko mo Jōji no neko mo kawaii
+option: Both Sara's cat and George's cat are cute
+correct: true
+option: Sara's cat or George's cat is cute
+option: Sara's cat and George's cat are also cute
+option: Both Sara's and George's cats are not cute
+---
+type: single_selection
+text: わたしもがっこうでにほんごをべんきょうします
+romanji: Watashi mo gakkō de nihongo wo benkyō shimasu
+option: I also study Japanese at school
+correct: true
+option: I study Japanese at school only
+option: I like Japanese at school too
+option: I also teach Japanese at school
+---
+type: identify_words
+text: ねこもいぬもみずをのみます
+romanji: Neko mo inu mo mizu wo nomimasu
+option: も
+correct: true
+option: を
+correct: true
+option: ねこ
+correct: true
+option: いぬ
+correct: true
+option: は
+option: の

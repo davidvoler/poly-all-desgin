@@ -1,0 +1,68 @@
+---
+type: course
+title: Spanish for Beginners
+description: This is an example course to demonstrate the structure of a course YAML file.
+lang: es
+to_lang: en
+level: beginner
+access: private
+---
+type: module
+title: Greeting words
+description: Basic greeting words in Spanish.
+weight: 1
+
+---
+type: lesson
+title: Lesson 1 -  Getting Started
+weight: 1
+words:
+  - Hola
+  - Adiós
+  - Gracias
+  - Por favor
+  - Sí
+  - No
+---
+type: exercise 
+exercise_type: single_choice
+sentence: Cuál es tu nombre?
+options:
+- text: What is your name?
+  correct: true
+- text: What is your age?
+- text: Where do you live?
+- text: What is your phone number? 
+hint: Nombre is name in Spanish.
+weight: 1
+---
+exercise_type: description
+description: Some description text here. This type of exercise does not require a correct answer, but rather provides information or context for the learner.
+---
+exercise_type: multiple_choice
+sentence: ¿Cuál de las siguientes opciones son frutas?
+options:
+- text: Manzana
+  correct: true
+- text: Plátano
+  correct: true
+- text: Zanahoria
+- text: Lechuga
+---
+type: exercise
+exercise_type: annotated_sentence
+sentence: La casa es grande.
+annotations:
+  - word: casa
+    annotation: house 
+description: La case = the house - Casa is feminine in Spanish. 
+---
+type: exercise
+exercise_type: words_in_sentence
+sentence: El perro corre rápido.
+correct_options:
+- corre
+- perro
+incorrect_options:
+- gato
+- lento

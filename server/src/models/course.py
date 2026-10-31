@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+import json
+
+from pydantic import BaseModel, field_validator
 from datetime import datetime as DateTime
 
 class UserCourseProgress(BaseModel):
@@ -14,6 +16,10 @@ class Lesson(BaseModel):
     description: str | None = ''
     words: list[str] | None = []
     completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
+    current: int | None = 0
 
 class Module(BaseModel):
     module_id: int 
@@ -21,20 +27,42 @@ class Module(BaseModel):
     description: str | None = ''
     words: list[str] | None = []
     completed: int | None = 0
+    max_score: float | None = 0.0
+    sum_score: float | None = 0.0
+    num_attempts: int | None = 0
+    current: int | None = 0
+
 
 class Course(BaseModel):
-    course_id: int 
+    course_id: int
     title: str| None = ''
     description: str | None = ''
     lang: str
-    to_lang: str 
+    to_lang: str
     tags : list[str] | None = []
+    # Course-level display metadata describing the reading / sentence-alt
+    # variants the course offers (name + icon + tooltip per variant). See the
+    # `metadata` column comment in DDL/update.sql. Empty when unset.
+    metadata: dict | None = {}
     lesson_count: int | None = 0
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def _coerce_metadata(cls, v):
+        if v is None:
+            return {}
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except (ValueError, TypeError):
+                return {}
+        return v if isinstance(v, dict) else {}
     user_lessons_done: int | None = 0
     avg_score: float | None = 0.0
     progress: int | None = 0
-    current_module: int | None = 1
-    current_lesson: int | None = 1
+    current_module: int | None = None
+    current_lesson: int | None = None
+    is_current_course: bool = False
 
 
 
@@ -49,6 +77,48 @@ class Exercise(BaseModel):
     word3: str | None = ''
     sentence_id: int |  None = None
     to_sentence_id: int | None = None
+    # Alternative renderings of `sentence`. Meaning is a per-language content
+    # convention — Japanese: alt1=hiragana, alt2=romaji, alt3=katakana;
+    # Arabic: alt1=diacritized, alt2=transliteration. Powers the quiz's
+    # "text alternative" toggle; already populated by the upload pipeline.
+    sentence_alt1: str | None = None
+    sentence_alt2: str | None = None
+    sentence_alt3: str | None = None
+    # Per-token furigana keyed by reading system ('hiragana' | 'katakana' |
+    # 'romanji'): {"hiragana": [{"text": "通り", "ruby": "とおり"}, ...], ...}.
+    ruby_text: dict | None = {}
+    # Per-word translations for the sentence's key words:
+    # [{"word": "通り", "translation": "רְחוֹב"}, ...].
+    annotations: list | None = []
+
+    # The jsonb columns are inconsistent across the historical upload runs:
+    # `annotations` is sometimes a proper array, sometimes a double-encoded
+    # JSON string ("[]" / "[{...}]"), sometimes null; `ruby_text` is an object
+    # or null. Coerce both to their canonical shape so the client always sees
+    # a list / dict and a malformed cell can never 500 the whole lesson.
+    @field_validator("annotations", mode="before")
+    @classmethod
+    def _coerce_annotations(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except (ValueError, TypeError):
+                return []
+        return v if isinstance(v, list) else []
+
+    @field_validator("ruby_text", mode="before")
+    @classmethod
+    def _coerce_ruby_text(cls, v):
+        if v is None:
+            return {}
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except (ValueError, TypeError):
+                return {}
+        return v if isinstance(v, dict) else {}
 
 
 class Word(BaseModel):
@@ -58,13 +128,15 @@ class Word(BaseModel):
 
 
 class SelectedWords(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str
     words: list[str] = []
 
 
 class LessonCompleted(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str| None = ''
     course_id: int = 0
     module_id: int = 0
@@ -77,7 +149,8 @@ class LessonCompleted(BaseModel):
 
 
 class PracticeCompleted(BaseModel):
-    user_id: int
+    # Optional on request — the server fills it from the auth cookie.
+    user_id: int | None = None
     lang: str| None = ''
     course_id: int = 0
     score: float = 0.0

@@ -1,0 +1,93 @@
+---
+title: Lesson 3 - Yes and No
+weight: 3
+---
+type: single_selection
+text: はい
+romanji: Hai
+option: Yes
+correct: true
+option: No
+option: Maybe
+option: Please
+---
+type: single_selection
+text: いいえ
+romanji: Iie
+option: No
+correct: true
+option: Yes
+option: Thank you
+option: Sorry
+---
+type: single_selection
+text: はい、ありがとう
+romanji: Hai, arigatō
+option: Yes, thank you
+correct: true
+option: No, thank you
+option: Yes, good morning
+option: Yes, goodbye
+---
+type: single_selection
+text: いいえ、ありがとう
+romanji: Iie, arigatō
+option: No, thank you
+correct: true
+option: Yes, thank you
+option: No, goodbye
+option: No, good morning
+---
+type: explanation
+か (ka) added to the end of a sentence turns it into a question — like a spoken question mark.
+---
+type: single_selection
+text: コーヒーはありがとうございますか
+romanji: Kōhī wa arigatō gozaimasu ka
+option: Would you like coffee?
+correct: true
+option: Thank you for the coffee
+option: Is the coffee good?
+option: Coffee, please
+---
+type: single_selection
+text: はい、コーヒーはありがとうございます
+romanji: Hai, kōhī wa arigatō gozaimasu
+option: Yes, thank you for the coffee
+correct: true
+option: No, thank you for the coffee
+option: Yes, good morning, coffee
+option: Yes, I like coffee
+---
+type: multiple_choice
+text: はい
+romanji: Hai
+option: yes
+correct: true
+option: that's right
+correct: true
+option: no
+option: maybe
+---
+type: identify_words
+text: はい、コーヒーはありがとうございます
+romanji: Hai, kōhī wa arigatō gozaimasu
+option: はい
+correct: true
+option: コーヒー
+correct: true
+option: は
+correct: true
+option: ありがとうございます
+correct: true
+option: いいえ
+option: おはよう
+---
+type: single_selection
+text: いいえ、おはようございます
+romanji: Iie, ohayō gozaimasu
+option: No, good morning
+correct: true
+option: Yes, good morning
+option: No, thank you
+option: No, goodbye

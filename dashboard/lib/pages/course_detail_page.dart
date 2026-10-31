@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/dashboard_api.dart';
 import '../api/models.dart';
 import '../theme.dart';
+import '../util/download.dart';
 import '../widgets/common.dart';
-import '../widgets/lesson_editor_dialog.dart';
 import '../widgets/shell.dart';
 
-/// Drill-in view for a single course — modules collapse/expand to
-/// reveal their lessons, each lesson shows its exercise count. Currently
-/// read-only; an editor pass will let the user rename modules/lessons
-/// and reorder them inline.
+/// Drill-in view for a single course. Course editing was simplified
+/// server-side to title/description/publish-unpublish only (see
+/// server/EDITOR.md "option 2") — this is a flat metadata form, not a
+/// module/lesson tree (there's no server endpoint left to back one).
 class CourseDetailPage extends ConsumerWidget {
   const CourseDetailPage({super.key});
 
@@ -19,10 +19,10 @@ class CourseDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final arg = ModalRoute.of(context)?.settings.arguments;
     final courseId = arg is int ? arg : 0;
-    final async = ref.watch(courseDetailProvider(courseId));
+    final headAsync = ref.watch(courseHeadProvider(courseId));
     return DashboardShell(
-      title: async.value?.title.isNotEmpty == true
-          ? async.value!.title
+      title: headAsync.value?.title.isNotEmpty == true
+          ? headAsync.value!.title
           : 'Course',
       activeRoute: '/courses',
       topbarTrailing: [
@@ -32,7 +32,7 @@ class CourseDetailPage extends ConsumerWidget {
           onTap: () => Navigator.pushReplacementNamed(context, '/courses'),
         ),
       ],
-      child: async.when(
+      child: headAsync.when(
         loading: () => const Padding(
           padding: EdgeInsets.symmetric(vertical: 48),
           child: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -47,8 +47,8 @@ class CourseDetailPage extends ConsumerWidget {
             ),
           ),
         ),
-        data: (detail) {
-          if (detail == null) {
+        data: (course) {
+          if (course == null) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 48),
               child: Center(
@@ -59,84 +59,163 @@ class CourseDetailPage extends ConsumerWidget {
               ),
             );
           }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _CourseHeader(detail: detail),
-              const SizedBox(height: 22),
-              const HeadRow(label: 'Modules'),
-              if (detail.modules.isEmpty)
-                _empty()
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final m in detail.modules) ...[
-                      _ModuleCard(module: m),
-                      const SizedBox(height: 10),
-                    ],
-                  ],
-                ),
-            ],
-          );
+          return _CourseEditForm(course: course);
         },
-      ),
-    );
-  }
-
-  Widget _empty() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 28),
-      alignment: Alignment.center,
-      child: Text(
-        'No modules yet — re-upload a course archive to populate this.',
-        style: TextStyle(fontSize: 12, color: DashColors.w(0.55)),
       ),
     );
   }
 }
 
-class _CourseHeader extends StatelessWidget {
-  final EditorCourseDetail detail;
-  const _CourseHeader({required this.detail});
+class _CourseEditForm extends ConsumerStatefulWidget {
+  final EditorCourse course;
+  const _CourseEditForm({required this.course});
 
-  StatusPill _statusPill() {
-    switch (detail.status) {
-      case CourseStatusWire.draft:
-        return const StatusPill(
-            label: 'Draft', kind: PillKind.muted, swatch: true);
-      case CourseStatusWire.review:
-        return const StatusPill(
-            label: 'In review', kind: PillKind.draft, swatch: true);
-      case CourseStatusWire.published:
-        return const StatusPill(
-            label: 'Published', kind: PillKind.active, swatch: true);
-      case CourseStatusWire.archived:
-        return const StatusPill(
-            label: 'Archived', kind: PillKind.error, swatch: true);
-      case CourseStatusWire.unknown:
-        return const StatusPill(
-            label: 'Unknown', kind: PillKind.muted, swatch: true);
+  @override
+  ConsumerState<_CourseEditForm> createState() => _CourseEditFormState();
+}
+
+class _CourseEditFormState extends ConsumerState<_CourseEditForm> {
+  late final _title = TextEditingController(text: widget.course.title);
+  late final _description =
+      TextEditingController(text: widget.course.description);
+  late bool _published = widget.course.published;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+    try {
+      await ref.read(dashboardApiProvider).updateCourse(
+            widget.course.copyWith(
+              title: _title.text.trim(),
+              description: _description.text.trim(),
+              published: _published,
+            ),
+          );
+      ref.invalidate(courseHeadProvider(widget.course.courseId));
+      ref.invalidate(editorCoursesProvider);
+      messenger.showSnackBar(const SnackBar(content: Text('Saved')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: SelectableText('Could not save: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
-  StatusPill _accessPill() {
-    switch (detail.access) {
-      case CourseAccessWire.public:
-        return const StatusPill(
-            label: 'Public', kind: PillKind.public, leading: Icons.public);
-      case CourseAccessWire.members:
-        return const StatusPill(
-            label: 'Members',
-            kind: PillKind.members,
-            leading: Icons.lock_outline);
-      case CourseAccessWire.unknown:
-        return const StatusPill(label: '—', kind: PillKind.muted);
+  Future<void> _export() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(
+      content: Text('Exporting ${widget.course.title}…'),
+      duration: const Duration(seconds: 30),
+    ));
+    try {
+      final bytes = await ref
+          .read(dashboardApiProvider)
+          .exportCourse(widget.course.courseId);
+      final filename = 'course_${widget.course.courseId}.yaml';
+      final saved = await saveBytes(filename: filename, bytes: bytes);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content:
+              Text(saved == null ? 'Export cancelled' : 'Saved $filename'),
+        ));
+    } catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: DashColors.darkBg,
+        title:
+            const Text('Delete course?', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'This permanently deletes "${widget.course.title}". '
+          'This cannot be undone.',
+          style: TextStyle(color: DashColors.w(0.70)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Delete', style: TextStyle(color: DashColors.red400)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await ref
+          .read(dashboardApiProvider)
+          .deleteCourse(widget.course.courseId);
+      ref.invalidate(editorCoursesProvider);
+      navigator.pushReplacementNamed('/courses');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: SelectableText('Could not delete: $e')));
+    }
+  }
+
+  StatusPill _publishedPill(bool published) => published
+      ? const StatusPill(
+          label: 'Published', kind: PillKind.active, swatch: true)
+      : const StatusPill(label: 'Draft', kind: PillKind.muted, swatch: true);
+
+  Widget _field(String label, TextEditingController controller,
+      {int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: DashText.sectionLabel(size: 10)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 13, color: Colors.white),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: DashColors.w(0.04),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide: BorderSide(color: DashColors.w(0.14)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: DashRadii.input,
+              borderSide:
+                  BorderSide(color: DashColors.brand.withValues(alpha: 0.55)),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final course = widget.course;
     return GlassCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -146,34 +225,54 @@ class _CourseHeader extends StatelessWidget {
             spacing: 10,
             runSpacing: 8,
             children: [
-              _statusPill(),
-              _accessPill(),
-              _Counter(label: 'Modules', value: '${detail.moduleCount}'),
-              _Counter(label: 'Lessons', value: '${detail.lessonCount}'),
-              _Counter(label: 'Students', value: '${detail.studentCount}'),
+              _publishedPill(_published),
+              StatusPill(
+                label:
+                    '${course.lang.toUpperCase()} → ${course.toLang.toUpperCase()}',
+                kind: PillKind.neutral,
+              ),
             ],
           ),
+          const SizedBox(height: 18),
+          _field('TITLE', _title),
           const SizedBox(height: 14),
-          Text(
-            detail.title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: -0.22,
-            ),
+          _field('DESCRIPTION', _description, maxLines: 4),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Text('PUBLISHED', style: DashText.sectionLabel(size: 10)),
+              const Spacer(),
+              Switch(
+                value: _published,
+                onChanged: (v) => setState(() => _published = v),
+              ),
+            ],
           ),
-          if (detail.description.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              detail.description,
-              style: TextStyle(fontSize: 13, color: DashColors.w(0.70)),
-            ),
+          if (!course.meta.isEmpty) ...[
+            const SizedBox(height: 14),
+            _VariantMeta(meta: course.meta),
           ],
-          const SizedBox(height: 6),
-          Text(
-            '${detail.lang.toUpperCase()} → ${detail.toLang.toUpperCase()} · updated ${detail.updatedHuman}',
-            style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              PrimaryButton(
+                label: _saving ? 'Saving…' : 'Save',
+                leading: Icons.save_outlined,
+                onTap: _saving ? null : _save,
+              ),
+              const SizedBox(width: 10),
+              GhostButton(
+                label: 'Export',
+                leading: Icons.download,
+                onTap: _export,
+              ),
+              const Spacer(),
+              GhostButton(
+                label: 'Delete',
+                leading: Icons.delete_outline,
+                onTap: _delete,
+              ),
+            ],
           ),
         ],
       ),
@@ -181,15 +280,71 @@ class _CourseHeader extends StatelessWidget {
   }
 }
 
-class _Counter extends StatelessWidget {
-  final String label;
-  final String value;
-  const _Counter({required this.label, required this.value});
+/// Read-only display of the course's display metadata — the reading
+/// (`ruby_text`) and full-sentence (`sentence_alt`) variants it declares,
+/// each as a small chip with its icon + name. Surfaces what the quiz will
+/// offer learners for this course.
+class _VariantMeta extends StatelessWidget {
+  final CourseMeta meta;
+  const _VariantMeta({required this.meta});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (meta.rubyText.isNotEmpty) ...[
+          _label('READING VARIANTS'),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final d in meta.rubyText) _VariantChip(d: d)],
+          ),
+        ],
+        if (meta.sentenceAlt.isNotEmpty) ...[
+          if (meta.rubyText.isNotEmpty) const SizedBox(height: 12),
+          _label('SENTENCE ALTERNATIVES'),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final d in meta.sentenceAlt) _VariantChip(d: d)],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.1,
+          color: DashColors.w(0.45),
+        ),
+      );
+}
+
+class _VariantChip extends StatelessWidget {
+  final VariantDescriptor d;
+  const _VariantChip({required this.d});
+
+  // Minimal name→icon resolver for the icons the metadata uses; unknown
+  // names fall back to a neutral glyph.
+  static const _icons = <String, IconData>{
+    'translate': Icons.translate,
+    'abc': Icons.abc,
+    'format_size': Icons.format_size,
+    'spellcheck': Icons.spellcheck,
+    'subtitles': Icons.subtitles,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: DashColors.w(0.06),
         borderRadius: DashRadii.pill,
@@ -198,166 +353,22 @@ class _Counter extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(_icons[d.icon] ?? Icons.label_outline,
+              size: 13, color: DashColors.w(0.70)),
+          const SizedBox(width: 6),
           Text(
-            value,
+            d.name,
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.0,
-              color: DashColors.w(0.55),
-            ),
-          ),
         ],
       ),
     );
-  }
-}
-
-/// Collapsible module — header always visible, lessons revealed on tap.
-/// `ExpansionTile` would do the job, but a custom widget keeps the
-/// glass styling consistent with the rest of the dashboard.
-class _ModuleCard extends StatefulWidget {
-  final EditorModuleRemote module;
-  const _ModuleCard({required this.module});
-
-  @override
-  State<_ModuleCard> createState() => _ModuleCardState();
-}
-
-class _ModuleCardState extends State<_ModuleCard> {
-  bool _open = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final m = widget.module;
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: () => setState(() => _open = !_open),
-            borderRadius: DashRadii.card,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Row(
-                children: [
-                  Icon(
-                    _open ? Icons.expand_more : Icons.chevron_right,
-                    size: 18,
-                    color: DashColors.w(0.55),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          m.title.isNotEmpty
-                              ? m.title
-                              : 'Module ${m.moduleId}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        if (m.description.isNotEmpty)
-                          Text(
-                            m.description,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: DashColors.w(0.55),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${m.lessons.length} lessons',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: DashColors.w(0.55),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_open) ...[
-            Divider(color: DashColors.w(0.08), height: 1),
-            for (final l in m.lessons) _LessonRow(lesson: l),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _LessonRow extends StatelessWidget {
-  final EditorLessonRemote lesson;
-  const _LessonRow({required this.lesson});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => showDialog<void>(
-        context: context,
-        builder: (_) => LessonEditorDialog(lessonId: lesson.lessonId),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(40, 10, 16, 10),
-        child: Row(
-          children: [
-            Icon(Icons.menu_book_outlined,
-                size: 14, color: DashColors.w(0.55)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lesson.title.isNotEmpty
-                        ? lesson.title
-                        : 'Lesson ${lesson.lessonId}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (lesson.words.isNotEmpty)
-                    Text(
-                      lesson.words.take(6).join(' · '),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: DashColors.w(0.55),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            Text(
-              '${lesson.exerciseCount} ex.',
-              style: TextStyle(fontSize: 11, color: DashColors.w(0.55)),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.chevron_right,
-                size: 14, color: DashColors.w(0.35)),
-          ],
-        ),
-      ),
-    );
+    final tip = d.tooltip;
+    if (tip == null || tip.isEmpty) return chip;
+    return Tooltip(message: tip, child: chip);
   }
 }

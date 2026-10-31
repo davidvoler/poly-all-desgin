@@ -4,15 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api/dashboard_api.dart';
 import 'config/app_config.dart';
+import 'pages/ai_course_workspace_page.dart';
+import 'pages/ai_courses_page.dart';
 import 'pages/course_detail_page.dart';
 import 'pages/courses_page.dart';
+import 'pages/create_ai_course_page.dart';
+import 'pages/create_course_page.dart';
+import 'pages/create_course_steps_page.dart';
+import 'pages/create_from_subtitles_page.dart';
 import 'pages/create_school_page.dart';
+import 'pages/create_video_course_page.dart';
 import 'pages/editors_page.dart';
 import 'pages/languages_page.dart';
 import 'pages/login_page.dart';
 import 'pages/overview_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/students_page.dart';
+import 'pages/video_course_workspace_page.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -89,19 +97,68 @@ class DashboardApp extends StatelessWidget {
       // Auth gate routes between login and the dashboard. Once signed
       // in, named routes navigate inside the dashboard normally.
       home: const _AuthGate(),
+      // "/ai-course/<id>" — the course workspace with its id in the URL so a
+      // browser refresh / bookmark / shared link reopens the same course
+      // (route `arguments` don't survive a page reload on web).
+      onGenerateRoute: (settings) {
+        final name = settings.name ?? '';
+        if (name.startsWith('/ai-course/')) {
+          final courseId = int.tryParse(name.substring('/ai-course/'.length)) ?? 0;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => _Guarded(child: AiCourseWorkspacePage(courseId: courseId)),
+          );
+        }
+        if (name.startsWith('/video-course/')) {
+          final courseId = int.tryParse(name.substring('/video-course/'.length)) ?? 0;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => _Guarded(child: VideoCourseWorkspacePage(courseId: courseId)),
+          );
+        }
+        return null;
+      },
       routes: {
         // Onboarding wizard — intentionally NOT wrapped in _Guarded
         // since the whole point is to run before the user has any
         // school to sign into.
         '/create-school': (_) => const CreateSchoolPage(),
+        // Courses list + detail are open to every signed-in user; authoring
+        // is gated on the page (terms + role), not by hiding the section.
         '/courses': (_) => const _Guarded(child: CoursesPage()),
+        // Create with AI is always reachable for any signed-in user; the
+        // page gates content authoring behind the terms when unsigned.
+        '/create-course': (_) => const _Guarded(child: CreateCoursePage()),
+        '/create-course-steps': (_) =>
+            const _Guarded(child: CreateCourseStepsPage()),
+        '/create-from-subtitles': (_) =>
+            const _Guarded(child: CreateFromSubtitlesPage()),
+        '/ai-courses': (_) => const _Guarded(child: AiCoursesPage()),
+        '/ai-course-new': (_) => const _Guarded(child: CreateAiCoursePage()),
+        '/video-course-new': (_) => const _Guarded(child: CreateVideoCoursePage()),
+        '/overview': (_) => const _Guarded(child: OverviewPage()),
+        // NB: the id-bearing form "/ai-course/<id>" is handled in
+        // onGenerateRoute below so a browser refresh keeps working — this
+        // bare entry only covers the legacy `arguments: courseId` call.
+        '/ai-course': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final courseId = args is int ? args : 0;
+          return _Guarded(child: AiCourseWorkspacePage(courseId: courseId));
+        },
+        // Same legacy-arguments fallback as '/ai-course' above, for
+        // "/video-course/<id>" (onGenerateRoute handles the URL form).
+        '/video-course': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final courseId = args is int ? args : 0;
+          return _Guarded(child: VideoCourseWorkspacePage(courseId: courseId));
+        },
         '/course': (_) => const _Guarded(child: CourseDetailPage()),
         '/languages': (_) => const _Guarded(child: LanguagesPage()),
-        '/editors': (_) =>
-            const _Guarded(adminOnly: true, child: EditorsPage()),
+        '/editors': (_) => const _Guarded(
+            adminOnly: true, permission: 'editors', child: EditorsPage()),
         '/students': (_) => const _Guarded(child: StudentsPage()),
-        '/settings': (_) =>
-            const _Guarded(adminOnly: true, child: SettingsPage()),
+        '/settings': (_) => const _Guarded(
+            adminOnly: true, permission: 'settings', child: SettingsPage()),
       },
     );
   }
@@ -120,7 +177,7 @@ class _AuthGate extends ConsumerWidget {
     if (auth is AuthRestoring) {
       return Container(decoration: kDashBackground);
     }
-    if (auth is AuthSignedIn) return const OverviewPage();
+    if (auth is AuthSignedIn) return const AiCoursesPage();
     return const LoginPage();
   }
 }
@@ -134,12 +191,22 @@ class _AuthGate extends ConsumerWidget {
 class _Guarded extends ConsumerWidget {
   final Widget child;
   final bool adminOnly;
-  const _Guarded({required this.child, this.adminOnly = false});
+
+  /// Optional key in the server-computed permission map ([meProvider]).
+  /// When set and the map is loaded, access is decided by that flag;
+  /// while the map is still loading we fall back to the role-based
+  /// `adminOnly` check so a deep link doesn't bounce mid-fetch.
+  final String? permission;
+  const _Guarded({required this.child, this.adminOnly = false, this.permission});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     if (auth is! AuthSignedIn) return const LoginPage();
+    final perms = ref.watch(meProvider).value;
+    if (permission != null && perms != null) {
+      return perms.can(permission!) ? child : const _AdminOnlyDenied();
+    }
     if (adminOnly && !auth.info.isAdmin) {
       return const _AdminOnlyDenied();
     }

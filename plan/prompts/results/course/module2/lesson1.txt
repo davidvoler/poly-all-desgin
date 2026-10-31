@@ -1,0 +1,90 @@
+---
+title: Lesson 1 - The Letter あ (a)
+weight: 1
+---
+type: explanation
+あ is the first hiragana letter. It makes the sound "a" as in "father". You have already seen it in ありがとう (arigatō) and かわいい (kawaii).
+---
+type: single_selection
+text: あ
+romanji: a
+option: the letter "a"
+correct: true
+option: the letter "i"
+option: the letter "u"
+option: the letter "ka"
+---
+type: identify_words
+text: ありがとう
+romanji: Arigatō
+option: あ
+correct: true
+option: り
+option: か
+option: お
+correct: true
+---
+type: single_selection
+text: あ is the first sound in which word?
+romanji: (choose the word that starts with あ)
+option: ありがとう
+correct: true
+option: コーヒー
+option: 水
+option: 猫
+---
+type: single_selection
+text: ありがとう、ワタナベさん
+romanji: Arigatō, Watanabe-san
+option: Thank you, Watanabe
+correct: true
+option: Good morning, Watanabe
+option: Goodbye, Watanabe
+option: Sorry, Watanabe
+---
+type: single_selection
+text: ありがとう、サラ
+romanji: Arigatō, Sara
+option: Thank you, Sara
+correct: true
+option: Good morning, Sara
+option: Goodbye, Sara
+option: No, Sara
+---
+type: single_selection
+text: 水はありがとう
+romanji: Mizu wa arigatō
+option: Thank you for the water
+correct: true
+option: I want water
+option: No water please
+option: Good morning, water
+---
+type: identify_words
+text: ありがとうございます
+romanji: Arigatō gozaimasu
+option: あ
+correct: true
+option: り
+option: い
+option: お
+correct: true
+---
+type: multiple_choice
+text: あ
+romanji: a
+option: found in ありがとう
+correct: true
+option: found in おはよう
+option: found in 猫
+option: the first hiragana letter
+correct: true
+---
+type: single_selection
+text: おはよう、コーヒーはありがとう
+romanji: Ohayō, kōhī wa arigatō
+option: Good morning, and thanks for the coffee
+correct: true
+option: Good morning, do you want coffee?
+option: Thank you, good morning
+option: Good morning, goodbye

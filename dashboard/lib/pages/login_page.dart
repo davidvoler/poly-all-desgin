@@ -18,8 +18,8 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController(text: 'lena@riverside.edu');
-  final _password = TextEditingController();
+  final _email = TextEditingController(text: 'demo@local.dev');
+  final _password = TextEditingController(text: 'changeme');
   final _schoolSlug = TextEditingController();
   bool _showPassword = false;
 
@@ -36,24 +36,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref.read(authProvider.notifier).signIn(
           email: _email.text.trim(),
           password: _password.text,
-          schoolSlug: _schoolSlug.text.trim().isEmpty
-              ? null
-              : _schoolSlug.text.trim(),
         );
   }
 
-  Future<void> _submitAuth0() async {
-    final slug = _schoolSlug.text.trim();
-    await ref
-        .read(authProvider.notifier)
-        .signInWithAuth0(schoolSlug: slug.isEmpty ? null : slug);
-  }
-
   Future<void> _submitGoogle() async {
-    final slug = _schoolSlug.text.trim();
-    await ref
-        .read(authProvider.notifier)
-        .signInWithGoogle(schoolSlug: slug.isEmpty ? null : slug);
+    await ref.read(authProvider.notifier).signInWithGoogle();
   }
 
   @override
@@ -61,11 +48,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final auth = ref.watch(authProvider);
     final isLoading = auth is AuthSigningIn;
     final error = auth is AuthSignedOut ? auth.error : null;
-    // Render the password form when local auth is on (the default, and
-    // anything other than pure `AUTH_PROVIDER=auth0`). Render the Auth0
-    // button when Auth0 is configured. When both are on we show a small
-    // divider between them.
-    final showLocal = AppConfig.isLocalAuthEnabled;
+    // Password form is gated on IS_DEV — production admins sign in
+    // via Google only. Google CTA is always rendered when Auth0 is
+    // configured. When both are visible a small divider sits between
+    // them.
+    final showPasswordForm = AppConfig.isDev && AppConfig.isLocalAuthEnabled;
     final showAuth0 = AppConfig.isAuth0Enabled;
 
     return Scaffold(
@@ -109,7 +96,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            if (showLocal) ...[
+                            if (showPasswordForm) ...[
                               _LoginField(
                                 controller: _email,
                                 label: 'Email',
@@ -151,45 +138,37 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                               const SizedBox(height: 12),
                             ],
-                            _LoginField(
-                              controller: _schoolSlug,
-                              label: 'School slug (optional)',
-                              hint: 'riverside-academy',
-                              validator: (_) => null,
-                              onSubmitted: (_) => _submit(),
-                            ),
+                            // TODO: re-enable school slug later
+                            // _LoginField(
+                            //   controller: _schoolSlug,
+                            //   label: 'School slug (optional)',
+                            //   hint: 'riverside-academy',
+                            //   validator: (_) => null,
+                            //   onSubmitted: (_) => _submit(),
+                            // ),
                             if (error != null) ...[
                               const SizedBox(height: 14),
                               _ErrorBanner(message: error),
                             ],
                             const SizedBox(height: 18),
-                            if (showLocal)
+                            if (showPasswordForm)
                               _PrimaryCta(
                                 label: isLoading ? 'Signing in…' : 'Sign in',
                                 onTap: isLoading ? null : _submit,
                               ),
-                            if (showLocal && showAuth0) ...[
+                            if (showPasswordForm && showAuth0) ...[
                               const SizedBox(height: 14),
                               _OrDivider(),
                               const SizedBox(height: 14),
                             ],
-                            if (showAuth0) ...[
-                              if (!showLocal) const SizedBox(height: 0),
+                            if (showAuth0)
                               _GoogleCta(
                                 label: isLoading
                                     ? 'Opening Google…'
                                     : 'Sign in with Google',
                                 onTap: isLoading ? null : _submitGoogle,
                               ),
-                              const SizedBox(height: 10),
-                              _Auth0Cta(
-                                label: isLoading
-                                    ? 'Opening Auth0…'
-                                    : 'Sign in with Auth0',
-                                onTap: isLoading ? null : _submitAuth0,
-                              ),
-                            ],
-                            if (showLocal) ...[
+                            if (showPasswordForm) ...[
                               const SizedBox(height: 10),
                               Center(
                                 child: TextButton(
@@ -214,36 +193,37 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: InkWell(
-                        onTap: () => Navigator.of(context)
-                            .pushNamed('/create-school'),
-                        borderRadius: BorderRadius.circular(6),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 4),
-                          child: Text.rich(
-                            TextSpan(
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: DashColors.w(0.70),
-                              ),
-                              children: [
-                                const TextSpan(text: 'No school yet?  '),
-                                TextSpan(
-                                  text: 'Create one →',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    // TODO: re-enable create school later
+                    // const SizedBox(height: 16),
+                    // Center(
+                    //   child: InkWell(
+                    //     onTap: () => Navigator.of(context)
+                    //         .pushNamed('/create-school'),
+                    //     borderRadius: BorderRadius.circular(6),
+                    //     child: Padding(
+                    //       padding: const EdgeInsets.symmetric(
+                    //           horizontal: 6, vertical: 4),
+                    //       child: Text.rich(
+                    //         TextSpan(
+                    //           style: TextStyle(
+                    //             fontSize: 12,
+                    //             color: DashColors.w(0.70),
+                    //           ),
+                    //           children: [
+                    //             const TextSpan(text: 'No school yet?  '),
+                    //             TextSpan(
+                    //               text: 'Create one →',
+                    //               style: const TextStyle(
+                    //                 color: Colors.white,
+                    //                 fontWeight: FontWeight.w700,
+                    //               ),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -516,47 +496,6 @@ class _GoogleGlyph extends StatelessWidget {
   }
 }
 
-class _Auth0Cta extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const _Auth0Cta({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    return Material(
-      color: disabled ? DashColors.w(0.04) : DashColors.w(0.08),
-      shape: StadiumBorder(
-        side: BorderSide(color: DashColors.w(0.18)),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const StadiumBorder(),
-        child: Container(
-          height: 44,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.lock_outline, size: 16, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.22,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PrimaryCta extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
@@ -735,7 +674,7 @@ class _ForgotPasswordDialogState
         _ResetField(controller: _slug, label: 'School slug (optional)'),
         if (_error != null) ...[
           const SizedBox(height: 10),
-          Text(_error!,
+          SelectableText(_error!,
               style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
         const SizedBox(height: 16),
@@ -821,7 +760,7 @@ class _ForgotPasswordDialogState
         ),
         if (_error != null) ...[
           const SizedBox(height: 10),
-          Text(_error!,
+          SelectableText(_error!,
               style: TextStyle(fontSize: 12, color: DashColors.red400)),
         ],
         const SizedBox(height: 16),

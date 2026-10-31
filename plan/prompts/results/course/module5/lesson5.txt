@@ -1,0 +1,135 @@
+---
+title: Lesson 5 - New Word — よみます (read)
+weight: 5
+---
+type: explanation
+よみます (yomimasu) means "read". It follows the same pattern as たべます and のみます. The thing you read is marked with を.
+---
+type: single_selection
+text: よみます
+romanji: yomimasu
+option: read
+correct: true
+option: drink
+option: eat
+option: write
+---
+type: single_selection
+text: わたしはほんをよみます
+romanji: Watashi wa hon wo yomimasu
+option: I read a book
+correct: true
+option: I write a book
+option: I buy a book
+option: I like a book
+---
+type: single_selection
+text: サラはまいにちほんをよみます
+romanji: Sara wa mainichi hon wo yomimasu
+option: Sara reads a book every day
+correct: true
+option: Sara writes a book every day
+option: Sara buys a book every day
+option: Sara likes a book every day
+---
+type: sentence_structure
+text: ジョージはいえでよるにほんをよみます
+romanji: Jōji wa ie de yoru ni hon wo yomimasu
+word: ジョージ
+romanji: Jōji
+meaning: George
+pos: proper noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: で
+romanji: de
+meaning: at (location of action)
+pos: particle
+word: よる
+romanji: yoru
+meaning: evening / night
+pos: noun
+word: に
+romanji: ni
+meaning: at (time)
+pos: particle
+word: ほん
+romanji: hon
+meaning: book
+pos: noun
+word: を
+romanji: wo
+meaning: (object marker)
+pos: particle
+word: よみます
+romanji: yomimasu
+meaning: read
+pos: verb
+---
+type: single_selection
+text: ジョージはいえでよるにほんをよみます
+romanji: Jōji wa ie de yoru ni hon wo yomimasu
+option: George reads a book at home at night
+correct: true
+option: George writes a book at home at night
+option: George buys a book at home at night
+option: George likes a book at home at night
+---
+type: single_selection
+text: ワタナベさんはにほんごのほんをよみます
+romanji: Watanabe-san wa nihongo no hon wo yomimasu
+option: Watanabe reads a Japanese book
+correct: true
+option: Watanabe writes a Japanese book
+option: Watanabe buys a Japanese book
+option: Watanabe likes a Japanese book
+---
+type: multiple_choice
+text: よみます
+romanji: yomimasu
+option: read
+correct: true
+option: reads
+correct: true
+option: reading (present)
+correct: true
+option: write
+---
+type: single_selection
+text: サラはがっこうでにほんごのほんをよみますか
+romanji: Sara wa gakkō de nihongo no hon wo yomimasu ka
+option: Does Sara read a Japanese book at school?
+correct: true
+option: Sara reads a Japanese book at school
+option: Does Sara write a Japanese book at school?
+option: Does Sara buy a Japanese book at school?
+---
+type: single_selection
+text: はい、わたしもにほんごのほんをよみます
+romanji: Hai, watashi mo nihongo no hon wo yomimasu
+option: Yes, I also read a Japanese book
+correct: true
+option: No, I also read a Japanese book
+option: Yes, I also write a Japanese book
+option: Yes, I also buy a Japanese book
+---
+type: identify_words
+text: わたしはよるにいえでほんをよみます
+romanji: Watashi wa yoru ni ie de hon wo yomimasu
+option: は
+correct: true
+option: に
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: が
+option: の
+option: と

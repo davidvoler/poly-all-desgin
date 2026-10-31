@@ -1,0 +1,88 @@
+---
+title: Lesson 4 - Cat
+weight: 4
+---
+type: single_selection
+text: 猫
+romanji: Neko
+option: cat
+correct: true
+option: dog
+option: bird
+option: water
+---
+type: explanation
+は (wa) marks the topic of the sentence — the thing being talked about. 猫は means "as for the cat" or simply "the cat".
+---
+type: single_selection
+text: 猫はかわいい
+romanji: Neko wa kawaii
+option: The cat is cute
+correct: true
+option: The cat is sad
+option: I like cats
+option: The cat is a bird
+---
+type: single_selection
+text: 猫はいいえ
+romanji: Neko wa iie
+option: The cat says no
+correct: true
+option: The cat says yes
+option: No cat
+option: The cat is cute
+---
+type: single_selection
+text: おはよう、猫
+romanji: Ohayō, neko
+option: Good morning, cat
+correct: true
+option: Thank you, cat
+option: Goodbye, cat
+option: Good evening, cat
+---
+type: identify_words
+text: 猫はかわいい
+romanji: Neko wa kawaii
+option: 猫
+correct: true
+option: は
+correct: true
+option: かわいい
+correct: true
+option: コーヒー
+option: ありがとう
+---
+type: multiple_choice
+text: 猫
+romanji: Neko
+option: cat
+correct: true
+option: cats
+correct: true
+option: kitty
+correct: true
+option: dog
+---
+type: single_selection
+text: 猫はコーヒーはいいえ
+romanji: Neko wa kōhī wa iie
+option: The cat says no to coffee
+correct: true
+option: The cat likes coffee
+option: No cat, no coffee
+option: The cat wants coffee
+---
+type: identify_words
+text: 猫はコーヒーはいいえ
+romanji: Neko wa kōhī wa iie
+option: 猫
+correct: true
+option: は
+correct: true
+option: コーヒー
+correct: true
+option: いいえ
+correct: true
+option: はい
+option: かわいい

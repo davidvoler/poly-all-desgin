@@ -1,0 +1,126 @@
+---
+title: Lesson 7 - New Word — ともだち (friend)
+weight: 7
+---
+type: explanation
+ともだち (tomodachi) means "friend". It is a noun, so it works with all the particles we know: ともだちと (with a friend), ともだちのいえ (a friend's house), ともだちがいます (there is a friend).
+---
+type: single_selection
+text: ともだち
+romanji: tomodachi
+option: friend
+correct: true
+option: teacher
+option: student
+option: family
+---
+type: single_selection
+text: わたしはともだちとがっこうにいきます
+romanji: Watashi wa tomodachi to gakkō ni ikimasu
+option: I go to school with a friend
+correct: true
+option: I go to school like a friend
+option: My friend likes school
+option: I go to my friend's school
+---
+type: single_selection
+text: サラはジョージのともだちです
+romanji: Sara wa Jōji no tomodachi desu
+option: Sara is George's friend
+correct: true
+option: George is Sara's friend
+option: Sara and George are friends
+option: Sara likes George
+---
+type: sentence_structure
+text: わたしのともだちはいえにいます
+romanji: Watashi no tomodachi wa ie ni imasu
+word: わたし
+romanji: watashi
+meaning: I
+pos: pronoun
+word: の
+romanji: no
+meaning: 's (possession)
+pos: particle
+word: ともだち
+romanji: tomodachi
+meaning: friend
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: いえ
+romanji: ie
+meaning: home
+pos: noun
+word: に
+romanji: ni
+meaning: at (location of existence)
+pos: particle
+word: います
+romanji: imasu
+meaning: is there (living thing)
+pos: verb
+---
+type: single_selection
+text: わたしのともだちはいえにいます
+romanji: Watashi no tomodachi wa ie ni imasu
+option: My friend is at home
+correct: true
+option: My friend likes home
+option: My friend goes home
+option: My friend's home is here
+---
+type: single_selection
+text: ワタナベさんはともだちとてがみをかきます
+romanji: Watanabe-san wa tomodachi to tegami wo kakimasu
+option: Watanabe writes a letter with a friend
+correct: true
+option: Watanabe reads a letter with a friend
+option: Watanabe sends a letter to a friend
+option: Watanabe likes writing with a friend
+---
+type: multiple_choice
+text: ともだち
+romanji: tomodachi
+option: friend
+correct: true
+option: friends
+correct: true
+option: teacher
+option: student
+---
+type: single_selection
+text: ジョージはともだちのいえでコーヒーをのみます
+romanji: Jōji wa tomodachi no ie de kōhī wo nomimasu
+option: George drinks coffee at a friend's house
+correct: true
+option: George drinks coffee with a friend
+option: George makes coffee at a friend's house
+option: George likes coffee at a friend's house
+---
+type: single_selection
+text: サラのともだちはにほんごがすきですか
+romanji: Sara no tomodachi wa nihongo ga suki desu ka
+option: Does Sara's friend like Japanese?
+correct: true
+option: Sara's friend likes Japanese
+option: Does Sara like her friend's Japanese?
+option: Does Sara's friend study Japanese?
+---
+type: identify_words
+text: わたしはともだちとがっこうでにほんごをべんきょうします
+romanji: Watashi wa tomodachi to gakkō de nihongo wo benkyō shimasu
+option: は
+correct: true
+option: と
+correct: true
+option: で
+correct: true
+option: を
+correct: true
+option: が
+option: の
+option: も

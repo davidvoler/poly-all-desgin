@@ -1,262 +1,681 @@
-*** Initial Dashboard ***
-
-- [v] create a flutter app called dashboard this app should be used for both public school and school dashboards - difference in the settings 
-
-- [v] create the tables ddl from school in ./DDL in school schema  - schools, users, etc
-
-- [v] Create initial design of the dashboard in ./dasboard flutter app based on the design in ./design_experiments/school_dashboard
-
-- [v] implement the python server code in server/school all school related api should be in this folder 
-
-- [v] implement the python api for course editing - in server/editor - for simplicity we are editing now by importing and exporting a single compressed file
-- [v] implement the review of a course on both server and client side, We need to add to the course a status field (review, published )
-
-- [v] Add a login page to the dashboard.  
-
-- [v] Start implementing the dashboard with api to the server .  - write here tasks for any missing api end point
-   - [v] Overview → GET /api/v1/school/{id}/stats + GET /api/v1/school/{id}/activity
-   - [v] Languages → GET /api/v1/school/{id}/languages (added; per-language teach/native cards)
-   - [v] Courses → GET /api/v1/editor/courses/ + POST /api/v1/editor/review/{id}/status (status menu)
-   - [v] Editors → GET /api/v1/school_users/ + POST /api/v1/school_users/ (invite dialog)
-   - [v] Students → GET /api/v1/school/{id}/students (filterable by lang + status)
-   - [v] Settings → PUT /api/v1/school/{id} (editable profile)
-
-*** Follow-ups — known gaps ***
-
-- [v] Upload dropzone is visual only; wire it to POST /api/v1/editor/upload/ (multipart) + invalidate editorCoursesProvider on success
-- [v] Course row "Export" action — call GET /api/v1/editor/export/{id} and trigger a browser download
-- [v] Editors row actions (suspend / change role / delete) — server already supports PUT/DELETE on /api/v1/school_users/{id}; UI not wired yet
-- [v] "Add students" CTA on Students page — single-student enroll + CSV bulk upload both wired
-- [v] Settings: subscription plans, billing card, danger-zone deletion — DDL (`school.plans`, `school.plan_features`, `school.billing_methods`) + CRUD endpoints + UI all landed; danger-zone confirms by typing the school name then signs out
-- [v] Activity feed only captures course status transitions today; expand `school.activity_log` writes from the upload, invite, and enrollment endpoints so the Overview panel reflects more
-
-*** Still open ***
-
-- [v] CSV bulk-enrol endpoint + Students-page CSV upload UI (POST /api/v1/school/{id}/students/csv?lang=ar accepting a CSV with email,name,course_id columns)
-- [v] Settings page wiring — `school.plans`/`school.plan_features`/`school.billing_methods` tables seeded; full CRUD endpoints; danger-zone DELETE wired with type-name confirm + sign-out
-- [v] Course detail page (drill-in from the Courses table) — read-only modules / lessons tree at /course; a per-lesson editor is the next pass
-- [v] Real folder→DB ingestion at upload time — `editor.utils.folder_to_db.load_course_content` now runs after extraction; best-effort, swallows malformed modules
-
-*** Next pass (new work) ***
-
-- [v] Per-lesson exercise editor inside the course detail page (GET /api/v1/editor/lesson/{id} added; click any lesson row → glass-card dialog with title + per-exercise editor)
-- [v] Show subscriber counts on plan cards — `plan_id` added to `school.student_enrollments`; `Plan.subscriber_count` populated server-side from COUNT(DISTINCT user_id); rendered on cards
-- [v] Search box on the Courses / Students / Editors tables — server `q` filter (ILIKE on title/description/email/name) + debounced `SearchField` widget on all three pages
-- [v] Real password reset flow — `school.password_resets` token table; POST /forgot_password issues + logs a 30-min token, POST /reset_password consumes it; login page has a two-step dialog (email → token + new password) with inline token shown for the demo
-- [v] Remove page transition between sidebar sections — `_NoTransitionsBuilder` registered per platform
-
-*** Dev notes ***
-
-- Default seeded credentials: `lena@riverside.edu` / `changeme` (owner of "Riverside Academy", school_id=1)
-- Reset tokens print to `docker logs server` and also return inline in the API response for the demo flow
-
-*** Next pass (selected this round) ***
-
-Candidates considered (recommendation chosen because they round out the
-auth+onboarding story without adding entirely new UX surfaces):
-
-- [v] Persistent auth — `shared_preferences` cache; `AuthRestoring` state during cold-boot lookup; cleared on sign-out.
-- [v] Create-school onboarding wizard at `/create-school` — auto-derives slug from name; `is_public` toggle (defaults on); POSTs `/api/v1/school/` + auto-logs in via `adoptSession`; linked from login page. Added `is_public` column to `school.schools` as part of this.
-- [v] Auth middleware — `school.utils.auth.require_school_member` reads `X-School-User-Id` header, verifies caller belongs to requested school (path or query). 401 on bogus header, 403 on mismatch, 200 when header missing (back-compat). Wired into school stats/activity/languages/students/plans/billing + editor courses/review/upload + school_users list. Client Dio stamps the header on sign-in/restore, clears on sign-out.
+# TASKS
 
 
-*** School Types ***
-We can have the following school types - with priority 1-4 
-1. Public schools - Open content anyone can create content - user reviewed - open to anyone - priority 1
-2. No Charge school - A real school or university that teaches languages and want to use our technology for enhancing the learning pace for its students - it may want also to open the content to others. Priority 2 
-3. Private school that charges the students per course, monthly or annually - priority 4
+### Create with AI - POC
 
 
-- [] Create a Super Admin user
-- [] Add a page schools - this page will show all existing schools and edit them
-- [] Add school type - (one of the 3 above)
-- [] Add create new school
+- [x] In Dashboard create a new page named 'Course AI POC' It should have the following elements 
+    - [x] title course name 
+    - [x] learning language 
+    - [x] student language
+    - [x] Prompt
+- [x] Fix -  Prompt is only an Input - maybe with some icon indicating it is a prompt - We do not need the copy prompt text and all that
+- [x] On top of the prompt lets replace the text Prompt with 'Hi {username} let's start creating a course'
+- The 
 
-   Decision points (resolving per workflow rule):
-   - Where super-admin lives (REVISED 2026-05-23 after user clarified: super-admin is NOT bound to any school):
-     - [ ] `school.school_users.is_super_admin bool` flag — rejected, still requires school_id.
-     - [selected] Separate `school.super_admins(super_admin_id, name, email, password_hash, created_at, last_seen)` table. Login flow checks super_admins FIRST; if found, returns a `LoginInfo` with `school_id=0` and `role='super_admin'`. Auth middleware treats super-admin as belonging-to-every-school. Existing school_users login path stays unchanged for regular roles.
-   - School type column:
-     - [selected] Add `type varchar(20)` enum ('public' | 'no_charge' | 'private') alongside the existing `is_public bool`. Backfill type from is_public; keep is_public derived so older clients still work. Drop is_public later.
-     - [ ] Replace is_public with type immediately — would invalidate the wizard + settings UI in this pass.
-   - "Schools" admin page placement:
-     - [selected] New top-level nav item visible only when `is_super_admin`. Route /super-admin/schools with a single page showing the list + inline edit dialog + "Create new school" CTA that reuses the existing wizard.
-     - [ ] Build a separate super-admin sub-app — heavier; defer.
+### Create Lesson - Description
 
-- [] Terms and conditions
+options under the prompt - A user can select what to do
+options will change with context 
+Example options 
+- select words for next lesson/ course 
+- Create next lesson
+- Preview lesson
+- Create a course 
+Every call to the backend will return the next option
 
-   Decision points (resolving per workflow rule):
-   - T&C storage:
-     - [selected] Static markdown at `content/legal/terms_v1.md` served by GET /api/v1/terms — easy to revise, version bumps via filename.
-     - [ ] DB-backed `school.terms_versions(version, content, created_at)` — flexible but heavier.
-   - Acceptance tracking:
-     - [selected] `school.terms_acceptances(school_user_id, version, accepted_at)` — one row per (user, version). Server returns "needs to accept" when there's no row for the current version.
-     - [ ] Just a `school_users.accepted_terms_version varchar` column — less query-friendly when bumping versions.
-   - When the dialog appears:
-     - [selected] Editor invite on public schools — newly-created editor row marked `pending_terms = true`; the editor sees a one-time T&C dialog on next sign-in. Admins on public schools also see it once. Private schools skip the gate.
-     - [ ] Every signed-in user must accept — annoying for students who won't author content.
+I see that I have already created a model for prompt with the different models. 
+Maybe I should be using it after all. 
+
+We can start the process one by one
+1. create a course - generate title if not provided by the user. 
+2. suggest next steps
+a. select initial words for course 
+b. create first lesson - greeting sentences
+c. Create the next lessons - simple sentences. 
+
+Experiment:
+I have asked gemini to teach me words related to politics 
+The words were great - but they he created 3 sentences for all participating words that were impossible to understand - As each word there was not understood. 
+
+The idea that language should be thought while introducing little difficulty each time and keep most of the text familiar - is difficult for AI. We will have to ask for it implicitly. 
+
+
+
+#### Tasks
+- [x] create the backend model for response that include options 
+- [x] Create the default options 
+- [x] Create initial router code
+
+
+
+#### End2End front end and backend 
+
+- [x] When we create a course the first time call /generate_course
+- [x] We get back the text and 2 options 
+    - [x] create words 
+    - [x] Create leson
+- [x] We can click on each and get the results 
+
+#### The process of creating a course 
+
+cleanup 
+- [x] remove '14 streak' and search icon from the top left of Course AI POC 
+- [x] One we have created the course 
+    - [x] the title should be the course title
+    - [x] We should keep in the state course_id, lang, to_lang and send them with any new prompt 
+    - [x] next prompts should not be create course but only create lesson 
+
+
+#### Let's review the process 
+
+Lets compare to Gemini and and Claude
+
+Gemini 
+left had icon menu
+- New chat
+- Search chats
+- image 
+- Video
+- Library
+- recent - a list of recent Chats 
+
+The Chat window itself 
+
+Ask away, David
++ {icon} Ask Gemini     /select Model/mic icone
 
 
 
 
-*** Public School ***
-Let's first define what is a public school 
-- In a public school all content is free - no charge for learning 
-- Initially we can have a single public school - maybe later we may think that different groups would like to maintain, different public schools. 
-- It would be best if the public school would use the same functionality with the following differences 
 
-- []  We do not limit languages - when a user creates a course - he can choose any language
-- We keep the language page to see in what languages we already have courses 
-- [] For now only I can edit my courses - 
-- [] We may want to allow co-editing - We need a plan first on how it would happen - we need to think of concepts like in github or wikipedia - but it requires planning.
-- [] Editor page - currently accessible on to admins - where you can see a list of contributors   
-- [] settings - also accessible only to admins  
-- [] We need to implement a simple ACL for public school - actually we need it also for private school
- 
-  Roles are
-    - Admin
-      Edit Languages 
-      Edit settings 
-      Add remove users 
+What do we need?
+Course context - See all courses that I was working on 
+Create Course - should be simple - lang to lang level and title - for now no need for prompt to create a course
+Once course is created - we are in the course context
+We can switch courses and continue from were we left 
+We should have course in edit mode and in preview mode 
+We should be able to create list of words for the course 
+Select words for the next lesson
+Create sentences for lesson 
+Choose sentences for the lesson - or ask the backend to directly create exercises  
+Edit sentences 
+Edit exercises
+preview course 
 
-    - Editor
-      Edit your courses
-      Add courses 
-      Upload and download your courses  
-    - Super Editor
-      Edit other people's courses - Only on private for now  
-    - Reviewer 
-      - can write review comments 
-      - can authorize a course to be published 
-    - Student
-      - can write review comments 
-  In public school to become an editor you have to agree to the -  terms and conditions 
-  maybe we need terms and condition for all roles even for student
-  You see the ui according to your role
-  
+
+It is time for a UI/UX POC
+We can create the POC in HTML/JS only in the folder 
+plan/design_experiments/create_with_ai_poc
+The page should be designed with AI Chat in minf hourser in our case this is not a general ask me anything chat - but we have a certain perpose to create a course, review it, and direct the backend/AI to create what we expect. 
 
 
 
 
-*** Next pass (selected this round) ***
 
-Picking the ACL + public-school foundations now — they're the prerequisite
-for almost everything else in the Public School section, and the role
-rename is cheap to do while data is small. Deferring co-editing /
-terms-and-conditions since the user flagged them as needing planning.
+#### We have the concept 
+The first version of the concept looks good - but we will have to do a few changes 
 
-- [v] Role enum migrated to admin/editor/super_editor/reviewer/student. Data backfilled (owner→admin, viewer→reviewer); check constraint updated on `school_users` + `school_invites`; client `EditorRoleWire` enum + `roleToWire()` serialiser; tolerant of cached "owner" sessions from before the migration.
-- [v] Page-level ACL on the dashboard — `NavItem.adminOnly` filters Editors + Settings out of the sidebar for non-admin sessions; `_Guarded(adminOnly: true)` swaps in an `_AdminOnlyDenied` empty-state for deep links.
-- [v] Public school = any language — upload route checks `school.is_public`; private schools enforce `languages_taught` whitelist with a clear 400 message; public schools accept any code and auto-extend `languages_taught` so the Languages page picks it up.
-- [v] Course ownership — `owner_user_id` column on `course_simple.course`; populated from `actor_user_id` on upload; `require_course_editor` helper enforces 403 on `set_course_status` + lesson save when the caller isn't owner / admin / super_editor. NULL owner (legacy/seed rows) short-circuits to back-compat allow.
-- [ ] Terms-and-conditions acceptance for becoming an editor on a public school — deferred (needs UX + storage decisions).
-- [ ] Real co-editing (github/wikipedia-style) — deferred per spec.
+The Good:
+- Like in any other AI Chat window I can follow my actions 
+- I have a list of courses and information about them (number of lessons, words,  etc)
+- I have the edit mode and the preview mode 
+- I can see list of words and list of sentences 
+- I have my courses page that leads to the course page 
 
+Improvements 
+ - When we are in the context of a course - we do not need to see the other courses. A link to my courses is enough - we need the entire space
+ - We should break the page in 2 
+    - Left side is the chat and the process 
+    - Right side the the models/lesson/exercises
 
-*** Content creation Formant  *** 
-We have 2 main way of creating content 
-1. Use the UI to create a course. lessons and modules 
-2. Import the content from a compresses folder
-- [v] We need an example course that users can export and extend - can be found in content/example_course
-
-- [v] We need an explanation page describing the format
-   - Markdown spec at `content/example_course/README.md` (folder layout + course.txt / module.txt / lesson.txt / exercises.txt keys + recognised language names + round-trip note).
-   - Dashboard `Format help` ghost-button on the Courses upload dropzone opens an inline cheat-sheet dialog (code-block snippets, scrollable).
-   - Parser extended: `editor.utils.folder_to_db.load_course_content` now detects `course.txt` and walks the `module<n>/lesson<n>/exercises.txt` shape — falls back to the old YAML/JSON loader when `course.txt` is absent.
-   - Language naming: `_to_lang_code()` maps common English names (`Italian`) and a few native scripts (`العربية`, `日本語`) to ISO codes; unknown strings pass through lowercased so custom codes still work.
-   - Bug fix during smoke-test: upload now syncs `course_simple.course.lesson_count` after ingestion so the Courses table + detail page show the right totals.
-   - **Smoke-test:** uploading `content/example_course.zip` to school_id=2 produced course #7 with `modules: 2 · lessons: 4`, exercises parsed correctly including `--- Explanation` blocks (stored on `word3` for now — separate explanation column is a future schema tweak).
+Words 
+- It could be that when we create a lesson we offer words for the next lesson 
+- We over a few and only 2 are selected - If we define 2 words per lessons 
+- User. can select other words from the list 
 
 
+The lessons in edit/preview mode  
+- lesson title 
+- words in lesson
+- exercises 
+Preview mode 
+- What we have is not bad - it is a long list of exercises - where you can participate 
+- Full - preview - exercise after exercise - exactly like in the students will see 
+--done up to this line--
+#### More small fixes before moving to implement with flutter 
+1. Add costs/tokens to the chat area 
+2. Rename edit tab with 'edit course' 
+3. Ddd to course more data like number of lessons, modules etc
+4. Think how we can add modules 
+5. Add the possibility to create exercise manually 
+6. add the options to edit elements in a sentences - maybe an edit button
+7. show current lesson/module - while other modules could be closed (view only the title)
+8. We can see words that we hve already used 
+9. We can see the next words when selecting a lesson
 
 
-*** tasks for deployment ***
-
-- [v] Client env via `flutter_dotenv` — both apps load `assets/.env` at
-  startup. `lib/config/app_config.dart` centralises reads; precedence is
-  `--dart-define` > `.env` > hardcoded default. Variables:
-  `API_BASE_URL`, `AUDIO_BASE_URL` (both apps), plus `AUTH_PROVIDER`,
-  `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_AUDIENCE`,
-  `AUTH0_REDIRECT_URI` (dashboard only). `.env.example` committed,
-  `assets/.env` gitignored.
-- [v] Auth0 sign-in in the dashboard — `auth0_flutter` wrapped in
-  `lib/auth/auth0_service.dart` (web uses `Auth0Web`, native uses
-  `Auth0`). Login page shows a "Sign in with Auth0" button only when
-  `AUTH_PROVIDER` is `auth0` or `both`; the `AuthNotifier` exchanges
-  the ID token at `POST /api/v1/school_users/login_auth0`. On web,
-  `restoreWebSession()` runs during cold-boot so the post-redirect
-  ID token gets traded for a `LoginInfo` without an extra click.
-- [v] Server-side Auth0 verification — `server/src/school/utils/auth0.py`
-  fetches the tenant JWKS, caches it for 1h, and verifies issuer +
-  signature + expiry (+ audience when configured). Route
-  `/api/v1/school_users/login_auth0` requires an existing
-  `school.school_users` row matching the verified `email` claim — Auth0
-  identities are not auto-provisioned, so school ACLs still gate access.
-  Returns 503 when `AUTH0_DOMAIN` is unset (the dashboard falls back to
-  local login gracefully).
-- [v] Local dev keeps using passwords — `AUTH_PROVIDER` defaults to
-  `local` so a fresh `flutter run` + `docker compose up` needs no
-  Auth0 setup. The server's `login_auth0` route is dormant until
-  `AUTH0_DOMAIN` is exported (see docker-compose.yaml).
-
-
-*** login page for polyglots_app ***
-- [v] Auth0 sign-in for the learner app — `Auth0Service` wraps
-  `auth0_flutter` (web + native). `AuthNotifier` drives the four-state
-  lifecycle (restoring / signedOut / signingIn / signedIn). On
-  sign-in the client posts the Auth0 ID token to
-  `POST /api/v1/auth/get_or_create_user`; on cold-boot it tries
-  `POST /api/v1/auth/login_with_cookie` first, then the
-  `SharedPreferences` cache as an optimistic fallback.
-- [v] Server `/api/v1/auth/get_or_create_user` — verifies the Auth0
-  token via `school.utils.auth0`, then upserts `user_data.users` by
-  email (composite PK is (email, user_id), so the lookup-then-insert
-  path avoids surprising no-ops). Returns the user + their most-recent
-  Preference and sets an HttpOnly `user_id` cookie (+ `lang` / `to_lang`
-  mirrors, matching the legacy code). 1-year `max_age` matches the
-  previous version.
-- [v] Server `/api/v1/auth/login_with_cookie` — reads the `user_id`
-  cookie and returns the same `UserPref` shape. 401 when the cookie is
-  missing or points at a deleted row so the client falls back to the
-  login screen.
-- [v] Server `/api/v1/auth/logout` — clears the `user_id` / `lang` /
-  `to_lang` cookies; client also flushes its SharedPreferences cache
-  and best-effort hits Auth0's logout endpoint.
-- [v] Dev escape-hatch — when `AUTH0_DOMAIN` is unset on the server,
-  `/get_or_create_user` accepts an unverified email so the client's
-  "Continue as guest" CTA works without an Auth0 tenant. Setting
-  `AUTH0_DOMAIN` automatically disables this path so prod can't
-  accidentally accept unverified emails.
-- [v] `kCurrentUserId` migrated from a `const` to a mutable bound to
-  the auth state — every existing call site keeps working. The
-  `PreferenceNotifier` now watches `currentUserIdProvider` and
-  short-circuits to null when signed out, so the auth gate never
-  fetches a stale user's preferences.
-- [v] Cookie plumbing — added `dio_cookie_manager` + `cookie_jar` so
-  native targets remember the server-set cookie. Flutter web uses the
-  browser cookie jar via `Options.extra: {'withCredentials': true}`.
-  
-  **Setup checklist (when going live):**
-  1. Create an Auth0 SPA application; add the dashboard origin (e.g.
-     `http://localhost:8000`) to Allowed Callback/Logout URLs.
-  2. `cp dashboard/.env.example dashboard/assets/.env` and fill
-     `AUTH_PROVIDER=auth0`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`,
-     `AUTH0_AUDIENCE`, `AUTH0_REDIRECT_URI`.
-  3. Export the same `AUTH0_DOMAIN` / `AUTH0_AUDIENCE` /
-     `AUTH0_CLIENT_ID` before `docker compose up` (compose passes them
-     through to the server container).
-  4. Pre-invite each Auth0 user via the Editors page so a matching
-     `school_users.email` row exists — that's the ACL hook.
-  5. `cd dashboard && flutter pub get` to install `flutter_dotenv` +
-     `auth0_flutter` (same for `poliglots_app` — only flutter_dotenv).
-  
+More fixes 
+1. move 'my courses' to the top left 
+2. "My Course" should be a bit bigger 
+3. Add start a new module 
 
 
 
 
-*** tasks saved for later stage ***
-- [ ] I prefer using Oauth - so we can skip password change password functionality - for now at least
-- [] Real SMTP for password reset — out of scope without infrastructure.
-- [ ] Pagination on Students table (currently capped at 200).
-- [ ] Cohort filter chips on Students page.
-- [ ] Public-school sibling site (community-contributor variant from design_experiments/school_public/) — substantial new UI; deferred to dedicated pass.
+# Planning the api
+
+Mapping the create_with_ai_poc (`plan/design_experiments/create_with_ai_poc`) feature
+set to backend endpoints before building it in Flutter. Conventions to follow (both
+already established in the codebase):
+- AI-generation calls stay flat under `/api/v1/generate_poc/<verb>` (matches the
+  existing `generate_course`/`generate_lesson`/`generate_words_list`).
+- Plain CRUD lives under `/api/v1/edit/<resource>/...` (matches `edit_course.py`).
+- Every new/changed endpoint uses `Depends(current_school_user)` and scopes every
+  query by `(user_id, school_id)` — same as every existing editor endpoint.
+
+#### Decisions needed before implementing
+- [x] New table `course_simple.course_word` for the AI word bank? There's no
+      per-course word-bank table today — `module.words`/`lesson.words` are just
+      `text[]` columns, and `draft.words(lang, word)` is a global (not per-course)
+      dictionary with no gloss/example-sentence/used-state. Proposing:
+      `course_word(course_word_id serial pk, course_id, word, gloss,
+      example_sentence, example_gloss, created_at)`.
+- [x] `generate_poc` endpoints aren't gated by the existing
+      `permissions['create_with_ai']` flag (`utils/user_school_data.py`) — should
+      the new/changed endpoints enforce it?
+- [x] Sentence/exercise CRUD: nest under `/api/v1/edit/course/...`, or give
+      lesson/exercise their own routers (`/api/v1/edit/lesson/...`,
+      `/api/v1/edit/exercise/...`)? Leaning toward one router per resource, since
+      `edit_course.py` today is scoped only to courses.
+- [x] `GenerateCourseRequest` has no `level` field even though `course.level`
+      already exists in the DB and the POC's create-course form requires it —
+      needs adding (request model + `create_course()` insert).
+
+#### Course context ("My courses" list + create)
+- [x] `GET /api/v1/edit/course/courses` — reuse as-is; response needs word/module/
+      lesson counts added (extend `Course` with `word_count`/`module_count`/
+      `lesson_count`/`ready_lesson_count`, or a `?with_stats=true` variant)
+- [x] `POST /api/v1/generate_poc/generate_course` — reuse; add `level` (see
+      decisions above)
+
+#### Course workspace (load + Edit Course tab)
+- [x] `GET /api/v1/edit/course/course/{course_id}/full` — new aggregate endpoint:
+      course meta + modules[] + lessons[] (each with words/sentences/exercises) +
+      word bank, in one call, so the workspace doesn't need N+1 round-trips.
+      Alternative: compose from the granular GETs below instead — pick one.
+- [x] `POST /api/v1/edit/course/course` — reuse for title/lang/to_lang/level
+      updates (Edit Course tab); add `level` to the `Course` model
+
+#### Words tab
+- [x] `POST /api/v1/generate_poc/generate_words_list` — currently a stub; wire to
+      actually generate N words and persist into `course_word`, returning the new
+      rows + `actual_tokens`/`actual_cost`
+- [x] `POST /api/v1/edit/course/{course_id}/words` — add a word manually
+- [x] `DELETE /api/v1/edit/course/words/{course_word_id}` — remove a word (also
+      detach it from any lesson's word selection)
+- [x] word "used" tracking — computed server-side (join `course_word` against
+      whatever links a word to a lesson, see lesson-word link decision below),
+      returned as `used: bool` per word
+
+#### Modules
+- [x] `POST /api/v1/edit/course/{course_id}/modules` — create a module (title
+      optional, server defaults to "Module N"); plain CRUD, not AI — the POC's
+      "Start a new module" never calls an AI endpoint
+- [x] modules fold into the `GET .../full` response — no separate list endpoint
+      needed unless we skip the aggregate route
+
+#### Lessons
+- [x] `POST /api/v1/edit/course/modules/{module_id}/lessons` — create a lesson
+      draft (`status='draft'`)
+- [x] `PATCH /api/v1/edit/course/lessons/{lesson_id}/words` — confirm word
+      selection, body `{word_ids: [...]}`; need to decide how word↔lesson links
+      are stored (a `lesson_word` join table, or keep `lesson.words text[]` but
+      store `course_word_id`s instead of raw strings)
+- [x] `POST /api/v1/generate_poc/generate_sentences` — new; body `{lesson_id}`,
+      generates + persists draft sentences for the lesson's selected words
+      (`chosen=true` by default)
+- [x] `PATCH /api/v1/edit/course/lessons/{lesson_id}/sentences` — confirm which
+      generated sentences to keep, body `{sentence_ids: [...chosen...]}`
+- [x] `POST /api/v1/generate_poc/generate_exercises` — new; body `{lesson_id}`,
+      generates + persists exercises from the lesson's chosen sentences, sets
+      lesson `status='ready'`
+- [x] `POST /api/v1/generate_poc/generate_lesson` — repurpose the existing stub
+      for "Create exercises directly": given `{lesson_id}`, generate sentences
+      AND exercises in one call, skipping the confirm-sentences step
+- [x] sentences need real rows, not just `lesson.words text[]` — new table
+      `course_simple.lesson_sentence(lesson_sentence_id pk, lesson_id, text,
+      gloss, chosen bool default true)`, since sentences need individual ids to
+      edit/delete/toggle
+- [x] `PATCH /api/v1/edit/course/sentences/{lesson_sentence_id}` — edit sentence
+      text
+- [x] `DELETE /api/v1/edit/course/sentences/{lesson_sentence_id}` — delete a
+      sentence (cascade-delete any exercise built from it)
+
+#### Exercises
+- [x] `POST /api/v1/edit/course/lessons/{lesson_id}/exercises` — add a blank
+      exercise manually
+- [x] `PATCH /api/v1/edit/course/exercises/{exercise_id}` — edit prompt/options/
+      correct answer (maps onto the existing `exercise.options` jsonb +
+      `sentence`/word columns — settle the exact jsonb shape against the existing
+      exercise-type catalogue rather than inventing a new one)
+- [x] `DELETE /api/v1/edit/course/exercises/{exercise_id}` — delete an exercise
+
+#### Preview
+- [x] no new endpoint — Preview tab just renders the same `GET .../full` response
+      read-only
+
+#### Usage / cost
+- [x] every `generate_poc` response already carries `actual_tokens`/`actual_cost`
+      — once a real LLM call lands, populate these for real (currently always
+      0.0/0, nothing calls an LLM yet); the running per-course total shown in the
+      chat header stays a client-side sum, no new endpoint needed
+
+
+
+#### API Manual planning 
+
+- We always use POST with a request
+- We should test permission on each call - User can edit this course? User can use AI? etc. 
+- We do not use path parameters  /write/{course_id}/best - As we always use post and pass course_id, lesson_id in the request
+
+
+
+Utilities
+- permissions (course editing, using AI, AI Limit etc)
+- calc costs , estimate costs 
+endpoints
+
+No AI
+- /edit/create/course - create course 
+- /edit/course/state - got back to last state - show the prompt history
+- /edit/course/words/update - updates the list of words - by user by adding and removing
+
+- /edit/module/create - creates a new module - this becomes the current module 
+
+AI
+- /generate/prompt - general prompt that we should use AI to understand
+With or without AI
+- words : we always see the next words to use
+- /edit/course/words/suggest - suggests an initial words per course
+
+- /edit/lesson/gen -{words} -  generate a full lesson - from words 
+- /edit/lesson/sentences - {words} -  generate a full lesson
+- /edit/lesson/exercises - {sentences} -  generate a full lesson
+
+
+
+
+
+#### Initial implementation
+
+
+I have started implementing the full api 
+I have to think - when generating a lesson - Are we going to insert the exercises and than send them back to the user - so he can edit/delete/add 
+Or we send them to the users - and if he approves than we save to the DB
+
+Sounds like the first option in better - this way we can go back to where we left. 
+
+Maybe we want to add reviewed field for all elements - this is set to true when user has spend some time reviewing - or explicitly set reviewed button
+
+It is good to have plain simple CRUD API for content elements - as we may reuse it - for imported courses, for gen with AI and manual creation of course. when applicable 
+
+
+##### Just before we bind frontEnd and backend 
+
+1. We need to create a table for prompts and results - so we can have the state of every prompt. 
+2. We need to plan the process again - with full options
+3. Meta Model is now free and supports ollama - we can use it for experiments 
+
+
+Process 
+Enter a course and start generating 
+We have the following options for generating data 
+- gen words 
+      - AI
+      - corpus - words that are common in a corpus 
+      - zipf - load words by how common they are in zipf db 
+- gen sentences 
+      - AI
+      - Corpus
+- Translate
+      - AI
+      - Google Translate
+      - Azure 
+- Gen Audio
+      - AI?
+      - Azure
+      - Google
+      - Others? 
+- Gen Exercise 
+      - Logic 80% single choice, 10% identify words, ...
+      - AI
+- Sentences Elements 
+      - Spacy
+      - AI
+
+- Option for prompts 
+      - Words source 
+      - Sentences source
+      - AI configuration
+
+We can think of a complex scenario where you want the data from corpus - but if sentences are missing you generate with ai
+Also - when data comes from corpus - you already have translation and voice
+
+Complex feature 
+- Link chat area with lesson  created by this chat 
+- like the name of the chat window can be: Creating Lesson 3
+
+We can ask AI to create complex exercises 
+like explanation - or sentence annotation 
+This goes into the chat window 
+
+The initial code should try with AI as we do want to test how to work with it - especially now that we have the option of using the Meta model 
+
+
+in case we do work with AI
+Here is the process 
+- AI, generate sentences 
+- Code/AI break words - rank words
+User review?
+- Code Generate exercises 
+Users review edit
+
+
+
+
+
+
+### Manual Tasks 
+- Implement get words  - do it manually, using zipf, using ollama
+- We should start using
+- Get words should be done for a single module 
+- When we want next words - We ask the model - here is our last model words - give us the next words 
+if we use zipf - we should keep the last words that we used and ask for the next chunk 
+the same when we use words from a corpus 
+
+When words are used in a course - stope offering them 
+keep a list of course words with 
+
+### Claude tasks 
+- [x] Start using ollama 
+- [x] choose models
+-
+
+#### Ollama provider (2026-08-13)
+
+`utils/ollama_client.py` — real (non-mocked) local inference via
+Ollama's HTTP API, reachable from the `server` container at
+`host.docker.internal:11434` (Docker Desktop's host alias on Mac/
+Windows; `extra_hosts: host-gateway` in docker-compose.yaml makes the
+same alias work on Linux). Override with `OLLAMA_BASE_URL` if Ollama
+runs elsewhere.
+
+- [x] `POST /api/v1/generate_poc/` (previously an unimplemented stub) —
+      the general "ask AI anything" prompt path
+      (`Prompt.prompt`/`.provider`/`.model` → `PromptResponse.response`),
+      gated on `current_ai_school_user` like every other AI endpoint.
+      `provider` defaults to (and currently only supports) `"ollama"`.
+- [x] `GET /api/v1/generate_poc/models` — `{"providers": {"ollama": [...]}}`
+      for a model picker.
+- [x] Models wired up: `muse-glimmer`, `gemma4`, `gpt-oss-20b` (tagged
+      `gpt-oss:20b` in `ollama list` — `OLLAMA_MODELS` maps the display
+      name to the real tag).
+- [x] Token usage (`actual_tokens`) comes from Ollama's real
+      `prompt_eval_count`/`eval_count`; `actual_cost` is always `0.0`
+      since local inference has no per-token billing.
+- Scope: only the raw prompt path is real now. `ai_course_content.py`
+  (word/sentence/exercise generation) is still curated mock content —
+  routing those through Ollama needs real prompt-engineering work
+  (structured output, retries) that's out of scope for this pass.
+
+#### Data model correction (2026-08-13)
+
+First backend pass modeled words and sentences as real DB entities
+(`course_word` table with a serial id, `lesson_word` join table,
+`lesson_sentence` table with a serial id). Review feedback: that's too
+much relational overhead for content that's really just per-course/
+per-lesson state. Reworked to:
+
+- [x] Words are NOT a database entity — no id, no table.
+      `course_simple.course.words` is a plain ordered jsonb list
+      (`[{word, gloss, example_sentence, example_gloss}, ...]`) —
+      generation order = frequency order, simplest/most common word
+      first. The word string is the identity, same as
+      `course_simple.lesson.words` (text[], unchanged from before).
+      `course_word`/`lesson_word` tables dropped.
+- [x] Sentences ARE a database entity — `course_simple.sentence`
+      (`sentence_id bigint pk, lang, text, gloss, created_at`) — but
+      nothing holds a foreign key to it. `sentence_id` is a
+      deterministic hash of `"lang:text"` (`sentence_id_for()` in
+      `utils/ai_course_content.py`, masked to 53 bits so it stays a
+      JS-safe integer through Flutter web's JSON), computed in app code
+      before insert. A lesson just carries an ordered jsonb list of its
+      own draft sentences (`course_simple.lesson.sentences`, mirroring
+      `.words`) — no join table (`lesson_sentence` dropped).
+- [x] Exercises keep their own copy of the prompt text
+      (`exercise.sentence`) and only carry `sentence_id` for reference —
+      editing an exercise never touches the sentence it came from, and
+      deleting a draft sentence never cascades to exercises already
+      built from it. No links to maintain in either direction, matching
+      the pre-existing (and never FK-enforced)
+      `exercise.sentence_id`/`to_sentence_id` columns.
+- [x] `course.level`: `smallint` → `varchar`. Store CEFR strings
+      (`"A1"`..`"C1"`) directly — no more int↔string mapping table
+      (`utils/level.py` deleted).
+
+See `plan/DDL/create_with_ai_v4.sql` for the migration. 
+
+
+### Manual Tasks 
+- [v]  write the create words with AI 
+- [v]  write the create sentences with AI 
+- [v]  write the create exercises - use code from  create_exercise_* in scripts 
+Create exercise is quite simple all you need is the write a few fields 
+
+- [v] Write a design - what do we do in each stage 
+
+
+#### Create with AI - What do we do in each stage 
+- when creating a course we add some settings that should be sent with each request
+  - level
+  - type of questions 
+  - number of words per lesson - can be change in a module level - or in a specific lesson
+  - use ai - model etc 
+- Save chat messages 
+      - message 
+      - action
+      - results 
+      - message sent to chat 
+      - tokens 
+      - costs 
+- When creating a module as to select words 
+- When creating a lesson - save lesson
+- Mark used words as used - deselect them 
+
+
+
+The process in order 
+- create course 
+      - extra options/optional - with default 
+- Create module 
+      - create words and save in module 
+- Create Lesson 
+      - choose words 
+      - create sentences 
+      - create exercises 
+- Create Exercise 
+      - you can ask the create a specific exercise - for example explanation exercise - or something else 
+- Free chat - should be mapped to one of the above actions  
+
+After working on lessons I have some understanding 
+1. I need words so far identify_words exercise - I could take them from module or course
+2. I need a place to store sentences for using them as distactors - or wrong answers
+
+It is time now to bind everything together and get the process to work.
+Maybe it is also time to add options in the course so can change
+We have to define the options fields and pass them on any request.
+
+- [v] Generate options
+- [] Create a CLI for testing the generate API
+- [] Add the code for getting data from corpus
+- [] get course words 
+
+
+### Corpus
+- [] create corpus connection
+- [] get data from corpus 
+- [] get words from corpus  
+
+
+### Testing 
+- [] this of a way to create local test for reviewing the results 
+
+### UI
+- [] The tabs on the left - lesson is first - that preview and finally words
+- [] Show current module in the top
+#### Words 
+- [] Words are created for a module - We need to see a list of words in each module 
+- [] Show the words used in each module 
+- [] Show current module words 
+#### Exercises 
+- [] Allow creating a manual exercise 
+- [] Add exercise type 
+- [] Allow changing the exercise type
+
+### End2End
+#### Routers 
+- [] Follow the design so far and decide what each rout is doing 
+- [] Re
+
+
+#### Implementations issues 
+- [] find a way to get last word and further
+    OPTIONS: instead of asking for words again and again each time with the last words. 
+    we can ask for a list of words at once and then use them one by one.
+    this makes sense for ai and corpus methods.
+- [] The course words should look as follows 
+      word: "", used: number of times - or true false
+- [v] create simple usable tests easy to run and test for the different data sources
+
+- [] content data is not full - we should do the following 
+  - [] add word1, word2, word3 to sentences - should be similar  
+  - [] consider copying from old data or break into words once again
+
+
+### Implement the API manually 
+- [v] Course 
+- [v] Course options 
+- [v] Remove unused endpoint 
+- [ ] Use  the old edit where possible 
+- [ ] Test 
+- [ ] work with Agent to link with UI
+
+### Tasks for working with AI
+- [v] use some async tasks - select the right platform
+- [v] implement polling on the client side
+- [v] show working animation
+
+
+
+### UI/UX Chat page
+- UI/UX make it simple. 
+- Remove unused elements like sentence - 
+- show the words and maybe we will not need to change 
+- test a lot with corpus - is it is faster
+
+- [v] remove preview course
+- [v] remove sentences
+
+- [v] Remove start lesson and than create Create exercise directly 
+- [v] Unite into a single button  create lesson for words
+- [v] remove create new module  
+- [] change number of exercise to 10
+
+### Batch create lesson
+
+How to implement it?
+I can this of the following options 
+1. start a module - with a list of words, number of words per lesson, 
+a. create multiple chat lines each for lesson and words
+b. scroll down to the latest
+c. call the server to run the implementation 
+d. animate the running tasks 
+e. show all completed when all are done 
+
+2. A simple continue after each lesson even if last one was not completed 
+- you can skip a lesson
+a. We do not have to wait for long tasks to complete
+
+
+
+
+### More UI improvements and ideas 
+- having the module on the tope - next to the paper trail - to left
+- Alternatively - have a top section with 
+      - Course options 
+            - 
+      - Module options 
+- Lesson numbers start with 1 for each module 
+
+
+
+### Start using for arabic 
+Before we chose the best method for 
+For arabic I need 
+1. I need much higher level words 
+2. I may need to generate words with AI
+
+
+
+
+Problem with words 
+- when I am deleting a word it may come back when I run generate words again.
+      solutions
+      - keep words as deleted 
+
+- running multiple tasks at the same time makes it run forever - it does not seem to be faster 
+- maybe we do need to implement the run on 
+
+
+- [] There is a problem with the exercises on the client side - seems like the data does not match
+- [] 
+
+
+
+
+### Video Lessons - Planning
+
+
+Working with video lessons 
+1. We want to add a youtube video 
+2. from this yuotube video we want to extract subtitles - if exsits - there is code that does in in the repo - please find it
+3. We want to break the video into say 3 minutes sections
+
+4. We want to make a list of difficult words - I can do it on the server - using some python logic 
+
+5. extract sentences, phrases 
+6 create a quiz for word, sentence, phrase
+7, So in the course the user will see - quiz - play some vide - quiz again - yet another sections in the video 
+We can start such a lesson with - initial quiz 
+We can finish such a lesson with a final quiz
+
+
+### Video Lessons - Implementations 
+
+- [] The page UI/UX
+      - [] choose a video
+      - [] show it 
+      - O[] info about the lesson - show available translation - audio etc.
+      - [] Download subtitles
+      - [] Generate sentences and phrases from subtitles 
+      - [] Generate quizzes 
+      - [] Each quiz should have a time - 
+      - [] Break the video into multiple parts - can be done as we go - 
+      - [] Preview
+
+
+### Cleanup tasks 
+1. Should be break the server into editor and school 2 separate server 
+2. Should we unite models - for editor and student
+3. 

@@ -1,0 +1,178 @@
+from pydantic import BaseModel
+from enum import Enum
+
+class ContentSource(str, Enum):
+    AI = "ai"
+    CORPUS = "corpus"
+class AiProvider(str, Enum):
+    OLLAMA = "ollama"
+    OPENAI = "openai"
+    CLAUDE = "claude"
+class AiModel(str, Enum):
+    GEMMA4 = "gemma4"
+    MUSE_GLIMMER = "muse-glimmer"
+    DEEPSEEK = "deepseek-r1:86"
+
+
+
+class CourseParams(BaseModel):
+    title: str | None = ''
+    description: str | None = ''
+    value: str | None = ''
+
+class CourseWord(BaseModel):
+    word: str  = ''
+    weight: int  = 0
+    used: int  = 0
+
+
+class CourseOption(BaseModel):
+    content_source: ContentSource | None = ContentSource.CORPUS
+    provider: AiProvider | None = AiProvider.OLLAMA
+    model: AiModel | None = AiModel.GEMMA4
+    # sentence and exercise generate
+    exercises_per_word: int | None = 5
+    words_per_lesson: int | None = 2
+    max_sentences_words: int | None = 4
+    min_sentences_words: int | None = 1
+    distractor_similarity: float | None = 0.5
+    # exercise-type mix — relative weights, roughly summing to 1.0
+    single_choice: float | None = 0.9
+    multiple_choice: float | None = 0.1
+    identify_words: float | None = 0.1
+    description: float | None = 0.0
+
+
+class Course(BaseModel):
+    course_id: int | None = None
+    title: str | None = ''
+    description: str | None = ''
+    lang: str | None = ''
+    to_lang: str | None = ''
+    published: bool | None = False
+    level: str | None = ''
+    metadata: CourseOption | None = CourseOption()
+    words: list[CourseWord] | None = []
+
+class GenerateForWords(BaseModel):
+    course: Course
+    words: list[str]
+    num_elements: int = 12
+    # When set, generated sentences / exercises are also persisted onto
+    # this lesson (course_simple.lesson.sentences + course_simple.exercise)
+    # so the Lessons / Preview tabs pick them up.
+    module_id: int | None = None
+    lesson_id: int | None = None
+
+class Sentences(BaseModel):
+    word: str
+    sentences: list[str]
+
+class Exercise(BaseModel):
+    pass
+
+class Lesson(BaseModel):
+    pass
+
+class Sentence(BaseModel):
+    sentences: str
+    word: str | None = ''
+    gloss: str | None = ''
+    sentence_id: int | None = None
+    chosen: bool | None = True
+
+
+
+class TaskStart(BaseModel):
+    task_id: str| None = None
+    task_type: str | None = None
+    status: str | None = None
+    error: str | None = None
+    completed: bool | None = False
+
+
+
+class VideoCourseOption(BaseModel):
+    content_source: ContentSource | None = ContentSource.CORPUS
+    provider: AiProvider | None = AiProvider.OLLAMA
+    model: AiModel | None = AiModel.GEMMA4
+    video_section_len_sec: int | None = 120
+    # Sentences extracted from subtitles longer than this (by word count)
+    # are dropped — keeps flashcard-style sentences short.
+    max_sentence_words: int | None = 12
+
+
+class VideoSubtitleLine(BaseModel):
+    start: float = 0
+    duration: float = 0
+    text: str = ''
+
+
+class VideoWordRank(BaseModel):
+    word: str
+    rank: int
+
+
+class VideoSection(BaseModel):
+    start_seconds: float
+    end_seconds: float
+    text: str = ''
+
+
+class VideoItem(BaseModel):
+    video_url: str
+    title: str | None = ''
+    # Populated step by step by the Edit tab's pipeline buttons — each is
+    # None until its step has run, so the UI can tell "not run yet" apart
+    # from "ran and found nothing".
+    subtitles: list[VideoSubtitleLine] | None = None
+    words: list[VideoWordRank] | None = None
+    phrases: list[str] | None = None
+    sections: list[VideoSection] | None = None
+
+
+class VideoModule(BaseModel):
+    """A video module — a row in course_simple.module with module_type
+    'video', alongside the AI-course modules that already live in that
+    table (module_type NULL). subtitles/words/sentences/phrases are None
+    until their pipeline step has run. sentences split on '.' only;
+    phrases split on both ',' and '.' (finer-grained)."""
+    module_id: int | None = None
+    course_id: int
+    title: str = ''
+    video_url: str = ''
+    subtitles: list[VideoSubtitleLine] | None = None
+    words: list[str] | None = None
+    sentences: list[str] | None = None
+    phrases: list[str] | None = None
+
+
+class VideoCourse(BaseModel):
+    course_id: int | None = None
+    title: str | None = ''
+    description: str | None = ''
+    lang: str | None = ''
+    to_lang: str | None = ''
+    level: str | None = ''
+    videos: list[VideoItem] | None = []
+    modules: list[VideoModule] | None = []
+    metadata: VideoCourseOption | None = VideoCourseOption()
+
+
+class VideoCourseId(BaseModel):
+    course_id: int
+
+
+class VideoAction(BaseModel):
+    course_id: int
+    video_url: str
+
+
+class ModuleAction(BaseModel):
+    course_id: int
+    module_id: int
+
+
+class CreateVideoModule(BaseModel):
+    course_id: int
+    title: str | None = ''

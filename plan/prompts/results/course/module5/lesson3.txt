@@ -1,0 +1,117 @@
+---
+title: Lesson 3 - New Word — います / あります (there is)
+weight: 3
+---
+type: explanation
+います (imasu) means "there is" for living things — people and animals. あります (arimasu) means "there is" for objects. Example: ねこがいます — "there is a cat". みずがあります — "there is water".
+---
+type: single_selection
+text: ねこがいます
+romanji: Neko ga imasu
+option: There is a cat
+correct: true
+option: The cat is cute
+option: I like the cat
+option: The cat eats
+---
+type: single_selection
+text: みずがあります
+romanji: Mizu ga arimasu
+option: There is water
+correct: true
+option: I want water
+option: The water is cold
+option: I drink water
+---
+type: single_selection
+text: いえにねこがいます
+romanji: Ie ni neko ga imasu
+option: There is a cat at home
+correct: true
+option: The cat goes home
+option: I have a cat at home
+option: The cat is cute at home
+---
+type: sentence_structure
+text: がっこうにがくせいがいます
+romanji: Gakkō ni gakusei ga imasu
+word: がっこう
+romanji: gakkō
+meaning: school
+pos: noun
+word: に
+romanji: ni
+meaning: at (location of existence)
+pos: particle
+word: がくせい
+romanji: gakusei
+meaning: student
+pos: noun
+word: が
+romanji: ga
+meaning: (subject marker)
+pos: particle
+word: います
+romanji: imasu
+meaning: there is (living thing)
+pos: verb
+---
+type: single_selection
+text: がっこうにがくせいがいます
+romanji: Gakkō ni gakusei ga imasu
+option: There are students at school
+correct: true
+option: The students like school
+option: The students go to school
+option: The students study at school
+---
+type: single_selection
+text: テーブルにコーヒーがあります
+romanji: Tēburu ni kōhī ga arimasu
+option: There is coffee on the table
+correct: true
+option: I drink coffee at the table
+option: The coffee is hot on the table
+option: I like coffee on the table
+---
+type: multiple_choice
+text: います vs あります
+romanji: (select all correct)
+option: います is for living things (people, animals)
+correct: true
+option: あります is for objects and things
+correct: true
+option: both use が to mark what exists
+correct: true
+option: あります is for people
+---
+type: single_selection
+text: いえにサラがいますか
+romanji: Ie ni Sara ga imasu ka
+option: Is Sara at home?
+correct: true
+option: Sara is at home
+option: Does Sara like home?
+option: Does Sara go home?
+---
+type: single_selection
+text: はい、サラといぬがいます
+romanji: Hai, Sara to inu ga imasu
+option: Yes, Sara and a dog are there
+correct: true
+option: No, Sara and a dog are there
+option: Yes, Sara has a dog
+option: Yes, Sara likes dogs
+---
+type: identify_words
+text: いえにねことみずがあります
+romanji: Ie ni neko to mizu ga arimasu
+option: に
+correct: true
+option: と
+correct: true
+option: が
+correct: true
+option: は
+option: を
+option: で

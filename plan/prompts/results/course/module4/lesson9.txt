@@ -1,0 +1,136 @@
+---
+title: Lesson 9 - Sentence Structure — Adjectives with です
+weight: 9
+---
+type: explanation
+Adjectives in Japanese come before the noun they describe, or after は with です. Example: かわいいねこ (cute cat) or ねこはかわいいです (the cat is cute). です makes the sentence polite.
+---
+type: sentence_structure
+text: ねこはかわいいです
+romanji: Neko wa kawaii desu
+word: ねこ
+romanji: neko
+meaning: cat
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: かわいい
+romanji: kawaii
+meaning: cute
+pos: adjective
+word: です
+romanji: desu
+meaning: is (polite)
+pos: verb (copula)
+---
+type: single_selection
+text: ねこはかわいいです
+romanji: Neko wa kawaii desu
+option: The cat is cute
+correct: true
+option: Is the cat cute?
+option: The cat is not cute
+option: I like cute cats
+---
+type: sentence_structure
+text: コーヒーはあついです
+romanji: Kōhī wa atsui desu
+word: コーヒー
+romanji: kōhī
+meaning: coffee
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: あつい
+romanji: atsui
+meaning: hot
+pos: adjective
+word: です
+romanji: desu
+meaning: is (polite)
+pos: verb (copula)
+---
+type: single_selection
+text: コーヒーはあついです
+romanji: Kōhī wa atsui desu
+option: The coffee is hot
+correct: true
+option: I like hot coffee
+option: Is the coffee hot?
+option: The coffee is cold
+---
+type: sentence_structure
+text: みずはつめたいです
+romanji: Mizu wa tsumetai desu
+word: みず
+romanji: mizu
+meaning: water
+pos: noun
+word: は
+romanji: wa
+meaning: (topic marker)
+pos: particle
+word: つめたい
+romanji: tsumetai
+meaning: cold
+pos: adjective
+word: です
+romanji: desu
+meaning: is (polite)
+pos: verb (copula)
+---
+type: single_selection
+text: みずはつめたいです
+romanji: Mizu wa tsumetai desu
+option: The water is cold
+correct: true
+option: I like cold water
+option: Is the water cold?
+option: The water is hot
+---
+type: single_selection
+text: サラのねこはかわいいです
+romanji: Sara no neko wa kawaii desu
+option: Sara's cat is cute
+correct: true
+option: Sara likes cute cats
+option: Is Sara's cat cute?
+option: Sara's cat is not cute
+---
+type: multiple_choice
+text: Adjectives with です
+romanji: (select all correct)
+option: adjective comes before the noun it describes
+correct: true
+option: adjective + です at end means "is [adjective]"
+correct: true
+option: です makes the sentence polite
+correct: true
+option: the adjective comes after the noun in all cases
+---
+type: single_selection
+text: ジョージのコーヒーはあつくないです
+romanji: Jōji no kōhī wa atsukunai desu
+option: George's coffee is not hot
+correct: true
+option: George's coffee is hot
+option: Is George's coffee hot?
+option: George likes coffee that is not hot
+---
+type: identify_words
+text: ワタナベさんのいえはおおきいです
+romanji: Watanabe-san no ie wa ōkii desu
+option: の
+correct: true
+option: は
+correct: true
+option: です
+correct: true
+option: いえ
+correct: true
+option: を
+option: で

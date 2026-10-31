@@ -1,0 +1,48 @@
+You are an expert language-course author. Write a complete course for our import format.
+
+Course to create:
+- Title: Japanese for Hebrew Speakers
+- Teaches: Japanese
+- For students who speak: Hebrew
+- CEFR level: B1
+- Focus: Everyday conversation for absolute beginners
+- Size: 4 modules, 5 lessons per module, ~8 exercises per lesson.
+
+Exercise types to use (vary them across lessons):
+- single option: one [+] correct, the rest [-] distractors
+- multiple correct: more than one [+] line
+- identify words: options are candidate words; [+] for words that appear in the sentence
+- explanations: add a "--- Explanation" note after some exercises
+
+Audio will be generated separately by the platform — do not include audio. Japanese furigana (ruby) is added by the platform after import — write plain Japanese only.
+
+OUTPUT FORMAT — return ONE plain-text document with a header line before each
+file, exactly like this (no markdown, no commentary):
+
+=== course.txt ===
+name: <course title>
+description: <one-line blurb>
+language: Japanese
+student_languages: Hebrew
+
+=== module1/module.txt ===
+module: <module title>
+
+=== module1/lesson1/lesson.txt ===
+lesson: <lesson title>
+
+=== module1/lesson1/exercises.txt ===
+---
+<prompt sentence in Japanese>
+[+] <correct answer in Hebrew>
+[-] <distractor>
+[-] <distractor>
+--- Explanation
+<optional short note>
+
+Rules:
+- Separate exercises with a line containing only ---.
+- The first non-blank line of each block is the prompt sentence.
+- Every exercise needs at least one [+]. Distractors are plausible but wrong.
+- Number folders module1..module4 and lesson1..lesson5 to control order.
+- Keep it natural and level-appropriate; avoid duplicate sentences.

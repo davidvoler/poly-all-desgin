@@ -38,11 +38,14 @@ class AppConfig {
     return defaultValue;
   }
 
-  /// Server base URL the Dio client points at.
+  /// Server base URL the Dio client points at. Use `localhost` (not
+  /// 127.0.0.1) so it's same-site with the `flutter run -d chrome` page
+  /// origin — otherwise the SameSite=Lax session cookie is dropped on
+  /// every API call.
   static String get apiBaseUrl => _read(
         'API_BASE_URL',
         fromEnv: const String.fromEnvironment('API_BASE_URL'),
-        defaultValue: 'http://127.0.0.1:8004',
+        defaultValue: 'http://localhost:8004',
       );
 
   /// Audio CDN — unused by the dashboard today but kept for parity
@@ -86,9 +89,22 @@ class AppConfig {
         defaultValue: '',
       );
 
-  static String get auth0RedirectUri => _read(
-        'AUTH0_REDIRECT_URI',
-        fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
-        defaultValue: '',
-      );
+  // static String get auth0RedirectUri => _read(
+  //       'AUTH0_REDIRECT_URI',
+  //       fromEnv: const String.fromEnvironment('AUTH0_REDIRECT_URI'),
+  //       defaultValue: '',
+  //     );
+  static String get auth0RedirectUri => Uri.base.origin;
+
+  /// True in non-production builds. Surfaces dev-only affordances —
+  /// e.g. the login page keeps the email/password form so testing
+  /// admin flows doesn't require a Google round-trip each time.
+  static bool get isDev {
+    final v = _read(
+      'IS_DEV',
+      fromEnv: const String.fromEnvironment('IS_DEV'),
+      defaultValue: 'false',
+    ).toLowerCase();
+    return v == 'true' || v == '1' || v == 'yes';
+  }
 }

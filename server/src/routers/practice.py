@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from routers.lesson import lesson_completed
+from utils.auth_deps import current_user_id
 from utils.db import get_query_results, run_query
 from models.course import Exercise, PracticeCompleted, Word, SelectedWords
 
@@ -73,12 +74,17 @@ async def get_exercises_by_words(lang:str,words: list[str]):
     WHERE( 
     word1 IN ({placehoslder}) or word2 IN ({placehoslder}) )
     """
+    print('words:', words)
     params = (*words, *words)
     res = await get_query_results(sql, params)
     results = []
     for r in res:
-        exercise = Exercise(**r)
-        results.append(exercise)
+        print('exercise row:', r)
+        try:
+            exercise = Exercise(**r)
+            results.append(exercise)
+        except Exception as e:
+            print('Error creating exercise:', e)
     random.shuffle(results)
     return results[:10]
 
@@ -115,7 +121,8 @@ async def get_exercises_by_exercises(lang:str,exercises: list[int]):
 
 
 @router.get("/by_words", response_model=list[Exercise])
-async def exercise_by_words(user_id: int, lang: str):
+async def exercise_by_words(lang: str,
+                            user_id: int = Depends(current_user_id)):
     words = await get_words_for_practice(user_id, lang)
     exercises = await get_exercises_by_words(lang, words)
     return exercises
@@ -129,12 +136,14 @@ async def exercise_by_selected_words(selected_words: SelectedWords):
 
 
 @router.get("/words", response_model=list[Word])
-async def exercise_by_words(user_id: int, lang: str):
+async def get_words(lang: str,
+                    user_id: int = Depends(current_user_id)):
     return await get_user_words(user_id, lang)
 
 
 @router.get("/by_sentences", response_model=list[Exercise])
-async def exercise_by_sentences(user_id: int, lang: str):
+async def exercise_by_sentences(lang: str,
+                                user_id: int = Depends(current_user_id)):
     sentences = await get_sentences_for_practice(user_id, lang)
     exercises = await get_exercises_by_sentences(lang, sentences)
     return exercises
@@ -142,7 +151,8 @@ async def exercise_by_sentences(user_id: int, lang: str):
 
 
 @router.get("/by_exercises", response_model=list[Exercise])
-async def exercise_by_exercises(user_id: int, lang: str):
+async def exercise_by_exercises(lang: str,
+                                user_id: int = Depends(current_user_id)):
     exercises = await get_exercises_for_practice(user_id, lang)
     exercises = await get_exercises_by_exercises(lang, exercises)
     return exercises
@@ -151,8 +161,10 @@ async def exercise_by_exercises(user_id: int, lang: str):
 
 
 @router.post("/completed")
-async def practice_completed(practice_completed: PracticeCompleted):
+async def practice_completed(practice_completed: PracticeCompleted,
+                             user_id: int = Depends(current_user_id)):
     """Handle practice completion."""
+    practice_completed.user_id = user_id
     sql = """
     INSERT INTO user_data.practice_status (
         user_id, course_id, lang, score, skipped_count, correct_count, incorrect_count, words_count, course_lessons_count

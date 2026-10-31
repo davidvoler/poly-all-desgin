@@ -1,0 +1,89 @@
+---
+title: Lesson 5 - Water
+weight: 5
+---
+type: single_selection
+text: 水
+romanji: Mizu
+option: water
+correct: true
+option: coffee
+option: cat
+option: morning
+---
+type: single_selection
+text: 水はありがとう
+romanji: Mizu wa arigatō
+option: Thank you for the water
+correct: true
+option: I want water
+option: The water is good
+option: Thank you for the coffee
+---
+type: single_selection
+text: 水はいいえ、コーヒーはありがとう
+romanji: Mizu wa iie, kōhī wa arigatō
+option: No water, thank you for the coffee
+correct: true
+option: Yes water, no coffee
+option: Thank you for the water and coffee
+option: No coffee, thank you for the water
+---
+type: explanation
+The pattern [thing] は [response] lets you accept or decline things. いいえ to decline, ありがとう to accept with thanks.
+---
+type: single_selection
+text: 水はありがとうございます
+romanji: Mizu wa arigatō gozaimasu
+option: Thank you very much for the water
+correct: true
+option: Thank you for the coffee
+option: The water is very good
+option: Water, please
+---
+type: identify_words
+text: 水はありがとうございます
+romanji: Mizu wa arigatō gozaimasu
+option: 水
+correct: true
+option: は
+correct: true
+option: ありがとうございます
+correct: true
+option: コーヒー
+option: 猫
+---
+type: single_selection
+text: おはよう、水はありがとう
+romanji: Ohayō, mizu wa arigatō
+option: Good morning, and thanks for the water
+correct: true
+option: Good morning, do you want water?
+option: Thank you, good morning
+option: Good morning, no water
+---
+type: multiple_choice
+text: 水
+romanji: Mizu
+option: water
+correct: true
+option: H₂O
+correct: true
+option: drink
+option: coffee
+---
+type: identify_words
+text: 水はいいえ、コーヒーはありがとう
+romanji: Mizu wa iie, kōhī wa arigatō
+option: 水
+correct: true
+option: は
+correct: true
+option: いいえ
+correct: true
+option: コーヒー
+correct: true
+option: ありがとう
+correct: true
+option: 猫
+option: おはよう

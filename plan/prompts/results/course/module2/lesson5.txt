@@ -1,0 +1,106 @@
+---
+title: Lesson 5 - The Letter は (wa/ha)
+weight: 5
+---
+type: explanation
+は is normally pronounced "ha" but when used as the topic particle it is pronounced "wa". You have seen it constantly — in ねこは、みずは、コーヒーは. Now we look at the letter itself.
+---
+type: single_selection
+text: は
+romanji: ha / wa
+option: the letter "ha", read as "wa" when a particle
+correct: true
+option: the letter "ka"
+option: the letter "na"
+option: the letter "a"
+---
+type: identify_words
+text: ねこはかわいい
+romanji: Neko wa kawaii
+option: は
+correct: true
+option: ね
+correct: true
+option: こ
+correct: true
+option: み
+---
+type: single_selection
+text: When は comes after a noun in a sentence, it is read as...
+romanji: (choose the correct answer)
+option: wa — it is the topic particle
+correct: true
+option: ha — it always sounds the same
+option: ka — it makes a question
+option: ne — it means "isn't it?"
+---
+type: single_selection
+text: ねこはみずがすきです
+romanji: Neko wa mizu ga suki desu
+option: The cat likes water
+correct: true
+option: The cat doesn't like water
+option: I like cats
+option: The cat wants water
+---
+type: single_selection
+text: サラはコーヒーはありがとうといいました
+romanji: Sara wa kōhī wa arigatō to iimashita
+option: Sara said thank you for the coffee
+correct: true
+option: Sara wants coffee
+option: Sara said good morning
+option: Sara said no to coffee
+---
+type: identify_words
+text: みずはありがとうございます
+romanji: Mizu wa arigatō gozaimasu
+option: は
+correct: true
+option: み
+correct: true
+option: あ
+correct: true
+option: ね
+---
+type: multiple_choice
+text: は
+romanji: ha / wa
+option: pronounced "wa" as a particle
+correct: true
+option: marks the topic of a sentence
+correct: true
+option: pronounced "ha" in other uses
+correct: true
+option: makes a sentence negative
+---
+type: single_selection
+text: ワタナベさんはコーヒーはいいえといいました
+romanji: Watanabe-san wa kōhī wa iie to iimashita
+option: Watanabe said no to coffee
+correct: true
+option: Watanabe said yes to coffee
+option: Watanabe likes coffee
+option: Watanabe asked for coffee
+---
+type: identify_words
+text: ねこはかわいいですか
+romanji: Neko wa kawaii desu ka
+option: は
+correct: true
+option: ね
+correct: true
+option: こ
+correct: true
+option: か
+correct: true
+option: み
+---
+type: single_selection
+text: はい、ねこはかわいいです
+romanji: Hai, neko wa kawaii desu
+option: Yes, the cat is cute
+correct: true
+option: No, the cat is cute
+option: Yes, the cat is not cute
+option: Is the cat cute?

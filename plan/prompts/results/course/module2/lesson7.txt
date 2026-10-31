@@ -1,0 +1,105 @@
+---
+title: Lesson 7 - The Particle で (de) — Location of Action
+weight: 7
+---
+type: explanation
+で (de) marks the place where an action happens. Example: がっこうでべんきょうする — "study at school". It answers the question "where does this action take place?"
+---
+type: single_selection
+text: がっこうでべんきょうする
+romanji: Gakkō de benkyō suru
+option: study at school
+correct: true
+option: go to school
+option: like school
+option: come from school
+---
+type: single_selection
+text: サラはがっこうでべんきょうします
+romanji: Sara wa gakkō de benkyō shimasu
+option: Sara studies at school
+correct: true
+option: Sara goes to school
+option: Sara likes school
+option: Sara comes from school
+---
+type: single_selection
+text: ジョージはいえでコーヒーをのみます
+romanji: Jōji wa ie de kōhī wo nomimasu
+option: George drinks coffee at home
+correct: true
+option: George drinks coffee at school
+option: George makes coffee at home
+option: George likes coffee at home
+---
+type: identify_words
+text: ワタナベさんはがっこうでおしえます
+romanji: Watanabe-san wa gakkō de oshiemasu
+option: で
+correct: true
+option: は
+correct: true
+option: がっこう
+correct: true
+option: を
+option: か
+---
+type: single_selection
+text: わたしはいえでみずをのみます
+romanji: Watashi wa ie de mizu wo nomimasu
+option: I drink water at home
+correct: true
+option: I drink water at school
+option: I make water at home
+option: I like water at home
+---
+type: multiple_choice
+text: で (de)
+romanji: de
+option: marks where an action takes place
+correct: true
+option: answers the question "where?"
+correct: true
+option: marks possession
+option: marks the topic of the sentence
+---
+type: single_selection
+text: サラのねこはいえでみずをのみます
+romanji: Sara no neko wa ie de mizu wo nomimasu
+option: Sara's cat drinks water at home
+correct: true
+option: Sara's cat drinks water at school
+option: Sara drinks water with her cat at home
+option: Sara's cat likes water at home
+---
+type: single_selection
+text: ジョージはがっこうでにほんごをべんきょうします
+romanji: Jōji wa gakkō de nihongo wo benkyō shimasu
+option: George studies Japanese at school
+correct: true
+option: George likes Japanese at school
+option: George teaches Japanese at school
+option: George speaks Japanese at school
+---
+type: single_selection
+text: ワタナベさんはいえであさにコーヒーをのみますか
+romanji: Watanabe-san wa ie de asa ni kōhī wo nomimasu ka
+option: Does Watanabe drink coffee at home in the morning?
+correct: true
+option: Watanabe drinks coffee at home in the morning
+option: Does Watanabe make coffee at home in the morning?
+option: Does Watanabe drink coffee at school in the morning?
+---
+type: identify_words
+text: わたしはいえであさにみずをのみます
+romanji: Watashi wa ie de asa ni mizu wo nomimasu
+option: で
+correct: true
+option: は
+correct: true
+option: に
+correct: true
+option: を
+correct: true
+option: の
+option: か

@@ -1,0 +1,93 @@
+---
+title: Lesson 2 - The Letter か (ka)
+weight: 2
+---
+type: explanation
+か makes the sound "ka". You have already seen it in おはようございますか — where か at the end turns a sentence into a question.
+---
+type: single_selection
+text: か
+romanji: ka
+option: the letter "ka"
+correct: true
+option: the letter "a"
+option: the letter "ki"
+option: the letter "ko"
+---
+type: identify_words
+text: おはようございますか
+romanji: Ohayō gozaimasu ka
+option: か
+correct: true
+option: あ
+correct: true
+option: お
+correct: true
+option: り
+---
+type: single_selection
+text: か at the end of a sentence means...
+romanji: (choose the correct answer)
+option: it is a question
+correct: true
+option: it is polite
+option: it is negative
+option: it is morning
+---
+type: single_selection
+text: コーヒーはありがとうございますか
+romanji: Kōhī wa arigatō gozaimasu ka
+option: Would you like coffee?
+correct: true
+option: Thank you for the coffee
+option: Is the coffee good?
+option: Good morning, coffee
+---
+type: single_selection
+text: 水はありがとうございますか
+romanji: Mizu wa arigatō gozaimasu ka
+option: Would you like water?
+correct: true
+option: Thank you for the water
+option: Is the water good?
+option: No water please
+---
+type: identify_words
+text: コーヒーはありがとうございますか
+romanji: Kōhī wa arigatō gozaimasu ka
+option: か
+correct: true
+option: あ
+correct: true
+option: お
+correct: true
+option: り
+---
+type: single_selection
+text: はい、コーヒーはありがとうございます
+romanji: Hai, kōhī wa arigatō gozaimasu
+option: Yes, thank you for the coffee
+correct: true
+option: No, thank you for the coffee
+option: Yes, good morning
+option: Yes, I like coffee
+---
+type: multiple_choice
+text: か
+romanji: ka
+option: found in おはようございますか
+correct: true
+option: makes a sentence a question when at the end
+correct: true
+option: found in ありがとう
+option: the sound "ka"
+correct: true
+---
+type: single_selection
+text: 猫はかわいいですか
+romanji: Neko wa kawaii desu ka
+option: Is the cat cute?
+correct: true
+option: The cat is cute
+option: The cat is not cute
+option: I like the cat

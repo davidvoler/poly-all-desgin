@@ -1,0 +1,121 @@
+
+
+I want to create a course of Japanese for English speakers 
+The course is for beginners 
+could you please create a single lesson with 12 exercises 
+Initially we can start with very simple sentences
+
+
+The course will only contain exercise of this 3 types 
+single_selection
+a sentences with a few options - one correct option
+multiple_choice
+a sentence with multiple options more than one option could be correct
+explanation
+non interactive explanation  
+identify words
+a sentences and options of words - correct when the word is in the sentences and in correct when the word is not 
+For now these are all the question type we do not need any other 
+
+The format is as follows:
+
+---
+title:  Lesson 1 intro to...
+weight: 1
+---
+type: single_selection
+text: おはよう
+romanji: Ohayō 
+option: Good morning
+correct: true
+option:  How are you 
+option:  Yes
+---
+type: explanation 
+some explanation will come here 
+yet another line of explanation 
+---
+type: identify_words
+text: 猫は悲しそうに見える
+romanji: Neko wa kanashi-sō ni mieru
+option: 猫
+correct: true
+option: は
+correct: true
+option:おはよう
+option: 思った
+
+---
+type: multiple_choice
+text: 花
+romanji: hana
+option: flower
+correct: true
+options: blossom
+correct: true 
+option: flowers
+correct: true 
+option: cat
+--
+
+
+the lesson created is good but too fast 
+I would expect 1 or 2 words in a lesson 
+and multiple sentences with this words - of course the new sentences will contain other words too
+But in the case of "thank you" for example we can do
+Thank you Watanabe 
+Thank you George 
+Thanks for the coffee 
+
+About the explanations 
+They are too long 
+An explanation should explain a single element
+for example the particle wa 
+or another explanation is the particle ka making the sentence a question
+Use explanation only when after you have a sentences with the elements in the explanation
+Let's redo the first lesson this time much simpler
+
+
+More comments
+
+
+Now let's create next 5 modules with 10 sentences for each module 
+
+module 1 - some basic words and sentences - Done
+- when using names - mix Japanese and None Japanese names 50%- 50%
+- explanation should explain a single elements - usually some elements we have already seen already
+Module 2 -  Reading
+- Letters - start with Hiragana - introduce a single letter per lesson - only letters we have already seen
+- In this module each lesson will have letter practice - 3 exercise per lesson
+- The word in the lesson should contain the letter we are practicing 
+- We should also practice previous lessons letters 
+- We would also practice words and sentences 
+Module 3 - Most common particles 
+Let's show the particles we have used so far 
+For each particle we will show new sentences and the way to use them
+Module 4 Sentence structure in Japanese 
+- We are not going to go deep into the Japanese grammar - We are learning by example, Simple sentences, with a simple structure, yet the structure will repeat
+- Use as many words and sentences used in the previous modules 
+- in this module we will introduce a new non interactive exercise where we show the structure of a sentences 
+- use sentence seen in previous lesson 
+- take the same structure and only change word 
+like - (of course it should be the same structure in Japanese not in English)
+I eat rice every day
+I drink tea every morning 
+I call my mom every evening 
+In the sentences structure we will have 
+annotation of each word - or most of them 
+- word Japanese
+- Romanji translation
+- meaning ( English)
+- part of speech - verb, particle, proper name, etc.
+module 5 - More words and Sentences 
+- new sentences - extending the particles, structure and words we have learned in previous modules 
+
+
+
+
+
+
+
+

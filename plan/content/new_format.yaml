@@ -1,0 +1,151 @@
+type: course
+lang: ja
+to_lang: he
+title: יפנית לדוברי עברית
+level
+share_edit: private
+access: private
+edit_stage: draft
+copied_from: 0
+---
+type: module
+title: Module 1
+description: This module provides an overview of the course and its objectives.
+weight: 1
+---
+type: lesson
+title: 'Lesson 1: トム'
+weight: 1
+---
+type: exercise
+exercise_type: single_choice
+sentence: トムだ。
+options:
+- text: ירית בתום.
+- text: הם ברחו.
+- text: זה תום.
+  correct: true
+audio: /ja/jpn/jpn_0d457c243f2be81cddba0ea05eb8174c2c7e1793.mp3
+word1: トム
+sentence_id: 1286387701
+to_sentence_id: 2171423527
+weight: 1
+sentence_alt3: トム
+sentence_alt1: とむ
+sentence_alt2: tomu
+ruby_text:
+  romanji:
+  - ruby: tomu
+    text: トム
+  hiragana:
+  - ruby: とむ
+    text: トム
+  katakana:
+  - text: トム
+annotations: []
+---
+type: exercise
+exercise_type: simple
+sentence: トムいる？
+options:
+- text: יש חריגים.
+- text: תתחפפי מכאן!
+- text: תום נמצא?
+  correct: true
+audio: /ja/jpn/jpn_79eefedabc8e14af065cec84fb2b7666161fd451.mp3
+word1: トム
+word2: いる
+sentence_id: 878480134
+to_sentence_id: 4037798259
+weight: 2
+sentence_alt3: トムイル
+sentence_alt1: とむいる
+sentence_alt2: tomu iru
+ruby_text:
+  romanji:
+  - ruby: tomu
+    text: トム
+  - ruby: iru
+    text: いる
+  hiragana:
+  - ruby: とむ
+    text: トム
+  - text: いる
+  katakana:
+  - text: トム
+  - ruby: イル
+    text: いる
+annotations:
+- word: いる
+  translation: יְצוּר
+---
+type: exercise
+exercise_type: simple
+sentence: トムいる？
+options:
+- text: אתם עוד שם?
+- text: האם טום שם?
+  correct: true
+- text: מי אצל טום?
+audio: /ja/jpn/jpn_79eefedabc8e14af065cec84fb2b7666161fd451.mp3
+word1: トム
+word2: いる
+sentence_id: 878480134
+to_sentence_id: 656608119
+weight: 3
+sentence_alt3: トムイル
+sentence_alt1: とむいる
+sentence_alt2: tomu iru
+ruby_text:
+  romanji:
+  - ruby: tomu
+    text: トム
+  - ruby: iru
+    text: いる
+  hiragana:
+  - ruby: とむ
+    text: トム
+  - text: いる
+  katakana:
+  - text: トム
+  - ruby: イル
+    text: いる
+annotations:
+- word: いる
+  translation: יְצוּר
+---
+type: exercise
+exercise_type: simple
+sentence: トムいる？
+options:
+- text: האם טום נמצא שם?
+  correct: true
+- text: תדליקו בבקשה את הטלוויזיה.
+- text: כמה שזיפים יש שם?
+audio: /ja/jpn/jpn_79eefedabc8e14af065cec84fb2b7666161fd451.mp3
+word1: トム
+word2: いる
+sentence_id: 878480134
+to_sentence_id: 559968408
+weight: 4
+sentence_alt3: トムイル
+sentence_alt1: とむいる
+sentence_alt2: tomu iru
+ruby_text:
+  romanji:
+  - ruby: tomu
+    text: トム
+  - ruby: iru
+    text: いる
+  hiragana:
+  - ruby: とむ
+    text: トム
+  - text: いる
+  katakana:
+  - text: トム
+  - ruby: イル
+    text: いる
+annotations:
+- word: いる
+  translation: יְצוּר
+---
