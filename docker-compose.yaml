@@ -83,27 +83,27 @@ services:
       - 6379:6379
 
 
-  broker:
-    container_name: broker
-    image: server:polyglots
-    command:
-      - taskiq
-      - worker
-      - tasks.broker:broker
-      # task modules to import so their @broker.task fns register on the worker
-      - routers.generate_poc_task
-      - -fsd
-      - --log-level 
-      - INFO
-      - --reload
-    volumes:
-      - ./server/src:/app
-    environment: *server-env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - redis
-      - postgres
+  # broker:
+  #   container_name: broker
+  #   image: server:polyglots
+  #   command:
+  #     - taskiq
+  #     - worker
+  #     - tasks.broker:broker
+  #     # task modules to import so their @broker.task fns register on the worker
+  #     - routers.generate_poc_task
+  #     - -fsd
+  #     - --log-level 
+  #     - INFO
+  #     - --reload
+  #   volumes:
+  #     - ./server/src:/app
+  #   environment: *server-env
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   depends_on:
+  #     - redis
+  #     - postgres
 
   audio-server:
     container_name: audio-server
@@ -145,3 +145,53 @@ services:
   #     - --reload
   #   depends_on:
   #     - postgres
+
+
+  editor:
+    container_name: editor
+    image: editor:polyglots
+    build:
+      context: server
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8006:8006
+    volumes:
+      - ./server_editor:${PWD}/server_editor
+    working_dir: ${PWD}/server_editor/src
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8006"
+      - --reload
+    depends_on:
+      - postgres
+
+  broker-editor:
+    container_name: broker-editor
+    image: editor:polyglots
+    command:
+      - taskiq
+      - worker
+      - task_runner:broker
+      # task modules to import so their @broker.task fns register on the worker
+      - tasks.prompt_tasks
+      - -fsd
+      - --log-level 
+      - INFO
+      - --reload
+    
+    volumes:
+      - ./server_editor:${PWD}/server_editor
+    working_dir: ${PWD}/server_editor/src
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - postgres
