@@ -66,15 +66,9 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
   List<_Option> _initialOptions() {
     final exercise = widget.exercise;
     return [
-      for (final option in exercise.correctOptions) _Option(option, true),
-      for (final option in exercise.incorrectOptions) _Option(option),
-      for (
-        var i =
-            exercise.correctOptions.length + exercise.incorrectOptions.length;
-        i < defaultOptionCount;
-        i++
-      )
-        _Option(),
+      for (final option in exercise.options)
+        _Option(option.text, option.correct),
+      for (var i = exercise.options.length; i < defaultOptionCount; i++) _Option(),
     ];
   }
 
@@ -128,26 +122,26 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     final (
       String questionText,
       String answerText,
-      List<String> correct,
-      List<String> wrong,
+      List<ExerciseOption> submittedOptions,
     ) = switch (type) {
       'true_false' => (
         question.text.trim(),
         '$statementIsTrue',
-        ['$statementIsTrue'],
-        ['${!statementIsTrue}'],
+        [
+          ExerciseOption(text: '$statementIsTrue', correct: true),
+          ExerciseOption(text: '${!statementIsTrue}'),
+        ],
       ),
-      'explanation' => ('', '', <String>[], <String>[]),
+      'explanation' => ('', '', <ExerciseOption>[]),
       _ => (
         question.text.trim(),
         filled.firstWhere((o) => o.correct).controller.text.trim(),
         [
           for (final o in filled)
-            if (o.correct) o.controller.text.trim(),
-        ],
-        [
-          for (final o in filled)
-            if (!o.correct) o.controller.text.trim(),
+            ExerciseOption(
+              text: o.controller.text.trim(),
+              correct: o.correct,
+            ),
         ],
       ),
     };
@@ -161,8 +155,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
         word: word.text.trim(),
         question: questionText,
         answer: answerText,
-        correctOptions: correct,
-        incorrectOptions: wrong,
+        options: submittedOptions,
         translation: type == 'explanation' ? '' : translation.text.trim(),
         explanation: explanation.text.trim(),
       ),

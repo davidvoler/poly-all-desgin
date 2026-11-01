@@ -5,7 +5,7 @@ import 'package:editor/features/modules/data/module.dart';
 import 'package:editor/features/modules/widgets/exercise_dialog.dart';
 
 void main() {
-  test('maps options and translation to the server columns', () {
+  test('maps ordered options and translation to the server columns', () {
     final exercise = Exercise.fromJson({
       'exercise_id': 1,
       'lesson_id': 11,
@@ -13,20 +13,21 @@ void main() {
       'word': 'ciao',
       'question': 'Ciao, come stai?',
       'answer': 'hi',
-      'options': {
-        'incorrect': ['thanks', 'please'],
-      },
+      'options': [
+        {'text': 'thanks'},
+        {'text': 'please'},
+        {'text': 'hi', 'correct': true},
+      ],
       'sentence_alt1': 'Hi, how are you?',
     });
 
-    // Exercises without options.correct, like the AI's, have the answer as
-    // their one correct option.
     expect(exercise.correctOptions, ['hi']);
     expect(exercise.incorrectOptions, ['thanks', 'please']);
-    expect(exercise.toJson()['options'], {
-      'correct': ['hi'],
-      'incorrect': ['thanks', 'please'],
-    });
+    expect(exercise.toJson()['options'], [
+      {'text': 'thanks'},
+      {'text': 'please'},
+      {'text': 'hi', 'correct': true},
+    ]);
     expect(exercise.toJson()['sentence_alt1'], 'Hi, how are you?');
   });
 
@@ -214,8 +215,11 @@ void main() {
         id: 5,
         type: 'multiple_choice',
         question: 'Which are greetings?',
-        correctOptions: ['ciao', 'salve'],
-        incorrectOptions: ['pane'],
+        options: [
+          ExerciseOption(text: 'ciao', correct: true),
+          ExerciseOption(text: 'salve', correct: true),
+          ExerciseOption(text: 'pane'),
+        ],
       ),
     );
     final checks = tester

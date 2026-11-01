@@ -56,8 +56,10 @@ void main() {
                           type: 'single_choice',
                           question: 'Il sole è caldo.',
                           answer: 'The sun is hot.',
-                          correctOptions: ['The sun is hot.'],
-                          incorrectOptions: ['The moon is full.'],
+                          options: [
+                            ExerciseOption(text: 'The sun is hot.', correct: true),
+                            ExerciseOption(text: 'The moon is full.'),
+                          ],
                         ),
                       ],
                     ),

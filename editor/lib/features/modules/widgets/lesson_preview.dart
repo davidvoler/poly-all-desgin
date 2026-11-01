@@ -41,14 +41,14 @@ class _LessonPreviewState extends State<LessonPreview> {
   /// The options to choose from, shuffled the same way each time.
   List<String> _options(Exercise exercise) {
     if (exercise.type == 'true_false') return const ['True', 'False'];
-    final options = [...exercise.correctOptions, ...exercise.incorrectOptions];
+    final options = [for (final option in exercise.options) option.text];
     return options..shuffle(Random(exercise.id ?? index));
   }
 
   bool _isCorrect(Exercise exercise, String option) =>
       exercise.type == 'true_false'
       ? option.toLowerCase() == exercise.answer.toLowerCase()
-      : exercise.correctOptions.contains(option);
+      : exercise.options.any((item) => item.text == option && item.correct);
 
   /// Single-answer types check as soon as an option is tapped.
   void _tap(Exercise exercise, String option) {

@@ -13,16 +13,22 @@ const lesson = Lesson(
       type: 'single_choice',
       question: 'Il sole è caldo.',
       answer: 'The sun is hot.',
-      correctOptions: ['The sun is hot.'],
-      incorrectOptions: ['The moon is full.', 'The sun is cold.'],
+      options: [
+        ExerciseOption(text: 'The sun is hot.', correct: true),
+        ExerciseOption(text: 'The moon is full.'),
+        ExerciseOption(text: 'The sun is cold.'),
+      ],
     ),
     Exercise(
       id: 2,
       type: 'multiple_choice',
       question: 'Which are greetings?',
       answer: 'ciao',
-      correctOptions: ['ciao', 'salve'],
-      incorrectOptions: ['pane'],
+      options: [
+        ExerciseOption(text: 'ciao', correct: true),
+        ExerciseOption(text: 'salve', correct: true),
+        ExerciseOption(text: 'pane'),
+      ],
     ),
     Exercise(
       id: 3,
