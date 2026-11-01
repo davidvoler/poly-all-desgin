@@ -224,13 +224,15 @@ async def _make_part_exercises(prompt_request: PromptRequest, course_id: int, mo
             course_id=course_id, module_id=module_id, lesson_id=lesson_id,
             exercise_type=PromptType.EXERCISE_SINGLE_CHOICE.value,
             word=text if from_words else None, question=text, answer=translation,
-            options={"correct": [translation], "incorrect": incorrect}, sentence_alt1=translation,
+            options=[{"text": translation, "correct": True},
+                     *({"text": option} for option in incorrect)], sentence_alt1=translation,
         )))
     return created
 
 
 def _exercise_rows(created: list[Exercise]) -> list[dict]:
-    return [{"question": e.question, "answer": e.answer, "wrong_options": ", ".join(e.options["incorrect"])}
+    return [{"question": e.question, "answer": e.answer,
+             "wrong_options": ", ".join(option.text for option in e.options or [] if not option.correct)}
             for e in created]
 
 

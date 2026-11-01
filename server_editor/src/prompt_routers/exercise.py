@@ -33,7 +33,8 @@ async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, wo
     if exercise_type == PromptType.EXERCISE_FILL_IN_THE_BLANK:
         generated = (await get_fill_in_blank_for_words(words, **kwargs)).exercises
         return [Exercise(**common, word=g.word, question=g.sentence, answer=g.word,
-                         options = get_options([g.translation], g.incorrect_options[:3]))
+                         options=get_options([g.word], g.incorrect_options[:3]),
+                         sentence_alt1=g.translation)
                 for g in generated]
     if exercise_type == PromptType.EXERCISE_SINGLE_CHOICE:
         return _translation_choices(common, (await get_single_choice_for_words(words, **kwargs)).questions)
@@ -67,7 +68,8 @@ async def _create_exercises(prompt_request: PromptRequest, exercise_type: Prompt
         course_id=context.course_id, module_id=context.module_id, lesson_id=context.lesson_id,
         results={"exercises": [
             {"word": e.word, "question": e.question, "answer": e.answer,
-             "wrong_options": ", ".join(e.options["incorrect"]), "translation": e.sentence_alt1}
+             "wrong_options": ", ".join(option.text for option in e.options or [] if not option.correct),
+             "translation": e.sentence_alt1}
             for e in created
         ]} if created else {},
         ui_chat_response={"message": message},

@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Option(BaseModel):
     text: str
-    correct: bool = False
+    correct: bool = Field(default=False, exclude_if=lambda value: value is False)
 
 #Full database exercise model
 class Exercise(BaseModel):
