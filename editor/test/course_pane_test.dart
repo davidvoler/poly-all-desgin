@@ -57,7 +57,10 @@ void main() {
                           question: 'Il sole è caldo.',
                           answer: 'The sun is hot.',
                           options: [
-                            ExerciseOption(text: 'The sun is hot.', correct: true),
+                            ExerciseOption(
+                              text: 'The sun is hot.',
+                              correct: true,
+                            ),
                             ExerciseOption(text: 'The moon is full.'),
                           ],
                         ),

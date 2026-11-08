@@ -68,7 +68,8 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     return [
       for (final option in exercise.options)
         _Option(option.text, option.correct),
-      for (var i = exercise.options.length; i < defaultOptionCount; i++) _Option(),
+      for (var i = exercise.options.length; i < defaultOptionCount; i++)
+        _Option(),
     ];
   }
 
@@ -138,10 +139,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
         filled.firstWhere((o) => o.correct).controller.text.trim(),
         [
           for (final o in filled)
-            ExerciseOption(
-              text: o.controller.text.trim(),
-              correct: o.correct,
-            ),
+            ExerciseOption(text: o.controller.text.trim(), correct: o.correct),
         ],
       ),
     };
