@@ -858,16 +858,16 @@ class _ExerciseCard extends StatelessWidget {
                   Text.rich(
                     TextSpan(
                       children: [
-                        for (final option in exercise.correctOptions)
+                        for (final option in exercise.options)
                           TextSpan(
-                            text: '$option   ',
-                            style: const TextStyle(
-                              color: Color(0xFF2B7771),
-                              fontWeight: FontWeight.w700,
-                            ),
+                            text: '${option.text}   ',
+                            style: option.correct
+                                ? const TextStyle(
+                                    color: Color(0xFF2B7771),
+                                    fontWeight: FontWeight.w700,
+                                  )
+                                : null,
                           ),
-                        for (final option in exercise.incorrectOptions)
-                          TextSpan(text: '$option   '),
                       ],
                     ),
                     style: muted,
