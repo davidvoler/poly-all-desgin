@@ -95181,7 +95181,7 @@ gqo(){return"\\"}}
 A.anT.prototype={
 FC(a){$.LX().m(0,this,a)}}
 A.aKs.prototype={
-$1(a){var s,r=A.b0V(A.h5("API_BASE_URL","http://localhost:8004","https://api.polyglots.social"),B.Ok,A.al(["withCredentials",!0],t.N,t.z),B.O6,B.k8),q=new A.Rb(A.b([B.Lh],t.i6))
+$1(a){var s,r=A.b0V(A.h5("API_BASE_URL","http://localhost:8004","https://api.student.polyglots.social"),B.Ok,A.al(["withCredentials",!0],t.N,t.z),B.O6,B.k8),q=new A.Rb(A.b([B.Lh],t.i6))
 q.M(q,B.WQ)
 s=new A.PK($,q,$,new A.agY(51200),!1)
 s.a_5$=r
