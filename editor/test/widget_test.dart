@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:editor/features/auth/data/auth.dart';
 import 'package:editor/features/chat/data/ai_models.dart';
 import 'package:editor/features/chat/data/chat_responder.dart';
 import 'package:editor/features/chat/data/prompt_router_responder.dart';
@@ -15,6 +16,8 @@ import 'package:editor/features/courses/data/course.dart';
 import 'package:editor/features/courses/data/courses_repository.dart';
 import 'package:editor/features/courses/data/language.dart';
 import 'package:editor/main.dart';
+
+import 'fake_auth.dart';
 
 const testAiProviders = [
   AiProvider(
@@ -37,6 +40,7 @@ Widget buildApp() => ProviderScope(
   overrides: [
     coursesProvider.overrideWith((ref) async => sampleCourses),
     languagesProvider.overrideWith((ref) async => builtInLanguages),
+    authProvider.overrideWith(FakeAuthNotifier.new),
     aiProvidersProvider.overrideWith((ref) async => testAiProviders),
     responderFactoryProvider.overrideWithValue(
       (course) => ChatResponder(course: course),

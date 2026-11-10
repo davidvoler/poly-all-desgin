@@ -1,24 +1,96 @@
 # Server Editor
 
-## Gemini API key
+## Login
 
-The editor defaults to the `gemini` provider with the `gemini-2.5-flash` model.
-Set `GOOGLE_API_KEY` in the environment before starting the server or worker.
-PydanticAI also accepts `GEMINI_API_KEY` as an alias.
-For Docker Compose, add this line to the repository-root `.env` file, which is
-loaded by both editor services:
+The editor uses the same accounts as the app and dashboard
+(`user_data.users`) and signs in with OAuth: Continue with Google through
+Auth0. Email + password exists for local development only, where Auth0 is not
+set up: the server refuses it unless `EDITOR_PASSWORD_LOGIN=true`, and
+production builds hide the form. Only active members of the school with the
+`editor` role in `school.school_users.roles` can sign in; users are never
+created here.
+
+- **Which school:** the editor site's hostname, matched against
+  `school.schools.school_editor_url` (like `school_url` for the app and
+  `school_dashboard_url` for the dashboard). Courses and AI keys store the
+  school as its `school_id` in text (`'1'`). DDL: `DDL/editor_auth.sql`.
+- **Session:** an HttpOnly `editor_session` cookie holding a JWT signed with
+  `EDITOR_SESSION_SECRET` (`utils/session.py`). Unlike the app/dashboard
+  `user_id` cookie it cannot be edited or forged, and it expires.
+- **Every request** (`utils/permission.get_school_user`) checks the cookie,
+  that it was issued for this site's school, and that the user is still an
+  active editor there, so removing the role takes effect at once.
+- **Per-school data:** `require_access` returns 404 for any course, module,
+  lesson or exercise of another school.
+- Endpoints: `POST /api/v1/auth/login_with_password`, `POST /api/v1/auth/login_auth0`
+  (`{"id_token"}`), `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`.
+
+Settings (repository-root `.env`, loaded by the editor server):
 
 ```env
-GOOGLE_API_KEY=your-gemini-api-key
+EDITOR_SESSION_SECRET=<at least 32 random characters>  # python -c "import secrets;print(secrets.token_urlsafe(48))"
+EDITOR_SESSION_DAYS=7
+COOKIE_SECURE=true                                      # behind HTTPS
+# The editor sites allowed to call the API with the cookie (default: localhost)
+EDITOR_ALLOWED_ORIGINS=^https://([a-z0-9-]+\.)*editor\.polyglots\.social$
+AUTH0_DOMAIN=polyglots.us.auth0.com                     # same tenant and client as the dashboard
+AUTH0_CLIENT_ID=<the SPA client id>
 ```
 
-For a local run, export the variable before launching the server:
+To let someone into the editor:
 
-```sh
-export GOOGLE_API_KEY="your-gemini-api-key"
+```sql
+update school.school_users set roles = array_append(roles, 'editor')
+where user_id = <id> and school_id = <school> and not ('editor' = any(roles));
 ```
 
-The key is read by PydanticAI when it creates the Gemini model.
+## AI API keys
+
+Each school, and each user, brings its own API keys for Gemini, Claude and
+OpenAI. They are added in the editor app (the key icon in the chat header) and
+stored encrypted in `secrets.ai_api_key` (DDL: `DDL/ai_keys.sql`).
+
+- **School key**: `user_id` is empty; shared by the school's users.
+- **User key**: has both `school` and `user_id`; used before the school's.
+- **Server key**: `GOOGLE_API_KEY` / `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`,
+  `OPENAI_API_KEY` in `.env`, used when neither has one, only while
+  `AI_KEYS_ENV_FALLBACK=true`. Set it to `false` in SaaS.
+
+The default provider is `gemini` with the `gemini-3.5-flash` model.
+
+### Setup
+
+1. Create the table: `psql ... -f server_editor/DDL/ai_keys.sql`.
+2. Add a master key to the repository-root `.env`, loaded by both editor
+   services (the server and the `broker-editor` worker):
+
+   ```env
+   # python -c "import os;print(os.urandom(32).hex())"
+   AI_KEYS_MASTER_KEY_V1=<64 hex characters>
+   AI_KEYS_ENV_FALLBACK=false
+   ```
+
+   Keep the master key out of git and backed up: without it the stored keys
+   cannot be decrypted. Use a different one in each environment.
+
+### How it works
+
+- The API never returns a key, only its last 4 characters
+  (`GET/PUT/DELETE /api/v1/ai/keys`).
+- Keys are encrypted with AES-GCM in `utils/secret_box.py`. Each ciphertext is
+  bound to its school, user and provider, so a copied row does not decrypt.
+- Keys are decrypted only in the task worker, for the length of one prompt
+  task (`tasks/prompt_tasks.py` → `prompts.providers.use_api_keys`).
+- `GET /api/v1/prompt/ai_models` marks a provider available when the user,
+  their school or the server has a key for it.
+- Who may change school keys: `utils.permission.can_manage_school_keys`
+  (every editor of the school).
+
+### Rotating the master key
+
+Add `AI_KEYS_MASTER_KEY_V2` next to V1, restart the editor server and worker,
+then run `cd server_editor/src && python -m scripts.rotate_ai_keys`. Remove V1
+once no rows use it.
 
 We want to create a separate server for editor and student
 There is some common functionality however most of the code is unique and separating it would ease the development

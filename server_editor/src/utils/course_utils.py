@@ -3,13 +3,14 @@ from models.course import Course
 import json
 
 
-async def get_courses() -> list[Course]:
+async def get_courses(school: str) -> list[Course]:
+    """The school's courses; [school] is its school_id as text."""
     query = """
     SELECT * FROM course_simple.course
-    WHERE deleted IS NOT TRUE
+    WHERE deleted IS NOT TRUE AND school = %(school)s
     ORDER BY course_id
     """
-    result = await get_query_results(query, {})
+    result = await get_query_results(query, {"school": school})
     if result:
         return [Course(**row) for row in result]
     return []

@@ -37,6 +37,7 @@ dependencies:
   flutter_riverpod: ^3.4.3
   dio: ^5.11.1
   youtube_player_iframe: ^6.0.2
+  auth0_flutter: ^1.7.0
 
 dev_dependencies:
   flutter_test:

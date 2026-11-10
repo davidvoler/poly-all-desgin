@@ -55,7 +55,7 @@ class AiModelPicker extends ConsumerWidget {
                   value: p.provider,
                   enabled: p.available && p.models.isNotEmpty,
                   child: Tooltip(
-                    message: p.reason ?? '',
+                    message: p.tooltip,
                     child: Text(
                       p.available ? p.label : '${p.label} (unavailable)',
                       overflow: TextOverflow.ellipsis,

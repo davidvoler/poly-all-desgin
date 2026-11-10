@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../features/auth/data/auth.dart';
 
 import '../../features/courses/pages/courses_page.dart';
 
@@ -76,27 +79,7 @@ class NavigationRailPanel extends StatelessWidget {
             const SizedBox(height: 16),
             const NavItem(icon: Icons.settings_outlined, label: 'Settings'),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 17,
-                  backgroundColor: const Color(0xFF9BC3B2),
-                  child: const Text(
-                    'DL',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF17252D),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'David Lee',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
+            const _SignedInUser(),
           ],
         ),
       ),
@@ -142,6 +125,66 @@ class NavItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Who is signed in, to which school, and a way to sign out.
+class _SignedInUser extends ConsumerWidget {
+  const _SignedInUser();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    final user = auth is AuthSignedIn ? auth.user : null;
+    if (user == null) return const SizedBox.shrink();
+    final initial = user.email.isEmpty ? '?' : user.email[0].toUpperCase();
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 17,
+          backgroundColor: const Color(0xFF9BC3B2),
+          child: Text(
+            initial,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF17252D),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user.email,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              Text(
+                user.schoolName,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Sign out',
+          onPressed: () {
+            // Back to the first page, which shows the login once signed out.
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            ref.read(authProvider.notifier).signOut();
+          },
+          icon: const Icon(
+            Icons.logout_rounded,
+            color: Colors.white54,
+            size: 18,
+          ),
+        ),
+      ],
     );
   }
 }

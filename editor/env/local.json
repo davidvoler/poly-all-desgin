@@ -1,4 +1,9 @@
 {
-  "_comment": "Local docker-compose stack: the editor server on port 8006, the same as the default in lib/core/api/api_client.dart.",
-  "API_BASE_URL": "http://localhost:8006"
+  "_comment": "Local docker-compose stack: the editor server on port 8006. Email + password sign-in only, as Auth0 is not configured locally.",
+  "API_BASE_URL": "http://localhost:8006",
+  "AUTH_PROVIDER": "local",
+  "AUTH0_DOMAIN": "",
+  "AUTH0_CLIENT_ID": "",
+  "AUTH0_AUDIENCE": "",
+  "IS_DEV": "true"
 }

@@ -36,7 +36,6 @@ services:
     working_dir: ${PWD}/server_editor/src
     # environment: *server-env
     env_file: .env
-    
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command:

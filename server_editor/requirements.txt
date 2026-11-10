@@ -30,3 +30,5 @@ fastapi
 babel
 openai
 pydantic-ai-harness
+# Encrypts AI API keys stored in Postgres (utils/secret_box.py)
+cryptography
