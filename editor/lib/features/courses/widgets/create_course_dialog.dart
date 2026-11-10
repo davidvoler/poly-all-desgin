@@ -4,24 +4,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/course.dart';
 import '../data/language.dart';
 
+/// Asks for a new course's details, or edits [course]'s when given.
+/// Pops the course to save, or null when cancelled.
 class CreateCourseDialog extends ConsumerStatefulWidget {
-  const CreateCourseDialog({super.key});
+  const CreateCourseDialog({this.course, super.key});
+
+  /// The course to edit; null creates a new one.
+  final Course? course;
 
   @override
   ConsumerState<CreateCourseDialog> createState() => _CreateCourseDialogState();
 }
 
 class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
-  final titleController = TextEditingController();
+  late final course = widget.course;
+  late final titleController = TextEditingController(text: course?.title);
+  late final descriptionController = TextEditingController(
+    text: course?.description,
+  );
+
+  static const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
   /// ISO codes of the picked languages.
-  String learningLanguage = 'es';
-  String studentLanguage = 'en';
-  String level = 'A1';
+  late String learningLanguage = _orDefault(course?.lang, 'es');
+  late String studentLanguage = _orDefault(course?.toLang, 'en');
+  late String level = levels.contains(course?.level) ? course!.level : 'A1';
+
+  static String _orDefault(String? value, String fallback) =>
+      value == null || value.isEmpty ? fallback : value;
 
   @override
   void dispose() {
     titleController.dispose();
+    descriptionController.dispose();
     super.dispose();
   }
 
@@ -42,6 +57,9 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
     if (title.isEmpty) return;
     Navigator.of(context).pop(
       Course(
+        id: course?.id,
+        status: course?.status ?? 'draft',
+        description: descriptionController.text.trim(),
         title: title,
         learningLanguage: _name(learningLanguage),
         studentLanguage: _name(studentLanguage),
@@ -68,12 +86,12 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Create a course',
+                          course == null ? 'Create a course' : 'Edit course',
                           style: TextStyle(
                             fontFamily: 'Georgia',
                             fontSize: 26,
@@ -81,9 +99,11 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
                             color: Color(0xFF17252D),
                           ),
                         ),
-                        SizedBox(height: 7),
+                        const SizedBox(height: 7),
                         Text(
-                          'Set the foundation before you start authoring.',
+                          course == null
+                              ? 'Set the foundation before you start authoring.'
+                              : 'Change the course details.',
                           style: TextStyle(
                             color: Color(0xFF748087),
                             fontSize: 13,
@@ -106,6 +126,16 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
                   labelText: 'Course title',
                   hintText: 'For example, Everyday Spanish',
                   prefixIcon: Icon(Icons.title_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                minLines: 1,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  prefixIcon: Icon(Icons.notes_rounded),
                 ),
               ),
               const SizedBox(height: 16),
@@ -136,7 +166,7 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
               CourseDropdown(
                 label: 'Level',
                 value: level,
-                values: const ['A1', 'A2', 'B1', 'B2', 'C1'],
+                values: levels,
                 onChanged: (value) => setState(() => level = value!),
               ),
               const SizedBox(height: 28),
@@ -150,8 +180,13 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
                   const SizedBox(width: 10),
                   FilledButton.icon(
                     onPressed: submit,
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                    label: const Text('Continue'),
+                    icon: Icon(
+                      course == null
+                          ? Icons.arrow_forward_rounded
+                          : Icons.check_rounded,
+                      size: 18,
+                    ),
+                    label: Text(course == null ? 'Continue' : 'Save'),
                   ),
                 ],
               ),

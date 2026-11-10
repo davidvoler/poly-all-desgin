@@ -24,8 +24,8 @@ async def extract_from_part(
     lang: str,
     to_lang: str,
     level: str,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> PartExtract:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> PartExtract:
     """Words and sentences worth learning from one part of a video's subtitles."""
     agent = Agent(
         get_ai_model(provider, model),

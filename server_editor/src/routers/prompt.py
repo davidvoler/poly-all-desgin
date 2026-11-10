@@ -6,6 +6,7 @@ from tasks.prompt_tasks import handle_prompt_task
 from utils.prompt_utils import get_last_responses
 from utils.context_options import context_options
 from utils.context_utils import get_or_create_context
+from utils.ai_models import AiProvider, ai_providers
 
 router = APIRouter()
 
@@ -24,6 +25,12 @@ async def _handle_prompt_history(course_id:int, module_id:int = 0, limit:int = 2
 async def _default_options(course_id:int)->list[PromptOption]:
     """The next steps for the course's current module and lesson."""
     return await context_options(course_id)
+
+
+@router.get("/ai_models", response_model=list[AiProvider])
+async def _ai_models()->list[AiProvider]:
+    """The AI providers and models the chat can use, and which are available."""
+    return await ai_providers()
 
 
 @router.post("/context", response_model=PromptsContext)

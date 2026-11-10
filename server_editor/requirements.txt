@@ -30,4 +30,3 @@ fastapi
 babel
 openai
 pydantic-ai-harness
-

@@ -7,6 +7,7 @@ import '../../courses/data/courses_repository.dart';
 import '../../courses/pages/course_authoring_page.dart';
 import '../../courses/widgets/create_course_dialog.dart';
 import '../data/prompt_router_responder.dart';
+import '../widgets/ai_model_picker.dart';
 import '../widgets/chat_panel.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
@@ -38,6 +39,29 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not create the course.\n$error')),
+      );
+    }
+  }
+
+  /// Opens the course form filled in, saves the changes and keeps the chat
+  /// on the course.
+  Future<void> _editCourse(Course course) async {
+    final draft = await showDialog<Course>(
+      context: context,
+      builder: (_) => CreateCourseDialog(course: course),
+    );
+    if (!mounted || draft == null) return;
+    try {
+      final saved = await ref
+          .read(coursesRepositoryProvider)
+          .updateCourse(draft);
+      if (!mounted) return;
+      setState(() => selected = saved);
+      ref.invalidate(coursesProvider);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save the course.\n$error')),
       );
     }
   }
@@ -122,7 +146,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget _buildHeader(List<Course> courses, Course course) {
     return Container(
       height: 78,
-      padding: const EdgeInsets.symmetric(horizontal: 42),
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE4E0D9))),
@@ -137,26 +161,42 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(width: 32),
+          // The pickers shrink, cutting long names short, on narrow windows.
+          const Flexible(flex: 4, child: AiModelPicker()),
           const Spacer(),
           const Text(
             'Course',
             style: TextStyle(color: Color(0xFF8A979A), fontSize: 13),
           ),
           const SizedBox(width: 12),
-          DropdownButton<Course>(
-            value: course,
-            underline: const SizedBox.shrink(),
-            items: courses
-                .map(
-                  (course) => DropdownMenuItem(
-                    value: course,
-                    child: Text(course.title),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) => setState(() => selected = value),
+          Flexible(
+            flex: 3,
+            child: DropdownButton<Course>(
+              value: course,
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+              items: courses
+                  .map(
+                    (course) => DropdownMenuItem(
+                      value: course,
+                      child: Text(
+                        course.title,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => selected = value),
+            ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Edit course',
+            onPressed: course.id == null ? null : () => _editCourse(course),
+            icon: const Icon(Icons.edit_outlined, size: 20),
+          ),
+          const SizedBox(width: 8),
           _buildNewCourseButton(),
         ],
       ),

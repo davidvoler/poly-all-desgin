@@ -14,8 +14,8 @@ class SingleChoiceList(BaseModel):
 async def get_single_choice(
     word: str,
     num_sentences: int = 3,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> SingleChoiceList:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> SingleChoiceList:
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
@@ -38,8 +38,8 @@ async def get_fill_in_blank_for_words(
     lang: str,
     to_lang: str,
     level: str,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> WordExerciseList:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> WordExerciseList:
     """One fill-in-the-blank question per word (the word is the answer), in one AI call."""
     agent = Agent(
         get_ai_model(provider, model),
@@ -74,8 +74,8 @@ async def get_single_choice_for_words(
     lang: str,
     to_lang: str,
     level: str,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> SentenceTranslationQuestionList:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> SentenceTranslationQuestionList:
     """One single-choice question per word: a sentence in the learned language that
     uses the word, its correct translation, and wrong translations to choose from."""
     agent = Agent(
@@ -105,8 +105,8 @@ async def get_wrong_translations(
     lang: str,
     to_lang: str,
     count: int = 3,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> dict[int, list[str]]:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> dict[int, list[str]]:
     """Wrong translations for each (sentence, correct translation), by the sentence's
     position in the list: alike in form, different in meaning."""
     listing = "\n".join(f"{i}. {s} => {t}" for i, (s, t) in enumerate(sentences, start=1))

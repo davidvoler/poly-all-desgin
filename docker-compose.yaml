@@ -1,23 +1,23 @@
 # Shared by `server` (FastAPI) and `broker` (taskiq worker) — the worker
 # runs the generate_poc_new jobs, so it needs the same DB + Ollama access.
-x-server-env: &server-env
-  - POSTGRES_DB=polyglots
-  - POSTGRES_PORT=5432
-  - POSTGRES_HOST=postgres
-  - POSTGRES_USER=polyglots
-  - POSTGRES_PASSWORD=polyglots
-  - POSTGRES_CONTENT_PORT=5432
-  - POSTGRES_CONTENT_HOST=postgres_content
-  - POSTGRES_CONTENT_USER=polyglots
-  - POSTGRES_CONTENT_PASSWORD=polyglots
-  - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
-  - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
-  - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
-  - ENABLE_DOCS=true
-  - COOKIE_SECURE=false
-  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-  - REDIS_HOST=redis
-  - REDIS_PORT=6379
+# x-server-env: &server-env
+#   - POSTGRES_DB=polyglots
+#   - POSTGRES_PORT=5432
+#   - POSTGRES_HOST=postgres
+#   - POSTGRES_USER=polyglots
+#   - POSTGRES_PASSWORD=polyglots
+#   - POSTGRES_CONTENT_PORT=5432
+#   - POSTGRES_CONTENT_HOST=postgres_content
+#   - POSTGRES_CONTENT_USER=polyglots
+#   - POSTGRES_CONTENT_PASSWORD=polyglots
+#   - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+#   - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+#   - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+#   - ENABLE_DOCS=true
+#   - COOKIE_SECURE=false
+#   - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+#   - REDIS_HOST=redis
+  # - REDIS_PORT=6379
 
 services:
   postgres:
@@ -59,7 +59,8 @@ services:
     volumes:
       - ./server:${PWD}/server
     working_dir: ${PWD}/server/src
-    environment: *server-env
+    # environment: *server-env
+    env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command:
@@ -104,14 +105,16 @@ services:
     container_name: editor
     image: editor:polyglots
     build:
-      context: server
+      context: server_editor
       dockerfile: Dockerfile.dev
     ports:
       - 8006:8006
     volumes:
       - ./server_editor:${PWD}/server_editor
     working_dir: ${PWD}/server_editor/src
-    environment: *server-env
+    # environment: *server-env
+    env_file: .env
+    
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command:
@@ -142,7 +145,8 @@ services:
     volumes:
       - ./server_editor:${PWD}/server_editor
     working_dir: ${PWD}/server_editor/src
-    environment: *server-env
+    # environment: *server-env
+    env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

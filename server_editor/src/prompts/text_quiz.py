@@ -29,8 +29,8 @@ async def get_text_quiz(
     to_language: str,
     text: str,
     level: str,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> TextParts:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> TextParts:
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,

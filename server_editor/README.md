@@ -1,5 +1,25 @@
 # Server Editor
 
+## Gemini API key
+
+The editor defaults to the `gemini` provider with the `gemini-2.5-flash` model.
+Set `GOOGLE_API_KEY` in the environment before starting the server or worker.
+PydanticAI also accepts `GEMINI_API_KEY` as an alias.
+For Docker Compose, add this line to the repository-root `.env` file, which is
+loaded by both editor services:
+
+```env
+GOOGLE_API_KEY=your-gemini-api-key
+```
+
+For a local run, export the variable before launching the server:
+
+```sh
+export GOOGLE_API_KEY="your-gemini-api-key"
+```
+
+The key is read by PydanticAI when it creates the Gemini model.
+
 We want to create a separate server for editor and student
 There is some common functionality however most of the code is unique and separating it would ease the development
 

@@ -13,8 +13,8 @@ class SentenceTranslationList(BaseModel):
 async def get_sentence_translation(
     word: str,
     num_sentences: int = 3,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> SentenceTranslationList:
+    provider: str = "gemini",
+    model: str = "gemini-2.5-flash") -> SentenceTranslationList:
     """Generate a list of sentence translation questions for the given word."""
     model_instance = get_provider(provider, model)
     agent = Agent(
