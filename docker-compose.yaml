@@ -11,6 +11,8 @@ services:
       shared_buffers: 4GB 
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+      - ./data/backup:/tmp/backup
+
     shm_size: 4GB
   postgres_content:
     container_name: postgres_content
