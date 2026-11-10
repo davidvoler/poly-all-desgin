@@ -1,9 +1,11 @@
 {
   "_comment": "The editor server behind nginx, and the same Auth0 tenant and SPA client as the dashboard (the client_id is public). The Auth0 application must list the editor sites in its allowed callback, logout and web origins.",
   "API_BASE_URL": "https://editor.api.polyglots.social",
+  "AUDIO_BASE_URL": "https://audio.polyglots.social",
   "AUTH_PROVIDER": "auth0",
   "AUTH0_DOMAIN": "polyglots.us.auth0.com",
   "AUTH0_CLIENT_ID": "USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk",
   "AUTH0_AUDIENCE": "",
+  "AUTH0_REDIRECT_URI": "https://editor.polyglots.social",
   "IS_DEV": "false"
 }
