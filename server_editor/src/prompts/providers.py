@@ -7,7 +7,7 @@ def ollama_base_url() -> str:
     return url.removesuffix("/v1")
 
 
-def get_provider(provider: str = "gemini", model: str = "gemini-2.5-flash"):
+def get_provider(provider: str = "gemini", model: str = "gemini-3.5-flash"):
     if provider == "ollama":
         from pydantic_ai.models.ollama import OllamaModel
         from pydantic_ai.providers.ollama import OllamaProvider

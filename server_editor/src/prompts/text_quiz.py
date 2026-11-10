@@ -30,7 +30,7 @@ async def get_text_quiz(
     text: str,
     level: str,
     provider: str = "gemini",
-    model: str = "gemini-2.5-flash") -> TextParts:
+    model: str = "gemini-3.5-flash") -> TextParts:
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,

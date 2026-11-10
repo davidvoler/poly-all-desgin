@@ -63,7 +63,7 @@ class PromptRequest(BaseModel):
     exercise_count: int|None = Field(0, description="The count of exercises in the context.")
     user_message: str = Field('', description="The message input from the user.") 
     provider: str = Field('gemini', description="The AI provider associated with the prompt request.")
-    model: str = Field('gemini-2.5-flash', description="The model to use for the prompt request.")
+    model: str = Field('gemini-3.5-flash', description="The model to use for the prompt request.")
     prompt_values: list|None = Field([], description="Values for the prompts could be words, sentences, or other relevant data.")
     router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
     prompt_type: PromptType|None = Field(None, description="The type of action associated with the last prompt request.")

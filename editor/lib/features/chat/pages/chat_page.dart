@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/error_snack_bar.dart';
+
 import '../../../core/widgets/navigation_rail_panel.dart';
 import '../../courses/data/course.dart';
 import '../../courses/data/courses_repository.dart';
@@ -37,9 +39,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ref.invalidate(coursesProvider);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not create the course.\n$error')),
-      );
+      showErrorSnackBar(context, 'Could not create the course.\n$error');
     }
   }
 
@@ -60,9 +60,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ref.invalidate(coursesProvider);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save the course.\n$error')),
-      );
+      showErrorSnackBar(context, 'Could not save the course.\n$error');
     }
   }
 

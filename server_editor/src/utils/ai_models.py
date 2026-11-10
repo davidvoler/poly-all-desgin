@@ -18,8 +18,9 @@ class AiProvider(BaseModel):
 # The first model of each provider is its default. Edit to offer other models.
 _HOSTED = [
     ("gemini", "Google Gemini", ("GOOGLE_API_KEY", "GEMINI_API_KEY"),
-     ["gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-pro",
-      "gemini-3.1-pro-preview"]),
+     # Google refuses the 2.5 models for new API keys. Pro models need a paid plan.
+     ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"]),
     ("claude", "Anthropic Claude", ("ANTHROPIC_API_KEY",),
      ["claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5-5"]),
     ("openai", "OpenAI", ("OPENAI_API_KEY",),

@@ -20,7 +20,7 @@ const testAiProviders = [
   AiProvider(
     provider: 'gemini',
     label: 'Google Gemini',
-    models: ['gemini-2.5-flash', 'gemini-2.5-pro'],
+    models: ['gemini-3.5-flash', 'gemini-3.1-pro-preview'],
     available: true,
   ),
   AiProvider(
@@ -67,7 +67,7 @@ void main() {
     expect(find.text('Everyday Spanish'), findsNWidgets(2));
     // The chat's AI provider and model picker starts on the default.
     expect(find.text('Google Gemini'), findsOneWidget);
-    expect(find.text('gemini-2.5-flash'), findsOneWidget);
+    expect(find.text('gemini-3.5-flash'), findsOneWidget);
 
     await tester.tap(find.text('Courses'));
     await tester.pumpAndSettle();

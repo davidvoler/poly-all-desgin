@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/error_snack_bar.dart';
+
 import '../../../core/widgets/navigation_rail_panel.dart';
 import '../../chat/data/prompt_router_responder.dart';
 import '../../chat/widgets/chat_panel.dart';
@@ -143,9 +145,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
           .select(moduleId: moduleId, lessonId: lessonId);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save the context.\n$error')),
-      );
+      showErrorSnackBar(context, 'Could not save the context.\n$error');
     }
   }
 
@@ -710,9 +710,7 @@ class _LessonExercises extends ConsumerWidget {
       await change();
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not $verb the exercise.\n$error')),
-      );
+      showErrorSnackBar(context, 'Could not $verb the exercise.\n$error');
       return;
     }
     ref.invalidate(lessonsProvider(module.id));
@@ -1103,9 +1101,7 @@ class _WordList extends ConsumerWidget {
           );
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not change the word.\n$error')),
-      );
+      showErrorSnackBar(context, 'Could not change the word.\n$error');
       return;
     }
     ref.invalidate(wordsProvider((courseId: courseId, moduleId: moduleId)));

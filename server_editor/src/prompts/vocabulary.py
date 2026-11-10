@@ -11,7 +11,7 @@ async def prompt_suggested_words(
    level: str,
    num_words: int = 30,
     provider: str = "gemini",
-    model: str = "gemini-2.5-flash") -> WordTranslationList:
+    model: str = "gemini-3.5-flash") -> WordTranslationList:
     """Generate a list of words and their translations. for students speaking {to_lang} learning {lang}. """
     model_instance = get_ai_model(provider, model)
     system_prompt=f"You are an expert {lang} language teacher."

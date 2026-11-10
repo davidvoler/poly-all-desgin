@@ -16,7 +16,43 @@ class CourseEditorApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2B7771)),
         fontFamily: 'Arial',
       ),
+      // Any text, such as an error, can be selected and copied.
+      builder: (context, child) => _SelectableText(child: child!),
       home: const ChatPage(),
     );
   }
+}
+
+/// Wraps the app in a [SelectionArea], with the [Overlay] it needs for its
+/// selection handles and copy menu.
+class _SelectableText extends StatefulWidget {
+  const _SelectableText({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_SelectableText> createState() => _SelectableTextState();
+}
+
+class _SelectableTextState extends State<_SelectableText> {
+  late final entry = OverlayEntry(
+    builder: (_) => SelectionArea(child: widget.child),
+  );
+
+  @override
+  void didUpdateWidget(_SelectableText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    entry.markNeedsBuild();
+  }
+
+  @override
+  void dispose() {
+    entry
+      ..remove()
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Overlay(initialEntries: [entry]);
 }
