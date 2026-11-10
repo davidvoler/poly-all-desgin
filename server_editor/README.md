@@ -72,3 +72,56 @@ There is some common functionality however most of the code is unique and separa
  
 ### Question:
 - Do we need a wizard UI or a simple chat will do?
+
+
+
+
+### Models and costs
+
+#### Google model options
+
+- `gemini-3.1-flash-lite`
+- `gemini-2.5-flash-lite`
+- `gemini-2.5-flash`
+- `gemini-3.8-flash`
+- `gemini-2.5-pro`
+- `gemini-3.1-pro`
+
+The cost difference between the model tiers is substantial: **Flash-Lite is 15× to 30× cheaper than Pro**, while standard **Flash sits in the sweet spot at roughly 4× to 6× cheaper than Pro**.
+
+Google prices the API per **1 million tokens (1M tokens)**, split into **Input** (your prompt, system instructions, and examples) and **Output** (the generated quiz items and translations).
+
+---
+
+### Token Pricing Comparison
+
+| Tier | Representative Model | Input Cost (per 1M tokens) | Output Cost (per 1M tokens) | Relative Cost Multiplier |
+| --- | --- | --- | --- | --- |
+| **Flash-Lite** *(Budget / High-Volume)* | `gemini-3.1-flash-lite` / `gemini-2.5-flash-lite` | **$0.10 – $0.25** | **$0.40 – $1.50** | **1× (Baseline)** |
+| **Standard Flash** *(Workhorse)* | `gemini-2.5-flash` / `gemini-3.8-flash` | **$0.30 – $0.75** | **$2.50 – $3.75** | **~3× to 6×** |
+| **Pro Tier** *(Flagship Reasoning)* | `gemini-2.5-pro` / `gemini-3.1-pro` | **$1.25 – $2.00** | **$10.00 – $12.00** | **~15× to 25×** |
+
+*(Note: Pro models double their input rate if a single request's prompt exceeds 200k tokens, whereas Flash tiers remain flat).*
+
+---
+
+### What Does This Look Like in Practice?
+
+Assume a standard interactive quiz workflow:
+
+* **Input prompt:** ~400 tokens (system instructions, language rules, few-shot schema example)
+* **Output generated:** ~300 tokens (questions, 4 choices, translations, explanation)
+* **Volume:** **10,000 quiz requests** (Total: 4 million input tokens + 3 million output tokens)
+
+| Model Tier | Cost for 10,000 Generated Quizzes |
+| ---                 | ---                 |
+| **Flash-Lite**      | **~$2.00 – $4.50** |
+| **Standard Flash**  | **~$8.50 – $14.00** |
+| **Pro Tier**        | **~$35.00 – $44.00** |
+---
+
+### Key Takeaways for Your App
+
+1. **Start with Standard Flash:** At roughly $0.001 per full quiz interaction, standard Flash gives near-instant response times and handles non-Latin/Semitic scripts with high linguistic accuracy without blowing through a budget.
+2. **Use Flash-Lite for Single-Word Lookups:** If your app adds micro-interactions (e.g., clicking a single Arabic or Hebrew word to get a 1-word gloss or audio pronunciation helper), route those to Flash-Lite to keep costs near zero.
+3. **Reserve Pro for Complex Grammar Audits:** Only route traffic to Pro if a user submits an essay for grading or requests deep linguistic etymology across classical texts.
