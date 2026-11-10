@@ -7,7 +7,16 @@ import os
 from fastapi import Depends
 from utils.permission import get_school_user
 
-app = FastAPI(lifespan=lifespan)
+
+enable_docs =  bool(os.environ.get("ENABLE_DOCS", ""))
+app = FastAPI(
+    docs_url="/docs" if enable_docs else None, 
+    redoc_url="/redoc" if enable_docs else None, 
+    openapi_url="/openapi.json" if enable_docs else None,
+    lifespan=lifespan,
+)
+
+# app = FastAPI(lifespan=lifespan)
 # Only the editor sites may call the API with the session cookie. The default
 # allows localhost on any port; set EDITOR_ALLOWED_ORIGINS in production, e.g.
 # ^https://([a-z0-9-]+\.)*editor\.polyglots\.social$
