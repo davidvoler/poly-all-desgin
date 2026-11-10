@@ -1,0 +1,4 @@
+{
+  "_comment": "Local docker-compose stack: the editor server on port 8006, the same as the default in lib/core/api/api_client.dart.",
+  "API_BASE_URL": "http://localhost:8006"
+}

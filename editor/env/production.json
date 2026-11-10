@@ -1,0 +1,4 @@
+{
+  "_comment": "The editor server behind nginx (deploy/multiple_servers.conf).",
+  "API_BASE_URL": "https://editor.api.polyglots.social"
+}
