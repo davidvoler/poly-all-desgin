@@ -15,6 +15,9 @@ services:
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - servers
+      - databases
     command:
       - uvicorn
       - main:app
@@ -38,6 +41,9 @@ services:
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - servers
+      - databases
     command:
       - uvicorn
       - main:app
@@ -66,7 +72,13 @@ services:
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - servers
+      - databases
 networks:
   databases:
     external: true
+  servers:
+    name: servers
+    
     
