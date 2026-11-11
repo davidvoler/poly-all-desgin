@@ -8,7 +8,10 @@
 - [v] proper database password 
 - [v] change database username  
 
+- [v] get new app to work with auth0
+
 - [] find backup for the database - probably it is not recent - decide if google server should be deleted without backup db
+- [] backup server database
 - [] stop google 
 - [] web-page - move to DO
 - [v] clean database from a lot of courses
