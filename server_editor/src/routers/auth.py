@@ -27,7 +27,10 @@ class PasswordLogin(BaseModel):
 
 
 class Auth0Login(BaseModel):
-    id_token: str
+    id_token: str | None = None
+    # Sent by the client from the Auth0 token's claims. Trusted only when
+    # AUTH0_DOMAIN is unset on the server, same as the app's server.
+    email: str | None = None
 
 
 async def _user_by_email(email: str) -> dict | None:
@@ -72,15 +75,21 @@ async def login_with_password(body: PasswordLogin, request: Request, response: R
 
 @router.post("/login_auth0", response_model=SchoolUser)
 async def login_auth0(body: Auth0Login, request: Request, response: Response) -> SchoolUser:
-    if not auth0.is_enabled():
-        raise HTTPException(status_code=503, detail="Auth0 sign-in is not configured on the server")
-    try:
-        claims = await auth0.verify_id_token(body.id_token)
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Auth0 sign-in could not be verified")
-    email = (claims.get("email") or "").strip().lower()
-    if not email or claims.get("email_verified") is False:
-        raise HTTPException(status_code=401, detail="The Auth0 account has no verified email")
+    if body.id_token and auth0.is_enabled():
+        try:
+            claims = await auth0.verify_id_token(body.id_token)
+        except ValueError:
+            raise HTTPException(status_code=401, detail="Auth0 sign-in could not be verified")
+        if claims.get("email_verified") is False:
+            raise HTTPException(status_code=401, detail="The Auth0 account has no verified email")
+        email = (claims.get("email") or "").strip().lower()
+    elif not auth0.is_enabled():
+        # Same as the app's server: without AUTH0_DOMAIN, trust the client's email.
+        email = (body.email or "").strip().lower()
+    else:
+        raise HTTPException(status_code=400, detail="id_token is required on this server")
+    if not email:
+        raise HTTPException(status_code=400, detail="email is required")
     user = await _user_by_email(email)
     if not user:
         raise HTTPException(status_code=403, detail=f"No account for {email}")
