@@ -69,7 +69,7 @@ _DEFAULT_CORS_ORIGINS = (
     "https://dashboard.polyglots.social",    
     "https://school1.app.polyglots.social",    
     "https://school1.dashboard.polyglots.social", 
-    "https://student.polyglots.social/"   
+    "https://student.polyglots.social"   
 )
 # _cors_origins = [
 #     o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
