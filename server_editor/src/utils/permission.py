@@ -19,6 +19,7 @@ EDITOR_ROLE = "editor"
 class School(BaseModel):
     school_id: int
     name: str
+    school_type: str | None = None
 
 
 class SchoolUser(BaseModel):
@@ -40,7 +41,7 @@ async def school_from_request(request: Request) -> School:
     """The school whose editor site the request comes from."""
     hostname = _hostname(request)
     rows = await get_query_results(
-        "SELECT school_id, name FROM school.schools WHERE LOWER(school_editor_url) = %(host)s",
+        "SELECT school_id, name, school_type FROM school.schools WHERE LOWER(school_editor_url) = %(host)s",
         {"host": hostname},
     ) if hostname else []
     if not rows:
