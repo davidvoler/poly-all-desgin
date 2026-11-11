@@ -49471,7 +49471,7 @@ break A}if(r instanceof A.m5){s=B.Gk
 break A}s=B.Qa
 break A}return s}}
 A.aKc.prototype={
-$1(a){var s,r=A.b0m("https://editor.api.polyglots.social",B.Ii,"application/json",A.aj(["withCredentials",!0],t.N,t.z),B.Iz),q=new A.RB(A.b([B.Fw],t.i6))
+$1(a){var s,r=A.b0m("https://api.editor.polyglots.social",B.Ii,"application/json",A.aj(["withCredentials",!0],t.N,t.z),B.Iz),q=new A.RB(A.b([B.Fw],t.i6))
 q.N(q,B.O9)
 s=new A.Q9($,q,$,new A.ae7(51200),!1)
 s.a2p$=r
