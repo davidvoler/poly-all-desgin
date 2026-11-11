@@ -3,9 +3,11 @@
 Every request names its school twice: the editor site it comes from (the
 Origin's hostname, matched against school.schools.school_editor_url, else
 school_dashboard_url or school_url) and the
-signed session cookie. Both must agree, and the user must still be an active
-member of that school with the `editor` role.
+signed session cookie. Both must agree. With EDITOR_REQUIRE_ROLE=true the user
+must also be an active member of that school with the `editor` role; without
+it, any signed-in user gets in.
 """
+import os
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, Request
@@ -62,18 +64,29 @@ async def school_from_request(request: Request) -> School:
     return School(**rows[0])
 
 
+def editor_role_required() -> bool:
+    """Off for now: any signed-in user may use the editor. Set
+    EDITOR_REQUIRE_ROLE=true to let in only active members with the editor role."""
+    return os.getenv("EDITOR_REQUIRE_ROLE", "").lower() in ("1", "true", "yes")
+
+
 async def editor_member(user_id: int, school: School) -> SchoolUser | None:
-    """The user as an active editor of [school], or None."""
+    """The user as an editor of [school], or None. Without EDITOR_REQUIRE_ROLE
+    every existing user counts, with whatever roles they have at the school."""
     rows = await get_query_results(
         """
-        SELECT u.user_id, u.email, su.roles FROM user_data.users u
-        JOIN school.school_users su ON su.user_id = u.user_id
-        WHERE u.user_id = %(user_id)s AND su.school_id = %(school_id)s
-          AND su.status = 'active' AND %(role)s = ANY(su.roles)
+        SELECT u.user_id, u.email, su.roles, su.status FROM user_data.users u
+        LEFT JOIN school.school_users su
+          ON su.user_id = u.user_id AND su.school_id = %(school_id)s
+        WHERE u.user_id = %(user_id)s
         """,
-        {"user_id": user_id, "school_id": school.school_id, "role": EDITOR_ROLE},
+        {"user_id": user_id, "school_id": school.school_id},
     )
     if not rows:
+        return None
+    if editor_role_required() and not (
+        rows[0]["status"] == "active" and EDITOR_ROLE in (rows[0]["roles"] or [])
+    ):
         return None
     return SchoolUser(
         user_id=user_id, school_id=school.school_id, school=str(school.school_id),
