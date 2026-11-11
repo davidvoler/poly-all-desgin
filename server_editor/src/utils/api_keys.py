@@ -23,8 +23,8 @@ KEY_PROVIDERS: dict[str, tuple[str, ...]] = {
 
 def env_fallback_enabled() -> bool:
     """Whether the server's own keys are used for schools and users without one.
-    On by default for local development; set AI_KEYS_ENV_FALLBACK=false in SaaS."""
-    return os.getenv("AI_KEYS_ENV_FALLBACK", "true").lower() in ("1", "true", "yes")
+    Off by default; set AI_KEYS_ENV_FALLBACK=true for local development."""
+    return os.getenv("AI_KEYS_ENV_FALLBACK", "false").lower() in ("1", "true", "yes")
 
 
 def env_key(provider: str) -> str | None:

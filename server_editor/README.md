@@ -47,14 +47,14 @@ where user_id = <id> and school_id = <school> and not ('editor' = any(roles));
 ## AI API keys
 
 Each school, and each user, brings its own API keys for Gemini, Claude and
-OpenAI. They are added in the editor app (the key icon in the chat header) and
+OpenAI. They are added in the editor app (the AI keys page in the sidebar) and
 stored encrypted in `secrets.ai_api_key` (DDL: `DDL/ai_keys.sql`).
 
 - **School key**: `user_id` is empty; shared by the school's users.
 - **User key**: has both `school` and `user_id`; used before the school's.
 - **Server key**: `GOOGLE_API_KEY` / `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`,
   `OPENAI_API_KEY` in `.env`, used when neither has one, only while
-  `AI_KEYS_ENV_FALLBACK=true`. Set it to `false` in SaaS.
+  `AI_KEYS_ENV_FALLBACK=true`. Off by default; turn it on for local development.
 
 The default provider is `gemini` with the `gemini-3.5-flash` model.
 
@@ -67,7 +67,8 @@ The default provider is `gemini` with the `gemini-3.5-flash` model.
    ```env
    # python -c "import os;print(os.urandom(32).hex())"
    AI_KEYS_MASTER_KEY_V1=<64 hex characters>
-   AI_KEYS_ENV_FALLBACK=false
+   # Optional, local development only: use the server's own keys as a fallback.
+   # AI_KEYS_ENV_FALLBACK=true
    ```
 
    Keep the master key out of git and backed up: without it the stored keys

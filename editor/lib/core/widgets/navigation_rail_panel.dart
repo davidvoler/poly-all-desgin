@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/ai_keys/pages/ai_keys_page.dart';
 import '../../features/auth/data/auth.dart';
 
 import '../../features/courses/pages/courses_page.dart';
 
-enum NavSection { courses, chat }
+enum NavSection { courses, chat, aiKeys }
 
 class NavigationRailPanel extends StatelessWidget {
   const NavigationRailPanel({this.selected = NavSection.courses, super.key});
@@ -21,6 +22,13 @@ class NavigationRailPanel extends StatelessWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const CoursesPage()));
+  }
+
+  void _openAiKeys(BuildContext context) {
+    if (selected == NavSection.aiKeys) return;
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const AiKeysPage()));
   }
 
   @override
@@ -85,6 +93,12 @@ class NavigationRailPanel extends StatelessWidget {
             const Spacer(),
             const Divider(color: Color(0xFF3B4A50)),
             const SizedBox(height: 16),
+            NavItem(
+              icon: Icons.key_outlined,
+              label: 'AI keys',
+              selected: selected == NavSection.aiKeys,
+              onTap: () => _openAiKeys(context),
+            ),
             const NavItem(icon: Icons.settings_outlined, label: 'Settings'),
             const SizedBox(height: 16),
             const _SignedInUser(),

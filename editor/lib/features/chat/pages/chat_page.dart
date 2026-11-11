@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/error_snack_bar.dart';
 
 import '../../../core/widgets/navigation_rail_panel.dart';
-import '../../ai_keys/widgets/ai_keys_dialog.dart';
+import '../../ai_keys/pages/ai_keys_page.dart';
 import '../../courses/data/course.dart';
 import '../../courses/data/courses_repository.dart';
 import '../../courses/pages/course_authoring_page.dart';
@@ -165,9 +165,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           const Flexible(flex: 4, child: AiModelPicker()),
           IconButton(
             tooltip: 'AI keys',
-            onPressed: () => showDialog<void>(
-              context: context,
-              builder: (_) => const AiKeysDialog(),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const AiKeysPage()),
             ),
             icon: const Icon(Icons.key_outlined, size: 20),
           ),
