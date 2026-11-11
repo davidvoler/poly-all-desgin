@@ -116,3 +116,35 @@ network as the backend (either move the nginx service into the root
 - TLS handshake to an unknown Host header gets a 444 (connection
   closed cleanly)
 - The presented cert SAN lists all three names
+
+
+### Cost saving
+I am paying quite a lot for a server I am not using. 
+I think that the correct way to handle it is:
+save files in a bucket
+and a CDN
+
+However 
+- I currently have an expensive server because I have a lot of data of a corpus that is not great 
+- Should I really be paying for that repo now?
+- would it now be simpler to start from scratch 
+
+- use a smaller instance
+- save new data created with AI - that will probably be much better 
+- when we get to recording we could consider using bucket for code
+
+
+
+### Deploy planning 
+
+- 2-3 version of both server and client 
+   - production
+   - new features
+   - experimental - development
+- Automatic remote build - of the web parts 
+
+options
+   - 1 database server - 2 databases 
+   - 2 database server
+- 3 client static
+-  

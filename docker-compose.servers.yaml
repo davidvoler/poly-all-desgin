@@ -1,0 +1,27 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:17.4
+    ports:
+      - 5432:5432
+    env_file: .env
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+    shm_size: 500MB
+    networks:
+      - databases
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:7.2
+    ports:
+      - 6379:6379
+    env_file: .env
+    networks:
+      - databases
+
+# A fixed name (no project prefix) so other compose files can join it as an
+# external network and reach these services as `postgres` and `redis`.
+networks:
+  databases:
+    name: databases

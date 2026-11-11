@@ -1,18 +1,5 @@
-services:
-  postgres:
-    container_name: postgres
-    image: postgres:17.4
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_USER: polyglots
-      POSTGRES_PASSWORD: polyglots
-      POSTGRES_DB: polyglots
-      shared_buffers: 2GB 
-    volumes:
-      - /home/davidle/new_data/postgres:/var/lib/postgresql/data
-    shm_size: 2GB
 
+services:
   server:
     container_name: server
     image: server:polyglots
@@ -20,32 +7,78 @@ services:
       context: server
       dockerfile: Dockerfile.dev
     ports:
-      - 8801:8801
+      - 8004:8004
     volumes:
-      - ./server/src:/app
-    environment:
-      - POSTGRES_DB=polyglots
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=polyglots
-      - POSTGRES_PASSWORD=polyglots
-      # Auth0 — leave blank to disable. When AUTH0_DOMAIN is set, the
-      # /api/v1/school_users/login_auth0 route verifies ID tokens
-      # against the tenant JWKS; otherwise it returns 503 and the
-      # dashboard falls back to the local password flow.
-      - AUTH0_DOMAIN=polyglots.us.auth0.com
-      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
-      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-USSbIufOeyPDcW6tO7KVsFrqFfR5ifqk}
-      # uncomment next line to enable docs on server
-      #- ENABLE_DOCS=true
-    command: 
+      - ./server:${PWD}/server
+    working_dir: ${PWD}/server/src
+    # environment: *server-env
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - servers
+      - databases
+    command:
       - uvicorn
       - main:app
       - --host
       - 0.0.0.0
       - --port
-      - "8801"
+      - "8004"
       - --reload
-    depends_on:
-      - postgres
-
+  editor:
+    container_name: editor
+    image: editor:polyglots
+    build:
+      context: server_editor
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8006:8006
+    volumes:
+      - ./server_editor:${PWD}/server_editor
+    working_dir: ${PWD}/server_editor/src
+    # environment: *server-env
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - servers
+      - databases
+    command:
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8006"
+      - --reload
+  broker-editor:
+    container_name: broker-editor
+    image: editor:polyglots
+    command:
+      - taskiq
+      - worker
+      - task_runner:broker
+      # task modules to import so their @broker.task fns register on the worker
+      - tasks.prompt_tasks
+      - -fsd
+      - --log-level 
+      - INFO
+      - --reload
+    volumes:
+      - ./server_editor:${PWD}/server_editor
+    working_dir: ${PWD}/server_editor/src
+    # environment: *server-env
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - servers
+      - databases
+networks:
+  databases:
+    external: true
+  servers:
+    name: servers
+    
+    

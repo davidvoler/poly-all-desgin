@@ -54,22 +54,22 @@ def youtube_subs(video_id: str, lang: str) -> list[Subtitle]:
     return subs
 
 def break_subtitles_into_sections(lines: list[Subtitle], break_video_seconds: float = 120.0) -> list[VideoSection]:
-    next_break = break_video_seconds
-    text = ""
-    sections = []
-    last_break = 0
-    for l in lines:
-        start = float(l.start)
-        duration = float(l.duration)
-        if start > next_break:
-            text += l.text # adding text to the current break - even if it is also added to the beginning of the next break
-            end = start + duration +0.5
-            sections.append(VideoSection(text=text , start=last_break, end=end))
-            next_break +=  start + duration
-            last_break = next_break
-            text = l.text + " "
-        else:
-            text += l.text + " "
-    sections.append(VideoSection(text=text , start=last_break, end=start+duration))
+    """Groups subtitles into consecutive sections of about break_video_seconds each.
+    A section ends at a subtitle boundary, so no line is cut or repeated."""
+    sections: list[VideoSection] = []
+    current: list[Subtitle] = []
+    for line in lines:
+        if current and line.start >= current[0].start + break_video_seconds:
+            sections.append(_section(current))
+            current = []
+        current.append(line)
+    if current:
+        sections.append(_section(current))
     return sections
 
+
+def _section(lines: list[Subtitle]) -> VideoSection:
+    start = lines[0].start
+    end = max(l.start + l.duration for l in lines)
+    return VideoSection(start=start, end=end, duration=end - start,
+                        text=" ".join(l.text.replace("\n", " ").strip() for l in lines))

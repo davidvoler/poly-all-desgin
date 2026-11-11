@@ -13,13 +13,13 @@ class SentenceTranslationList(BaseModel):
 async def get_sentence_translation(
     word: str,
     num_sentences: int = 3,
-    provider: str = "ollama",
-    model: str = "llama3.1") -> SentenceTranslationList:
+    provider: str = "gemini",
+    model: str = "gemini-3.5-flash") -> SentenceTranslationList:
     """Generate a list of sentence translation questions for the given word."""
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
-        result_type=SentenceTranslationList,
+        output_type=SentenceTranslationList,
         system_prompt="You are an expert language teacher.",)
     result = await agent.run(f"Create {num_sentences} questions for the word: {word}")
-    return result.data
+    return result.output

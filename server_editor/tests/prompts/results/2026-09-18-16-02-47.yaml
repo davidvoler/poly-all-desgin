@@ -1,0 +1,52 @@
+# Add a new run below when you want to compare a prompt change.
+# Keep the comment field specific so it is visible beside that run in the output.
+
+tests:
+- test:
+    target: prompts.text_quiz:get_text_quiz
+    params:
+      language: English
+      to_language: Spanish
+      text: The curious student opened the old book.
+      level: A2
+      provider: ollama
+      model: gemma4
+  comments: Baseline Spanish quiz prompt.
+  results:
+    error: 'TypeError: Agent.__init__() got an unexpected keyword argument ''result_type'''
+  status: fail
+- test:
+    target: prompts.break_text_parts:get_text_parts
+    params:
+      language: German
+      to_language: English
+      text: Der neugierige Student öffnete das alte Buch.
+      level: A2
+      provider: ollama
+      model: muse-glimmer
+  comments: Compare sentence splitting after the prompt wording change.
+  results:
+    error: 'TypeError: Agent.__init__() got an unexpected keyword argument ''result_type'''
+  status: fail
+- test:
+    target: prompts.single_choice:get_single_choice
+    params:
+      word: wander
+      num_sentences: 2
+      provider: ollama
+      model: gemma4
+  comments: Check whether the distractors remain plausible.
+  results:
+    error: 'TypeError: Agent.__init__() got an unexpected keyword argument ''result_type'''
+  status: fail
+- test:
+    target: prompts.sentence:get_sentence_translation
+    params:
+      word: libro
+      num_sentences: 2
+      provider: ollama
+      model: muse-glimmer
+  comments: Spanish vocabulary comparison run.
+  results:
+    error: 'TypeError: Agent.__init__() got an unexpected keyword argument ''result_type'''
+  status: fail

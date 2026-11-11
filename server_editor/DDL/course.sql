@@ -1,4 +1,7 @@
+
+
 create schema if not exists course;
+
 
 drop table if exists course.course;
 create table course.course (
@@ -25,6 +28,7 @@ create table course_words (
     lesson_id int,
     word varchar(255) not null,
     translation text,
+    weight int2 DEFAULT 0 NULL,
     deleted boolean default false
 );
 
@@ -61,7 +65,9 @@ create table course.lesson (
     description text,
     words varchar(100)[],
     deleted boolean default false,
-    weight int2 DEFAULT 0 NULL
+    weight int2 DEFAULT 0 NULL,
+    video_start float4 DEFAULT 0 NULL, -- for a video part: where it starts in the video, in seconds
+    video_end float4 DEFAULT 0 NULL
 );
 
 drop table if exists course.exercise;
@@ -71,6 +77,7 @@ create table course.exercise (
     module_id int,
     lesson_id int ,
     exercise_type varchar(100),
+    word varchar(255), -- the word the exercise practises; marks it used in course.words
     question varchar(255),
     options jsonb,
     explanation text,
@@ -104,6 +111,64 @@ create table course.subtitles(
     duration int ,
     text varchar(355),
     weight int  default 0
+);
+
+
+drop table if exists course.prompt_request;
+create table course.prompt_request (
+    prompt_request_id serial primary key,
+    course_id int,
+    module_id int,
+    lesson_id int,
+    user_message text,
+    provider varchar(200),
+    model varchar(200),
+    options jsonb,
+    last_router_type varchar(100),
+    last_action_type varchar(100),
+    created_at timestamp default now()
+);
+drop table if exists course.prompt_response;
+create table course.prompt_response (
+    prompt_response_id serial primary key,
+    request_user_message varchar(500),
+    prompt_request_id int,
+    course_id int,
+    module_id int,
+    lesson_id int,
+    options jsonb,
+    results jsonb,
+    results_type varchar(100),
+    ui_chat_response varchar(500),
+    prompt_router_type varchar(100),
+    prompt_type varchar(100),
+    prompt_action_type varchar(100),
+    created_at timestamp default now()
+);
+
+drop table if exists course.prompt_context;
+create table course.prompt_context (
+    context_id serial primary key,
+    course_id int,
+    module_id int,
+    lesson_id int,
+    created_at timestamp default now()
+);
+
+
+drop table if exists course.words;
+create table course.words (
+    word_id serial primary key,
+    lang varchar(12),
+    to_lang varchar(12),
+    course_id int,
+    module_id int,
+    word varchar(255),
+    translation varchar(255),
+    deleted boolean default false,
+    used boolean default false,
+    weight int2 DEFAULT 0 ,
+    created_at timestamp default now()
 );
 
 

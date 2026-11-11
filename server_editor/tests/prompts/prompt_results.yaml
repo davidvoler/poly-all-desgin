@@ -1,0 +1,57 @@
+# Add a new run below when you want to compare a prompt change.
+# Keep the comment field specific so it is visible beside that run in the output.
+
+source: tests/prompts/prompt_cases.yaml
+generated_at: '2026-09-18T12:54:26.773551+00:00'
+input_comments:
+- '# Add a new run below when you want to compare a prompt change.'
+- '# Keep the comment field specific so it is visible beside that run in the output.'
+runs:
+- name: text quiz in Spanish
+  target: prompts.text_quiz:get_text_quiz
+  comment: Baseline Spanish quiz prompt.
+  input:
+    language: English
+    to_language: Spanish
+    text: The curious student opened the old book.
+    level: A2
+    provider: ollama
+    model: llama3.1
+  status: failed
+  error: 'ImportError: cannot import name ''OpenAIModel'' from ''pydantic_ai.models.openai''
+    (/Users/davidle/miniconda3/lib/python3.13/site-packages/pydantic_ai/models/openai.py)'
+- name: text parts in German
+  target: prompts.break_text_parts:get_text_parts
+  comment: Compare sentence splitting after the prompt wording change.
+  input:
+    language: German
+    to_language: English
+    text: Der neugierige Student öffnete das alte Buch.
+    level: A2
+    provider: ollama
+    model: llama3.1
+  status: failed
+  error: 'ImportError: cannot import name ''OpenAIModel'' from ''pydantic_ai.models.openai''
+    (/Users/davidle/miniconda3/lib/python3.13/site-packages/pydantic_ai/models/openai.py)'
+- name: single choice for wander
+  target: prompts.single_choice:get_single_choice
+  comment: Check whether the distractors remain plausible.
+  input:
+    word: wander
+    num_sentences: 2
+    provider: ollama
+    model: llama3.1
+  status: failed
+  error: 'ImportError: cannot import name ''OpenAIModel'' from ''pydantic_ai.models.openai''
+    (/Users/davidle/miniconda3/lib/python3.13/site-packages/pydantic_ai/models/openai.py)'
+- name: sentence translation for libro
+  target: prompts.sentence:get_sentence_translation
+  comment: Spanish vocabulary comparison run.
+  input:
+    word: libro
+    num_sentences: 2
+    provider: ollama
+    model: llama3.1
+  status: failed
+  error: 'ImportError: cannot import name ''OpenAIModel'' from ''pydantic_ai.models.openai''
+    (/Users/davidle/miniconda3/lib/python3.13/site-packages/pydantic_ai/models/openai.py)'
