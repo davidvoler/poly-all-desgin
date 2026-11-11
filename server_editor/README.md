@@ -61,25 +61,29 @@ The default provider is `gemini` with the `gemini-3.5-flash` model.
 ### Setup
 
 1. Create the table: `psql ... -f server_editor/DDL/ai_keys.sql`.
-2. Add a master key to the repository-root `.env`, loaded by both editor
-   services (the server and the `broker-editor` worker):
+2. No master key is needed for now: without one, keys are stored as plain
+   text (`key_version` 0). To encrypt them later, add a master key to the
+   repository-root `.env`, loaded by both editor services (the server and the
+   `broker-editor` worker), restart them, and run `scripts/rotate_ai_keys.py`
+   to encrypt the keys already stored:
 
    ```env
    # python -c "import os;print(os.urandom(32).hex())"
-   AI_KEYS_MASTER_KEY_V1=<64 hex characters>
+   # AI_KEYS_MASTER_KEY_V1=<64 hex characters>
    # Optional, local development only: use the server's own keys as a fallback.
    # AI_KEYS_ENV_FALLBACK=true
    ```
 
-   Keep the master key out of git and backed up: without it the stored keys
-   cannot be decrypted. Use a different one in each environment.
+   Once set, keep the master key out of git and backed up: without it the
+   stored keys cannot be decrypted. Use a different one in each environment.
 
 ### How it works
 
 - The API never returns a key, only its last 4 characters
   (`GET/PUT/DELETE /api/v1/ai/keys`).
-- Keys are encrypted with AES-GCM in `utils/secret_box.py`. Each ciphertext is
-  bound to its school, user and provider, so a copied row does not decrypt.
+- With a master key, keys are encrypted with AES-GCM in `utils/secret_box.py`.
+  Each ciphertext is bound to its school, user and provider, so a copied row
+  does not decrypt. Without one, they are stored as plain text.
 - Keys are decrypted only in the task worker, for the length of one prompt
   task (`tasks/prompt_tasks.py` → `prompts.providers.use_api_keys`).
 - `GET /api/v1/prompt/ai_models` marks a provider available when the user,
