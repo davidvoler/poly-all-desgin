@@ -35,26 +35,34 @@ class NavigationRailPanel extends StatelessWidget {
           children: [
             Row(
               children: [
+                // The app's logo: a globe on its blue gradient.
                 Container(
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE7A37A),
                     borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
+                    ),
                   ),
                   child: const Icon(
-                    Icons.auto_stories_rounded,
-                    color: Color(0xFF17252D),
+                    Icons.language,
+                    color: Colors.white,
                     size: 19,
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'lumen',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                const Flexible(
+                  child: Text(
+                    'Polyglots Editor',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

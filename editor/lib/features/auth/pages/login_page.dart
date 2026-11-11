@@ -59,13 +59,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   children: [
                     const Row(
                       children: [
-                        Icon(
-                          Icons.auto_stories_rounded,
-                          color: Color(0xFF2B7771),
-                        ),
+                        Icon(Icons.language, color: Color(0xFF1E88E5)),
                         SizedBox(width: 10),
                         Text(
-                          'lumen',
+                          'Polyglots Editor',
                           style: TextStyle(
                             color: Color(0xFF17252D),
                             fontSize: 20,
