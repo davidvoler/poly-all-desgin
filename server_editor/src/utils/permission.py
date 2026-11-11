@@ -1,7 +1,8 @@
 """Who is signed in to the editor, and what they may access.
 
 Every request names its school twice: the editor site it comes from (the
-Origin's hostname, matched against school.schools.school_editor_url) and the
+Origin's hostname, matched against school.schools.school_editor_url, else
+school_dashboard_url or school_url) and the
 signed session cookie. Both must agree, and the user must still be an active
 member of that school with the `editor` role.
 """
@@ -38,12 +39,24 @@ def _hostname(request: Request) -> str:
 
 
 async def school_from_request(request: Request) -> School:
-    """The school whose editor site the request comes from."""
+    """The school the request comes from, by the Origin's hostname: first its
+    editor site, then (like the app's server) its dashboard or student site."""
     hostname = _hostname(request)
-    rows = await get_query_results(
-        "SELECT school_id, name, school_type FROM school.schools WHERE LOWER(school_editor_url) = %(host)s",
-        {"host": hostname},
-    ) if hostname else []
+    rows = []
+    if hostname:
+        rows = await get_query_results(
+            "SELECT school_id, name, school_type FROM school.schools WHERE LOWER(school_editor_url) = %(host)s",
+            {"host": hostname},
+        )
+        if not rows:
+            # A separate query, so it still works where school_editor_url is missing.
+            rows = await get_query_results(
+                """SELECT school_id, name, school_type FROM school.schools
+                WHERE LOWER(school_dashboard_url) = %(host)s OR LOWER(school_url) = %(host)s
+                ORDER BY (LOWER(school_dashboard_url) = %(host)s) DESC, school_id
+                LIMIT 1""",
+                {"host": hostname},
+            )
     if not rows:
         raise HTTPException(status_code=400, detail=f"No school uses the editor at {hostname or 'this site'}")
     return School(**rows[0])
