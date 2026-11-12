@@ -679,3 +679,80 @@ We can finish such a lesson with a final quiz
 1. Should be break the server into editor and school 2 separate server 
 2. Should we unite models - for editor and student
 3. 
+
+
+
+### Deploy Tasks 
+- [] All done 
+
+
+### Alpha tasks 
+- [] extra params about the course 
+      - use words that are common in literature but still simple      
+- [] the save of sentence is incorrect - we need to save the words in 
+- [] improve the prompts - currently I am getting un readable sentences 
+      - [] smaller sentences, less words, does not have to be a full sentence 
+      - [] maybe start with the word, than add minimum words to create meaning and finally max 5 words sentence 
+- [] Course level guidance - (system prompt). 
+- [] The wrong options are mostly too close to the sentences 
+- [] Random the sentences - currently the first is alway the correct - consider doing the random on the student app 
+
+
+
+# Architecture 
+- [] Consider using Web Socket to replace polling 
+      - [] if we use WS do we still need a worker?
+      - [] No worker - We just run an async 
+
+Workers with WebSocket 
+1. Workers is good for stability and scale 
+2. WebSoket is also good for stability, ans scale to save time on polling 
+
+
+The process
+ - Prompt 
+ - run worker
+ - worker updates the
+
+ here is an alternative offered by Gemini using SSE
+Server-Sent Events
+
+```python
+import asyncio
+import redis.asyncio as redis
+from fastapi import FastAPI, Depends, HTTPException
+from sse_starlette.sse import EventSourceResponse
+
+app = FastAPI()
+
+@app.get("/events")
+async def user_event_stream(user = Depends(get_current_user)):
+    # Subscription check right at the door
+    if not user.has_active_subscription:
+        raise HTTPException(status_code=403, detail="Active subscription required")
+    async def event_generator():
+        r = redis.from_url("redis://localhost:6379")
+        pubsub = r.pubsub()
+        await pubsub.subscribe(f"user:{user.id}:events")
+        try:
+            async for message in pubsub.listen():
+                if message["type"] == "message":
+                    yield {
+                        "event": "task_update",
+                        "data": message["data"].decode("utf-8"),
+                    }
+        finally:
+            await pubsub.unsubscribe(f"user:{user.id}:events")
+            await r.aclose()
+    return EventSourceResponse(event_generator())
+
+@broker.task
+async def process_heavy_job(user_id: str, job_id: str):
+    r = redis.from_url("redis://localhost:6379")
+    # ... do heavy work ...
+    await r.publish(
+        f"user:{user_id}:events",
+        json.dumps({"job_id": job_id, "status": "completed"})
+    )
+    await r.aclose()
+```
