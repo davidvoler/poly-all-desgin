@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import (
-    auth,
     lesson,
     course,
     module,
@@ -13,29 +12,9 @@ from routers import (
     preference,
     user_stats,
     practice,
-    achievement, 
+    achievement,
     auth_new,
-    generate_poc_task,
-    generate_poc_new,
-    video_module,
 )
-from routers.edit import  (
-    edit_course,
-    course_import,
-    course_export,
-    word as edit_word,
-    module as edit_module,
-    lesson as edit_lesson,
-    exercise as edit_exercise,
-)
-from tasks import status
-from school.routes import school as school_routes, users as school_users 
-# from editor.routes import (
-#     upload_course,
-#     editor_courses,
-#     review as editor_review,
-#     lesson as editor_lesson,
-# )
 enable_docs =  bool(os.environ.get("ENABLE_DOCS", ""))
 
 from tasks.broker import lifespan
@@ -66,9 +45,7 @@ _DEFAULT_CORS_ORIGINS = (
     "http://127.0.0.1:8000",
     "https://www.polyglots.social",
     "https://app.polyglots.social",
-    "https://dashboard.polyglots.social",    
     "https://school1.app.polyglots.social",    
-    "https://school1.dashboard.polyglots.social", 
     "https://student.polyglots.social"   
 )
 # _cors_origins = [
@@ -123,49 +100,3 @@ app.include_router(achievement.router,
 app.include_router(auth_new.router,
     prefix="/api/v1/auth",
     tags=["auth_new"])
-
-# --- School-admin dashboard ---------------------------------------------------
-app.include_router(school_routes.router,
-    prefix="/api/v1/school",
-    tags=["school"])
-app.include_router(school_users.router,
-    prefix="/api/v1/school_users",
-    tags=["school_users"])
-#-- new editor routes for course import/export
-app.include_router(edit_course.router,
-    prefix="/api/v1/edit/course",
-    tags=["edit_course"])   
-app.include_router(course_import.router,
-    prefix="/api/v1/edit/course/import",
-    tags=["import_course"])
-app.include_router(course_export.router,
-    prefix="/api/v1/edit/course/export",
-    tags=["export_course"])
-app.include_router(edit_word.router,
-    prefix="/api/v1/edit/word",
-    tags=["edit_word"])
-app.include_router(edit_module.router,
-    prefix="/api/v1/edit/module",
-    tags=["edit_module"])
-app.include_router(edit_lesson.router,
-    prefix="/api/v1/edit/lesson",
-    tags=["edit_lesson"])
-app.include_router(edit_exercise.router,
-    prefix="/api/v1/edit/exercise",
-    tags=["edit_exercise"])
-
-app.include_router(generate_poc_task.router,
-    prefix="/api/v1/generate_poc",
-    tags=["generate_poc"])
-
-app.include_router(generate_poc_new.router,
-    prefix="/api/v1/generate_poc_new",
-    tags=["generate_poc_new"])
-
-app.include_router(video_module.router,
-    prefix="/api/v1/video_module",
-    tags=["video_module"])
-
-app.include_router(status.router,
-    prefix="/api/v1/tasks",
-    tags=["status"])
