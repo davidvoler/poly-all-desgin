@@ -689,7 +689,7 @@ We can finish such a lesson with a final quiz
 - [] extra params about the course 
       - use words that are common in literature but still simple      
 - [v] the save of sentence is incorrect - we need to save the words in 
-- [] improve the prompts - currently I am getting un readable sentences 
+- [] improve the prompts - currently I am getting too long sentences 
       - [] smaller sentences, less words, does not have to be a full sentence 
       - [] maybe start with the word, than add minimum words to create meaning and finally max 5 words sentence 
 - [] Course level guidance - (system prompt). 

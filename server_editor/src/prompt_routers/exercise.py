@@ -7,7 +7,7 @@ from models.prompts import (
     PromptType,
 )
 from prompts.single_choice import WRONG_TRANSLATIONS, get_fill_in_blank_for_words, get_single_choice_for_words
-from utils.context_options import context_stats, EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON
+from utils.context_options import context_stats, EXERCISES_PER_REQUEST, EXERCISES_PER_WORD
 from utils.course_utils import get_course
 from utils.exercise_utils import create_exercise, get_options
 from utils.prompt_utils import save_prompt_response
@@ -44,18 +44,20 @@ async def _create_exercises(prompt_request: PromptRequest, exercise_type: Prompt
     """Turns the module's unused words into exercises in the current lesson."""
     stats = await context_stats(prompt_request.course_id)
     context = stats.context
-    count = max(min(EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises), 0)
+    count = min(EXERCISES_PER_REQUEST, stats.words_that_fit)
+    # Single choice makes EXERCISES_PER_WORD steps per word; the other types one.
+    per_word = EXERCISES_PER_WORD if exercise_type == PromptType.EXERCISE_SINGLE_CHOICE else 1
     # The words the picked option names, else the first unused ones.
     requested = [str(w) for w in prompt_request.prompt_values or []]
     words = [w for w in requested if w in stats.unused_words][:count] if requested else stats.unused_words[:count]
     created = []
     if words:
         course = await get_course(context.course_id)
-        # Keep one exercise per requested word; the model may repeat or invent words.
-        by_word = {e.word.strip().lower(): e for e in await _generate(prompt_request, exercise_type, words, course, context)}
+        # Keep per_word exercises for each requested word, in the order the model wrote
+        # them; it may repeat or invent words.
+        generated = await _generate(prompt_request, exercise_type, words, course, context)
         for word in words:
-            e = by_word.get(word.lower())
-            if e:
+            for e in [e for e in generated if e.word.strip().lower() == word.lower()][:per_word]:
                 e.word = word
                 created.append(await create_exercise(e))
     message = (f"Created {len(created)} exercises." if created

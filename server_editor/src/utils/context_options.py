@@ -7,8 +7,11 @@ from utils.exercise_utils import get_lesson_exercises
 from utils.lesson_utils import get_module_lessons
 from utils.words_utils import course_words
 
+# Single-choice exercises made per word: the word, a phrase, a short and a longer sentence.
+EXERCISES_PER_WORD = 4
 # When a lesson has this many exercises, the next ones go to a new lesson.
-MAX_EXERCISES_PER_LESSON = 10
+# 3 words x 4 exercises: one request fills a lesson.
+MAX_EXERCISES_PER_LESSON = 12
 # When a module has this many lessons (and the last is full), continue in a new module.
 MAX_LESSONS_PER_MODULE = 5
 # Words turned into exercises by one request, to keep the AI call short.
@@ -25,8 +28,13 @@ class ContextStats(BaseModel):
     lesson_exercises: int
 
     @property
+    def words_that_fit(self) -> int:
+        """How many more words the lesson has room for, at EXERCISES_PER_WORD each."""
+        return max(MAX_EXERCISES_PER_LESSON - self.lesson_exercises, 0) // EXERCISES_PER_WORD
+
+    @property
     def lesson_full(self) -> bool:
-        return self.lesson_exercises >= MAX_EXERCISES_PER_LESSON
+        return self.words_that_fit == 0
 
     @property
     def module_full(self) -> bool:
@@ -103,7 +111,7 @@ async def context_options(course_id: int) -> list[PromptOption]:
             f"The lesson has {stats.lesson_exercises} exercises."))
     # Alternatives, each naming its own unused words; the option carries them in prompt_values.
     # A video module makes its exercises from its parts instead.
-    size = min(EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises)
+    size = min(EXERCISES_PER_REQUEST, stats.words_that_fit)
     if size > 0 and not is_video:
         for start in range(0, min(unused, size * EXERCISE_OPTIONS), size):
             words = stats.unused_words[start:start + size]
