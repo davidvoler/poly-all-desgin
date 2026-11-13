@@ -12,7 +12,7 @@ from models.word import WordTranslation
 from models.exercise import Exercise
 from prompts.single_choice import get_wrong_translations
 from prompts.video_extract import extract_from_part
-from utils.exercise_utils import create_exercise
+from utils.exercise_utils import create_exercise, get_options
 from utils.context_utils import get_or_create_context, save_context
 from utils.course_utils import get_course
 from utils.module_utils import create_module, get_course_modules
@@ -223,9 +223,9 @@ async def _make_part_exercises(prompt_request: PromptRequest, course_id: int, mo
         created.append(await create_exercise(Exercise(
             course_id=course_id, module_id=module_id, lesson_id=lesson_id,
             exercise_type=PromptType.EXERCISE_SINGLE_CHOICE.value,
-            word=text if from_words else None, question=text, answer=translation,
-            options=[{"text": translation, "correct": True},
-                     *({"text": option} for option in incorrect)], sentence_alt1=translation,
+            word=text if from_words else None, question=text,
+            sentence=None if from_words else text, answer=translation,
+            options=get_options([translation], incorrect),
         )))
     return created
 

@@ -152,6 +152,8 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
         type: type,
         word: word.text.trim(),
         question: questionText,
+        // A single-choice question is the sentence in the learned language.
+        sentence: type == 'single_choice' ? questionText : current.sentence,
         answer: answerText,
         options: submittedOptions,
         translation: type == 'explanation' ? '' : translation.text.trim(),

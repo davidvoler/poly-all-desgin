@@ -9,19 +9,17 @@ from models.prompts import (
 from prompts.single_choice import WRONG_TRANSLATIONS, get_fill_in_blank_for_words, get_single_choice_for_words
 from utils.context_options import context_stats, EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON
 from utils.course_utils import get_course
-from utils.exercise_utils import create_exercise
+from utils.exercise_utils import create_exercise, get_options
 from utils.prompt_utils import save_prompt_response
 
 
 def _translation_choices(common: dict, questions) -> list[Exercise]:
-    """Sentence in the learned language; the options are its translations, the correct one first."""
-    return [Exercise(**common, word=q.word, question=q.sentence, answer=q.translation,
-                     options = get_options([q.translation], q.incorrect_translations[:WRONG_TRANSLATIONS]),
-                     sentence_alt1=q.translation)
+    """The sentence in the learned language; the options are its translations, in random
+    order. sentence_alt1-3 stay empty for now."""
+    return [Exercise(**common, word=q.word, question=q.sentence, sentence=q.sentence, answer=q.translation,
+                     options=get_options([q.translation], q.incorrect_translations[:WRONG_TRANSLATIONS]))
             for q in questions]
 
-def get_options(correct: list[str], incorrect: list[str]) -> list[dict]:
-    return [{"text": text, "correct": True} for text in correct] + [{"text": text, "correct": False} for text in incorrect]
 
 async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, words: list[str],
                     course, context) -> list[Exercise]:
@@ -69,7 +67,8 @@ async def _create_exercises(prompt_request: PromptRequest, exercise_type: Prompt
         results={"exercises": [
             {"word": e.word, "question": e.question, "answer": e.answer,
              "wrong_options": ", ".join(option.text for option in e.options or [] if not option.correct),
-             "translation": e.sentence_alt1}
+             # Single choice: the answer is the translation; fill in the blank keeps it in sentence_alt1.
+             "translation": e.sentence_alt1 or e.answer}
             for e in created
         ]} if created else {},
         ui_chat_response={"message": message},

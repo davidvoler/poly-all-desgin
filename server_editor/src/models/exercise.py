@@ -14,6 +14,7 @@ class Exercise(BaseModel):
     exercise_type: str | None = None
     word: str | None = None  # the word the exercise practises
     question: str | None = None
+    sentence: str | None = None  # the sentence in the learned language
     options: list[Option] | None = None
     explanation: str | None = None
     sentence_alt1: str | None = None

@@ -1,12 +1,14 @@
 import json
+import random
+
 from models.exercise import Exercise
 from utils.db import get_query_results, run_query
 
 EXERCISE_COLUMNS = """exercise_id, course_id, module_id, lesson_id, exercise_type, word, question,
-    options, explanation, sentence_alt1, sentence_alt2, sentence_alt3, ruby_text, annotations, answer, weight"""
+    sentence, options, explanation, sentence_alt1, sentence_alt2, sentence_alt3, ruby_text, annotations, answer, weight"""
 
 # Columns written on create/update, in this order.
-_EDITABLE = ("course_id", "module_id", "lesson_id", "exercise_type", "word", "question", "options",
+_EDITABLE = ("course_id", "module_id", "lesson_id", "exercise_type", "word", "question", "sentence", "options",
              "explanation", "sentence_alt1", "sentence_alt2", "sentence_alt3", "ruby_text",
              "annotations", "answer", "weight")
 
@@ -18,6 +20,14 @@ def _values(exercise: Exercise) -> tuple:
         json.dumps(data[c]) if c in json_columns and data[c] is not None else data[c]
         for c in _EDITABLE
     )
+
+
+def get_options(correct: list[str], incorrect: list[str]) -> list[dict]:
+    """The options in random order, so the correct one is not always first."""
+    options = ([{"text": text, "correct": True} for text in correct]
+               + [{"text": text, "correct": False} for text in incorrect])
+    random.shuffle(options)
+    return options
 
 
 async def mark_module_words_used(module_id: int) -> None:
