@@ -14,9 +14,11 @@ from utils.prompt_utils import save_prompt_response
 
 
 def _translation_choices(common: dict, questions) -> list[Exercise]:
-    """The sentence in the learned language; the options are its translations, in random
-    order. sentence_alt1-3 stay empty for now."""
+    """The sentence in the learned language, without diacritics; the options are its
+    translations, in random order. sentence_alt1 has the sentence with diacritics when
+    the course asks for them; sentence_alt2-3 stay empty."""
     return [Exercise(**common, word=q.word, question=q.sentence, sentence=q.sentence, answer=q.translation,
+                     sentence_alt1=q.sentence_with_diacritics,
                      options=get_options([q.translation], q.incorrect_translations[:WRONG_TRANSLATIONS]))
             for q in questions]
 
@@ -34,11 +36,22 @@ async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, wo
                          options=get_options([g.word], g.incorrect_options[:3]),
                          sentence_alt1=g.translation)
                 for g in generated]
-    if exercise_type == PromptType.EXERCISE_SINGLE_CHOICE:
-        return _translation_choices(common, (await get_single_choice_for_words(words, **kwargs)).questions)
+    if exercise_type in (PromptType.EXERCISE_SINGLE_CHOICE, PromptType.EXERCISE_MULTIPLE_CHOICE):
+        questions = (await get_single_choice_for_words(words, **kwargs, diacritics=course.diacritics)).questions
+        return _translation_choices(common, questions)
 
-    if exercise_type == PromptType.EXERCISE_MULTIPLE_CHOICE:
-        return _translation_choices(common, (await get_single_choice_for_words(words, **kwargs)).questions)
+def _result_row(e: Exercise) -> dict:
+    """An exercise as the chat lists it. For single choice the answer is the
+    translation and sentence_alt1 the sentence with diacritics; fill in the blank
+    keeps its translation in sentence_alt1."""
+    row = {"word": e.word, "question": e.question, "answer": e.answer,
+           "wrong_options": ", ".join(option.text for option in e.options or [] if not option.correct)}
+    if e.exercise_type == PromptType.EXERCISE_FILL_IN_THE_BLANK.value:
+        row["translation"] = e.sentence_alt1
+    elif e.sentence_alt1:
+        row["with_diacritics"] = e.sentence_alt1
+    return row
+
 
 async def _create_exercises(prompt_request: PromptRequest, exercise_type: PromptType) -> PromptResponse:
     """Turns the module's unused words into exercises in the current lesson."""
@@ -66,13 +79,7 @@ async def _create_exercises(prompt_request: PromptRequest, exercise_type: Prompt
     response = PromptResponse(
         request_user_message=prompt_request.user_message,
         course_id=context.course_id, module_id=context.module_id, lesson_id=context.lesson_id,
-        results={"exercises": [
-            {"word": e.word, "question": e.question, "answer": e.answer,
-             "wrong_options": ", ".join(option.text for option in e.options or [] if not option.correct),
-             # Single choice: the answer is the translation; fill in the blank keeps it in sentence_alt1.
-             "translation": e.sentence_alt1 or e.answer}
-            for e in created
-        ]} if created else {},
+        results={"exercises": [_result_row(e) for e in created]} if created else {},
         ui_chat_response={"message": message},
         prompt_router_type=PromptRouterType.EXERCISE,
         prompt_type=exercise_type,

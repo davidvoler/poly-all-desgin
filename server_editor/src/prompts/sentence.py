@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from prompts.course_guidance import course_guidance
+from prompts.course_instructions import course_instructions
 from prompts.providers import get_provider
 
 class SentenceTranslation(BaseModel):
@@ -21,7 +21,7 @@ async def get_sentence_translation(
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=SentenceTranslationList,
         system_prompt="You are an expert language teacher.",)
     result = await agent.run(f"Create {num_sentences} questions for the word: {word}")

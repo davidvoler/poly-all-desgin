@@ -1,5 +1,6 @@
 import json
 import random
+import unicodedata
 
 from models.exercise import Exercise
 from utils.db import get_query_results, run_query
@@ -22,10 +23,46 @@ def _values(exercise: Exercise) -> tuple:
     )
 
 
+# Marks that are part of the spelling, not vowel marks: Arabic madda and hamza, which
+# NFD splits off letters such as آ, أ and إ.
+_SPELLING_MARKS = {"\u0653", "\u0654", "\u0655"}
+
+
+def strip_diacritics(text: str | None) -> str | None:
+    """The text without Arabic and Hebrew diacritics (harakat, niqqud, cantillation).
+    Other languages' combining marks, such as Hindi vowel signs, are part of the
+    letters and kept."""
+    if not text:
+        return text
+    decomposed = unicodedata.normalize("NFD", text)
+    kept = "".join(c for c in decomposed
+                   if c in _SPELLING_MARKS
+                   or not (unicodedata.category(c) == "Mn"
+                           and unicodedata.name(c, "").startswith(("ARABIC", "HEBREW"))))
+    return unicodedata.normalize("NFC", kept)
+
+
+def option_key(text: str) -> str:
+    """The text without punctuation, case, extra spaces or vowel marks (such as Arabic
+    harakat or Hebrew niqqud), to tell options apart that only differ in those."""
+    decomposed = unicodedata.normalize("NFKD", text or "")
+    kept = "".join(c for c in decomposed
+                   if not unicodedata.category(c).startswith(("M", "P")))
+    return " ".join(kept.casefold().split())
+
+
 def get_options(correct: list[str], incorrect: list[str]) -> list[dict]:
-    """The options in random order, so the correct one is not always first."""
+    """The options in random order, so the correct one is not always first. Wrong
+    options that read the same as a correct one or as each other are left out."""
+    seen = {option_key(text) for text in correct}
+    wrong = []
+    for text in incorrect:
+        key = option_key(text)
+        if key and key not in seen:
+            seen.add(key)
+            wrong.append(text)
     options = ([{"text": text, "correct": True} for text in correct]
-               + [{"text": text, "correct": False} for text in incorrect])
+               + [{"text": text, "correct": False} for text in wrong])
     random.shuffle(options)
     return options
 

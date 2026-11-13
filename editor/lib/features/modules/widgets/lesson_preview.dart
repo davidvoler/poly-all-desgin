@@ -300,11 +300,10 @@ class _LessonPreviewState extends State<LessonPreview> {
           fontWeight: FontWeight.w700,
         ),
       ),
-      if (exercise.translation.isNotEmpty &&
-          !exercise.correctOptions.contains(exercise.translation)) ...[
+      if (exercise.sentenceAlt1.isNotEmpty) ...[
         const SizedBox(height: 6),
         Text(
-          exercise.translation,
+          exercise.sentenceAlt1,
           style: const TextStyle(color: Color(0xFF748087), fontSize: 14),
         ),
       ],

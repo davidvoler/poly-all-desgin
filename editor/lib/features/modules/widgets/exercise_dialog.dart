@@ -41,8 +41,8 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
   late final word = TextEditingController(text: widget.exercise.word);
   final wordFocus = FocusNode();
   late final question = TextEditingController(text: widget.exercise.question);
-  late final translation = TextEditingController(
-    text: widget.exercise.translation,
+  late final sentenceAlt1 = TextEditingController(
+    text: widget.exercise.sentenceAlt1,
   );
   late final explanation = TextEditingController(
     text: widget.exercise.explanation,
@@ -78,7 +78,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     for (final controller in [
       word,
       question,
-      translation,
+      sentenceAlt1,
       explanation,
       for (final option in options) option.controller,
     ]) {
@@ -156,7 +156,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
         sentence: type == 'single_choice' ? questionText : current.sentence,
         answer: answerText,
         options: submittedOptions,
-        translation: type == 'explanation' ? '' : translation.text.trim(),
+        sentenceAlt1: type == 'explanation' ? '' : sentenceAlt1.text.trim(),
         explanation: explanation.text.trim(),
       ),
     );
@@ -250,10 +250,13 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
 
   List<Widget> _buildTypeFields(bool isNew) {
     const gap = SizedBox(height: 14);
-    final translationField = TextFormField(
-      controller: translation,
+    final sentenceAlt1Field = TextFormField(
+      controller: sentenceAlt1,
       maxLines: null,
-      decoration: const InputDecoration(labelText: 'Translation'),
+      decoration: const InputDecoration(
+        labelText: 'Sentence with diacritics',
+        hintText: 'Optional: the sentence with vowel marks',
+      ),
     );
     switch (type) {
       case 'true_false':
@@ -281,7 +284,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
                 setState(() => statementIsTrue = value.single),
           ),
           gap,
-          translationField,
+          sentenceAlt1Field,
         ];
       case 'explanation':
         return [
@@ -316,7 +319,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
           gap,
           ..._buildOptions(),
           gap,
-          translationField,
+          sentenceAlt1Field,
           gap,
           TextFormField(
             controller: explanation,

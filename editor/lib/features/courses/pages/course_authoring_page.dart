@@ -870,9 +870,12 @@ class _ExerciseCard extends StatelessWidget {
                     ),
                     style: muted,
                   ),
-                if (exercise.translation.isNotEmpty) ...[
+                if (exercise.sentenceAlt1.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(exercise.translation, style: muted),
+                  Text(
+                    'With diacritics: ${exercise.sentenceAlt1}',
+                    style: muted,
+                  ),
                 ],
               ],
             ),

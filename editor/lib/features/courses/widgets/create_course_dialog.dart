@@ -32,6 +32,7 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
   late String learningLanguage = _orDefault(course?.lang, 'es');
   late String studentLanguage = _orDefault(course?.toLang, 'en');
   late String level = levels.contains(course?.level) ? course!.level : 'A1';
+  late bool diacritics = course?.diacritics ?? false;
 
   static String _orDefault(String? value, String fallback) =>
       value == null || value.isEmpty ? fallback : value;
@@ -72,6 +73,7 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
         lang: learningLanguage,
         toLang: studentLanguage,
         guidance: guidanceController.text.trim(),
+        diacritics: diacritics,
         options: course?.options ?? const {},
       ),
     );
@@ -175,7 +177,18 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
                 values: levels,
                 onChanged: (value) => setState(() => level = value!),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: diacritics,
+                onChanged: (value) => setState(() => diacritics = value),
+                title: const Text('Diacritics (vowel marks)'),
+                subtitle: const Text(
+                  'Also keep each sentence with diacritics, such as Arabic '
+                  'harakat or Hebrew niqqud. The plain sentence is always kept.',
+                ),
+              ),
+              const SizedBox(height: 8),
               TextField(
                 controller: guidanceController,
                 minLines: 2,

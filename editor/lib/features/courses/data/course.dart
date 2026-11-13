@@ -15,6 +15,7 @@ class Course {
     this.lang = '',
     this.toLang = '',
     this.guidance = '',
+    this.diacritics = false,
     this.options = const {},
   });
 
@@ -42,6 +43,7 @@ class Course {
       lang: lang,
       toLang: toLang,
       guidance: options['extra_system_prompt'] as String? ?? '',
+      diacritics: options['diacritics'] == true,
       options: options,
     );
   }
@@ -59,6 +61,7 @@ class Course {
     'course_options': {
       ...options,
       'extra_system_prompt': guidance.isEmpty ? null : guidance,
+      'diacritics': diacritics,
     },
   };
 
@@ -80,6 +83,10 @@ class Course {
   /// The author's guidance for the AI, such as "Literary course: prepare the
   /// student for reading books". Saved as course_options.extra_system_prompt.
   final String guidance;
+
+  /// Whether exercises also keep the learned-language sentence with diacritics
+  /// (vowel marks), in sentence_alt1. Saved as course_options.diacritics.
+  final bool diacritics;
 
   /// The course's saved course_options, kept when the course is saved.
   final Map<String, Object?> options;

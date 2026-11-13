@@ -1,12 +1,14 @@
 import random
+import unicodedata
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from prompts.course_guidance import course_guidance
+from prompts.course_instructions import course_instructions
 from prompts.providers import get_provider
 from utils.ai_utils import get_ai_model
 from utils.context_options import EXERCISES_PER_WORD
+from utils.exercise_utils import option_key, strip_diacritics
 
 class SingleChoice(BaseModel):
     sentence: str = Field(description="The target sentence containing a blank or question context.")
@@ -24,7 +26,7 @@ async def get_single_choice(
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=SingleChoiceList,
         system_prompt="You are an expert language teacher.",)
     result = await agent.run(f"Create {num_sentences} questions for the word: {word}")
@@ -49,7 +51,7 @@ async def get_fill_in_blank_for_words(
     """One fill-in-the-blank question per word (the word is the answer), in one AI call."""
     agent = Agent(
         get_ai_model(provider, model),
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=WordExerciseList,
         system_prompt=f"You are an expert {lang} language teacher writing exercises for {level} learners who speak {to_lang}.",
     )
@@ -67,8 +69,8 @@ WRONG_TRANSLATIONS = 3
 # The highest similarity, in percent, a wrong translation may have to the correct one,
 # by course level. Each wrong translation gets a random similarity from 0 up to this,
 # so higher levels get wrong options closer to the correct one.
-WRONG_OPTION_MAX_SIMILARITY = {"a1": 40, "a2": 50, "b1": 60, "b2": 70, "c1": 80, "c2": 90}
-DEFAULT_MAX_SIMILARITY = 40
+WRONG_OPTION_MAX_SIMILARITY = {"a1": 25, "a2": 30, "b1": 35, "b2": 40, "c1": 50, "c2": 60}
+DEFAULT_MAX_SIMILARITY = 30
 
 
 def wrong_option_similarities(level: str | None, count: int = WRONG_TRANSLATIONS) -> list[int]:
@@ -82,6 +84,8 @@ class SentenceTranslationQuestion(BaseModel):
     """One single-choice question: a text in the learned language and its translations."""
     word: str = Field(description="The word this question practises, spelled exactly as given.")
     sentence: str = Field(description="The text in the learned language.")
+    # The same text with diacritics, when the course asks for them.
+    sentence_with_diacritics: str | None = None
     translation: str = Field(description="The correct translation of the text in the student's language.")
     incorrect_translations: list[str] = Field(
         description=f"{WRONG_TRANSLATIONS} wrong translations in the student's language.")
@@ -91,7 +95,9 @@ class SentenceTranslationQuestionList(BaseModel):
 
 
 class WordStep(BaseModel):
-    text: str = Field(description="The text in the learned language for this step.")
+    text: str = Field(description="The text in the learned language for this step, without diacritics.")
+    text_with_diacritics: str | None = Field(
+        default=None, description="The same text with full diacritics (vowel marks), when asked for; else empty.")
     translation: str = Field(description="Its correct translation in the student's language.")
     incorrect_translations: list[str] = Field(
         description=f"{WRONG_TRANSLATIONS} wrong translations in the student's language, each as similar to "
@@ -113,14 +119,16 @@ async def get_single_choice_for_words(
     to_lang: str,
     level: str,
     provider: str = "gemini",
-    model: str = "gemini-3.5-flash") -> SentenceTranslationQuestionList:
+    model: str = "gemini-3.5-flash",
+    diacritics: bool = False) -> SentenceTranslationQuestionList:
     """EXERCISES_PER_WORD single-choice questions per word, from easy to harder: the word,
     a short phrase, a short sentence, and a sentence of at most 6 words. Each has its
     correct translation and wrong translations to choose from. Returned word by word,
-    each word's steps in order."""
+    each word's steps in order. No text has diacritics; with [diacritics], each
+    question also has its learned-language text with them."""
     agent = Agent(
         get_ai_model(provider, model),
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=WordStepsList,
         system_prompt=f"You are an expert {lang} language teacher writing exercises for {level} learners who speak {to_lang}.",
     )
@@ -139,19 +147,77 @@ async def get_single_choice_for_words(
         f"4. A slightly longer sentence with the word, at most 6 words.\n"
         f"Example for the English word \"coffee\": coffee / hot coffee / The coffee is cold / I never drink coffee.\n"
         f"Keep the {lang} simple and common. For each step give its correct {to_lang} translation and "
-        f"{WRONG_TRANSLATIONS} wrong {to_lang} translations.\n\n"
-        f"Each wrong translation must read naturally, have about the same length as the correct one, and be "
+        f"{WRONG_TRANSLATIONS} wrong {to_lang} translations.\n"
+        f"Write all texts and translations without diacritics (no vowel marks such as harakat or niqqud). "
+        + (f"Also give each step's {lang} text again in text_with_diacritics, with full, correct diacritics.\n\n"
+           if diacritics else "Leave text_with_diacritics empty.\n\n")
+        + f"Each wrong translation must read naturally, have about the same length as the correct one, and be "
         f"wrong. Make each one as similar to the correct translation as its target below. Similarity is how much "
         f"of the correct translation's words and meaning it keeps: 0% shares nothing (a different text on "
         f"another topic), 50% keeps about half, 100% would be the same text. Write them in the order given.\n"
+        f"Even at a high target, a wrong translation must mean something different from the correct one: "
+        f"never the correct translation with only punctuation, capitalisation, spacing or vowel marks changed, "
+        f"and never the same as another wrong translation.\n"
         f"{targets}"
     )
-    return SentenceTranslationQuestionList(questions=[
-        SentenceTranslationQuestion(word=w.word, sentence=step.text, translation=step.translation,
-                                    incorrect_translations=step.incorrect_translations)
-        for w in result.output.words
-        for step in w.steps[:EXERCISES_PER_WORD]
-    ])
+    questions = []
+    for w in result.output.words:
+        for step in w.steps[:EXERCISES_PER_WORD]:
+            marked = _with_diacritics(step) if diacritics else None
+            questions.append(SentenceTranslationQuestion(
+                # From the marked text when there is one: it also has the hamza the
+                # plain text sometimes leaves out.
+                word=w.word, sentence=strip_diacritics(marked or step.text),
+                sentence_with_diacritics=marked,
+                translation=strip_diacritics(step.translation),
+                incorrect_translations=_distinct_wrong(step.translation, step.incorrect_translations)))
+    await _top_up_wrong_translations(questions, lang, to_lang, provider, model)
+    return SentenceTranslationQuestionList(questions=questions)
+
+
+def _bare(text: str) -> str:
+    """The letters alone, without any combining mark (hamza and madda too), to check
+    that two texts are the same words."""
+    return "".join(c for c in unicodedata.normalize("NFD", text or "") if not unicodedata.category(c).startswith("M"))
+
+
+def _with_diacritics(step: WordStep) -> str | None:
+    """The step's text with diacritics, when the model gave it for the same words: its
+    text_with_diacritics, else the text itself when that already has them."""
+    marked = (step.text_with_diacritics or "").strip()
+    if marked and strip_diacritics(marked) != marked and _bare(marked) == _bare(step.text):
+        return marked
+    if strip_diacritics(step.text) != step.text:
+        return step.text
+    return None
+
+
+def _distinct_wrong(correct: str, wrong: list[str]) -> list[str]:
+    """The wrong translations, without diacritics, that differ from the correct one and
+    from each other, ignoring punctuation, case, spacing and vowel marks."""
+    seen, kept = {option_key(correct)}, []
+    for text in map(strip_diacritics, wrong):
+        key = option_key(text)
+        if key and key not in seen:
+            seen.add(key)
+            kept.append(text)
+    return kept
+
+
+async def _top_up_wrong_translations(questions: list[SentenceTranslationQuestion], lang: str, to_lang: str,
+                                     provider: str, model: str) -> None:
+    """Models sometimes return a wrong translation that is the correct one again, maybe
+    without its full stop. Asks once more for the questions left with too few."""
+    short = [q for q in questions if len(q.incorrect_translations) < WRONG_TRANSLATIONS]
+    if not short:
+        return
+    extra = await get_wrong_translations(
+        [(q.sentence, q.translation) for q in short], lang=lang, to_lang=to_lang,
+        count=WRONG_TRANSLATIONS, provider=provider, model=model,
+        avoid=[q.incorrect_translations for q in short])
+    for number, q in enumerate(short, start=1):
+        q.incorrect_translations = _distinct_wrong(
+            q.translation, q.incorrect_translations + extra.get(number, []))[:WRONG_TRANSLATIONS]
 
 
 class SentenceWrongTranslations(BaseModel):
@@ -167,19 +233,26 @@ async def get_wrong_translations(
     to_lang: str,
     count: int = 3,
     provider: str = "gemini",
-    model: str = "gemini-3.5-flash") -> dict[int, list[str]]:
+    model: str = "gemini-3.5-flash",
+    avoid: list[list[str]] | None = None) -> dict[int, list[str]]:
     """Wrong translations for each (sentence, correct translation), by the sentence's
-    position in the list: alike in form, different in meaning."""
-    listing = "\n".join(f"{i}. {s} => {t}" for i, (s, t) in enumerate(sentences, start=1))
+    position in the list: alike in form, different in meaning. [avoid] gives, per
+    sentence, wrong translations it already has, which are not to be repeated."""
+    listing = "\n".join(
+        f"{i}. {s} => {t}" + (f" (already used, do not repeat: {' | '.join(avoid[i - 1])})"
+                               if avoid and i <= len(avoid) and avoid[i - 1] else "")
+        for i, (s, t) in enumerate(sentences, start=1))
     agent = Agent(
         get_ai_model(provider, model),
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=SentenceWrongTranslationsList,
         system_prompt=f"You are an expert {lang} language teacher writing single-choice exercises for students who speak {to_lang}.",
     )
     result = await agent.run(
         f"Each line is a numbered {lang} sentence and its correct {to_lang} translation:\n{listing}\n\n"
         f"For each sentence, write {count} wrong {to_lang} translations. Each must read naturally and look like "
-        f"the correct one, but change the meaning (for example a different word, person, tense or negation)."
+        f"the correct one, but change the meaning (for example a different word, person, tense or negation). "
+        f"Never write the correct translation with only punctuation, capitalisation, spacing or vowel marks "
+        f"changed, and never repeat a translation."
     )
     return {s.number: s.incorrect_translations[:count] for s in result.output.sentences}

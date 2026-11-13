@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from prompts.course_guidance import course_guidance
+from prompts.course_instructions import course_instructions
 from prompts.providers import get_provider
 
 
@@ -35,7 +35,7 @@ async def get_text_parts(
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=TextParts,
         system_prompt=f"You are an expert language teacher. You are creating {language} learning materials for {level} learners.")
     result = await agent.run(f"Break the following text language: {language} into clauses, sentences, paragraphs, and words: {text} use native translations for each part from {language} to {to_language}. ")

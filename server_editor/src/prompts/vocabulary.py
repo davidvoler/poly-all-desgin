@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from prompts.course_guidance import course_guidance
+from prompts.course_instructions import course_instructions
 from prompts.providers import get_provider
 from models.word import (WordTranslationList, WordTranslation)
 from utils.ai_utils import get_ai_model
@@ -22,7 +22,7 @@ async def prompt_suggested_words(
     print(prompt)
     agent = Agent(
         model_instance,
-        instructions=course_guidance(),
+        instructions=course_instructions(),
         output_type=WordTranslationList,
         system_prompt=system_prompt
     )

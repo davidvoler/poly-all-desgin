@@ -8,6 +8,7 @@ from models.prompts import (
 from utils.prompt_utils import save_prompt_request, save_prompt_response
 from utils.course_utils import get_course
 from utils.words_utils import save_words
+from utils.exercise_utils import strip_diacritics
 from prompts.vocabulary import prompt_suggested_words
 async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     if prompt_request.prompt_type:
@@ -28,6 +29,9 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
                 provider=prompt_request.provider,
                 model=prompt_request.model,
             )
+            # Words are saved without diacritics, like the exercises' sentences.
+            for w in words_list.words_translations:
+                w.word, w.translation = strip_diacritics(w.word), strip_diacritics(w.translation)
             #save words
             await save_words(lang=course.lang,
                             to_lang=course.to_lang,

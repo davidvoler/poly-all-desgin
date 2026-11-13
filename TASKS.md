@@ -697,5 +697,12 @@ We can finish such a lesson with a final quiz
 - [v] Random the sentences - currently the first is alway the correct - 
 
 - [] random on the student app - so each time an exercise is displayed the order of answers changes  
+- [] Wrong translations in single choice - sometimes the correct translation is wrong
+      - example: translated as "אָמַרְתִּי אֶת הָאֹמֶר הַזֶּה בְּקוֹל רָם", which has no real meaning in Hebrew; the sentence meant "I said this word in a loud voice"
+      - it is intermittent: a review of 36 new ar->he translations scored 4.89/5 with none wrong
+      - likely cause: one AI call writes everything (12 sentences, 12 translations, 36 wrong options with similarity targets)
+      - [] split the call: first the learned-language steps + their translations (translate the meaning into natural language, not word for word), then the wrong options for the finished translations (get_wrong_translations, with the similarity targets)
+      - [] add a translation check: a short AI call reviews each sentence/translation pair and fixes mistakes before the wrong options are written
+      - [] later, if still not reliable: Google Translate as a cross-check for the sentence steps only (weak on single words and short phrases, does not make wrong options, needs a Cloud Translation key)
 
 

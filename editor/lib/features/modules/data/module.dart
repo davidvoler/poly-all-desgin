@@ -78,7 +78,7 @@ class Exercise {
     this.sentence = '',
     this.answer = '',
     this.options = const [],
-    this.translation = '',
+    this.sentenceAlt1 = '',
     this.explanation = '',
   });
 
@@ -113,7 +113,7 @@ class Exercise {
       sentence: json['sentence'] as String? ?? '',
       answer: answer,
       options: options,
-      translation: json['sentence_alt1'] as String? ?? '',
+      sentenceAlt1: json['sentence_alt1'] as String? ?? '',
       explanation: json['explanation'] as String? ?? '',
     );
   }
@@ -131,7 +131,7 @@ class Exercise {
     'sentence': sentence.isEmpty ? null : sentence,
     'answer': answer,
     'options': [for (final option in options) option.toJson()],
-    'sentence_alt1': translation,
+    'sentence_alt1': sentenceAlt1.isEmpty ? null : sentenceAlt1,
     'explanation': explanation,
   };
 
@@ -164,7 +164,8 @@ class Exercise {
     for (final option in options)
       if (!option.correct) option.text,
   ];
-  final String translation;
+  /// The sentence with diacritics (vowel marks), when the course asks for them.
+  final String sentenceAlt1;
   final String explanation;
 }
 

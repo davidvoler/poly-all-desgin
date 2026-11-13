@@ -31,6 +31,15 @@ class Course(BaseModel):
     course_options: dict|CourseOption|None = {}
 
     @property
+    def diacritics(self) -> bool:
+        """Whether exercises also keep the learned-language sentence with diacritics
+        (course_options.diacritics), in sentence_alt1. sentence never has them."""
+        options = self.course_options
+        if isinstance(options, CourseOption):
+            return False
+        return bool((options or {}).get("diacritics"))
+
+    @property
     def guidance(self) -> str | None:
         """The author's guidance for the course's AI prompts (course_options.extra_system_prompt)."""
         options = self.course_options
