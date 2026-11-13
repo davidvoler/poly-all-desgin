@@ -86,4 +86,16 @@ final response = await dio.get<ResponseBody>(
     receiveTimeout: null, // also override per request in case BaseOptions sets one
   ),
 );
+
+```
+nginx conf to prevent buffering
+
+```nginx conf
+location /events {
+    proxy_pass http://app;
+    proxy_http_version 1.1;
+    proxy_set_header Connection '';
+    proxy_buffering off;          # otherwise pings get buffered and never reach Flutter
+    proxy_read_timeout 1h;
+}
 ```
