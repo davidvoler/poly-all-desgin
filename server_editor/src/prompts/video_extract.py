@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
+from prompts.course_guidance import course_guidance
+
 from models.word import WordTranslation
 from utils.ai_utils import get_ai_model
 
@@ -29,6 +31,7 @@ async def extract_from_part(
     """Words and sentences worth learning from one part of a video's subtitles."""
     agent = Agent(
         get_ai_model(provider, model),
+        instructions=course_guidance(),
         output_type=PartExtract,
         system_prompt=f"You are an expert {lang} language teacher preparing {level} lessons for students who speak {to_lang}.",
     )

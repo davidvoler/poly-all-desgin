@@ -686,14 +686,16 @@ We can finish such a lesson with a final quiz
 - [v] All done 
 
 ### Alpha tasks 
-- [] extra params about the course 
+- [v] extra params about the course 
       - use words that are common in literature but still simple      
 - [v] the save of sentence is incorrect - we need to save the words in 
-- [] improve the prompts - currently I am getting too long sentences 
-      - [] smaller sentences, less words, does not have to be a full sentence 
-      - [] maybe start with the word, than add minimum words to create meaning and finally max 5 words sentence 
-- [] Course level guidance - (system prompt). 
-- [] The wrong options are mostly too close to the sentences 
-- [v] Random the sentences - currently the first is alway the correct - consider doing the random on the student app 
+- [v] improve the prompts - currently I am getting too long sentences 
+      - [v] smaller sentences, less words, does not have to be a full sentence 
+      - [v] maybe start with the word, than add minimum words to create meaning and finally max 5 words sentence 
+- [v] Course level guidance - (system prompt). 
+- [v] The wrong options are mostly too close to the sentences 
+- [v] Random the sentences - currently the first is alway the correct - 
+
+- [] random on the student app - so each time an exercise is displayed the order of answers changes  
 
 

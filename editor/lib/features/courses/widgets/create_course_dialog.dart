@@ -22,6 +22,9 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
   late final descriptionController = TextEditingController(
     text: course?.description,
   );
+  late final guidanceController = TextEditingController(
+    text: course?.guidance,
+  );
 
   static const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
@@ -37,6 +40,7 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
+    guidanceController.dispose();
     super.dispose();
   }
 
@@ -67,6 +71,8 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
         monogram: learningLanguage.toUpperCase(),
         lang: learningLanguage,
         toLang: studentLanguage,
+        guidance: guidanceController.text.trim(),
+        options: course?.options ?? const {},
       ),
     );
   }
@@ -168,6 +174,22 @@ class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
                 value: level,
                 values: levels,
                 onChanged: (value) => setState(() => level = value!),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: guidanceController,
+                minLines: 2,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Course guidance for the AI',
+                  hintText:
+                      'For example: Literary course, prepare the student for '
+                      'reading books. Or: Everyday spoken sentences.',
+                  helperText: 'Added to every AI request for this course.',
+                  helperMaxLines: 2,
+                  alignLabelWithHint: true,
+                  prefixIcon: Icon(Icons.auto_awesome_outlined),
+                ),
               ),
               const SizedBox(height: 28),
               Row(

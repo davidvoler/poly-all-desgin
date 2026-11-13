@@ -30,4 +30,12 @@ class Course(BaseModel):
     status: str | None = 'draft'  # draft, reviewed, published, archived
     course_options: dict|CourseOption|None = {}
 
+    @property
+    def guidance(self) -> str | None:
+        """The author's guidance for the course's AI prompts (course_options.extra_system_prompt)."""
+        options = self.course_options
+        if isinstance(options, CourseOption):
+            return options.extra_system_prompt
+        return (options or {}).get("extra_system_prompt")
+
 

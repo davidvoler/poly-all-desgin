@@ -1,9 +1,11 @@
 from taskiq import Context, TaskiqDepends
 from prompt_routers.main_router import handle_prompt_request, PromptRequest
+from prompts.course_guidance import use_course_guidance
 from prompts.providers import use_api_keys
 from task_runner import broker
 from models.tasks import TasksResultsRequest
 from utils.api_keys import resolve_keys
+from utils.course_utils import get_course
 from utils.permission import SchoolUser
 import time
 
@@ -14,7 +16,9 @@ async def _handle_prompt_task(
     user_id: int | None = None,
     context: Context = TaskiqDepends()):
     # The keys are decrypted here, in the worker, and live only for this task.
-    with use_api_keys(await resolve_keys(school, user_id)):
+    # The course's guidance is added to every AI prompt of the task.
+    guidance = (await get_course(req.course_id)).guidance if req.course_id else None
+    with use_api_keys(await resolve_keys(school, user_id)), use_course_guidance(guidance):
         return await handle_prompt_request(req)
 
 async def handle_prompt_task(req: PromptRequest, school_user: SchoolUser)->TasksResultsRequest:

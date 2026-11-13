@@ -2,6 +2,8 @@ import random
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+
+from prompts.course_guidance import course_guidance
 from prompts.providers import get_provider
 from utils.ai_utils import get_ai_model
 from utils.context_options import EXERCISES_PER_WORD
@@ -22,6 +24,7 @@ async def get_single_choice(
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
+        instructions=course_guidance(),
         output_type=SingleChoiceList,
         system_prompt="You are an expert language teacher.",)
     result = await agent.run(f"Create {num_sentences} questions for the word: {word}")
@@ -46,6 +49,7 @@ async def get_fill_in_blank_for_words(
     """One fill-in-the-blank question per word (the word is the answer), in one AI call."""
     agent = Agent(
         get_ai_model(provider, model),
+        instructions=course_guidance(),
         output_type=WordExerciseList,
         system_prompt=f"You are an expert {lang} language teacher writing exercises for {level} learners who speak {to_lang}.",
     )
@@ -116,6 +120,7 @@ async def get_single_choice_for_words(
     each word's steps in order."""
     agent = Agent(
         get_ai_model(provider, model),
+        instructions=course_guidance(),
         output_type=WordStepsList,
         system_prompt=f"You are an expert {lang} language teacher writing exercises for {level} learners who speak {to_lang}.",
     )
@@ -168,6 +173,7 @@ async def get_wrong_translations(
     listing = "\n".join(f"{i}. {s} => {t}" for i, (s, t) in enumerate(sentences, start=1))
     agent = Agent(
         get_ai_model(provider, model),
+        instructions=course_guidance(),
         output_type=SentenceWrongTranslationsList,
         system_prompt=f"You are an expert {lang} language teacher writing single-choice exercises for students who speak {to_lang}.",
     )
