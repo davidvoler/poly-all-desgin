@@ -706,3 +706,47 @@ We can finish such a lesson with a final quiz
       - [] later, if still not reliable: Google Translate as a cross-check for the sentence steps only (weak on single words and short phrases, does not make wrong options, needs a Cloud Translation key)
 
 
+## Cleanup Tasks
+- [v] delete dashboard
+- [v] delete server cod used by dashboard 
+
+
+### Next ideas for implementation no tasks yet 
+I should of the following tasks 
+- add gen voice for words and sentences
+- create a course for myself to increase the arabic vocabulary 
+- generate a full course with the AI - with iterations 
+      - Suggest words 
+      - Choose better words - and words that are not good   
+      - suggest sentences - iterate through better and not so good sentences 
+      - Type of exercises 
+      - do we need to record sound 
+- long running process with break 
+      - create full course by asking agent to create module exercises for all words
+      - 
+
+
+
+#### Smaller ideas 
+- delete words - words that we do not want to use for the lesson
+- save the AI provider and AI model in the text
+
+
+
+#### Reverting code from before cleanup 
+- do we need import/export of courses for easy editing with text editors?
+
+#### Generating full course with AI
+We have to define a discussion with AI
+What would be great?
+I write AI that I want to create a course that improves my vocabulary in Arabic 
+The AI will give me a few words and ASK if I know them . 
+Mark words you already know  
+The same for sentences - mark easy and difficult sentences. 
+He can also ask me if I want that some concepts like basic grammar or syntax questions
+
+
+
+
+
+
