@@ -747,6 +747,96 @@ He can also ask me if I want that some concepts like basic grammar or syntax que
 
 
 
+- [] Suggested solution 1 
+      - [] Create a set of words and sentences
+      - [] Let user choose which words and sentences where 
+            - too easy - not for this course
+            - I know already - could be exactly my level but I know them
+            - Too hard - not yet there 
+      - [] where do we save the the pre-course word/ sentences selections and in what format? 
+            - [] in the same format as module/lesson/exercise - but with a specific label
+            - [] in a separate table 
+      - [] we can go back to the pre-course and edit it or copy to a different course  
+- [] in the process we can ask the user more question
+      - [] Which exercise type to include 
+      - [] Max number of words in sentences
+
+
+
+So this is how a create ne course looks like 
+S: Welcome to the course creation - would you like to start by selecting the words and sentences level for this course 
+      - more about the course
+      - full course setting 
+      - select words and sentences   
+U:- select words and sentences to tune course level
+D-AI-> please generate a few course and sentences  in different levels 
+S: display the words and sentences to to user, for each words select which was too easy, right or too difficult. 
+consider - display it as a quiz and let the user choose 
+OPTION:
+      - Start creating words, sentences for course - if we have selected enough words  
+      - Repeat the process - create more words 
+U: - Start creating words and sentences (30, words, 30 sentences)
+S->AI: Show words that where too easy, to hard or just right. ask AI to create more of this.  
+U: - Repeat the process - the same as above. 
+We can use cache here, 
+
+U: - full course setting
+S: display course setting and late the user select 
+Allow user answering in text and let AI match the correct questions. 
+
+
+
+#### Data Structure 
+
+
+This way we can get words from cache - we do not need to create them every time. 
+- words table 
+      lang, word, translation
+- Word course table 
+      lang, word, translation, rate level (to easy), label ()
+
+- sentences 
+      lang, sentence, translation
+- Word course table 
+      lang, sentence, translation, rate level (to easy), label ()
+
+
+
+#### Long running process
+
+Suppose I trust the AI and I want to create a full course 
+I could setup a limit on TOKENS and run until I am getting a full course 
+
+
+#### Do I need more than just REST  + Streaming
+
+- [] long running process - keep user informed even if she closes and opens the process again - Streaming http will not solve it
+- [] Editing with someone
+
+
+
+The process as it is today:
+- APP Message or options 
+- APP Poll for answer 
+- S - Create a prompt request task
+- S - Save request to DB (Verify that it works )
+- B - send request to AI - 
+- B - on results recive from AI update results in REDIS
+- APP loads results from REDIS
+- APP load results from REST
+
+How can we change it 
+
+WS without Broker
+- APP Message 
+- Server - save request, Ask AI, get results, send WS to app with results
+- APP - load course data if needed
+
+WS with Broker  
+- APP Message 
+- Server - Start Task
+- Broker - save request, Ask AI, get results, send WS to app with results
+- APP - load course data if needed
 
 
 

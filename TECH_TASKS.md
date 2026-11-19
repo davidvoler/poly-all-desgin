@@ -25,7 +25,7 @@ I want a mirror of the data sent to both users and I want them to communicate wh
 
 Workers with WebSocket 
 1. Workers is good for stability and scale 
-2. WebSoket is also good for stability, ans scale to save time on polling 
+2. WebSocket is also good for stability, ans scale to save time on polling 
 
 
 The process
