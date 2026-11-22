@@ -203,7 +203,8 @@ async def _extract_next_part(prompt_request: PromptRequest) -> PromptResponse:
 async def _make_part_exercises(prompt_request: PromptRequest, course_id: int, module_id: int, lesson_id: int,
                               from_words: bool, ai: bool = False) -> list[Exercise]:
     """Single-choice exercises from a part's words (no AI) or sentences (random or AI wrong options)
-    that have none yet. The question is the word or sentence; the options are translations."""
+    that have none yet. The question and the sentence field are the word or sentence; the options
+    are translations."""
     items = (await part_words_without_exercises(lesson_id, module_id) if from_words
              else await part_sentences_without_exercises(lesson_id, module_id))
     course = await get_course(course_id)
@@ -220,16 +221,17 @@ async def _make_part_exercises(prompt_request: PromptRequest, course_id: int, mo
     for (text, translation), incorrect in zip(items, wrong):
         if not incorrect:
             continue  # nothing to choose from
-        # sentence and the options never have diacritics; sentence_alt1 keeps the
-        # sentence's own diacritics when the course asks for them.
+        # The word or sentence goes in the sentence field. sentence and the options
+        # never have diacritics; sentence_alt1 keeps the text's own diacritics when
+        # the course asks for them.
         plain = strip_diacritics(text)
         translation = strip_diacritics(translation)
         created.append(await create_exercise(Exercise(
             course_id=course_id, module_id=module_id, lesson_id=lesson_id,
             exercise_type=PromptType.EXERCISE_SINGLE_CHOICE.value,
             word=text if from_words else None, question=plain,
-            sentence=None if from_words else plain, answer=translation,
-            sentence_alt1=text if course.diacritics and not from_words and plain != text else None,
+            sentence=plain, answer=translation,
+            sentence_alt1=text if course.diacritics and plain != text else None,
             options=get_options([translation], [strip_diacritics(o) for o in incorrect]),
         )))
     return created
