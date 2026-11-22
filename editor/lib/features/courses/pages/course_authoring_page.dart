@@ -380,16 +380,14 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
               ],
             ),
           ),
-          data: (words) => words.isEmpty
-              ? const _NoWords('No words in this module yet.')
-              : _WordList(
-                  courseId: id,
-                  moduleId: moduleId,
-                  moduleTitle: module.title.isEmpty
-                      ? 'Untitled module'
-                      : module.title,
-                  words: words,
-                ),
+          data: (words) => _WordList(
+            courseId: id,
+            moduleId: moduleId,
+            moduleTitle: module.title.isEmpty
+                ? 'Untitled module'
+                : module.title,
+            words: words,
+          ),
         );
   }
 
@@ -1110,27 +1108,143 @@ class _WordList extends ConsumerWidget {
     ref.invalidate(wordsProvider((courseId: courseId, moduleId: moduleId)));
   }
 
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final added = await showDialog<List<({String word, String translation})>>(
+      context: context,
+      builder: (_) => _AddWordsDialog(moduleTitle: moduleTitle),
+    );
+    if (added == null || added.isEmpty || !context.mounted) return;
+    final List<String> skipped;
+    try {
+      skipped = await ref
+          .read(modulesRepositoryProvider)
+          .addWords(courseId: courseId, moduleId: moduleId, words: added);
+    } catch (error) {
+      if (!context.mounted) return;
+      showErrorSnackBar(context, 'Could not add the words.\n$error');
+      return;
+    }
+    ref.invalidate(wordsProvider((courseId: courseId, moduleId: moduleId)));
+    if (skipped.isNotEmpty && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Already in the course, not added: ${skipped.join(', ')}',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final used = words.where((word) => word.used).length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$moduleTitle  ·  ${words.length} words, $used used',
-          style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$moduleTitle  ·  ${words.length} words, $used used',
+                style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => _add(context, ref),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add words'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Expanded(
-          child: SingleChildScrollView(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final word in words)
-                  _WordChip(word: word, onTap: () => _edit(context, ref, word)),
-              ],
-            ),
+          child: words.isEmpty
+              ? const _NoWords(
+                  'No words in this module yet. '
+                  'Add your own, or ask the AI to suggest some.',
+                )
+              : SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final word in words)
+                        _WordChip(
+                          word: word,
+                          onTap: () => _edit(context, ref, word),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Asks for words to add, one per line, each optionally followed by
+/// `= translation` (a tab works too, for lists pasted from a spreadsheet).
+class _AddWordsDialog extends StatefulWidget {
+  const _AddWordsDialog({required this.moduleTitle});
+
+  final String moduleTitle;
+
+  @override
+  State<_AddWordsDialog> createState() => _AddWordsDialogState();
+}
+
+class _AddWordsDialogState extends State<_AddWordsDialog> {
+  final text = TextEditingController();
+
+  @override
+  void dispose() {
+    text.dispose();
+    super.dispose();
+  }
+
+  static List<({String word, String translation})> _parse(String input) {
+    final words = <({String word, String translation})>[];
+    for (final line in input.split('\n')) {
+      final parts = line.split(RegExp(r'[=\t]'));
+      final word = parts.first.trim();
+      if (word.isEmpty) continue;
+      words.add((word: word, translation: parts.skip(1).join(' ').trim()));
+    }
+    return words;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final words = _parse(text.text);
+    return AlertDialog(
+      title: Text('Add words to ${widget.moduleTitle}'),
+      content: SizedBox(
+        width: 420,
+        child: TextField(
+          controller: text,
+          autofocus: true,
+          minLines: 6,
+          maxLines: 12,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'One word per line, e.g.\nbonjour = hello\nmerci',
+            helperText: 'The translation after "=" is optional.',
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: words.isEmpty
+              ? null
+              : () => Navigator.of(context).pop(words),
+          child: Text(
+            words.length > 1 ? 'Add ${words.length} words' : 'Add word',
           ),
         ),
       ],

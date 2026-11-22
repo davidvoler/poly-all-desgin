@@ -164,6 +164,7 @@ class Exercise {
     for (final option in options)
       if (!option.correct) option.text,
   ];
+
   /// The sentence with diacritics (vowel marks), when the course asks for them.
   final String sentenceAlt1;
   final String explanation;
@@ -297,6 +298,28 @@ class ModulesRepository {
       'deleted': deleted,
     },
   );
+
+  /// Adds words an author typed to a module. Returns the words the course
+  /// already had, which the server skips.
+  Future<List<String>> addWords({
+    required int courseId,
+    required int moduleId,
+    required List<({String word, String translation})> words,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/words/words',
+      data: {
+        'course_id': courseId,
+        'module_id': moduleId,
+        'words': [
+          for (final w in words) {'word': w.word, 'translation': w.translation},
+        ],
+      },
+    );
+    return [
+      for (final word in response.data?['skipped'] as List? ?? []) '$word',
+    ];
+  }
 
   /// The module's lessons with their exercises.
   Future<List<Lesson>> fetchLessons(int moduleId) async {

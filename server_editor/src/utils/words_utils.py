@@ -42,6 +42,38 @@ async def save_words(lang:str, to_lang:str, course_id:int, module_id:int|None = 
 
 
 
+async def add_words(lang: str, to_lang: str, course_id: int, module_id: int,
+                    words: list[WordTranslation]) -> list[str]:
+    """Adds words an author typed to a module; returns the words it skipped.
+
+    A word removed from this module earlier comes back. A word the course
+    already has elsewhere is skipped, so each word is taught once.
+    """
+    rows = await get_query_results(
+        "SELECT word, module_id, deleted IS TRUE AS deleted FROM course_simple.words WHERE course_id = %s",
+        (course_id,))
+    active = {row["word"] for row in rows if not row["deleted"]}
+    removed_here = {row["word"] for row in rows if row["deleted"] and row["module_id"] == module_id}
+    skipped: list[str] = []
+    for word in words:
+        if word.word in active:
+            skipped.append(word.word)
+            continue
+        active.add(word.word)
+        if word.word in removed_here:
+            await run_query("""
+            UPDATE course_simple.words
+            SET deleted = false, translation = COALESCE(NULLIF(%s, ''), translation)
+            WHERE course_id = %s AND module_id = %s AND word = %s
+            """, (word.translation, course_id, module_id, word.word))
+        else:
+            await run_query("""
+            INSERT INTO course_simple.words (course_id, module_id, lang, to_lang, word, translation)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """, (course_id, module_id, lang, to_lang, word.word, word.translation))
+    return skipped
+
+
 async def move_unused_words(from_module_id: int, to_module_id: int) -> int:
     """Moves the words no exercise uses yet to another module; returns how many words moved."""
     query = """
