@@ -23,6 +23,20 @@ runs:
       provider: ollama
       model: muse-glimmer
 
+  - name: text parts with long German sentences
+    target: prompts.break_text_parts:get_text_parts
+    comment: Long sentences should come back as new sentences of at most 8 words.
+    args:
+      language: German
+      to_language: English
+      text: >-
+        Als der neugierige Student, der seit Wochen auf dieses Buch gewartet hatte, endlich
+        die Bibliothek betrat, öffnete er das alte Buch und begann sofort, die erste Seite
+        mit großer Aufmerksamkeit zu lesen.
+      level: A2
+      provider: ollama
+      model: muse-glimmer
+
   - name: single choice for wander
     target: prompts.single_choice:get_single_choice
     comment: Check whether the distractors remain plausible.
