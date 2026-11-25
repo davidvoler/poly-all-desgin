@@ -230,7 +230,7 @@ async def _make_part_exercises(prompt_request: PromptRequest, course_id: int, mo
             course_id=course_id, module_id=module_id, lesson_id=lesson_id,
             exercise_type=PromptType.EXERCISE_SINGLE_CHOICE.value,
             word=text if from_words else None, question=plain,
-            sentence=plain, answer=translation,
+            sentence=plain, answer=translation, item_kind="word" if from_words else "sentence",
             sentence_alt1=text if course.diacritics and plain != text else None,
             options=get_options([translation], [strip_diacritics(o) for o in incorrect]),
         )))

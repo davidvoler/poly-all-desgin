@@ -659,7 +659,7 @@ _LessonInfo _lessonInfoFromServer(
     en: translation,
     done: l.completed,
     selected: !l.completed && i == selectedIdx,
-    route: '/quiz',
+    route: l.isVideo ? '/video_lesson' : '/quiz',
     bestScore: l.hasAttempted ? l.maxScore : null,
     attempts: l.numAttempts,
   );

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -188,6 +190,34 @@ class _QuizDisplayContext {
   String? rubyTooltip(RubyMode m) =>
       meta.rubyFor(key: m.rubyKey, label: m.label)?.tooltip;
 }
+
+/// Which round of a video lesson the quiz runs: the part's words before the
+/// video, its sentences after it, or both shuffled as an extra round.
+enum VideoQuizKind {
+  words('Words'),
+  sentences('Sentences'),
+  mixed('Mixed quiz');
+
+  const VideoQuizKind(this.label);
+  final String label;
+}
+
+/// Route argument for one round of a video lesson. The quiz pops `true`
+/// when the round is finished, so the video lesson page moves on.
+class VideoQuizArgs {
+  final int lessonId;
+  final VideoQuizKind kind;
+  const VideoQuizArgs(this.lessonId, this.kind);
+}
+
+/// The exercises of a video lesson that [kind] quizzes, in a stable order.
+List<Exercise> videoRoundExercises(List<Exercise> all, VideoQuizKind kind) =>
+    switch (kind) {
+      VideoQuizKind.words => all.where((e) => e.isWord).toList(),
+      VideoQuizKind.sentences => all.where((e) => !e.isWord).toList(),
+      // Seeded so rebuilds keep the order the student is answering in.
+      VideoQuizKind.mixed => [...all]..shuffle(Random(all.length)),
+    };
 
 class QuizPage extends ConsumerStatefulWidget {
   const QuizPage({super.key});
@@ -436,11 +466,20 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     // Words page).
     final arg = ModalRoute.of(context)?.settings.arguments;
     final practice = arg is PracticeKind ? arg : null;
-    final lessonId = arg is int ? arg : null;
+    final video = arg is VideoQuizArgs ? arg : null;
+    final lessonId = arg is int ? arg : video?.lessonId;
     final selectedWords = arg is List<String> ? arg : null;
+    // The words round warms up for the video; the lesson's attempt is
+    // recorded when the sentences (or mixed) round is finished.
+    final recordLessonId =
+        video?.kind == VideoQuizKind.words ? null : lessonId;
 
     final AsyncValue<List<Exercise>> exercisesAsync;
-    if (selectedWords != null) {
+    if (video != null) {
+      exercisesAsync = ref
+          .watch(videoExercisesProvider(video.lessonId))
+          .whenData((all) => videoRoundExercises(all, video.kind));
+    } else if (selectedWords != null) {
       final prefLang =
           ref.watch(preferenceProvider.select((p) => p.value?.lang));
       final learning = ref.watch(learningLangProvider);
@@ -470,9 +509,11 @@ class _QuizPageState extends ConsumerState<QuizPage> {
           ? const <Lesson>[]
           : (ref.watch(lessonsProvider(moduleId)).value ?? const <Lesson>[]);
       final li = lessons.indexWhere((l) => l.id == lessonId);
-      pageTitle = (li != -1 && lessons[li].title.isNotEmpty)
+      final lessonTitle = (li != -1 && lessons[li].title.isNotEmpty)
           ? lessons[li].title
           : 'Lesson';
+      pageTitle =
+          video == null ? lessonTitle : '${video.kind.label} · $lessonTitle';
     }
 
     return Scaffold(
@@ -500,7 +541,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     child: Text(
                       practice != null
                           ? 'Nothing to practice right now'
-                          : 'No exercises in this lesson',
+                          : video != null
+                              ? 'No ${video.kind.label.toLowerCase()} '
+                                  'exercises in this part'
+                              : 'No exercises in this lesson',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -512,6 +556,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   return _QuizComplete(
                     lessonId: lessonId,
                     practice: practice,
+                    video: video,
                     onRepeat: _restartLesson,
                     summary: _summary!,
                     newAchievements: _newAchievements,
@@ -619,14 +664,14 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     } else if (idx + 1 < exercises.length) {
                       _goToExercise(idx + 1, exercises);
                     } else {
-                      _completeLesson(exercises, lessonId);
+                      _completeLesson(exercises, recordLessonId);
                     }
                   },
                   onSkip: () {
                     if (idx + 1 < exercises.length) {
                       _goToExercise(idx + 1, exercises);
                     } else {
-                      _completeLesson(exercises, lessonId);
+                      _completeLesson(exercises, recordLessonId);
                     }
                   },
                   onBack: idx > 0
@@ -675,6 +720,8 @@ class _LessonSummary {
 class _QuizComplete extends ConsumerWidget {
   final int? lessonId;
   final PracticeKind? practice;
+  // Set when this is one round of a video lesson.
+  final VideoQuizArgs? video;
   final VoidCallback onRepeat;
   final _LessonSummary summary;
   // Null while the server check is still in flight (only meaningful in
@@ -684,6 +731,7 @@ class _QuizComplete extends ConsumerWidget {
   const _QuizComplete({
     required this.lessonId,
     required this.practice,
+    this.video,
     required this.onRepeat,
     required this.summary,
     required this.newAchievements,
@@ -691,6 +739,28 @@ class _QuizComplete extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A video lesson round: back to the video lesson page, which moves on.
+    final round = video;
+    if (round != null) {
+      return _CompleteScaffold(
+        heading: '${round.kind.label} — done!',
+        subtitle: switch (round.kind) {
+          VideoQuizKind.words => 'Now watch the video and listen for them.',
+          VideoQuizKind.sentences => 'You finished this part of the video.',
+          VideoQuizKind.mixed => 'Nice work — everything in one go.',
+        },
+        primaryLabel: round.kind == VideoQuizKind.words
+            ? 'Watch the video'
+            : 'Continue',
+        onPrimary: () => Navigator.pop(context, true),
+        repeatLabel: 'Repeat',
+        onRepeat: onRepeat,
+        summary: summary,
+        newAchievements:
+            round.kind == VideoQuizKind.words ? null : newAchievements,
+      );
+    }
+
     // Practice mode: no lesson chain — just finish or drill again.
     if (practice != null) {
       return _CompleteScaffold(
@@ -734,7 +804,8 @@ class _QuizComplete extends ConsumerWidget {
                     ? next.title
                     : (next.words.isNotEmpty ? next.words.first : null),
               );
-          Navigator.pushReplacementNamed(context, '/quiz',
+          Navigator.pushReplacementNamed(
+              context, next.isVideo ? '/video_lesson' : '/quiz',
               arguments: next.id);
         } else {
           Navigator.maybePop(context);

@@ -7,8 +7,9 @@ from models.word import WordTranslation
 from utils.ai_utils import get_ai_model
 
 # Upper bounds asked of the model per video part, to keep each call short.
-WORDS_PER_PART = 15
-SENTENCES_PER_PART = 10
+WORDS_PER_PART = 12
+SENTENCES_PER_PART = 5
+SENTENCES_MAX_WORDS = 12
 
 
 class SentenceTranslation(BaseModel):
@@ -39,7 +40,9 @@ async def extract_from_part(
         f"These are subtitles from part of a {lang} video:\n\n{text}\n\n"
         f"List up to {WORDS_PER_PART} {lang} words from them that a {level} learner should learn, "
         f"in their dictionary form, each with its {to_lang} translation. "
-        f"Then list up to {SENTENCES_PER_PART} complete sentences from the subtitles "
+        f"Then list up to {SENTENCES_PER_PART} sentences from the subtitles "
+        f" Sentences should be up to {SENTENCES_MAX_WORDS} words long. "
+        f"If there are no suitable short sentences available, use parts of the sentences to create shorter ones. "
         f"(join fragments, fix punctuation, skip music and sound notes), each with its {to_lang} translation."
     )
     return result.output

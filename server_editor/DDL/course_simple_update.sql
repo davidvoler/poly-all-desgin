@@ -38,3 +38,25 @@ ALTER TABLE course_simple.exercise
     ALTER COLUMN answer TYPE varchar(300);
 
 COMMIT;
+
+-- course_simple.exercise.item_kind: what the exercise practises, 'word' or 'sentence'.
+-- Video lessons quiz the words before the video and the sentences after it.
+BEGIN;
+ALTER TABLE course_simple.exercise
+    ADD COLUMN IF NOT EXISTS item_kind varchar(10)
+        CONSTRAINT exercise_item_kind_chk CHECK (item_kind IN ('word', 'sentence'));
+
+-- Video word exercises made before the flag left the sentence empty.
+UPDATE course_simple.exercise
+SET sentence = question
+WHERE sentence IS NULL AND word IS NOT NULL AND exercise_type = 'single_choice'
+  AND btrim(question) NOT LIKE '% %';
+
+-- Backfill: an exercise whose sentence is a single word practises a word.
+UPDATE course_simple.exercise
+SET item_kind = CASE
+        WHEN word IS NOT NULL AND btrim(COALESCE(sentence, question, '')) NOT LIKE '% %' THEN 'word'
+        ELSE 'sentence'
+    END
+WHERE item_kind IS NULL;
+COMMIT;

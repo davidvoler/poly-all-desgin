@@ -20,8 +20,17 @@ async def get_lessons(module_id: int,
            COALESCE(ls.max_score, 0.0) AS max_score,
            COALESCE(ls.sum_score, 0.0) AS sum_score,
            COALESCE(ls.num_attempts, 0) AS num_attempts,
-           CASE WHEN COALESCE(ls.max_score, 0) > 0 THEN 1 ELSE 0 END AS completed
+           CASE WHEN COALESCE(ls.max_score, 0) > 0 THEN 1 ELSE 0 END AS completed,
+           v.url AS video_url,
+           CASE WHEN v.url IS NOT NULL THEN lesson.video_start END AS video_start,
+           CASE WHEN v.url IS NOT NULL THEN NULLIF(lesson.video_end, 0) END AS video_end
     FROM course_simple.lesson AS lesson
+    -- The module's video, when it is a video module; its lessons are the video's parts.
+    LEFT JOIN LATERAL (
+        SELECT url FROM course_simple.video
+        WHERE module_id = lesson.module_id AND deleted IS NOT TRUE
+        ORDER BY video_id DESC LIMIT 1
+    ) AS v ON true
     LEFT JOIN (
         -- Each lesson_status row already holds one attempt's score, which
         -- is sum(score) of that attempt's exercises (see the quiz client's

@@ -42,6 +42,8 @@ dependencies:
   riverpod: ^3.2.1
   dio: ^5.9.2
   audioplayers: ^6.1.0
+  # Plays a video lesson's part of its YouTube video (same player as the editor).
+  youtube_player_iframe: ^6.0.2
   # Loads runtime config (API + audio base URLs) from `assets/.env`.
   # See lib/config/app_config.dart — `--dart-define` still takes
   # precedence so CI/CD overrides keep working.

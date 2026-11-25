@@ -14,6 +14,7 @@ import 'pages/courses_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'pages/quiz_page.dart';
+import 'pages/video_lesson_page.dart';
 import 'pages/words_page.dart';
 import 'state/lang.dart';
 import 'theme.dart';
@@ -125,6 +126,8 @@ class PolyglotsApp extends StatelessWidget {
         '/courses': (context) => const _Guarded(child: CoursesPage()),
         '/course': (context) => const _Guarded(child: CoursePage()),
         '/quiz': (context) => const _Guarded(child: QuizPage()),
+        '/video_lesson': (context) =>
+            const _Guarded(child: VideoLessonPage()),
         '/words': (context) => const _Guarded(child: WordsPage()),
         '/annotated': (context) => const _Guarded(child: AnnotatedPage()),
       },

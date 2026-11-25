@@ -813,15 +813,13 @@ I could setup a limit on TOKENS and run until I am getting a full course
 - [] long running process - keep user informed even if she closes and opens the process again - Streaming http will not solve it
 - [] Editing with someone
 
-
-
 The process as it is today:
 - APP Message or options 
 - APP Poll for answer 
 - S - Create a prompt request task
 - S - Save request to DB (Verify that it works )
 - B - send request to AI - 
-- B - on results recive from AI update results in REDIS
+- B - on results receive from AI update results in REDIS
 - APP loads results from REDIS
 - APP load results from REST
 
@@ -840,3 +838,19 @@ WS with Broker
 
 
 
+### Video Course Student
+- [x] show video
+- [x] Consider the following order 
+      - [x] words quiz 
+      - [x] video 
+      - [x] sentences quiz 
+      - [x] play again - extra 
+      - [x] mixed quiz - extra 
+- [x] We need a flag in in the exercise if it is a word or sentence
+      (`course_simple.exercise.item_kind`: 'word' | 'sentence'; run the
+      migration at the end of `server_editor/DDL/course_simple_update.sql`)
+
+
+### Generate sound with AI 
+- should we generate sound the old way? 
+      - [] do a simple cost research

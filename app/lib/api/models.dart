@@ -360,6 +360,9 @@ class Exercise {
   final Map<String, List<RubyToken>> rubyText;
   // Per-word translations for the sentence's key words. Empty when none.
   final List<WordAnnotation> annotations;
+  // What the exercise practises: 'word' or 'sentence'. Empty on exercises
+  // made before the server sent the flag; see [isWord].
+  final String itemKind;
 
   const Exercise({
     required this.id,
@@ -376,7 +379,14 @@ class Exercise {
     this.sentenceAlt3 = '',
     this.rubyText = const {},
     this.annotations = const [],
+    this.itemKind = '',
   });
+
+  /// True when the exercise practises a single word rather than a sentence.
+  /// Older exercises have no flag: a one-word sentence counts as a word.
+  bool get isWord => itemKind.isNotEmpty
+      ? itemKind == 'word'
+      : !sentence.trim().contains(' ');
 
   /// Furigana tokens for a reading system ('hiragana'/'katakana'/'romanji'),
   /// or empty when this exercise has none for that system.
@@ -413,6 +423,7 @@ class Exercise {
         sentenceAlt3: (j['sentence_alt3'] as String?) ?? '',
         rubyText: _parseRubyText(j['ruby_text']),
         annotations: _parseAnnotations(j['annotations']),
+        itemKind: (j['item_kind'] as String?) ?? '',
       );
 
   /// Parse the server's `ruby_text` into per-system token lists. Defensive
@@ -571,6 +582,11 @@ class Lesson {
   // achievement threshold (sum >= 1 → "learned" in the server).
   final double sumScore;
   final int numAttempts;
+  // Set on a video lesson: the part of the module's video it teaches,
+  // from [videoStart] to [videoEnd] seconds (end null = to the end).
+  final String? videoUrl;
+  final double? videoStart;
+  final double? videoEnd;
 
   const Lesson({
     required this.id,
@@ -581,9 +597,15 @@ class Lesson {
     this.maxScore = 0.0,
     this.sumScore = 0.0,
     this.numAttempts = 0,
+    this.videoUrl,
+    this.videoStart,
+    this.videoEnd,
   });
 
   bool get hasAttempted => numAttempts > 0;
+
+  /// A video lesson runs words quiz → video part → sentences quiz.
+  bool get isVideo => videoUrl != null && videoUrl!.isNotEmpty;
 
   factory Lesson.fromJson(Map<String, dynamic> j) => Lesson(
         id: j['lesson_id'] as int,
@@ -594,6 +616,9 @@ class Lesson {
         maxScore: (j['max_score'] as num?)?.toDouble() ?? 0.0,
         sumScore: (j['sum_score'] as num?)?.toDouble() ?? 0.0,
         numAttempts: (j['num_attempts'] as num?)?.toInt() ?? 0,
+        videoUrl: j['video_url'] as String?,
+        videoStart: (j['video_start'] as num?)?.toDouble(),
+        videoEnd: (j['video_end'] as num?)?.toDouble(),
       );
 }
 

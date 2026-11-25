@@ -20,6 +20,11 @@ class Lesson(BaseModel):
     sum_score: float | None = 0.0
     num_attempts: int | None = 0
     current: int | None = 0
+    # A video lesson is one part of its module's video: the student watches
+    # video_start..video_end of video_url. All three are None otherwise.
+    video_url: str | None = None
+    video_start: float | None = None
+    video_end: float | None = None
 
 class Module(BaseModel):
     module_id: int 
@@ -90,6 +95,9 @@ class Exercise(BaseModel):
     # Per-word translations for the sentence's key words:
     # [{"word": "通り", "translation": "רְחוֹב"}, ...].
     annotations: list | None = []
+    # What the exercise practises: 'word' or 'sentence'; None on exercises
+    # made before the flag, which the client then infers.
+    item_kind: str | None = None
 
     # The jsonb columns are inconsistent across the historical upload runs:
     # `annotations` is sometimes a proper array, sometimes a double-encoded

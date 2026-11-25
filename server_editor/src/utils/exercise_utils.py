@@ -6,12 +6,13 @@ from models.exercise import Exercise
 from utils.db import get_query_results, run_query
 
 EXERCISE_COLUMNS = """exercise_id, course_id, module_id, lesson_id, exercise_type, word, question,
-    sentence, options, explanation, sentence_alt1, sentence_alt2, sentence_alt3, ruby_text, annotations, answer, weight"""
+    sentence, options, explanation, sentence_alt1, sentence_alt2, sentence_alt3, ruby_text, annotations, answer, weight,
+    item_kind"""
 
 # Columns written on create/update, in this order.
 _EDITABLE = ("course_id", "module_id", "lesson_id", "exercise_type", "word", "question", "sentence", "options",
              "explanation", "sentence_alt1", "sentence_alt2", "sentence_alt3", "ruby_text",
-             "annotations", "answer", "weight")
+             "annotations", "answer", "weight", "item_kind")
 
 
 def _values(exercise: Exercise) -> tuple:
@@ -126,6 +127,9 @@ async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
 async def update_exercise(exercise: Exercise) -> Exercise:
     await _fill_from_lesson(exercise)
     previous = await get_exercise(exercise.exercise_id)
+    # Clients that do not know the flag keep what the exercise had.
+    if exercise.item_kind is None:
+        exercise.item_kind = previous.item_kind
     sql = f"""
     UPDATE course_simple.exercise
     SET {", ".join(f"{c} = %s" for c in _EDITABLE)}

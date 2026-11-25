@@ -18,6 +18,7 @@ def _translation_choices(common: dict, questions) -> list[Exercise]:
     translations, in random order. sentence_alt1 has the sentence with diacritics when
     the course asks for them; sentence_alt2-3 stay empty."""
     return [Exercise(**common, word=q.word, question=q.sentence, sentence=q.sentence, answer=q.translation,
+                     item_kind="sentence",
                      sentence_alt1=q.sentence_with_diacritics,
                      options=get_options([q.translation], q.incorrect_translations[:WRONG_TRANSLATIONS]))
             for q in questions]
@@ -32,7 +33,7 @@ async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, wo
                   exercise_type=exercise_type.value)
     if exercise_type == PromptType.EXERCISE_FILL_IN_THE_BLANK:
         generated = (await get_fill_in_blank_for_words(words, **kwargs)).exercises
-        return [Exercise(**common, word=g.word, question=g.sentence, answer=g.word,
+        return [Exercise(**common, word=g.word, question=g.sentence, answer=g.word, item_kind="sentence",
                          options=get_options([g.word], g.incorrect_options[:3]),
                          sentence_alt1=g.translation)
                 for g in generated]

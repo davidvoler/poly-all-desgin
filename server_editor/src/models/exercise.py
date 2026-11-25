@@ -24,3 +24,6 @@ class Exercise(BaseModel):
     annotations: list | None = None
     answer: str | None = None
     weight: int | None = 0
+    # What the exercise practises: "word" or "sentence". Video lessons quiz
+    # the words before the video and the sentences after it.
+    item_kind: str | None = None

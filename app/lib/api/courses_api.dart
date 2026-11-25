@@ -100,10 +100,11 @@ class CoursesRepository {
   }
 
   /// `GET /api/v1/exercise/?lesson_id=…` — exercises for a single lesson.
-  Future<List<Exercise>> fetchExercises(int lessonId) async {
+  /// The server returns at most [limit] (its default is 10).
+  Future<List<Exercise>> fetchExercises(int lessonId, {int? limit}) async {
     final res = await _dio.get<List<dynamic>>(
       '/api/v1/exercise/',
-      queryParameters: {'lesson_id': lessonId},
+      queryParameters: {'lesson_id': lessonId, 'limit': ?limit},
     );
     final data = res.data ?? const [];
     return data
@@ -352,6 +353,15 @@ final exercisesProvider =
     FutureProvider.family<List<Exercise>, int>((ref, lessonId) {
   final repo = ref.watch(coursesRepositoryProvider);
   return repo.fetchExercises(lessonId);
+});
+
+/// Every exercise of a video lesson, words and sentences; keyed by lesson id.
+/// The video flow quizzes them in separate rounds, so it needs all of them,
+/// not the first 10 a regular lesson gets.
+final videoExercisesProvider =
+    FutureProvider.family<List<Exercise>, int>((ref, lessonId) {
+  final repo = ref.watch(coursesRepositoryProvider);
+  return repo.fetchExercises(lessonId, limit: 500);
 });
 
 /// Practice modes — each maps to a `/api/v1/practice/<path>` endpoint

@@ -186,11 +186,28 @@ class HomePage extends ConsumerWidget {
                         return CtaButton(
                           label: label,
                           leadingIcon: Icons.play_arrow,
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            '/quiz',
-                            arguments: lessonId,
-                          ),
+                          onTap: () async {
+                            // A video lesson opens its own page.
+                            final moduleId =
+                                ref.read(preferenceProvider).value?.moduleId;
+                            var isVideo = false;
+                            if (moduleId != null && lessonId != null) {
+                              try {
+                                final lessons = await ref
+                                    .read(lessonsProvider(moduleId).future);
+                                isVideo = lessons.any(
+                                    (l) => l.id == lessonId && l.isVideo);
+                              } catch (_) {
+                                // Unknown: open it as a regular lesson.
+                              }
+                            }
+                            if (!context.mounted) return;
+                            Navigator.pushNamed(
+                              context,
+                              isVideo ? '/video_lesson' : '/quiz',
+                              arguments: lessonId,
+                            );
+                          },
                         );
                       }),
                     ),
